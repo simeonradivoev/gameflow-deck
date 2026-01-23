@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+    --color-dark: #333333;
+    --color-light: #464646;
+    --color-light: #828282;
+    --color-light2: #bcbcbc;
+    --color-primary: #E5FF00;
+    --color-alt: #4656E6;
+    --color-alert: #E60012;
+}
+
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+}
+
+#root {
+}

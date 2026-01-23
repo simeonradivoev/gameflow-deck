@@ -1,0 +1,36 @@
+{
+  "name": "gameflow-deck",
+  "version": "1.0.0",
+  "description": "Game Launcher",
+  "scripts": {
+    "dev": "bun run build && electrobun dev",
+    "dev:hmr": "concurrently \"bun run hmr\" \"bun run dev\"",
+    "build": "vite build && electrobun build",
+    "build:canary": "vite build && electrobun build --env=canary",
+    "build:stable": "vite build && electrobun build --env=stable",
+    "hmr": "vite --port 5173",
+    "start": "bun run dev"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "^1.154.10",
+    "@tanstack/router-plugin": "^1.154.10",
+    "classnames": "^2.5.1",
+    "electrobun": "latest",
+    "gamepad.css": "^0.0.4",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/react-router-devtools": "^1.154.10",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "concurrently": "^9.2.1",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}
