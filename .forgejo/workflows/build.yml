@@ -12,6 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 1. FIX: Install system dependencies BEFORE setup-bun
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip libstdc++6
+
       - name: Setup Bun
         uses: https://github.com/oven-sh/setup-bun@v2
         with:
