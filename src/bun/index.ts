@@ -24,6 +24,7 @@ const url = await getMainViewUrl();
 const mainWindow = new BrowserWindow({
   title: "GameFlow",
   url,
+  renderer: 'cef',
   styleMask: {
     Borderless: true,
   },
