@@ -18,10 +18,20 @@ jobs:
           apt-get update
           apt-get install -y unzip libstdc++6
 
-      - name: Setup Bun
-        uses: https://github.com/oven-sh/setup-bun@v2
-        with:
-          bun-download-url: "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip"
+      - name: Manual Bun Install
+        run: |
+          # Download and install via official script
+          curl -fsSL https://bun.sh/install | bash
+          
+          # Manually add Bun to the PATH for subsequent steps
+          echo "BUN_INSTALL=$HOME/.bun" >> $GITHUB_ENV
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+          
+          # Force execution permissions just in case
+          chmod +x $HOME/.bun/bin/bun
+          
+          # Verify it works immediately
+          $HOME/.bun/bin/bun --version
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
