@@ -15,7 +15,7 @@ jobs:
       - name: Setup Bun
         uses: https://github.com/oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.1.1
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
