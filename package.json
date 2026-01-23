@@ -12,8 +12,8 @@
     "start": "bun run dev"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.154.10",
-    "@tanstack/router-plugin": "^1.154.10",
+    "@tanstack/react-router": "^1.154.12",
+    "@tanstack/router-plugin": "^1.154.12",
     "classnames": "^2.5.1",
     "electrobun": "latest",
     "gamepad.css": "^0.0.4",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",
-    "@tanstack/react-router-devtools": "^1.154.10",
+    "@tanstack/react-router-devtools": "^1.154.12",
     "@types/bun": "latest",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
