@@ -40,7 +40,7 @@ jobs:
         run: bun run build:canary
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: canary-build
           # Replace 'dist' with your actual output folder (e.g., 'out' or 'build')
