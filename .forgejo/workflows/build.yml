@@ -10,6 +10,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+        # This is the critical missing step
+      - name: Setup Node.js (Required for setup-bun v2)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Setup Bun
         uses: https://github.com/oven-sh/setup-bun@v2
         with:
