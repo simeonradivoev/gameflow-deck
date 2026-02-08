@@ -11,17 +11,9 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
-    container:
-      image: node:20
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # 1. FIX: Install system dependencies BEFORE setup-bun
-      - name: Install system dependencies
-        run: |
-          apt-get update
-          apt-get install -y unzip libstdc++6 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libasound2
 
       - name: Bun Install
         uses: oven-sh/setup-bun@v2
