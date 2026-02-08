@@ -29,5 +29,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: canary-build
+          name: canary-build-${{ runner.os }}
           path: build/${{ runner.os }}
