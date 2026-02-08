@@ -1,6 +1,8 @@
 name: Build and Upload Canary
 on:
-  # Allows you to run this manually from the Forgejo UI
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
