@@ -1,35 +1,8 @@
-import { PluginBuilder } from "bun";
 import fs from "node:fs/promises";
-import path, { resolve, sep } from "node:path";
+import path, { } from "node:path";
 import os from "node:os";
-import appPackage from '../package.json';
 
-const plugin = {
-    name: "dist-absolute-filter",
-    setup (build: PluginBuilder)
-    {
-        build.onStart(async () =>
-        {
-            if (await fs.exists('./build'))
-            {
-                await fs.rm('./build', { recursive: true });
-            }
-        });
-        // 1. Intercept all resolutions to check their REAL path
-        build.onResolve({ filter: /.*/, namespace: 'file' }, (args) =>
-        {
-            if (args.path.startsWith(`.${sep}dist`))
-            {
-                return { path: resolve(args.resolveDir, args.path), namespace: "dist_assets" };
-            }
-        });
-        build.onLoad({ filter: /.*/, namespace: 'dist_assets' }, async (args) =>
-        {
-            console.log(args.path);
-            return { contents: await Bun.file(args.path).bytes(), loader: 'file' };
-        });
-    },
-};
+const buildSubDir = process.env.BUILD_DIR ?? `./build/${os.platform()}`;
 
 const compileOption: Bun.CompileBuildOptions = {
     outfile: "gameflow",
@@ -49,7 +22,7 @@ await Bun.build({
     entrypoints: ["./src/bun/index.ts", "./src/bun/webview-worker.ts"],
     metafile: true,
     compile: compileOption,
-    outdir: `./build/${os.platform()}`,
+    outdir: buildSubDir,
     root: './src/bun',
     define: {
         "process.env.IS_BINARY": "true"
@@ -67,9 +40,9 @@ await Bun.build({
         {
             build.onStart(async () =>
             {
-                if (await fs.exists(`./build/${os.platform()}`))
+                if (await fs.exists(buildSubDir))
                 {
-                    const files = await fs.readdir(`./build/${os.platform()}`, { withFileTypes: true });
+                    const files = await fs.readdir(buildSubDir, { withFileTypes: true });
                     for (const file of files)
                     {
                         await fs.rm(path.join(file.parentPath, file.name), { recursive: true });
@@ -78,7 +51,7 @@ await Bun.build({
             });
             build.onEnd(async () =>
             {
-                await fs.cp('./dist', `./build/${os.platform()}/dist`, { recursive: true });
+                await fs.cp('./dist', `${buildSubDir}/dist`, { recursive: true });
             });
         },
     }]

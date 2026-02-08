@@ -7,10 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
+    runs-on: docker
     container:
       image: node:20
     steps:
@@ -23,19 +20,30 @@ jobs:
           apt-get update
           apt-get install -y unzip libstdc++6 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libasound2
 
-      - name: Bun Install
-        uses: oven-sh/setup-bun@v2
+      - name: Manual Bun Install
+        run: |
+          # Download and install via official script
+          curl -fsSL https://bun.sh/install | bash
+
+          # Manually add Bun to the PATH for subsequent steps
+          echo "BUN_INSTALL=$HOME/.bun" >> $GITHUB_ENV
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+          # Force execution permissions just in case
+          chmod +x $HOME/.bun/bin/bun
+
+          # Verify it works immediately
+          $HOME/.bun/bin/bun --version
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Build Canary
         run: bun run package:auto-prod
-        env:
-          BUILD_DIR: ./build/${{ runner.os }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: canary-build
-          path: build/${{ runner.os }}
+          path: build/linux
+          retention-days: 7
