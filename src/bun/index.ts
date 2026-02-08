@@ -1,39 +1,55 @@
-import { BrowserWindow, Updater } from "electrobun/bun";
+import { RunBunServer } from './server';
+import { RunAPIServer } from './api/rpc';
+import { spawnBrowser } from './utils/browser-spawner';
+import { BuildParams } from './utils/browser-params';
 
-const DEV_SERVER_PORT = 5173;
-const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}/Dashboard`;
+const api = RunAPIServer();
+let bunServer: { stop: () => void; url: URL; } | undefined;
 
-// Check if Vite dev server is running for HMR
-async function getMainViewUrl(): Promise<string> {
-  const channel = await Updater.localInfo.channel();
-  if (channel === "dev") {
-    try {
-      await fetch(DEV_SERVER_URL, { method: "HEAD" });
-      console.log(`HMR enabled: Using Vite dev server at ${DEV_SERVER_URL}`);
-      return DEV_SERVER_URL;
-    } catch {
-      console.log("Vite dev server not running. Run 'bun run dev:hmr' for HMR support.");
-    }
-  }
-  return "views://mainview/index.html";
+if (!Bun.env.PUBLIC_ACCESS)
+{
+  bunServer = RunBunServer();
 }
 
-// Create the main application window
-const url = await getMainViewUrl();
+function cleanup ()
+{
+  bunServer?.stop();
+  api.apiServer.stop();
+  process.exit(0);
+}
 
-const mainWindow = new BrowserWindow({
-  title: "GameFlow",
-  url,
-  renderer: 'cef',
-  styleMask: {
-    Borderless: true,
-  },
-  frame: {
-    width: 1280,
-    height: 800,
-    x: 200,
-    y: 200,
-  },
-});
+try
+{
+  const webviewWorker = new Worker(process.env.IS_BINARY ? "./webview-worker.ts" : new URL("./webview-worker", import.meta.url).href, {
+    smol: true,
+  });
+  webviewWorker.addEventListener('error', console.error);
+  await new Promise(resolve => webviewWorker.addEventListener('close', resolve));
+  cleanup();
+}
+catch (error)
+{
+  console.error(error);
 
-console.log("React Tailwind Vite app started!");
+  const browserParams = await BuildParams();
+
+  if (!browserParams)
+  {
+    console.error("Could not find valid browser");
+    process.exit();
+  }
+
+  const browser = spawnBrowser({
+    browser: browserParams.browser.type,
+    args: browserParams.args,
+    env: browserParams.env,
+    detached: true,
+    execPath: browserParams.browser.path,
+    source: browserParams.browser.source,
+    ipc (message)
+    {
+      console.log(message);
+    },
+    onExit: cleanup
+  });
+}

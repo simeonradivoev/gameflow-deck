@@ -1,9 +1,27 @@
+{
   "files.readonlyInclude": {
-    "**/routeTree.gen.ts": true
+    "**/*.gen.ts": true,
+    "src/mainview/gen/*": true,
   },
   "files.watcherExclude": {
-    "**/routeTree.gen.ts": true
+    "**/*.gen.ts": true,
+    "src/mainview/gen/*": true,
   },
   "search.exclude": {
-    "**/routeTree.gen.ts": true
-  }
+    "**/*.gen.ts": true,
+    "src/mainview/gen/*": true,
+    
+  },
+  "editor.formatOnSave": true,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.formatOnSave": true
+  },
+  "cSpell.words": [
+    "elysia"
+  ]
+}

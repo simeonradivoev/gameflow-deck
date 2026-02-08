@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Act",
+      "type": "shell",
+      "command": "act",
+      "args": ["--artifact-server-path", "artifacts", "-W", ".github/workflows/build.yml"],
+      "options": {
+        "env": {
+          "PATH": "${env:PATH}",
+          "ACTIONS_RUNTIME_TOKEN": "foo"
+        },
+      },
+      "problemMatcher": []
+    }
+  ]
+}

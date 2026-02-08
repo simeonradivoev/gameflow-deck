@@ -1,16 +1,23 @@
-import { Link, Outlet, createRootRoute } from "@tanstack/react-router";
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { Gamepad2, Library, Settings, Store } from "lucide-react";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { RouterContext } from "..";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
 });
 
-function RootComponent() {
+function RootComponent ()
+{
   return (
     <div className="w-screen h-screen overflow-hidden">
       <Outlet />
-      <TanStackRouterDevtools position="bottom-right" />
-    </div>
+      {import.meta.env.DEV && false &&
+        <>
+          <TanStackRouterDevtools position="top-left" />
+          <ReactQueryDevtools buttonPosition="top-right" />
+        </>
+      }
+    </div >
   );
 }

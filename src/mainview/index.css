@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import 'animate.css';
+@plugin "daisyui";
 
 @theme {
     --color-dark: #333333;
@@ -8,6 +10,26 @@
     --color-primary: #E5FF00;
     --color-alt: #4656E6;
     --color-alert: #E60012;
+    --game-card-height: calc(var(--spacing) * 100);
+    --game-card-width: calc(var(--spacing) * 64);
+
+    --animate-wiggle: wiggle 0.3s ease-in-out 1;
+
+    @keyframes wiggle {
+
+        0%,
+        100% {
+            transform: perspective(400px) rotate3d(0, 1, 0, 2deg);
+        }
+
+        50% {
+            transform: perspective(400px) rotate3d(0, 1, 0, -2deg);
+        }
+    }
+}
+
+symbol path {
+    fill: var(--color-base-content) !important;
 }
 
 html {
@@ -16,8 +38,220 @@ html {
     text-rendering: optimizeLegibility;
 }
 
-body {
+@layer components {
+    .game-card {
+        @apply rounded-2xl;
+    }
+
+    .menu-icon svg {
+        @apply sm:size-8 md:size-10;
+    }
+
+    .header-icon svg {
+        @apply w-8 h-8 min-w-8 min-h-8;
+    }
+
+    .header-icon-small svg {
+        @apply w-6 h-6 min-w-6 min-h-6;
+    }
+
+    .card-list {
+        display: flex;
+    }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, var(--game-card-width));
+        grid-auto-rows: var(--game-card-height);
+        padding-bottom: 16px;
+    }
+
+    .no-scrollbar {
+        scrollbar-width: none;
+    }
+
+    &::view-transition-old(.game-card),
+    &::view-transition-new(.game-card) {
+        height: 100%;
+        width: 100%;
+    }
+
+    html:active-view-transition-type(zoom-in) {
+
+        &::view-transition-old(root) {
+            animation: fade-out 300ms ease-in forwards;
+        }
+
+        &::view-transition-new(root) {
+            animation: zoom-in-fade-in 300ms ease-in-out forwards;
+        }
+    }
+
+    html:active-view-transition-type(zoom-out) {
+
+        &::view-transition-old(root) {
+            animation: zoom-out-fade-out 300ms ease-in-out forwards;
+        }
+
+        &::view-transition-new(root) {
+            animation: zoom-start-small-in-fade-in 300ms ease-in-out forwards;
+        }
+    }
+
+    @keyframes fade-out {
+        from {
+            opacity: 1;
+        }
+
+        to {
+            opacity: 0;
+        }
+    }
+
+    @keyframes zoom-start-small-in-fade-in {
+        from {
+            scale: 95%;
+            opacity: 0;
+        }
+
+        to {
+            scale: 100%;
+            opacity: 1;
+        }
+    }
+
+    @keyframes zoom-in-fade-out {
+        from {
+            scale: 100%;
+            opacity: 1;
+        }
+
+        to {
+            scale: 105%;
+            opacity: 0;
+        }
+    }
+
+    @keyframes zoom-in-fade-in {
+        from {
+            scale: 105%;
+            opacity: 0;
+        }
+
+        to {
+            scale: 100%;
+            opacity: 1;
+        }
+    }
 }
 
-#root {
+
+/* Background */
+#container {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    margin: 0px auto;
+    padding: 0px auto;
+}
+
+#container-inside {
+    position: relative;
+    min-width: 960px;
+    max-width: 1280px;
+    height: auto;
+    min-height: 100%;
+    margin: 0px auto;
+    padding: 0px auto;
+    overflow: visible;
+}
+
+#circle-small {
+    -webkit-animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation-timing-function: cubic-bezier(.6, 0, .4, 1);
+    animation-delay: 0s;
+    position: absolute;
+    top: 200px;
+    left: -150px;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    opacity: 0.2;
+}
+
+#circle-medium {
+    -webkit-animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation-timing-function: cubic-bezier(.6, 0, .4, 1);
+    animation-delay: 0.3s;
+    position: absolute;
+    top: 50px;
+    left: -300px;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    opacity: 0.15;
+}
+
+#circle-large {
+    -webkit-animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation-timing-function: cubic-bezier(.6, 0, .4, 1);
+    animation-delay: 0.6s;
+    position: absolute;
+    top: -100px;
+    left: -450px;
+    width: 900px;
+    height: 900px;
+    border-radius: 50%;
+    opacity: 0.1;
+}
+
+#circle-xlarge {
+    -webkit-animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation-timing-function: cubic-bezier(.6, 0, .4, 1);
+    animation-delay: 0.9s;
+    position: absolute;
+    top: -250px;
+    left: -600px;
+    width: 1200px;
+    height: 1200px;
+    border-radius: 50%;
+    opacity: 0.05;
+}
+
+#circle-xxlarge {
+    -webkit-animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation: circle-small-scale 3s ease-in-out infinite alternate;
+    animation-timing-function: cubic-bezier(.6, 0, .4, 1);
+    animation-delay: 1.2s;
+    position: absolute;
+    top: -400px;
+    left: -750px;
+    width: 1500px;
+    height: 1500px;
+    border-radius: 50%;
+    opacity: 0.025;
+}
+
+@-webkit-keyframes circle-small-scale {
+    0% {
+        -webkit-transform: scale(1.0);
+    }
+
+    100% {
+        -webkit-transform: scale(1.1);
+    }
+}
+
+@keyframes circle-small-scale {
+    0% {
+        transform: scale(1.0);
+    }
+
+    100% {
+        transform: scale(1.1);
+    }
 }
