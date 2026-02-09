@@ -12,7 +12,7 @@ function RootComponent ()
   return (
     <div className="w-screen h-screen overflow-hidden">
       <Outlet />
-      {import.meta.env.DEV && false &&
+      {import.meta.env.DEV &&
         <>
           <TanStackRouterDevtools position="top-left" />
           <ReactQueryDevtools buttonPosition="top-right" />

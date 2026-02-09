@@ -5,6 +5,7 @@ Focused on building a simple user experience and intuitive UI.
 
 > [!WARNING]
 > This app is actively in development, it doesn't have most of its critical features implemented yet.
+> It will have an opinionated design and will be used as an experiment in discovering a good UX.
 
 ## Features
 

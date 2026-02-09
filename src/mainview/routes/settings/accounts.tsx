@@ -1,170 +1,38 @@
 import
 {
   FocusContext,
-  FocusDetails,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { QueriesResults, useIsMutating, useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useIsMutating, useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import classNames from "classnames";
-import { DoorOpen, Key, Link, Lock, User } from "lucide-react";
+import { Cross, Delete, Key, Link, Lock, Save, Trash, User, X } from "lucide-react";
 import
 {
-  ChangeEventHandler,
-  createContext,
-  FocusEventHandler,
   HTMLInputTypeAttribute,
   JSX,
   useCallback,
-  useContext,
   useEffect,
-  useMemo,
-  useRef,
   useState,
 } from "react";
 import { client } from "../..";
-import { SettingsType } from "../../../shared/constants";
+import { RPC_URL, SettingsType } from "../../../shared/constants";
 import
 {
   getCurrentUserApiUsersMeGetOptions,
-  loginApiLoginPostMutation,
-  logoutApiLogoutPostMutation,
   statsApiStatsGetOptions,
 } from "../../../clients/romm/@tanstack/react-query.gen";
-import { useToasters } from "../../contexts/ToasterContext";
 import { UserSchema } from "../../../clients/romm";
 import toast from "react-hot-toast";
+import z from "zod";
+import { OptionSpace } from "../../components/options/OptionSpace";
+import { OptionInput } from "../../components/options/OptionInput";
+import { useSettingsForm, useSettingsFormContext } from "../../components/options/SettingsAppForm";
 import { twMerge } from "tailwind-merge";
 
 export const Route = createFileRoute("/settings/accounts")({
   component: RouteComponent,
 });
-
-const OptionContext = createContext(
-  {} as {
-    focused: boolean;
-    focus: (focusDetails?: FocusDetails | undefined) => void;
-    eventTarget: EventTarget;
-  },
-);
-
-function useOptionContext (params?: { onOptionEnterPress?: () => void; })
-{
-  const context = useContext(OptionContext);
-  useEffect(() =>
-  {
-    if (params?.onOptionEnterPress)
-    {
-      context.eventTarget.addEventListener(
-        "onEnterPress",
-        params.onOptionEnterPress,
-      );
-    }
-
-    return () =>
-    {
-      if (params?.onOptionEnterPress)
-      {
-        context.eventTarget.removeEventListener(
-          "onEnterPress",
-          params.onOptionEnterPress,
-        );
-      }
-    };
-  }, [context.eventTarget]);
-  return context;
-}
-
-function OptionSpace (data: {
-  id?: string;
-  className?: string;
-  focusable?: boolean;
-  children: JSX.Element;
-  label?: string | JSX.Element;
-})
-{
-  const eventTarget = useMemo(() => new EventTarget(), []);
-  const { ref, focused, focusSelf, focusKey, hasFocusedChild } = useFocusable({
-    focusKey: data.id,
-    focusable: data.focusable !== false,
-    trackChildren: true,
-    onEnterPress ()
-    {
-      eventTarget.dispatchEvent(new CustomEvent("onEnterPress"));
-    },
-  });
-
-  return (<FocusContext value={focusKey}>
-    <OptionContext value={{ focused, focus: focusSelf, eventTarget }}>
-      <li
-        ref={ref}
-        className={twMerge("flex sm:p-2 md:p-4 pl-8! rounded-full bg-base-content/1", classNames(
-          {
-            "text-primary-content bg-primary ": focused || hasFocusedChild,
-          }),
-          data.className,
-        )}
-      >
-        {typeof data.label === "string" ? (
-          <label
-            className={classNames("label flex-1 md:text-lg pr-4", {
-              "text-primary-content font-semibold": focused,
-            })}
-          >
-            {data.label}
-          </label>
-        ) : (
-          data.label
-        )}
-        {data.children}
-      </li>
-    </OptionContext>
-  </FocusContext>
-  );
-}
-
-function OptionInput (data: {
-  name: string;
-  type: HTMLInputTypeAttribute;
-  className?: string;
-  placeholder?: string;
-  icon?: JSX.Element;
-  value?: string;
-  onBlur?: FocusEventHandler<HTMLInputElement>;
-  onChange?: ChangeEventHandler<HTMLInputElement>;
-})
-{
-  const inputRef = useRef<HTMLInputElement>(null);
-  const option = useOptionContext({
-    onOptionEnterPress ()
-    {
-      inputRef.current?.focus();
-    },
-  });
-
-  return (
-    <label className="flex items-center gap-3 rounded-full sm:flex-2 md:flex-1 divide-accent">
-      <span className={twMerge("text-base-content/80", classNames({
-        "text-primary-content": option.focused
-      }))}>{data.icon}</span>
-      <input
-        ref={inputRef}
-        id={data.name}
-        name={data.name}
-        value={data.value}
-        type={data.type}
-        onFocus={() => option.focus()}
-        placeholder={data.placeholder}
-        onChange={data.onChange}
-        onBlur={data.onBlur}
-        className={classNames(
-          "input grow rounded-full ring-primary-content focus:ring-3",
-          data.className,
-        )}
-      />
-    </label>
-  );
-}
 
 type KeysWithValueAssignableTo<T, Value> = {
   [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
@@ -185,7 +53,7 @@ function Option (data: {
     queryKey: ["setting", data.id],
     queryFn: async () =>
     {
-      const value = (await client.api.settings({ id: data.id! }).get()).data?.value;
+      const value = await client.api.settings({ id: data.id! }).get().then(d => d.data?.value);
       if (!dirty)
       {
         setLocalValue(String(value));
@@ -227,52 +95,70 @@ function Option (data: {
   );
 }
 
-function Button (data: { children?: any, disabled?: boolean, type: "reset" | "button" | "submit" | undefined; } & InteractParams & FocusParams)
+function Button (data: { children?: any, className?: string, disabled?: boolean, type: "reset" | "button" | "submit" | undefined; } & InteractParams & FocusParams)
 {
   const { ref, focused } = useFocusable({
     focusKey: data.type,
     onEnterPress: data.onAction,
-    onFocus: data.onFocus
+    onFocus: data.onFocus,
+    focusable: !data.disabled
   });
   return <button
     ref={ref}
     onClick={data.onAction}
     disabled={data.disabled}
-    className={classNames("btn rounded-full focus:bg-base-content focus:text-base-300 md:text-lg", {
+    className={twMerge("btn rounded-full focus:bg-base-content focus:text-base-300 md:text-lg", classNames({
       "btn-accent": focused
-    })}
+    }, data.className))}
     type={data.type}
   >
     {data.children}
   </button>;
 }
 
-function LoginControls (data: { user: UseQueryResult<UserSchema | null, Error>; })
+function LoginControls (data: { hasPassword: boolean; })
 {
+  const user = useQuery({
+    ...getCurrentUserApiUsersMeGetOptions(),
+    queryKey: ['romm', 'auth', "login"],
+    refetchOnWindowFocus: false,
+    retry: 0
+  });
+  const context = useSettingsFormContext({});
+  context.state.canSubmit;
   const isMutatingRomm = useIsMutating({ mutationKey: ["romm", "auth"] }) > 0;
   const logoutMutation = useMutation({
-    mutationKey: ["romm", "auth", "logout"], mutationFn: () => window.cookieStore.delete({ name: "romm_session" }),
+    mutationKey: ["romm", "auth", "logout"], mutationFn: () => client.api.romm.logout.post(),
     onSuccess: async (d, v, r, c) =>
     {
       c.client.invalidateQueries({ queryKey: ["romm", "auth"] });
     }
   });
   return <div className="flex gap-2 items-center">
-    {data.user.isError && <div className="badge badge-error gap-2 tooltip" data-tip={(data.user.error as any)?.detail ?? ''}>
+    {user.isError && <div className="badge badge-error gap-2 tooltip" data-tip={(user.error as any)?.detail ?? ''}>
       <Lock className="size-4" /></div>}
-    {data.user.isSuccess && <div className="badge badge-success badge-lg rounded-full gap-2">Logged In As: <b>{data.user.data?.username}</b></div>}
-    <Button disabled={isMutatingRomm} type="submit" >
-      <Lock /> Login
+    {user.isSuccess && <>
+      <div className="badge badge-success badge-lg rounded-full gap-2"> Logged In As: <img className="size-6 rounded-full" src={`${RPC_URL(__HOST__)}/api/romm/assets/romm/assets/${user.data?.avatar_path}`} /><b>{user.data?.username}</b></div>
+    </>}
+    <Button disabled={!context.state.canSubmit || !context.state.isDirty} type="submit" onAction={() => context.handleSubmit()} >
+      <Save /> Save
     </Button>
-    <Button onAction={() =>
-    {
-      toast("Logout", { id: 'romm-logout-noti' });
-      logoutMutation.mutate();
-    }} disabled={isMutatingRomm} type="button" >
-      <DoorOpen /> Logout
+    {data.hasPassword &&
+      <Button onAction={() =>
+      {
+        toast("Logout", { id: 'romm-logout-noti' });
+        logoutMutation.mutate();
+      }} disabled={isMutatingRomm} type="button" >
+        <Trash /> Forget
+      </Button>
+    }
+    <Button disabled={context.state.isDefaultValue} type="reset" onAction={() => context.reset()}>
+      <X /> Cancel
     </Button>
   </div>;
 }
+
+const dataSchema = z.object({ hostname: z.url(), username: z.string(), password: z.string() });
 
 function RouteComponent ()
 {
@@ -280,17 +166,36 @@ function RouteComponent ()
   const { ref, focusKey, focusSelf } = useFocusable({
     preferredChildFocusKey: focus
   });
+
+  const { data: hasPassword } = useQuery({ queryKey: ['romm', 'auth', 'passLength'], queryFn: () => client.api.romm.login.get().then(d => d.data?.hasPassword as boolean) });
+  const { data: hostname } = useQuery({ queryKey: ['romm', 'auth', 'hostname'], queryFn: () => client.api.settings({ id: 'rommAddress' }).get().then(d => d.data?.value as string) });
+  const { data: username } = useQuery({ queryKey: ['romm', 'auth', 'username'], queryFn: () => client.api.settings({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
+
+
+  const loginForm = useSettingsForm({
+    defaultValues: {
+      hostname: hostname ?? '',
+      username: username ?? '',
+      password: ''
+    },
+    onSubmit: async ({ value }) =>
+    {
+      await toast.promise(loginMutation.mutateAsync(value), {
+        loading: "Logging In",
+        success: "Logged In",
+        error: e => e?.detail ?? "Error Logging In",
+      });
+      loginForm.reset();
+    },
+    validators: {
+      onChange: dataSchema
+    }
+  });
+
   const rommOnline = useQuery({
     ...statsApiStatsGetOptions(),
     refetchInterval: 30000,
     retry: false,
-  });
-
-  const user = useQuery({
-    ...getCurrentUserApiUsersMeGetOptions(),
-    queryKey: ['romm', 'auth', "login"],
-    refetchOnWindowFocus: false,
-    retry: 0
   });
 
   useEffect(() =>
@@ -303,7 +208,10 @@ function RouteComponent ()
 
   const loginMutation = useMutation({
     mutationKey: ["romm", "login"],
-    ...loginApiLoginPostMutation(),
+    mutationFn: (data: z.infer<typeof dataSchema>) =>
+    {
+      return client.api.romm.login.post({ username: data.username, password: data.password, host: data.hostname });
+    },
     onSuccess: (d, v, r, c) =>
     {
       c.client.invalidateQueries({ queryKey: ['romm', 'auth'] });
@@ -331,54 +239,40 @@ function RouteComponent ()
             <h3>Romm</h3>
           </div>
         </div>
-        <Option
-          id="rommAddress"
-          type="text"
-          icon={
-            <div className="indicator">
-              <span
-                className={classNames("indicator-item status", indicator)}
-              ></span>
-              <Link />
-            </div>
-          }
-          label="Romm Address"
-        />
-        <form
-          className="flex flex-col gap-2"
-          onSubmit={(e) =>
-          {
-            e.preventDefault();
-            const data = new FormData(e.currentTarget);
-            toast.promise(loginMutation.mutateAsync({
-              auth: `${data.get("username")}:${data.get("password")}`,
-            }), {
-              loading: "Logging In",
-              success: "Logged In",
-              error: e => e?.detail ?? "Error Logging In",
-            });
-          }}
-        >
-          <OptionSpace label="User">
-            <OptionInput
-              icon={<User />}
-              name="username"
-              type="text"
-              placeholder="Username"
-            />
-          </OptionSpace>
-          <OptionSpace label="Password">
-            <OptionInput
-              icon={<Key />}
-              name="password"
-              type="password"
-              placeholder="Password"
-            />
-          </OptionSpace>
-          <OptionSpace className="justify-end">
-            <LoginControls user={user} />
-          </OptionSpace>
-        </form>
+        <loginForm.AppForm>
+          <form
+            className="flex flex-col gap-2"
+            onSubmit={(e) =>
+            {
+              e.preventDefault();
+              e.stopPropagation();
+              loginForm.handleSubmit();
+            }}
+            onReset={e =>
+            {
+              e.preventDefault();
+              e.stopPropagation();
+              loginForm.reset();
+            }}
+          >
+            <loginForm.AppField name="hostname" children={(field) =>
+              <field.FormOption label="Romm Address" icon={<div className="indicator">
+                <span
+                  className={classNames("indicator-item status", indicator)}
+                ></span>
+                <Link />
+              </div>
+              } type='url' />} />
+            <loginForm.AppField name="username" children={(field) =>
+              <field.FormOption label={"Romm Username"} icon={<User />} type="text" />} />
+            <loginForm.AppField name="password" children={(field) =>
+              <field.FormOption label={"Romm Password"} icon={<Key />} type="password" placeholder={hasPassword ? '*****' : "Password"} />} />
+            <loginForm.Subscribe children={(form) =>
+              <OptionSpace className="justify-end">
+                <LoginControls hasPassword={hasPassword === true} />
+              </OptionSpace>} />
+          </form>
+        </loginForm.AppForm>
       </ul>
     </FocusContext.Provider>
   );

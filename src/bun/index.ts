@@ -11,10 +11,10 @@ if (!Bun.env.PUBLIC_ACCESS)
   bunServer = RunBunServer();
 }
 
-function cleanup ()
+async function cleanup ()
 {
   bunServer?.stop();
-  api.apiServer.stop();
+  await api.apiServer.stop();
   process.exit(0);
 }
 
@@ -25,7 +25,7 @@ try
   });
   webviewWorker.addEventListener('error', console.error);
   await new Promise(resolve => webviewWorker.addEventListener('close', resolve));
-  cleanup();
+  await cleanup();
 }
 catch (error)
 {

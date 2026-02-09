@@ -39,7 +39,7 @@ import { SaveSource } from "../scripts/spatialNavigation";
 import LoadingCardList from "../components/LoadingCardList";
 import { AutoFocus } from "../components/AutoFocus";
 import SaveScroll from "../components/SaveScroll";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary, useErrorBoundary } from "react-error-boundary";
 import { twMerge } from "tailwind-merge";
 import Shortcuts from "../components/Shortcuts";
 
@@ -157,6 +157,15 @@ function CollectionList (data: { id: string, setBackground: (url: string) => voi
   );
 }
 
+function HomeListError (data: { focused: boolean; })
+{
+  const error = useErrorBoundary();
+  return <div className="flex justify-center items-center h-(--game-card-height)"><div role="alert" className={twMerge("alert alert-error", classNames({ "alert-outline": !data.focused }))}>
+    <OctagonAlert />
+    <span>{(error.error as any).detail}</span>
+  </div></div>;
+}
+
 function HomeList (data: {
   selectedFilter: keyof typeof filters;
 })
@@ -176,14 +185,9 @@ function HomeList (data: {
 
   return (
     <FocusContext value={focusKey}>
-      <div ref={ref} className="flex overflow-x-scroll no-scrollbar pb-3 mb-1">
+      <div ref={ref} className="flex overflow-x-scroll no-scrollbar pb-3 mb-1 justify-center-safe">
         <div className="flex px-16">
-          <ErrorBoundary fallback={
-            <div role="alert" className="alert alert-error alert-outline">
-              <OctagonAlert />
-              <span>Error! Task failed successfully.</span>
-            </div>
-          }>
+          <ErrorBoundary fallback={<HomeListError focused={focused} />}>
             <Suspense key={data.selectedFilter} fallback={<LoadingCardList placeholderCount={8} />}>
               {lists[data.selectedFilter]}
               <SaveScroll id={`card-list-${data.selectedFilter}`} ref={ref} />

@@ -1,6 +1,7 @@
 import { SERVER_PORT } from "../shared/constants";
 import path from 'node:path';
 import { host } from "./utils";
+import appInfo from '../../package.json';
 
 export function RunBunServer ()
 {
@@ -12,6 +13,19 @@ export function RunBunServer ()
       "/": Bun.file("./dist/index.html"),
       // Serve a file by lazily loading it into memory
       "/favicon.ico": Bun.file("./dist/favicon.ico"),
+      "/.well-known/appspecific/com.chrome.devtools.json": new Response(
+        JSON.stringify({
+          name: appInfo.name,
+          version: appInfo.version,
+          debuggable: true,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+          },
+        }
+      )
     },
     fetch: async (req) =>
     {
