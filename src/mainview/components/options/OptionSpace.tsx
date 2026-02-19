@@ -42,8 +42,9 @@ export function OptionSpace (data: {
     id?: string;
     className?: string;
     focusable?: boolean;
-    children: JSX.Element;
+    children?: any | any[];
     label?: string | JSX.Element;
+    saveLastFocusedChild?: boolean;
 })
 {
     const eventTarget = useMemo(() => new EventTarget(), []);
@@ -51,6 +52,11 @@ export function OptionSpace (data: {
         focusKey: data.id,
         focusable: data.focusable !== false,
         trackChildren: true,
+        saveLastFocusedChild: data.saveLastFocusedChild ?? false,
+        onFocus ()
+        {
+            (ref.current as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        },
         onEnterPress ()
         {
             eventTarget.dispatchEvent(new CustomEvent("onEnterPress"));

@@ -1,0 +1,29 @@
+.ball {
+    border-radius: 50%;
+    animation: bounce 0.6s 32 alternate;
+}
+
+.ball:nth-child(1) {
+    background: var(--color-accent);
+    animation-delay: 0s;
+}
+
+.ball:nth-child(2) {
+    background: var(--color-secondary);
+    animation-delay: 0.2s;
+}
+
+.ball:nth-child(3) {
+    background: var(--color-primary);
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        transform: translateY(-30px);
+    }
+}

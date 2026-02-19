@@ -2,8 +2,8 @@ import { SERVER_URL } from "../../shared/constants";
 import os from 'node:os';
 import path, { dirname } from 'node:path';
 import { getBrowserPath } from "./get-browser";
-import { config } from "../api/settings";
-import { host } from "../utils";
+import { host, isSteamDeckGameMode } from "../utils";
+import { config } from "../api/app";
 
 export async function BuildParams ()
 {
@@ -42,7 +42,15 @@ export async function BuildParams ()
         args.push('--disable-component-update');
         args.push('--allow-insecure-localhost');
         args.push('--auto-accept-camera-and-microphone-capture');
-        args.push(`--window-size=${config.get('windowSize.width')},${config.get('windowSize.height')}`);
+
+        if (isSteamDeckGameMode())
+        {
+            args.push('--kiosk');
+        } else
+        {
+            args.push(`--window-size=${config.get('windowSize.width')},${config.get('windowSize.height')}`);
+        }
+
         args.push('--password-store=basic');
         args.push('--block-new-web-contents');
         args.push('--bwsi');
@@ -82,8 +90,8 @@ export async function BuildParams ()
 
         if (os.platform() === 'linux')
         {
-            args.push("--disable-web-security");
-            args.push("--no-sandbox");
+            //args.push("--disable-web-security");
+            //args.push("--no-sandbox");
         }
     }
 

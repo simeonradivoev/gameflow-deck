@@ -1,15 +1,19 @@
-import { navigateByDirection } from "@noriginmedia/norigin-spatial-navigation";
+import { getCurrentFocusKey, navigateByDirection, SpatialNavigation } from "@noriginmedia/norigin-spatial-navigation";
+import { dispatchFocusedEvent, GetFocusedElement } from "./spatialNavigation";
 
 let loopStarted = false;
 
-window.addEventListener("gamepadconnected", (evt) => {
-  if (!loopStarted) {
-    requestAnimationFrame(updateStatus);
-    loopStarted = true;
-  }
+window.addEventListener("gamepadconnected", (evt) =>
+{
+    if (!loopStarted)
+    {
+        requestAnimationFrame(updateStatus);
+        loopStarted = true;
+    }
 });
-window.addEventListener("gamepaddisconnected", (evt) => {
-  
+window.addEventListener("gamepaddisconnected", (evt) =>
+{
+
 });
 
 const throttleMap = new Map<string, number>();
@@ -21,10 +25,10 @@ function throttleNav (key: string, dir: string, event: Event)
     const currentDate = new Date();
     const lastTime = throttleMap.get(key);
     const acceleration = throttleAcceleration.get(key) ?? 0;
-    const speed = Math.max(maxSpeed - (maxSpeed - minSpeed) * (acceleration / 6),minSpeed);
+    const speed = Math.max(maxSpeed - (maxSpeed - minSpeed) * (acceleration / 6), minSpeed);
     if ((currentDate.getTime() - (lastTime ?? 0) > speed))
     {
-        navigateByDirection(dir, { event })
+        navigateByDirection(dir, { event });
         throttleMap.set(key, currentDate.getTime());
         throttleAcceleration.set(key, acceleration + 1);
     }
@@ -34,11 +38,17 @@ window.addEventListener('keydown', e =>
 {
     if (e.key === 'Escape')
     {
-        window.dispatchEvent(new Event('cancel'));
+        const focusedElement = GetFocusedElement(getCurrentFocusKey());
+        const finalTarget = focusedElement ?? window;
+        const evn = new Event('cancel', { bubbles: true, cancelable: true });
+        finalTarget.dispatchEvent(evn);
     }
-})
+});
 
-function updateStatus () {
+
+
+function updateStatus ()
+{
     for (const gamepad of navigator.getGamepads().filter(g => !!g))
     {
         const gamepadEvent = new GamepadEvent('gamepad-navigation', { gamepad, });
@@ -47,14 +57,14 @@ function updateStatus () {
         {
             if (!throttleMap.has('enter'))
             {
-                window.dispatchEvent(new KeyboardEvent('keydown',{key: 'Enter', code: 'Enter', charCode: 13, keyCode: 13, view: window, bubbles: true}));
+                dispatchFocusedEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', charCode: 13, keyCode: 13, view: window, bubbles: true }), window);
                 throttleMap.set('enter', 0);
             }
         } else
         {
             if (throttleMap.delete('enter'))
             {
-                window.dispatchEvent(new KeyboardEvent('keyup', {key: 'Enter'}));
+                dispatchFocusedEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
             }
         }
 
@@ -62,7 +72,8 @@ function updateStatus () {
         {
             if (!throttleMap.has('cancel'))
             {
-                window.dispatchEvent(new Event('cancel'));
+                const evn = new Event('cancel', { bubbles: true, cancelable: true });
+                dispatchFocusedEvent(evn);
                 throttleMap.set('cancel', 0);
             }
         } else
@@ -70,79 +81,87 @@ function updateStatus () {
             throttleMap.delete('cancel');
         }
 
-        if (gamepad.buttons[12].pressed)
+        const activeFocus = GetFocusedElement(getCurrentFocusKey());
+        if (activeFocus instanceof HTMLInputElement)
         {
-            throttleNav('gp-up', "up", gamepadEvent);
-        } else
-        {
-            throttleAcceleration.delete('gp-up');
-            throttleMap.delete('gp-up');
-        }
-        if (gamepad.buttons[13].pressed)
-        {
-            throttleNav('gp-down', "down", gamepadEvent);
-        } else
-        {
-            throttleAcceleration.delete('gp-down');
-            throttleMap.delete('gp-down');
-        }
-        if (gamepad.buttons[14].pressed)
-        {
-            throttleNav('gp-left', "left", gamepadEvent);
-        } else
-        {
-            throttleAcceleration.delete('gp-left');
-            throttleMap.delete('gp-left');
-        }
-        if (gamepad.buttons[15].pressed)
-        {
-            throttleNav('gp-right', "right", gamepadEvent);
-        } else
-        {
-            throttleAcceleration.delete('gp-right');
-            throttleMap.delete('gp-right');
-        }
 
-        const deadzone = 0.5;
-        const cancelDeadzone = 0.3;
-
-        function AxisControls ()
+        } else
         {
-            if (gamepad.axes[0] > deadzone)
+            if (gamepad.buttons[12].pressed)
             {
-                throttleNav('gpa-right', "right", gamepadEvent);
-                return;
-            }
-            else if (gamepad.axes[0] < -deadzone)
-            {
-                throttleNav('gpa-left', "left", gamepadEvent);
-                return;
-            }
-            else if ((throttleMap.has('gpa-left') || throttleMap.has('gpa-left')) && gamepad.axes[0] < cancelDeadzone && gamepad.axes[0] > -cancelDeadzone)
-            {
-                throttleAcceleration.delete('gpa-right');
-                throttleAcceleration.delete('gpa-left');
-                throttleMap.delete('gpa-left');
-                throttleMap.delete('gpa-left');
-            }
-
-            if (gamepad.axes[1] > deadzone)
-            {
-                throttleNav('gpa-down', "down", gamepadEvent);
-            }
-            else if (gamepad.axes[1] < -deadzone)
-            {
-                throttleNav('gpa-up', "up", gamepadEvent);
+                throttleNav('gp-up', "up", gamepadEvent);
             } else
             {
-                throttleAcceleration.delete('gpa-up');
-                throttleAcceleration.delete('gpa-down');
-                throttleMap.delete('gpa-up');
-                throttleMap.delete('gpa-down');
+                throttleAcceleration.delete('gp-up');
+                throttleMap.delete('gp-up');
             }
+            if (gamepad.buttons[13].pressed)
+            {
+                throttleNav('gp-down', "down", gamepadEvent);
+            } else
+            {
+                throttleAcceleration.delete('gp-down');
+                throttleMap.delete('gp-down');
+            }
+            if (gamepad.buttons[14].pressed)
+            {
+                throttleNav('gp-left', "left", gamepadEvent);
+            } else
+            {
+                throttleAcceleration.delete('gp-left');
+                throttleMap.delete('gp-left');
+            }
+            if (gamepad.buttons[15].pressed)
+            {
+                throttleNav('gp-right', "right", gamepadEvent);
+            } else
+            {
+                throttleAcceleration.delete('gp-right');
+                throttleMap.delete('gp-right');
+            }
+
+            const deadzone = 0.5;
+            const cancelDeadzone = 0.3;
+
+            function AxisControls ()
+            {
+                if (gamepad.axes[0] > deadzone)
+                {
+                    throttleNav('gpa-right', "right", gamepadEvent);
+                    return;
+                }
+                else if (gamepad.axes[0] < -deadzone)
+                {
+                    throttleNav('gpa-left', "left", gamepadEvent);
+                    return;
+                }
+                else if ((throttleMap.has('gpa-left') || throttleMap.has('gpa-left')) && gamepad.axes[0] < cancelDeadzone && gamepad.axes[0] > -cancelDeadzone)
+                {
+                    throttleAcceleration.delete('gpa-right');
+                    throttleAcceleration.delete('gpa-left');
+                    throttleMap.delete('gpa-left');
+                    throttleMap.delete('gpa-left');
+                }
+
+                if (gamepad.axes[1] > deadzone)
+                {
+                    throttleNav('gpa-down', "down", gamepadEvent);
+                }
+                else if (gamepad.axes[1] < -deadzone)
+                {
+                    throttleNav('gpa-up', "up", gamepadEvent);
+                } else
+                {
+                    throttleAcceleration.delete('gpa-up');
+                    throttleAcceleration.delete('gpa-down');
+                    throttleMap.delete('gpa-up');
+                    throttleMap.delete('gpa-down');
+                }
+            }
+
+            AxisControls();
         }
 
-        AxisControls();
     }
 
     requestAnimationFrame(updateStatus);

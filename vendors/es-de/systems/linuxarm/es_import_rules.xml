@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!-- This is the ES-DE import rules configuration file for Linux on ARM (AArch64) -->
+<ruleList>
+    <system name="desktop">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory>/usr/share/applications</directory>
+            <directory>/usr/local/share/applications</directory>
+            <directory>~/.local/share/applications</directory>
+            <directory>/var/lib/flatpak/exports/share/applications</directory>
+            <directory>/var/lib/snapd/desktop/applications</directory>
+            <directory>~/Desktop</directory>
+        </rule>
+    </system>
+    <system name="emulators">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory>/usr/share/applications</directory>
+            <directory>/usr/local/share/applications</directory>
+            <directory>~/.local/share/applications</directory>
+            <directory>/var/lib/flatpak/exports/share/applications</directory>
+            <directory>/var/lib/snapd/desktop/applications</directory>
+        </rule>
+    </system>
+    <system name="epic">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory execFilter="heroic://launch">~/.local/share/applications</directory>
+            <directory execFilter="heroic://launch">~/Desktop</directory>
+        </rule>
+    </system>
+    <system name="lutris">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory execFilter="lutris:rungameid">~/.local/share/applications</directory>
+            <directory execFilter="lutris:rungameid">~/Desktop</directory>
+        </rule>
+    </system>
+    <system name="ps3">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory execFilter="RPCS3_GAMEID">~/.local/share/applications/RPCS3</directory>
+            <directory execFilter="RPCS3_GAMEID">~/Desktop</directory>
+        </rule>
+    </system>
+    <system name="steam">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory execFilter="steam://rungameid">~/.local/share/applications</directory>
+            <directory execFilter="steam://rungameid">~/Desktop</directory>
+        </rule>
+    </system>
+</ruleList>

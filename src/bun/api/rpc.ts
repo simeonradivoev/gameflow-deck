@@ -1,16 +1,17 @@
-import { RPC_PORT } from "../../shared/constants";
-import { settings } from "./settings";
-import { romm } from "./clients";
-import Elysia from "elysia";
 import { cors } from "@elysiajs/cors";
+import Elysia from "elysia";
+import { RPC_PORT } from "../../shared/constants";
 import { host } from "../utils";
+import clients from "./clients";
+import { settings } from "./settings";
+import { system } from "./system";
 
-const api = new Elysia({ prefix: "/api", serve: {} })
-    .use(cors())
-    .use(romm)
-    .use(settings);
+const api = new Elysia({ serve: {} })
+    .use([cors(), clients, settings, system]);
 
-export type AppType = typeof api;
+export type RommAPIType = typeof clients;
+export type SettingsAPIType = typeof settings;
+export type SystemAPIType = typeof system;
 
 export function RunAPIServer ()
 {
@@ -19,24 +20,11 @@ export function RunAPIServer ()
         apiServer: api.listen({
             port: RPC_PORT,
             hostname: host,
-            development: process.env.NODE_ENV === 'development',
-            fetch (req, server)
-            {
-                if (server.upgrade(req, {
-                    data: undefined
-                }))
-                {
-                    return;
-                }
-                return api.fetch(req);
-            },
-            websocket: {
-                message (ws, message)
-                {
+            development: process.env.NODE_ENV === 'development'
+        }),
+        async cleanup ()
+        {
 
-
-                },
-            }
-        })
+        }
     };
 }

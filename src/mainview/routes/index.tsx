@@ -1,4 +1,4 @@
-import { JSX, Suspense, useContext } from "react";
+import { JSX, Suspense, useContext, useState } from "react";
 import
 {
   Gamepad2,
@@ -16,7 +16,7 @@ import
   useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import
 {
   FocusContext,
@@ -24,13 +24,12 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { DefaultRommStaleTime, RPC_URL } from "../../shared/constants";
-import { useLocalStorage, useSessionStorage } from "usehooks-ts";
+import { useEventListener, useLocalStorage } from "usehooks-ts";
 import
 {
   getCollectionsApiCollectionsGetOptions,
-  getPlatformsApiPlatformsGetOptions,
 } from "../../clients/romm/@tanstack/react-query.gen";
-import { CardList } from "../components/CardList";
+import { CardList, GameMetaExtra } from "../components/CardList";
 import { HeaderUI } from "../components/Header";
 import { FilterUI } from "../components/Filters";
 import { AnimatedBackground, AnimatedBackgroundContext } from "../components/AnimatedBackground";
@@ -42,6 +41,8 @@ import SaveScroll from "../components/SaveScroll";
 import { ErrorBoundary, useErrorBoundary } from "react-error-boundary";
 import { twMerge } from "tailwind-merge";
 import Shortcuts from "../components/Shortcuts";
+import { PlatformsList } from "../components/PlatformsList";
+import { systemApi } from "../scripts/clientApi";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -60,64 +61,7 @@ const filters = {
   },
 };
 
-function PlatformList (data: { id: string, setBackground: (url: string) => void; })
-{
-  const navigate = useNavigate();
-  const { data: platforms } = useSuspenseQuery({
-    ...getPlatformsApiPlatformsGetOptions(),
-    refetchOnWindowFocus: false,
-    staleTime: DefaultRommStaleTime,
-  });
-
-  return (
-    <CardList
-      type="platform"
-      id={data.id}
-      games={platforms.sort((a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at))
-        .map((g) => ({
-          id: g.id,
-          focusKey: g.slug,
-          title: g.display_name,
-          subtitle: g.family_name ?? "",
-          previewUrl: g.url_logo ?? "",
-          badge: (
-            <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">
-              {g.rom_count}
-            </span>
-          ),
-          preview: (
-            <div
-              className="flex h-60 p-6 bg-base-100 justify-center items-center"
-              style={{
-                background: `linear-gradient(
-      color-mix(in srgb, var(--color-base-content) 60%, transparent), 
-      color-mix(in srgb, var(--color-base-300) 60%, transparent)
-    ), url(https://picsum.photos/id/${10 + g.id}/300/300.webp?blur=10) center / cover`,
-
-                backgroundBlendMode: "screen",
-              }}
-            >
-              <img
-                src={`${RPC_URL(__HOST__)}/api/romm/assets/platforms/${g.slug.toLocaleLowerCase()}.svg`}
-              ></img>
-            </div>
-          ),
-        }))}
-      onSelectGame={(id) =>
-      {
-        navigate({ to: `/platform/${id}`, viewTransition: { types: ['zoom-in'] } });
-      }}
-      onGameFocus={(id) =>
-      {
-        data.setBackground(
-          `https://picsum.photos/id/${10 + (id ?? 0)}/1920/1080.webp`,
-        );
-      }}
-    />
-  );
-}
-
-function CollectionList (data: { id: string, setBackground: (url: string) => void; })
+function CollectionList (data: { id: string, setBackground: (url: string) => void; className?: string; })
 {
   const navigate = useNavigate();
   const { data: collections } = useSuspenseQuery({
@@ -130,19 +74,20 @@ function CollectionList (data: { id: string, setBackground: (url: string) => voi
     <CardList
       type="collection"
       id={data.id}
+      className={data.className}
       games={collections.sort((a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at))
         .map((g) => ({
-          id: g.id,
+          id: String(g.id),
           title: g.name,
           focusKey: `collection-${g.id}`,
           subtitle: g.user__username,
           previewUrl: `${RPC_URL(__HOST__)}/api/romm/${g.path_covers_large[0]}`,
-          badge: (
+          badges: [
             <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">
               {g.rom_count}
             </span>
-          ),
-        }))}
+          ],
+        } satisfies GameMetaExtra))}
       onSelectGame={(id) =>
       {
         navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
@@ -171,21 +116,45 @@ function HomeList (data: {
 })
 {
   const bg = useContext(AnimatedBackgroundContext);
-
   const { ref, focused, focusKey, focusSelf } = useFocusable({
     focusKey: "home-list",
     preferredChildFocusKey: `${data.selectedFilter}-list`
   });
 
   const lists = {
-    consoles: <PlatformList id={"consoles-list"} setBackground={bg.setBackground} />,
-    games: <GameList id="games-list" setBackground={bg.setBackground} />,
-    collections: <CollectionList id={"collections-list"} setBackground={bg.setBackground} />,
+    consoles: <PlatformsList className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />,
+    games: <GameList className="animate-slide-up" key="games-list" id="games-list" setBackground={bg.setBackground} />,
+    collections: <CollectionList className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />,
   };
+
+  useEventListener('wheel', e =>
+  {
+    const deltaY = e.deltaY;
+    const deltaYSign = Math.sign(e.deltaY);
+
+    if (deltaYSign == -1)
+    {
+      (ref.current as HTMLElement)?.scrollBy({
+        top: 0,
+        left: deltaY,
+        behavior: 'auto'
+      });
+
+    } else
+    {
+      (ref.current as HTMLElement)?.scrollBy({
+        top: 0,
+        left: deltaY,
+        behavior: 'auto'
+      });
+    }
+  });
 
   return (
     <FocusContext value={focusKey}>
-      <div ref={ref} className="flex overflow-x-scroll no-scrollbar pb-3 mb-1 justify-center-safe">
+      <div ref={ref} className="flex overflow-x-scroll no-scrollbar pb-3 mb-1 justify-center-safe" style={{
+        mask: `linear-gradient(to right, rgba(0,0,0,0.8) 0%, black 10%, black 90%, rgba(0,0,0,0.8) 100%)`
+      }}>
         <div className="flex px-16">
           <ErrorBoundary fallback={<HomeListError focused={focused} />}>
             <Suspense key={data.selectedFilter} fallback={<LoadingCardList placeholderCount={8} />}>
@@ -206,6 +175,14 @@ export default function ConsoleHomeUI ()
     keyof typeof filters
   >("home-filter-selected", "games");
 
+  const closeMutation = useMutation({
+    mutationKey: ['close'], mutationFn: async () =>
+    {
+      const { error } = await systemApi.api.system.exit.post();
+      if (error) throw error;
+    }
+  });
+
   const { ref, focusKey, focusSelf } = useFocusable({
     forceFocus: true,
     autoRestoreFocus: false,
@@ -220,7 +197,7 @@ export default function ConsoleHomeUI ()
         <div className="px-3 w-full pt-2">
           <HeaderUI buttons={[
             { id: "search", icon: <Search /> },
-            { id: "power-button", icon: <Power />, external: true }
+            { id: "power-button", icon: <Power />, external: true, action: () => closeMutation.mutate() }
           ]} />
         </div>
         <div className="flex w-full flex-col grow justify-evenly">
@@ -243,7 +220,7 @@ export default function ConsoleHomeUI ()
         <footer className="px-2 pb-2 flex items-center justify-between">
           <div className="flex gap-2 text-sm">
           </div>
-          <Shortcuts />
+          <Shortcuts shortcuts={[{ icon: 'steamdeck_button_a', label: 'Select' }]} />
         </footer>
       </FocusContext.Provider>
     </AnimatedBackground>
@@ -282,7 +259,7 @@ function MainMenu (data: {})
         <CircleIcon
           action={() =>
           {
-            SaveSource('settings', location.pathname);
+            SaveSource('settings');
             navigate({ to: "/settings/accounts", viewTransition: { types: ['zoom-in'] } });
           }}
           icon={<Settings />}
@@ -319,7 +296,7 @@ function CircleIcon (data: {
         'sm:w-14 sm:h-14',
         typeClasses[data.type ?? "none"], classNames(
           {
-            "ring-7 ring-primary drop-shadow-2xl": focused,
+            "focus ring-7 ring-primary drop-shadow-2xl animate-scale": focused,
             "hover:ring-7 hover:ring-primary": true,
           })
       )}

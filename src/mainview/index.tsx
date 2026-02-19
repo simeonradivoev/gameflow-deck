@@ -10,27 +10,14 @@ import
 } from "@tanstack/react-router";
 import { routeTree } from "./gen/routeTree.gen";
 import { QueryClient } from "@tanstack/react-query";
-import { AppType } from "../bun/api/rpc";
 import { RPC_URL } from "../shared/constants";
 import "./scripts/gamepads";
 import "./scripts/windowEvents";
-import { Toasters } from "./contexts/ToasterContext";
 import { client as rommClient } from "../clients/romm/client.gen";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import "./scripts/spatialNavigation";
-import
-{
-  treaty
-} from '@elysiajs/eden';
 
 const hashHistory = createHashHistory({});
-
-export const client = treaty<AppType>(RPC_URL(__HOST__), {
-  keepDomain: true,
-  fetch: {
-    credentials: 'include',
-  }
-});
 
 rommClient.setConfig({
   baseUrl: `${RPC_URL(__HOST__)}/api/romm`,
@@ -51,8 +38,7 @@ export const Router = createRouter({
   history: hashHistory,
   defaultPreload: "intent",
   context: { queryClient },
-  scrollRestoration: true,
-  scrollToTopSelectors: ["[save-scroll]"],
+  scrollRestoration: false,
   defaultNotFoundComponent: () =>
   {
     return (
@@ -86,7 +72,6 @@ if (!rootElement.innerHTML)
   root.render(
     <StrictMode>
       <RouterProvider router={Router} />
-      <Toasters />
     </StrictMode>,
   );
 }

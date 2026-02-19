@@ -3,118 +3,30 @@ import
   FocusContext,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { useIsMutating, useMutation, useQuery, UseQueryResult } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import classNames from "classnames";
-import { Cross, Delete, Key, Link, Lock, Save, Trash, User, X } from "lucide-react";
+import { Key, Link, Lock, Save, Trash, User, X } from "lucide-react";
 import
 {
-  HTMLInputTypeAttribute,
-  JSX,
-  useCallback,
   useEffect,
-  useState,
 } from "react";
-import { client } from "../..";
-import { RPC_URL, SettingsType } from "../../../shared/constants";
+import { RPC_URL } from "../../../shared/constants";
 import
 {
   getCurrentUserApiUsersMeGetOptions,
   statsApiStatsGetOptions,
 } from "../../../clients/romm/@tanstack/react-query.gen";
-import { UserSchema } from "../../../clients/romm";
 import toast from "react-hot-toast";
 import z from "zod";
 import { OptionSpace } from "../../components/options/OptionSpace";
-import { OptionInput } from "../../components/options/OptionInput";
 import { useSettingsForm, useSettingsFormContext } from "../../components/options/SettingsAppForm";
-import { twMerge } from "tailwind-merge";
+import { rommApi, settingsApi } from "../../scripts/clientApi";
+import { Button } from "../../components/options/Button";
 
 export const Route = createFileRoute("/settings/accounts")({
   component: RouteComponent,
 });
-
-type KeysWithValueAssignableTo<T, Value> = {
-  [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
-}[keyof T];
-
-function Option (data: {
-  label: string;
-  id: KeysWithValueAssignableTo<SettingsType, string>;
-  type: HTMLInputTypeAttribute;
-  placeholder?: string;
-  icon?: JSX.Element;
-})
-{
-  const [dirty, setDirty] = useState(false);
-  const [localValue, setLocalValue] = useState<string | undefined>();
-  useQuery({
-    enabled: !!data.id,
-    queryKey: ["setting", data.id],
-    queryFn: async () =>
-    {
-      const value = await client.api.settings({ id: data.id! }).get().then(d => d.data?.value);
-      if (!dirty)
-      {
-        setLocalValue(String(value));
-      }
-      return value;
-    },
-  });
-  const setSettingMultation = useMutation({
-    mutationKey: ["setting", data.id],
-    mutationFn: (value: any) =>
-      client.api.settings({ id: data.id! }).post({ value }).then(d => d.status)
-  });
-
-  const handleSave = useCallback(() =>
-  {
-    if (dirty)
-    {
-      setDirty(false);
-      setSettingMultation.mutate(localValue);
-    }
-  }, [dirty, setDirty, localValue]);
-
-  return (
-    <OptionSpace label={data.label}>
-      <OptionInput
-        icon={data.icon}
-        name={data.id ?? ""}
-        type={data.type}
-        placeholder={data.placeholder}
-        onBlur={handleSave}
-        onChange={(e) =>
-        {
-          setLocalValue(e.currentTarget.value);
-          setDirty(true);
-        }}
-        value={localValue}
-      />
-    </OptionSpace>
-  );
-}
-
-function Button (data: { children?: any, className?: string, disabled?: boolean, type: "reset" | "button" | "submit" | undefined; } & InteractParams & FocusParams)
-{
-  const { ref, focused } = useFocusable({
-    focusKey: data.type,
-    onEnterPress: data.onAction,
-    onFocus: data.onFocus,
-    focusable: !data.disabled
-  });
-  return <button
-    ref={ref}
-    onClick={data.onAction}
-    disabled={data.disabled}
-    className={twMerge("btn rounded-full focus:bg-base-content focus:text-base-300 md:text-lg", classNames({
-      "btn-accent": focused
-    }, data.className))}
-    type={data.type}
-  >
-    {data.children}
-  </button>;
-}
 
 function LoginControls (data: { hasPassword: boolean; })
 {
@@ -128,7 +40,7 @@ function LoginControls (data: { hasPassword: boolean; })
   context.state.canSubmit;
   const isMutatingRomm = useIsMutating({ mutationKey: ["romm", "auth"] }) > 0;
   const logoutMutation = useMutation({
-    mutationKey: ["romm", "auth", "logout"], mutationFn: () => client.api.romm.logout.post(),
+    mutationKey: ["romm", "auth", "logout"], mutationFn: () => rommApi.api.romm.logout.post(),
     onSuccess: async (d, v, r, c) =>
     {
       c.client.invalidateQueries({ queryKey: ["romm", "auth"] });
@@ -167,10 +79,9 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
 
-  const { data: hasPassword } = useQuery({ queryKey: ['romm', 'auth', 'passLength'], queryFn: () => client.api.romm.login.get().then(d => d.data?.hasPassword as boolean) });
-  const { data: hostname } = useQuery({ queryKey: ['romm', 'auth', 'hostname'], queryFn: () => client.api.settings({ id: 'rommAddress' }).get().then(d => d.data?.value as string) });
-  const { data: username } = useQuery({ queryKey: ['romm', 'auth', 'username'], queryFn: () => client.api.settings({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
-
+  const { data: hasPassword } = useQuery({ queryKey: ['romm', 'auth', 'passLength'], queryFn: () => rommApi.api.romm.login.get().then(d => d.data?.hasPassword as boolean) });
+  const { data: hostname } = useQuery({ queryKey: ['romm', 'auth', 'hostname'], queryFn: () => settingsApi.api.settings({ id: 'rommAddress' }).get().then(d => d.data?.value as string) });
+  const { data: username } = useQuery({ queryKey: ['romm', 'auth', 'username'], queryFn: () => settingsApi.api.settings({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
 
   const loginForm = useSettingsForm({
     defaultValues: {
@@ -210,7 +121,7 @@ function RouteComponent ()
     mutationKey: ["romm", "login"],
     mutationFn: (data: z.infer<typeof dataSchema>) =>
     {
-      return client.api.romm.login.post({ username: data.username, password: data.password, host: data.hostname });
+      return rommApi.api.romm.login.post({ username: data.username, password: data.password, host: data.hostname });
     },
     onSuccess: (d, v, r, c) =>
     {

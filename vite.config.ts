@@ -6,11 +6,15 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons-ng';
 import path from "node:path";
 import staticAssetsPlugin from 'vite-static-assets-plugin';
 import { host } from "./src/bun/utils";
+import os from 'node:os';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig(() =>
 {
   const production = process.env.NODE_ENV === 'production';
   console.log(`Building Vite in ${process.env.NODE_ENV}`);
+  process.env.VITE_PLATFORM = os.platform();
+  process.env.VITE_ARCH = os.arch();
 
   return {
     base: './',
@@ -36,7 +40,8 @@ export default defineConfig(() =>
       createSvgIconsPlugin({
         // Specify the icon folder to be cached
         iconDirs: [path.resolve(process.cwd(), 'src/mainview/assets/icons')],
-      })
+      }),
+      tsconfigPaths()
     ],
     root: "src/mainview",
     build: {
@@ -71,6 +76,11 @@ export default defineConfig(() =>
       strictPort: true,
       allowedHosts: true,
       host,
+    },
+    resolve: {
+      alias: {
+        "@emulators": path.resolve(__dirname, `vendors/es-de/emulators.${os.platform()}.${os.arch()}.json`)
+      }
     },
     define: {
       __HOST__: JSON.stringify(host)

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!-- This is the ES-DE import rules configuration file for macOS -->
+<ruleList>
+    <system name="desktop">
+        <rule name="macOS Bundle" type="macosbundle">
+            <directory recursive="true">/Applications</directory>
+        </rule>
+    </system>
+    <system name="emulators">
+        <rule name="macOS Bundle" type="macosbundle">
+            <directory recursive="true">/Applications</directory>
+        </rule>
+    </system>
+    <system name="epic">
+        <rule name="macOS Bundle" type="macosbundle">
+            <directory recursive="false">~/Applications</directory>
+        </rule>
+    </system>
+    <system name="steam">
+        <rule name="macOS Bundle" type="macosbundle">
+            <directory recursive="false">~/Desktop</directory>
+            <directory recursive="false">~/Applications</directory>
+        </rule>
+    </system>
+</ruleList>

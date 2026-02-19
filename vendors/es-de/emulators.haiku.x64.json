@@ -1,0 +1,18 @@
+{
+   "OS-SHELL": "Operating system shell",
+   "RETROARCH": "RETROARCH",
+   "ADVANCEMAME": "Arcade emulator AdvanceMAME",
+   "DOSBOX-X": "DOS emulator DOSBox-X",
+   "FINALBURN-NEO": "Arcade emulator FinalBurn Neo",
+   "FS-UAE": "Commodore Amiga emulator FS-UAE",
+   "FUSE": "Sinclair ZX Spectrum emulator Fuse",
+   "MAME": "Arcade emulator MAME",
+   "MEDNAFEN": "Multi-system emulator Mednafen",
+   "MELONDS": "Nintendo DS and DSi emulator melonDS",
+   "MGBA": "Nintendo Game Boy Advance emulator mGBA",
+   "MUPEN64PLUS": "Nintendo 64 emulator Mupen64Plus",
+   "PPSSPP": "Sony PlayStation Portable emulator PPSSPP",
+   "SCUMMVM": "ScummVM game engine",
+   "SOLARUS": "Solarus game engine",
+   "ZESARUX": "Sinclair ZX Spectrum emulator ZEsarUX"
+}

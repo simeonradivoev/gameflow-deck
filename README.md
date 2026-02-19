@@ -17,6 +17,8 @@ Focused on building a simple user experience and intuitive UI.
   - Not tested on Mac yet
 - **Steam Deck Support**: Extensively tested with the steam deck. It can use flatpak installed browsers.
 - **Great for Controllers**: The UI is inspired by the switch and works great with joysticks and dpads.
+- **Automatic Download** Downloads roms from ROMM automatically
+- **Automatic Emulator Discovery** Using the configs of the excellent ES-DE to discover installed emulators and launch games. 
 
 ## Screenshots
 
@@ -46,6 +48,14 @@ Focused on building a simple user experience and intuitive UI.
    bun run package:auto-prod
    ```
    Builds will go in `/builds/<platform>`.
+
+4. Additional Commands:
+   - ```bun run mappings:generate``` converts the es-de configs into local sqlite configs with mappings to rom systems
+   -    ```bun run drizzle:generate``` generates sqlite migrations based on the app schema
+   - ```bun run openapi-ts``` generated the openapi client calls from romm's API
+   - ```bun run package``` builds an executable
+   - ```bun run package:auto-prod``` builds and executable for production
+
 
 ### Tech Stack
 

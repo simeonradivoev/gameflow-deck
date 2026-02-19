@@ -10,7 +10,6 @@
   "search.exclude": {
     "**/*.gen.ts": true,
     "src/mainview/gen/*": true,
-    
   },
   "editor.formatOnSave": true,
   "[typescriptreact]": {
@@ -22,6 +21,13 @@
     "editor.formatOnSave": true
   },
   "cSpell.words": [
-    "elysia"
+    "elysia",
+    "elysiajs",
+    "gameflow",
+    "hackolade",
+    "keytar",
+    "norigin",
+    "noriginmedia",
+    "romm"
   ]
 }

@@ -1,14 +1,18 @@
-import React from 'react';
 import ShortcutPrompt from './ShortcutPrompt';
+import { IconType } from './SvgIcon';
 
-export default function Shortcuts ()
+export interface Shortcut
+{
+    icon: IconType;
+    label: string;
+    action?: () => void;
+}
+
+export default function Shortcuts (data: { shortcuts: Shortcut[]; })
 {
     return (
         <div style={{ viewTransitionName: 'shortcuts' }} className="flex gap-2">
-            <ShortcutPrompt icon="steamdeck_button_a" label="Continue" />
-            <ShortcutPrompt icon="steamdeck_button_b" label="Back" />
-            <ShortcutPrompt icon="steamdeck_button_x" label="Close" />
-            <ShortcutPrompt icon="steamdeck_button_y" label="Options" />
+            {data.shortcuts.map((s, i) => <ShortcutPrompt key={i} onClick={s.action} icon={s.icon} label={s.label} />)}
         </div>
     );
 }

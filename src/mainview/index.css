@@ -3,17 +3,96 @@
 @plugin "daisyui";
 
 @theme {
-    --color-dark: #333333;
-    --color-light: #464646;
-    --color-light: #828282;
-    --color-light2: #bcbcbc;
-    --color-primary: #E5FF00;
-    --color-alt: #4656E6;
-    --color-alert: #E60012;
     --game-card-height: calc(var(--spacing) * 100);
     --game-card-width: calc(var(--spacing) * 64);
 
     --animate-wiggle: wiggle 0.3s ease-in-out 1;
+    --animate-rotate: rotate 0.3s ease-in-out 1 0.2s;
+    --animate-rotate-small: rotate-small 0.3s ease-in-out 1 0.2s;
+    --animate-scale: scale 0.3s ease-in-out 1;
+    --animate-slide-up: slide-up 0.2s ease-in-out 1;
+    --animate-scale-delayed: scale 0.3s ease-in-out 1 100ms;
+    --animate-scale-small: scale-small 0.3s ease-in-out 1;
+    --animate-fade-out: fade-out 0.3s ease-out 1;
+
+    @keyframes slide-up {
+        0% {
+            opacity: 0;
+            transform: translate(0, 10px)
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    @keyframes fade-out {
+        0% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0;
+        }
+    }
+
+    @keyframes scale-small {
+
+        0%,
+        100% {
+            transform: scale(100%);
+        }
+
+        50% {
+            transform: scale(102%);
+        }
+    }
+
+    @keyframes scale {
+
+        0%,
+        100% {
+            transform: scale(100%);
+        }
+
+        50% {
+            transform: scale(105%);
+        }
+    }
+
+    @keyframes rotate-small {
+
+        0%,
+        50%,
+        100% {
+            transform: rotate(0deg);
+        }
+
+        25% {
+            transform: rotate(0.2deg);
+        }
+
+        75% {
+            transform: rotate(-0.2deg);
+        }
+    }
+
+    @keyframes rotate {
+
+        0%,
+        50%,
+        100% {
+            transform: rotate(0deg);
+        }
+
+        25% {
+            transform: rotate(1deg);
+        }
+
+        75% {
+            transform: rotate(-1deg);
+        }
+    }
 
     @keyframes wiggle {
 
@@ -39,11 +118,27 @@ html {
 }
 
 @layer components {
+
+    .background {
+        -webkit-backface-visibility: hidden;
+        -webkit-perspective: 1000;
+        -webkit-transform: translate3d(0, 0, 0);
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        perspective: 1000;
+        transform: translate3d(0, 0, 0);
+        transform: translateZ(0);
+    }
+
     .game-card {
         @apply rounded-2xl;
     }
 
     .menu-icon svg {
+        @apply sm:size-7 md:size-9 transition-all;
+    }
+
+    .menu-icon.focus svg {
         @apply sm:size-8 md:size-10;
     }
 

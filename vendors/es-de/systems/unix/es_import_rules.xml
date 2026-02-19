@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!-- This is the ES-DE import rules configuration file for FreeBSD -->
+<ruleList>
+    <system name="desktop">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory>/usr/local/share/applications</directory>
+            <directory>~/.local/share/applications</directory>
+            <directory>~/Desktop</directory>
+        </rule>
+    </system>
+    <system name="emulators">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory>/usr/local/share/applications</directory>
+            <directory>~/.local/share/applications</directory>
+        </rule>
+    </system>
+    <system name="steam">
+        <rule name="Desktop Shortcut" type="desktopshortcut">
+            <directory execFilter="steam://rungameid">~/.local/share/applications</directory>
+            <directory execFilter="steam://rungameid">~/Desktop</directory>
+        </rule>
+    </system>
+</ruleList>

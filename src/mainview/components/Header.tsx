@@ -50,7 +50,6 @@ function HeaderAvatar (data: {
       id={data.id}
       ref={ref}
       onClick={data.onSelect}
-      style={{ viewTransitionName: data.id }}
       className={classNames(
         `avatar indicator ring-base-100 ring-offset-base-100 size-14 rounded-full flex items-center justify-center`,
         bgColors[data.type ?? "none"],
@@ -92,6 +91,7 @@ export interface HeaderButton
   id: string;
   icon: JSX.Element;
   external?: boolean;
+  action?: () => void;
 }
 
 export interface HeaderAccount
@@ -135,7 +135,7 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
     ],
     action: () =>
     {
-      SaveSource('settings', location.pathname);
+      SaveSource('settings');
       navigate({ to: '/settings/accounts', viewTransition: { types: ['zoom-in'] }, search: { focus: 'rommAddress' } });
     },
     status: user.data ? "status-success" : 'status-error',
@@ -182,6 +182,7 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
               id={b.id}
               icon={b.icon}
               external={b.external}
+              action={b.action}
             />)}
           </div>
         </div>

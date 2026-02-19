@@ -1,8 +1,10 @@
 import fs from "node:fs/promises";
 import path, { } from "node:path";
 import os from "node:os";
+import { Glob } from "bun";
 
-const buildSubDir = process.env.BUILD_DIR ?? `./build/${os.platform()}`;
+const system = getPlatform();
+const buildSubDir = process.env.BUILD_DIR ?? `./build/${system.platform}`;
 
 const compileOption: Bun.CompileBuildOptions = {
     outfile: "gameflow",
@@ -19,7 +21,7 @@ if (process.env.TARGET)
 }
 
 await Bun.build({
-    entrypoints: ["./src/bun/index.ts", "./src/bun/webview-worker.ts"],
+    entrypoints: ["./src/bun/index.ts", `./src/bun/webview/${system.platform}.ts`],
     metafile: true,
     compile: compileOption,
     outdir: buildSubDir,
@@ -27,8 +29,8 @@ await Bun.build({
     define: {
         "process.env.IS_BINARY": "true"
     },
-    minify: true,
-    sourcemap: "linked",
+    minify: process.env.NODE_ENV !== 'development',
+    sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : "linked",
     target: 'bun',
     format: 'esm',
     loader: {
@@ -52,7 +54,32 @@ await Bun.build({
             build.onEnd(async () =>
             {
                 await fs.cp('./dist', `${buildSubDir}/dist`, { recursive: true });
+                await fs.cp('./drizzle', `${buildSubDir}/drizzle`, { recursive: true });
+                await fs.cp(`./vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, `${buildSubDir}/vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, { recursive: true });
             });
         },
     }]
 });
+
+function getPlatform ()
+{
+    if (process.env.TARGET)
+    {
+        const arch = process.env.TARGET.includes('arm') ? 'arm' : 'x64';
+        let platform = os.platform();
+        if (platform.includes('windows'))
+        {
+            platform = 'win32';
+        } else if (platform.includes('darwin'))
+        {
+            platform = 'darwin';
+        } else
+        {
+            platform = 'linux';
+        }
+        return { platform, arch };
+    } else
+    {
+        return { platform: os.platform(), arch: os.arch() };
+    }
+}

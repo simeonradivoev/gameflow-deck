@@ -1,0 +1,1285 @@
+<?xml version="1.0"?>
+<!-- This is the ES-DE find rules configuration file for Windows -->
+<ruleList>
+    <emulator name="OS-SHELL">
+        <!-- Operating system shell -->
+        <rule type="systempath">
+            <entry>cmd.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="RETROARCH">
+        <rule type="winregistrypath">
+            <!-- Check for an App Paths entry in the Windows Registry -->
+            <entry>retroarch.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <!-- This requires that the user has manually updated the Path variable -->
+            <entry>retroarch.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <!-- Some reasonable installation locations as fallback -->
+            <entry>C:\RetroArch-Win64\retroarch.exe</entry>
+            <entry>C:\RetroArch\retroarch.exe</entry>
+            <entry>~\AppData\Roaming\RetroArch\retroarch.exe</entry>
+            <entry>C:\Program Files\RetroArch-Win64\retroarch.exe</entry>
+            <entry>C:\Program Files\RetroArch\retroarch.exe</entry>
+            <entry>C:\Program Files (x86)\RetroArch-Win64\retroarch.exe</entry>
+            <entry>C:\Program Files (x86)\RetroArch\retroarch.exe</entry>
+            <!-- Steam release at some default locations -->
+            <entry>C:\Program Files (x86)\Steam\steamapps\common\RetroArch\retroarch.exe</entry>
+            <entry>D:\Program Files (x86)\Steam\steamapps\common\RetroArch\retroarch.exe</entry>
+            <entry>C:\Program Files\Steam\steamapps\common\RetroArch\retroarch.exe</entry>
+            <entry>D:\Program Files\Steam\steamapps\common\RetroArch\retroarch.exe</entry>
+            <!-- Portable installation -->
+            <entry>%ESPATH%\Emulators\RetroArch-Win64\retroarch.exe</entry>
+            <entry>%ESPATH%\Emulators\RetroArch\retroarch.exe</entry>
+            <entry>%ESPATH%\..\Emulators\RetroArch-Win64\retroarch.exe</entry>
+            <entry>%ESPATH%\..\Emulators\RetroArch\retroarch.exe</entry>
+        </rule>
+    </emulator>
+    <core name="RETROARCH">
+        <rule type="corepath">
+            <entry>%EMUPATH%\cores</entry>
+        </rule>
+    </core>
+    <emulator name="3DSEN">
+        <!-- Nintendo NES and Famicom emulator 3dSen -->
+        <rule type="systempath">
+            <entry>3dSen.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\3dSen\3dSen.exe</entry>
+            <entry>%ESPATH%\..\Emulators\3dSen\3dSen.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="A7800">
+        <!-- Atari 7800 emulator A7800 -->
+        <rule type="systempath">
+            <entry>a7800.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\a7800\a7800.exe</entry>
+            <entry>%ESPATH%\..\Emulators\a7800\a7800.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ACE-DL">
+        <!-- Amstrad CPC emulator ACE-DL -->
+        <rule type="systempath">
+            <entry>AceDL.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\AceDL\AceDL.exe</entry>
+            <entry>%ESPATH%\..\Emulators\AceDL\AceDL.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ADVANCEMAME">
+        <!-- Arcade emulator AdvanceMAME -->
+        <rule type="systempath">
+            <entry>advmame.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\AdvanceMAME\advmame.exe</entry>
+            <entry>%ESPATH%\..\Emulators\AdvanceMAME\advmame.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ALTIRRA">
+        <!-- Atari 8-bit computer emulator Altirra -->
+        <rule type="systempath">
+            <entry>Altirra64.exe</entry>
+            <entry>Altirra.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Altirra\Altirra64.exe</entry>
+            <entry>%ESPATH%\Emulators\Altirra\Altirra.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Altirra\Altirra64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Altirra\Altirra.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="APPLEWIN">
+        <!-- Apple II emulator AppleWin -->
+        <rule type="systempath">
+            <entry>AppleWin.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\AppleWin\AppleWin.exe</entry>
+            <entry>%ESPATH%\..\Emulators\AppleWin\AppleWin.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ARCADEFLASHWEB">
+        <!-- Adobe Flash player ArcadeFlashWeb -->
+        <rule type="systempath">
+            <entry>ArcadeFlashWeb.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\ArcadeFlashWeb\ArcadeFlashWeb.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ArcadeFlashWeb\ArcadeFlashWeb.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ARES">
+        <!-- Multi-system emulator ares -->
+        <rule type="systempath">
+            <entry>ares.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\ares\ares.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ares\ares.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ATARI800">
+        <!-- Atari 8-bit computer emulator Atari800 -->
+        <rule type="systempath">
+            <entry>atari800.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\atari800\atari800.exe</entry>
+            <entry>%ESPATH%\..\Emulators\atari800\atari800.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="AZAHAR">
+        <!-- Nintendo 3DS emulator Azahar -->
+        <rule type="systempath">
+            <entry>azahar.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\azahar\azahar.exe</entry>
+            <entry>%ESPATH%\..\Emulators\azahar\azahar.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="AZAHARPLUS">
+        <!-- Nintendo 3DS emulator AzaharPlus -->
+        <rule type="systempath">
+            <entry>azaharplus.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\azaharplus\azaharplus.exe</entry>
+            <entry>%ESPATH%\..\Emulators\azaharplus\azaharplus.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="BASILISKII">
+        <!-- Macintosh 68k emulator Basilisk II -->
+        <rule type="systempath">
+            <entry>BasiliskII.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\BasiliskII\BasiliskII.exe</entry>
+            <entry>%ESPATH%\..\Emulators\BasiliskII\BasiliskII.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="BEEBEM">
+        <!-- Acorn Computers BBC Micro emulator BeebEm -->
+        <rule type="systempath">
+            <entry>BeebEm.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\BeebEm\BeebEm.exe</entry>
+            <entry>%ESPATH%\..\Emulators\BeebEm\BeebEm.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="BIGPEMU">
+        <!-- Atari Jaguar emulator BigPEmu -->
+        <rule type="systempath">
+            <entry>BigPEmu.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\BigPEmu\BigPEmu.exe</entry>
+            <entry>%ESPATH%\..\Emulators\BigPEmu\BigPEmu.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="BLASTEM">
+        <!-- Sega Mega Drive/Genesis emulator BlastEm -->
+        <rule type="systempath">
+            <entry>blastem.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\blastem\blastem.exe</entry>
+            <entry>%ESPATH%\..\Emulators\blastem\blastem.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="BSNES">
+        <!-- Super Nintendo/Super Famicom emulator bsnes -->
+        <rule type="systempath">
+            <entry>bsnes.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\bsnes\bsnes.exe</entry>
+            <entry>%ESPATH%\..\Emulators\bsnes\bsnes.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="CEMU">
+        <!-- Nintendo Wii U emulator Cemu -->
+        <rule type="systempath">
+            <entry>Cemu.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\cemu\Cemu.exe</entry>
+            <entry>%ESPATH%\..\Emulators\cemu\Cemu.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="CITRA">
+        <!-- Nintendo 3DS emulator Citra -->
+        <rule type="systempath">
+            <entry>citra-qt.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>~\AppData\Local\Citra\nightly-mingw\citra-qt.exe</entry>
+            <entry>~\AppData\Local\Citra\canary-mingw\citra-qt.exe</entry>
+            <entry>%ESPATH%\Emulators\Citra\nightly-mingw\citra-qt.exe</entry>
+            <entry>%ESPATH%\Emulators\Citra\canary-mingw\citra-qt.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Citra\nightly-mingw\citra-qt.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Citra\canary-mingw\citra-qt.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="COLEM">
+        <!-- Coleco ColecoVision and Adam emulator ColEm -->
+        <rule type="systempath">
+            <entry>ColEm.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\ColEm\ColEm.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ColEm\ColEm.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="CPCEMU">
+        <!-- Amstrad CPC emulator CPCemu -->
+        <rule type="winregistryvalue">
+            <entry>SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\CPCEMU_is1\InstallLocation|cpcemu.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>cpcemu.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\cpcemu\cpcemu.exe</entry>
+            <entry>%ESPATH%\..\Emulators\cpcemu\cpcemu.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="CSPECT">
+        <!-- Sinclair ZX Spectrum Next emulator #CSpect -->
+        <rule type="systempath">
+            <entry>CSpect.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\CSpect\CSpect.exe</entry>
+            <entry>%ESPATH%\..\Emulators\CSpect\CSpect.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="CXBX-RELOADED">
+        <!-- Microsoft Xbox emulator Cxbx-Reloaded -->
+        <rule type="systempath">
+            <entry>cxbx.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Cxbx-Reloaded\cxbx.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Cxbx-Reloaded\cxbx.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="DEMUL">
+        <!-- Sega Dreamcast emulator Demul -->
+        <rule type="systempath">
+            <entry>demul.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\demul\demul.exe</entry>
+            <entry>%ESPATH%\..\Emulators\demul\demul.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="DOLPHIN">
+        <!-- Nintendo GameCube and Wii emulator Dolphin -->
+        <rule type="systempath">
+            <entry>Dolphin.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Dolphin-x64\Dolphin.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Dolphin-x64\Dolphin.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="DOSBOX-PURE-UNLEASHED">
+        <!-- DOS emulator DOSBox Pure Unleashed -->
+        <rule type="systempath">
+            <entry>DOSBoxPure.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\DOSBoxPure\DOSBoxPure.exe</entry>
+            <entry>%ESPATH%\..\Emulators\DOSBoxPure\DOSBoxPure.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="DOSBOX-STAGING">
+        <!-- DOS emulator DOSBox Staging -->
+        <rule type="systempath">
+            <entry>dosbox.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\dosbox-staging\dosbox.exe</entry>
+            <entry>%ESPATH%\..\Emulators\dosbox-staging\dosbox.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="DOSBOX-X">
+        <!-- DOS emulator DOSBox-X -->
+        <rule type="winregistryvalue">
+            <entry>SOFTWARE\DOSBox-X\Path|\dosbox-x.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>dosbox-x.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\DOSBox-X\dosbox-x.exe</entry>
+            <entry>%ESPATH%\..\Emulators\DOSBox-X\dosbox-x.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="DREAMM">
+        <!-- LucasArts game engine DREAMM -->
+        <rule type="systempath">
+            <entry>dreamm.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\dreamm\dreamm.exe</entry>
+            <entry>%ESPATH%\..\Emulators\dreamm\dreamm.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="DUCKSTATION">
+        <!-- Sony PlayStation 1 emulator DuckStation -->
+        <rule type="systempath">
+            <entry>duckstation-qt-x64-ReleaseLTCG.exe</entry>
+            <entry>duckstation-qt-x64-ReleaseLTCG-SSE2.exe</entry>
+            <entry>duckstation-nogui-x64-ReleaseLTCG.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\duckstation\duckstation-qt-x64-ReleaseLTCG.exe</entry>
+            <entry>%ESPATH%\Emulators\duckstation\duckstation-qt-x64-ReleaseLTCG-SSE2.exe</entry>
+            <entry>%ESPATH%\Emulators\duckstation\duckstation-nogui-x64-ReleaseLTCG.exe</entry>
+            <entry>%ESPATH%\..\Emulators\duckstation\duckstation-qt-x64-ReleaseLTCG.exe</entry>
+            <entry>%ESPATH%\..\Emulators\duckstation\duckstation-qt-x64-ReleaseLTCG-SSE2.exe</entry>
+            <entry>%ESPATH%\..\Emulators\duckstation\duckstation-nogui-x64-ReleaseLTCG.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="EASYRPG">
+        <!-- EasyRPG game engine -->
+        <rule type="systempath">
+            <entry>Player.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\EasyRPG\Player.exe</entry>
+            <entry>%ESPATH%\..\Emulators\EasyRPG\Player.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="EKA2L1">
+        <!-- Symbian and Nokia N-Gage emulator EKA2L1 -->
+        <rule type="systempath">
+            <entry>eka2l1_qt.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\EKA2L1\eka2l1_qt.exe</entry>
+            <entry>%ESPATH%\..\Emulators\EKA2L1\eka2l1_qt.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="FINALBURN-NEO">
+        <!-- Arcade emulator FinalBurn Neo -->
+        <rule type="systempath">
+            <entry>fbneo64.exe</entry>
+            <entry>fbneo.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\fbneo\fbneo64.exe</entry>
+            <entry>%ESPATH%\Emulators\fbneo\fbneo.exe</entry>
+            <entry>%ESPATH%\..\Emulators\fbneo\fbneo64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\fbneo\fbneo.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="FLYCAST">
+        <!-- Sega Dreamcast emulator Flycast -->
+        <rule type="systempath">
+            <entry>flycast.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\flycast\flycast.exe</entry>
+            <entry>%ESPATH%\..\Emulators\flycast\flycast.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="FLYCAST-DOJO">
+        <!-- Sega Dreamcast emulator Flycast Dojo -->
+        <rule type="systempath">
+            <entry>flycast-dojo.exe</entry>
+            <entry>flycast.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\flycast-dojo\flycast.exe</entry>
+            <entry>%ESPATH%\..\Emulators\flycast-dojo\flycast.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="FS-UAE">
+        <!-- Commodore Amiga emulator FS-UAE -->
+        <rule type="systempath">
+            <entry>fs-uae-launcher.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\FS-UAE-Launcher\Windows\x86-64\fs-uae-launcher.exe</entry>
+            <entry>%ESPATH%\..\Emulators\FS-UAE-Launcher\Windows\x86-64\fs-uae-launcher.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="FUSE">
+        <!-- Sinclair ZX Spectrum emulator Fuse -->
+        <rule type="systempath">
+            <entry>fuse.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Fuse\fuse.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Fuse\fuse.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="FUTURE-PINBALL">
+        <!-- Pinball simulator Future Pinball -->
+        <rule type="systempath">
+            <entry>Future Pinball.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Future Pinball\Future Pinball.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Future Pinball\Future Pinball.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="FUTURE-PINBALL-FPLOADER">
+        <!-- Pinball simulator Future Pinball (FPLoader) -->
+        <rule type="systempath">
+            <entry>FPLoader.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Future Pinball\BAM\FPLoader.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Future Pinball\BAM\FPLoader.exe</entry>
+            <entry>%ESPATH%\Emulators\Future Pinball\BAM-OpenVR\FPLoader.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Future Pinball\BAM-OpenVR\FPLoader.exe</entry>
+            <entry>%ESPATH%\Emulators\Future Pinball\BAM-OpenVR-OC\FPLoader.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Future Pinball\BAM-OpenVR-OC\FPLoader.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="GARGOYLE">
+        <!-- Interactive fiction player Gargoyle -->
+        <rule type="systempath">
+            <entry>gargoyle.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\gargoyle\gargoyle.exe</entry>
+            <entry>%ESPATH%\..\Emulators\gargoyle\gargoyle.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="GEARBOY">
+        <!-- Nintendo Game Boy and Game Boy Color emulator Gearboy -->
+        <rule type="systempath">
+            <entry>Gearboy.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Gearboy\Gearboy.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Gearboy\Gearboy.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="GOPHER2600">
+        <!-- Atari 2600 emulator Gopher2600 -->
+        <rule type="systempath">
+            <entry>gopher2600_windows_amd64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\gopher2600\gopher2600_windows_amd64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\gopher2600\gopher2600_windows_amd64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="GOPHER64">
+        <!-- Nintendo 64 emulator Gopher64 -->
+        <rule type="systempath">
+            <entry>gopher64-windows-x86_64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\gopher64\gopher64-windows-x86_64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\gopher64\gopher64-windows-x86_64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="HATARI">
+        <!-- Atari ST/STE/TT/Falcon emulator Hatari -->
+        <rule type="systempath">
+            <entry>hatari.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\hatari\hatari.exe</entry>
+            <entry>%ESPATH%\..\Emulators\hatari\hatari.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="HYPSEUS-SINGE">
+        <!-- Hypseus Singe, fork of arcade LaserDisc emulator Daphne -->
+        <rule type="systempath">
+            <entry>hypseus.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Hypseus Singe\hypseus.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Hypseus Singe\hypseus.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="IZAPPLE2">
+        <!-- Apple II emulator izapple2 -->
+        <rule type="systempath">
+            <entry>izapple2sdl_windows_amd64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\izapple2\izapple2sdl_windows_amd64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\izapple2\izapple2sdl_windows_amd64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="JGENESIS">
+        <!-- Multi-system emulator jgenesis -->
+        <rule type="systempath">
+            <entry>jgenesis-cli.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\jgenesis\jgenesis-cli.exe</entry>
+            <entry>%ESPATH%\..\Emulators\jgenesis\jgenesis-cli.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="KEGS">
+        <!-- Apple IIGS emulator KEGS -->
+        <rule type="systempath">
+            <entry>kegswin.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\kegs\kegswin.exe</entry>
+            <entry>%ESPATH%\..\Emulators\kegs\kegswin.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="KEMULATOR">
+        <!-- Java 2 Micro Edition emulator KEmulator -->
+        <rule type="systempath">
+            <entry>KEmulator.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\KEmulator\KEmulator.exe</entry>
+            <entry>%ESPATH%\..\Emulators\KEmulator\KEmulator.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="KRONOS">
+        <!-- Sega Saturn emulator Kronos -->
+        <rule type="systempath">
+            <entry>kronos.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\kronos\kronos.exe</entry>
+            <entry>%ESPATH%\..\Emulators\kronos\kronos.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="LIME3DS">
+        <!-- Nintendo 3DS emulator Lime3DS -->
+        <rule type="systempath">
+            <entry>lime3ds.exe</entry>
+            <entry>lime3ds-gui.exe</entry>
+            <entry>lime-qt.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\lime3ds\lime3ds.exe</entry>
+            <entry>%ESPATH%\..\Emulators\lime3ds\lime3ds.exe</entry>
+            <entry>%ESPATH%\Emulators\lime3ds\lime3ds-gui.exe</entry>
+            <entry>%ESPATH%\..\Emulators\lime3ds\lime3ds-gui.exe</entry>
+            <entry>%ESPATH%\Emulators\lime-qt\lime-qt.exe</entry>
+            <entry>%ESPATH%\..\Emulators\lime-qt\lime-qt.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="M2EMULATOR">
+        <!-- Sega Model 2 Emulator -->
+        <rule type="systempath">
+            <entry>EMULATOR.EXE</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\m2emulator\EMULATOR.EXE</entry>
+            <entry>%ESPATH%\..\Emulators\m2emulator\EMULATOR.EXE</entry>
+        </rule>
+    </emulator>
+    <emulator name="MAME">
+        <!-- Arcade emulator MAME -->
+        <rule type="systempath">
+            <entry>mame.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\mame\mame.exe</entry>
+            <entry>%ESPATH%\..\Emulators\mame\mame.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="MANDARINE">
+        <!-- Nintendo 3DS emulator Mandarine -->
+        <rule type="systempath">
+            <entry>mandarine-qt.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\mandarine\mandarine-qt.exe</entry>
+            <entry>%ESPATH%\..\Emulators\mandarine\mandarine-qt.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="MEDNAFEN">
+        <!-- Multi-system emulator Mednafen -->
+        <rule type="systempath">
+            <entry>mednafen.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\mednafen\mednafen.exe</entry>
+            <entry>%ESPATH%\..\Emulators\mednafen\mednafen.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="MELONDS">
+        <!-- Nintendo DS and DSi emulator melonDS -->
+        <rule type="systempath">
+            <entry>melonDS.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\melonDS\melonDS.exe</entry>
+            <entry>%ESPATH%\..\Emulators\melonDS\melonDS.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="MESEN">
+        <!-- Multi-system emulator Mesen -->
+        <rule type="systempath">
+            <entry>Mesen.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Mesen\Mesen.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Mesen\Mesen.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="MFME">
+        <!-- Fruit machine emulator MFME -->
+        <rule type="systempath">
+            <entry>MFME.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\MFME\MFME.exe</entry>
+            <entry>%ESPATH%\..\Emulators\MFME\MFME.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="MGBA">
+        <!-- Nintendo Game Boy Advance emulator mGBA -->
+        <rule type="winregistryvalue">
+            <entry>SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\mGBA_is1\InstallLocation|mGBA.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>mGBA.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>C:\Program Files\mGBA\mGBA.exe</entry>
+            <entry>D:\Program Files\mGBA\mGBA.exe</entry>
+            <entry>%ESPATH%\Emulators\mGBA\mGBA.exe</entry>
+            <entry>%ESPATH%\..\Emulators\mGBA\mGBA.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="MUPEN64PLUS">
+        <!-- Nintendo 64 emulator Mupen64Plus -->
+        <rule type="systempath">
+            <entry>mupen64plus-ui-console.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\mupen64plus\mupen64plus-ui-console.exe</entry>
+            <entry>%ESPATH%\..\Emulators\mupen64plus\mupen64plus-ui-console.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="NOODS">
+        <!-- Nintendo DS and Game Boy Advance emulator NooDS -->
+        <rule type="systempath">
+            <entry>noods.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\noods\noods.exe</entry>
+            <entry>%ESPATH%\..\Emulators\noods\noods.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="OPENMSX">
+        <!-- MSX home computer emulator openMSX -->
+        <rule type="systempath">
+            <entry>openmsx.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\openMSX\openmsx.exe</entry>
+            <entry>%ESPATH%\..\Emulators\openMSX\openmsx.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ORICUTRON">
+        <!-- Tangerine Computer Systems emulator Oricutron -->
+        <rule type="systempath">
+            <entry>oricutron.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Oricutron\oricutron.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Oricutron\oricutron.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PANDA3DS">
+        <!-- Nintendo 3DS emulator Panda3DS -->
+        <rule type="systempath">
+            <entry>Alber.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Panda3DS\Alber.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Panda3DS\Alber.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PARALLEL-LAUNCHER">
+        <!-- Nintendo 64 emulator Parallel Launcher  -->
+        <rule type="systempath">
+            <entry>parallel-launcher.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>C:\Program Files (x86)\parallel-launcher\parallel-launcher.exe</entry>
+            <entry>D:\Program Files (x86)\parallel-launcher\parallel-launcher.exe</entry>
+            <entry>%ESPATH%\Emulators\parallel-launcher\parallel-launcher.exe</entry>
+            <entry>%ESPATH%\..\Emulators\parallel-launcher\parallel-launcher.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PCSX2">
+        <!-- Sony PlayStation 2 emulator PCSX2 -->
+        <rule type="systempath">
+            <entry>pcsx2-qt.exe</entry>
+            <entry>pcsx2-qtx64.exe</entry>
+            <entry>pcsx2-qtx64-avx2.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\PCSX2-Qt\pcsx2-qt*.exe</entry>
+            <entry>%ESPATH%\..\Emulators\PCSX2-Qt\pcsx2-qt*.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PCSX2-LEGACY">
+        <!-- Sony PlayStation 2 emulator PCSX2 (legacy) -->
+        <rule type="winregistryvalue">
+            <entry>SOFTWARE\PCSX2\Install_Dir|\pcsx2.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>pcsx2.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>C:\Program Files (x86)\PCSX2\pcsx2.exe</entry>
+            <entry>D:\Program Files (x86)\PCSX2\pcsx2.exe</entry>
+            <entry>%ESPATH%\Emulators\PCSX2\pcsx2.exe</entry>
+            <entry>%ESPATH%\..\Emulators\PCSX2\pcsx2.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PICO-8">
+        <!-- PICO-8 Fantasy Console (game engine) -->
+        <rule type="systempath">
+            <entry>pico8.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>C:\Program Files (x86)\PICO-8\pico8.exe</entry>
+            <entry>D:\Program Files (x86)\PICO-8\pico8.exe</entry>
+            <entry>%ESPATH%\Emulators\PICO-8\pico8.exe</entry>
+            <entry>%ESPATH%\..\Emulators\PICO-8\pico8.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PLAY!">
+        <!-- Sony PlayStation 2 emulator Play! -->
+        <rule type="systempath">
+            <entry>Play.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>C:\Program Files\Play\Play.exe</entry>
+            <entry>D:\Program Files\Play\Play.exe</entry>
+            <entry>%ESPATH%\Emulators\Play\Play.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Play\Play.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PPSSPP">
+        <!-- Sony PlayStation Portable emulator PPSSPP -->
+        <rule type="winregistryvalue">
+            <entry>SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PPSSPP_is1\InstallLocation|PPSSPPWindows64.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>PPSSPPWindows64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>C:\Program Files\PPSSPP\PPSSPPWindows64.exe</entry>
+            <entry>D:\Program Files\PPSSPP\PPSSPPWindows64.exe</entry>
+            <entry>%ESPATH%\Emulators\PPSSPP\PPSSPPWindows64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\PPSSPP\PPSSPPWindows64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PRBOOM-PLUS">
+        <!-- Doom engine source port PrBoom+ -->
+        <rule type="systempath">
+            <entry>prboom-plus.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\prboom-plus\prboom-plus.exe</entry>
+            <entry>%ESPATH%\..\Emulators\prboom-plus\prboom-plus.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PRIMEHACK">
+        <!-- PrimeHack, fork of Nintendo GameCube and Wii emulator Dolphin -->
+        <rule type="systempath">
+            <!-- Must be renamed from Dolphin.exe to avoid a potential Path/name conflict -->
+            <entry>PrimeHack.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\PrimeHack\Dolphin.exe</entry>
+            <entry>%ESPATH%\..\Emulators\PrimeHack\Dolphin.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PROJECT64">
+        <!-- Nintendo 64 emulator Project64 -->
+        <rule type="systempath">
+            <entry>Project64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Project64\Project64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Project64\Project64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="PUNES">
+        <!-- Nintendo NES and Famicom emulator puNES -->
+        <rule type="systempath">
+            <entry>punes64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\punes\punes64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\punes\punes64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="QUASI88">
+        <!-- NEC PC-8800 series emulator QUASI88 -->
+        <rule type="systempath">
+            <entry>QUASI88.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\quasi88\QUASI88.exe</entry>
+            <entry>%ESPATH%\..\Emulators\quasi88\QUASI88.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="REDREAM">
+        <!-- Sega Dreamcast emulator Redream -->
+        <rule type="systempath">
+            <entry>redream.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\redream\redream.exe</entry>
+            <entry>%ESPATH%\..\Emulators\redream\redream.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ROSALIES-MUPEN-GUI">
+        <!-- Nintendo 64 emulator Rosalie's Mupen GUI -->
+        <rule type="systempath">
+            <entry>RMG.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>~\AppData\Local\Programs\Rosalie's Mupen GUI\RMG.exe</entry>
+            <entry>%ESPATH%\Emulators\RMG\RMG.exe</entry>
+            <entry>%ESPATH%\..\Emulators\RMG\RMG.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="RPCS3">
+        <!-- Sony PlayStation 3 emulator RPCS3 -->
+        <rule type="systempath">
+            <entry>rpcs3.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\RPCS3\rpcs3.exe</entry>
+            <entry>%ESPATH%\..\Emulators\RPCS3\rpcs3.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="RUFFLE">
+        <!-- Adobe Flash player Ruffle -->
+        <rule type="systempath">
+            <entry>ruffle.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\ruffle\ruffle.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ruffle\ruffle.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="RYUJINX">
+        <!-- Nintendo Switch emulator Ryujinx -->
+        <rule type="systempath">
+            <entry>Ryujinx.exe</entry>
+            <entry>Ryujinx.Ava.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\ryujinx\Ryujinx.exe</entry>
+            <entry>%ESPATH%\Emulators\ryujinx\Ryujinx.Ava.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ryujinx\Ryujinx.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ryujinx\Ryujinx.Ava.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SAMEBOY">
+        <!-- Nintendo Game Boy and Game Boy Color emulator SameBoy -->
+        <rule type="systempath">
+            <entry>sameboy.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\sameboy\sameboy.exe</entry>
+            <entry>%ESPATH%\..\Emulators\sameboy\sameboy.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SCUMMVM">
+        <!-- ScummVM game engine -->
+        <rule type="winregistryvalue">
+            <entry>SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ScummVM_is1\InstallLocation|scummvm.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>scummvm.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\scummvm\scummvm.exe</entry>
+            <entry>%ESPATH%\..\Emulators\scummvm\scummvm.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SDL2TRS">
+        <!-- Tandy TRS-80 emulator sdl2trs -->
+        <rule type="systempath">
+            <entry>sdl2trs64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\sdl2trs\sdl2trs64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\sdl2trs\sdl2trs64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SHADPS4">
+        <!-- Sony PlayStation 4 emulator shadPS4 -->
+        <rule type="systempath">
+            <entry>shadPS4.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\shadPS4\shadPS4.exe</entry>
+            <entry>%ESPATH%\..\Emulators\shadPS4\shadPS4.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SHADPS4-GUI">
+        <!-- Sony PlayStation 4 emulator shadPS4 (GUI) -->
+        <rule type="systempath">
+            <entry>shadPS4QtLauncher.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\shadPS4QtLauncher\shadPS4QtLauncher.exe</entry>
+            <entry>%ESPATH%\..\Emulators\shadPS4QtLauncher\shadPS4QtLauncher.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SHEEPSHAVER">
+        <!-- Apple Macintosh PowerPC emulator SheepShaver -->
+        <rule type="systempath">
+            <entry>SheepShaver.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\SheepShaver\SheepShaver.exe</entry>
+            <entry>%ESPATH%\..\Emulators\SheepShaver\SheepShaver.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SIMCOUPE">
+        <!-- SAM Coupé emulator SimCoupé -->
+        <rule type="winregistrypath">
+            <entry>SimCoupe.exe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>SimCoupe.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\SimCoupe\SimCoupe.exe</entry>
+            <entry>%ESPATH%\..\Emulators\SimCoupe\SimCoupe.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SIMPLE64">
+        <!-- Nintendo 64 emulator simple64 -->
+        <rule type="systempath">
+            <entry>simple64-gui.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\simple64\simple64-gui.exe</entry>
+            <entry>%ESPATH%\..\Emulators\simple64\simple64-gui.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SKYEMU">
+        <!-- Nintendo Game Boy, Game Boy Color, Game Boy Advance and DS emulator SkyEmu -->
+        <rule type="systempath">
+            <entry>SkyEmu.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\SkyEmu\SkyEmu.exe</entry>
+            <entry>%ESPATH%\..\Emulators\SkyEmu\SkyEmu.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SNES9X">
+        <!-- Super Nintendo emulator Snes9x -->
+        <rule type="systempath">
+            <entry>snes9x-x64.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\snes9x\snes9x-x64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\snes9x\snes9x-x64.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SOLARUS">
+        <!-- Solarus game engine -->
+        <rule type="systempath">
+            <entry>solarus-run.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\solarus\solarus-run.exe</entry>
+            <entry>%ESPATH%\..\Emulators\solarus\solarus-run.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SSF">
+        <!-- Sega Saturn emulator SSF -->
+        <rule type="systempath">
+            <entry>SSF.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\SSF\SSF.exe</entry>
+            <entry>%ESPATH%\..\Emulators\SSF\SSF.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="STEAM">
+        <!-- Valve Steam -->
+        <rule type="winregistryvalue">
+            <entry>SOFTWARE\Valve\Steam\SteamExe</entry>
+        </rule>
+        <rule type="systempath">
+            <entry>steam.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>C:\Program Files (x86)\Steam\steam.exe</entry>
+            <entry>D:\Program Files (x86)\Steam\steam.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="STELLA">
+        <!-- Atari 2600 emulator Stella -->
+        <rule type="systempath">
+            <entry>Stella.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Stella\64-bit\Stella.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Stella\64-bit\Stella.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SUPERMODEL">
+        <!-- Sega Model 3 emulator Supermodel -->
+        <rule type="systempath">
+            <entry>Supermodel.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Supermodel\Supermodel.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Supermodel\Supermodel.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="SUPERMODEL-DOJO">
+        <!-- Sega Model 3 emulator Supermodel Dojo -->
+        <rule type="systempath">
+            <entry>supermodel.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Supermodel-Dojo\supermodel.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Supermodel-Dojo\supermodel.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="TIC-80">
+        <!-- TIC-80 Fantasy Computer (game engine) -->
+        <rule type="systempath">
+            <entry>tic80.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\tic80\tic80.exe</entry>
+            <entry>%ESPATH%\..\Emulators\tic80\tic80.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="TRIFORCE">
+        <!-- Triforce, fork of Nintendo GameCube and Wii emulator Dolphin -->
+        <rule type="systempath">
+            <entry>Triforce.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Triforce\DolphinWX.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Triforce\DolphinWX.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="TSUGARU">
+        <!-- Fujitsu FM Towns emulator Tsugaru -->
+        <rule type="systempath">
+            <entry>Tsugaru_CUI.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\tsugaru\Tsugaru_CUI.exe</entry>
+            <entry>%ESPATH%\..\Emulators\tsugaru\Tsugaru_CUI.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="VBA-M">
+        <!-- Nintendo Game Boy Advance emulator VBA-M -->
+        <rule type="systempath">
+            <entry>visualboyadvance-m.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\VBA-M\visualboyadvance-m.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VBA-M\visualboyadvance-m.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="VICE-X64SC">
+        <!-- Commodore 8-bit computer emulator VICE (x64sc accurate) -->
+        <rule type="systempath">
+            <entry>x64sc.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\VICE\x64sc.exe</entry>
+            <entry>%ESPATH%\Emulators\VICE\bin\x64sc.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VICE\x64sc.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VICE\bin\x64sc.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="VICE-XPLUS4">
+        <!-- Commodore 8-bit computer emulator VICE (xplus4) -->
+        <rule type="systempath">
+            <entry>xplus4.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\VICE\xplus4.exe</entry>
+            <entry>%ESPATH%\Emulators\VICE\bin\xplus4.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VICE\xplus4.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VICE\bin\xplus4.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="VICE-XVIC">
+        <!-- Commodore 8-bit computer emulator VICE (xvic) -->
+        <rule type="systempath">
+            <entry>xvic.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\VICE\xvic.exe</entry>
+            <entry>%ESPATH%\Emulators\VICE\bin\xvic.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VICE\xvic.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VICE\bin\xvic.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="VIRCON32">
+        <!-- Vircon32 Virtual Console -->
+        <rule type="systempath">
+            <entry>Vircon32.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Vircon32\Emulator\Vircon32.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Vircon32\Emulator\Vircon32.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="VISUAL-PINBALL">
+        <!-- Pinball simulator Visual Pinball -->
+        <rule type="systempath">
+            <entry>VPinballX_BGFX64.exe</entry>
+            <entry>VPinballX_GL64.exe</entry>
+            <entry>VPinballX64.exe</entry>
+            <entry>VPinballX.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\VPinballX\VPinballX_BGFX64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VPinballX\VPinballX_BGFX64.exe</entry>
+            <entry>%ESPATH%\Emulators\VPinballX\VPinballX_GL64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VPinballX\VPinballX_GL64.exe</entry>
+            <entry>%ESPATH%\Emulators\VPinballX\VPinballX64.exe</entry>
+            <entry>%ESPATH%\..\Emulators\VPinballX\VPinballX64.exe</entry>
+            <entry>%ESPATH%\Emulators\Visual Pinball\VPinballX.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Visual Pinball\VPinballX.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="VITA3K">
+        <!-- Sony PlayStation Vita emulator Vita3K -->
+        <rule type="systempath">
+            <entry>Vita3K.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\Vita3K\Vita3K.exe</entry>
+            <entry>%ESPATH%\..\Emulators\Vita3K\Vita3K.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="WINARCADIA">
+        <!-- Emerson Arcadia 2001 emulator WinArcadia -->
+        <rule type="systempath">
+            <entry>WinArcadia.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\WinArcadia\WinArcadia.exe</entry>
+            <entry>%ESPATH%\..\Emulators\WinArcadia\WinArcadia.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="XEMU">
+        <!-- Microsoft Xbox emulator xemu -->
+        <rule type="systempath">
+            <entry>xemu.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\xemu\xemu.exe</entry>
+            <entry>%ESPATH%\..\Emulators\xemu\xemu.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="XENIA">
+        <!-- Microsoft Xbox 360 emulator xenia -->
+        <rule type="systempath">
+            <entry>xenia.exe</entry>
+            <entry>xenia_canary.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\xenia\xenia.exe</entry>
+            <entry>%ESPATH%\..\Emulators\xenia\xenia.exe</entry>
+            <entry>%ESPATH%\Emulators\xenia_canary\xenia_canary.exe</entry>
+            <entry>%ESPATH%\..\Emulators\xenia_canary\xenia_canary.exe</entry>
+            <entry>%ESPATH%\Emulators\XeniaManager\Emulators\Xenia Canary\xenia_canary.exe</entry>
+            <entry>%ESPATH%\..\Emulators\XeniaManager\Emulators\Xenia Canary\xenia_canary.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="XENIA-EDGE">
+        <!-- Microsoft Xbox 360 emulator Xenia Edge -->
+        <rule type="systempath">
+            <entry>xenia_edge.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\xenia_edge\xenia_edge.exe</entry>
+            <entry>%ESPATH%\..\Emulators\xenia_edge\xenia_edge.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="XM6PRO68K">
+        <!-- Sharp X68000 emulator XM6 Pro-68k -->
+        <rule type="systempath">
+            <entry>XM6.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\XM6 Pro-68k\XM6.exe</entry>
+            <entry>%ESPATH%\..\Emulators\XM6 Pro-68k\XM6.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="XM6TYPEG">
+        <!-- Sharp X68000 emulator XM6 TypeG -->
+        <rule type="systempath">
+            <entry>xm6g.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\xm6_typeg\xm6g.exe</entry>
+            <entry>%ESPATH%\..\Emulators\xm6_typeg\xm6g.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="XROAR">
+        <!-- Dragon and Tandy 8-bit computer emulator XRoar -->
+        <rule type="systempath">
+            <entry>xroar.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\xroar\xroar.exe</entry>
+            <entry>%ESPATH%\..\Emulators\xroar\xroar.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="YABASANSHIRO-2">
+        <!-- Sega Saturn emulator Yaba Sanshiro 2 -->
+        <rule type="systempath">
+            <entry>yabasanshiro.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\yabasanshiro\yabasanshiro.exe</entry>
+            <entry>%ESPATH%\..\Emulators\yabasanshiro\yabasanshiro.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="YMIR">
+        <!-- Sega Saturn emulator Ymir -->
+        <rule type="systempath">
+            <entry>ymir-sdl3.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\ymir\ymir-sdl3.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ymir\ymir-sdl3.exe</entry>
+        </rule>
+    </emulator>
+    <emulator name="ZESARUX">
+        <!-- Sinclair ZX Spectrum emulator ZEsarUX -->
+        <rule type="systempath">
+            <entry>zesarux.exe</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>%ESPATH%\Emulators\ZEsarUX\zesarux.exe</entry>
+            <entry>%ESPATH%\..\Emulators\ZEsarUX\zesarux.exe</entry>
+        </rule>
+    </emulator>
+</ruleList>

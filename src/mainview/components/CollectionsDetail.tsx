@@ -3,9 +3,7 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { HeaderUI } from './Header';
 import { GameList, GameListFilter } from './GameList';
 import { Search, Settings2 } from 'lucide-react';
-import ShortcutPrompt from './ShortcutPrompt';
-import { selfFocusSmart } from '../scripts/utils';
-import { JSX, Suspense, useEffect, useState } from 'react';
+import { JSX, Suspense } from 'react';
 import Shortcuts from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
 
@@ -21,7 +19,7 @@ export interface CollectionsDetailParams
 
 export function CollectionsDetail (data: CollectionsDetailParams)
 {
-    const focusKey = `game-list-${data.id}-${data.filters.platformIds?.join()}-${data.filters.collectionId}`;
+    const focusKey = `game-list-${data.id}-${data.filters.platformId}-${data.filters.collectionId}`;
     const { ref, focusSelf } = useFocusable({
         focusKey,
         preferredChildFocusKey: `${focusKey}-list`,
@@ -46,7 +44,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                     <div>
                         {data.footer}
                     </div>
-                    <Shortcuts />
+                    <Shortcuts shortcuts={[{ icon: 'steamdeck_button_b', label: 'Back' }]} />
                 </footer>
             </AnimatedBackground>
         </FocusContext>

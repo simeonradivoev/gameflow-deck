@@ -1,8 +1,8 @@
-import { client } from "../index";
+import { settingsApi } from "./clientApi";
 
 window.addEventListener("resize", () =>
 {
-  client.api.settings({ id: 'windowSize' }).post({ value: { width: window.innerWidth, height: window.innerHeight } });
+  settingsApi.api.settings({ id: 'windowSize' }).post({ value: { width: window.innerWidth, height: window.innerHeight } });
 });
 
 let lastWindowPosX: number = window.screenX;
@@ -11,7 +11,7 @@ var screenPositionInternal: NodeJS.Timeout = setInterval(() =>
 {
   if (lastWindowPosX != window.screenX || lastWindowPosY != window.screenY)
   {
-    client.api.settings({ id: 'windowPosition' }).post({ value: { x: window.screenX, y: window.screenY } });
+    settingsApi.api.settings({ id: 'windowPosition' }).post({ value: { x: window.screenX, y: window.screenY } });
   }
 
   lastWindowPosX = window.screenX;

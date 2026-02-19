@@ -3,17 +3,16 @@ import
   FocusContext,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { GameMeta } from "../../shared/constants";
-import GameCard, { GameCardSkeleton } from "./GameCard";
-import { JSX, useEffect, useMemo, useState } from "react";
-import { useLocalStorage } from "usehooks-ts";
-import { useScrollSave } from "../scripts/utils";
+import { FrontEndId, GameMeta } from "../../shared/constants";
+import GameCard, { GameCardParams } from "./GameCard";
+import { JSX, useState } from "react";
 import classNames from "classnames";
+import { twMerge } from "tailwind-merge";
 
 export interface GameMetaExtra extends GameMeta
 {
-  preview?: JSX.Element;
-  badge?: JSX.Element;
+  preview?: GameCardParams['preview'];
+  badges?: JSX.Element[];
   focusKey: string;
 }
 
@@ -22,8 +21,9 @@ export function CardList (data: {
   type?: string;
   games: GameMetaExtra[];
   grid?: boolean;
-  onSelectGame?: (id: number) => void;
-  onGameFocus?: (id: number) => void;
+  onSelectGame?: (id: string) => void;
+  onGameFocus?: (id: string) => void;
+  className?: string;
 })
 {
   const { ref, focusKey } = useFocusable({
@@ -32,7 +32,7 @@ export function CardList (data: {
 
   function BuildGame (g: GameMetaExtra, i: number)
   {
-    let preview: JSX.Element | string | undefined = g.preview;
+    let preview: GameCardParams['preview'] = g.preview;
     if (!preview && g.previewUrl)
     {
       preview = g.previewUrl;
@@ -48,11 +48,17 @@ export function CardList (data: {
         subtitle={g.subtitle ?? ""}
         onFocus={() =>
         {
+          g.onFocus?.();
           data.onGameFocus?.(g.id);
+          (document.querySelector(":root") as HTMLElement).style.setProperty('--selected-card-offset', `${i}s`);
         }}
-        onAction={() => data.onSelectGame?.(g.id)}
+        onAction={() =>
+        {
+          g.onSelect?.();
+          data.onSelectGame?.(g.id);
+        }}
         preview={preview}
-        badge={g.badge}
+        badges={g.badges}
         id={g.id}
       />
     );
@@ -64,8 +70,9 @@ export function CardList (data: {
       id={`card-list-${data.id}`}
       ref={ref}
       save-child-focus="session"
-      className={classNames("my-6 items-center justify-center-safe h-(--game-card-height) ",
-        data.grid ? "card-grid h-fit gap-5" : 'card-list gap-6'
+      className={twMerge("my-6 items-center justify-center-safe h-(--game-card-height) ",
+        data.grid ? "card-grid h-fit gap-5" : 'card-list gap-6',
+        data.className
       )}
       onKeyDown={(e) =>
       {

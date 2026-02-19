@@ -27,10 +27,10 @@ function FilterCat (
       className={classNames(
         "flex px-4 h-12 items-center justify-center rounded-full transition-all",
         {
-          "bg-primary text-primary-content drop-shadow-sm cursor-default":
+          "bg-base-content px-3 text-base-300 drop-shadow cursor-default":
             focused || data.active,
-          "ring-base-content ring-7": focused,
-          "hover:bg-base-300 cursor-pointer": !focused,
+          "ring-primary ring-7": focused,
+          "hover:bg-base-content/40 cursor-pointer": !focused,
         },
       )}
     >

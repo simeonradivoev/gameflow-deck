@@ -16,7 +16,7 @@
             "internalConsoleOptions": "neverOpen",
             "request": "attach",
             "name": "Attach Bun",
-            "url": "ws://127.0.0.1:9229/7lt63qegtr8",
+            "url": "ws://127.0.0.1:9229/54esztvxlfe",
             "localRoot": "${workspaceFolder}",
             "stopOnEntry": false,
         }
@@ -24,7 +24,10 @@
     "compounds": [
         {
             "name": "Attach Debug App",
-            "configurations": ["Attach Bun", "Attach to Edge"],
+            "configurations": [
+                "Attach Bun",
+                "Attach to Edge"
+            ],
             "stopAll": true,
             "preLaunchTask": "bun: dev"
         }

@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+<!-- This is the ES-DE find rules configuration file for Haiku -->
+<ruleList>
+    <emulator name="OS-SHELL">
+        <!-- Operating system shell -->
+        <rule type="systempath">
+            <entry>bash</entry>
+            <entry>sh</entry>
+        </rule>
+    </emulator>
+    <emulator name="RETROARCH">
+        <rule type="systempath">
+            <entry>retroarch</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/boot/system/apps/retroarch</entry>
+        </rule>
+    </emulator>
+    <core name="RETROARCH">
+        <rule type="corepath">
+            <entry>/boot/system/add-ons/libretro</entry>
+        </rule>
+    </core>
+    <emulator name="ADVANCEMAME">
+        <!-- Arcade emulator AdvanceMAME -->
+        <rule type="systempath">
+            <entry>advmame</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/bin/advmame</entry>
+        </rule>
+    </emulator>
+    <emulator name="DOSBOX-X">
+        <!-- DOS emulator DOSBox-X -->
+        <rule type="systempath">
+            <entry>DOSBox-X</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/boot/system/apps/DOSBox-X</entry>
+        </rule>
+    </emulator>
+    <emulator name="FINALBURN-NEO">
+        <!-- Arcade emulator FinalBurn Neo -->
+        <rule type="systempath">
+            <entry>fbneo</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/boot/system/apps/fbneo</entry>
+        </rule>
+    </emulator>
+    <emulator name="FS-UAE">
+        <!-- Commodore Amiga emulator FS-UAE -->
+        <rule type="systempath">
+            <entry>fs-uae-launcher</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/bin/fs-uae-launcher</entry>
+        </rule>
+    </emulator>
+    <emulator name="FUSE">
+        <!-- Sinclair ZX Spectrum emulator Fuse -->
+        <rule type="staticpath">
+            <entry>/boot/system/apps/Fuse/Fuse</entry>
+        </rule>
+    </emulator>
+    <emulator name="MAME">
+        <!-- Arcade emulator MAME -->
+        <rule type="systempath">
+            <entry>mame</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/bin/mame</entry>
+        </rule>
+    </emulator>
+    <emulator name="MEDNAFEN">
+        <!-- Multi-system emulator Mednafen -->
+        <rule type="systempath">
+            <entry>mednafen</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/bin/mednafen</entry>
+        </rule>
+    </emulator>
+    <emulator name="MELONDS">
+        <!-- Nintendo DS and DSi emulator melonDS -->
+        <rule type="systempath">
+            <entry>melonDS</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/boot/system/apps/melonDS</entry>
+        </rule>
+    </emulator>
+    <emulator name="MGBA">
+        <!-- Nintendo Game Boy Advance emulator mGBA -->
+        <rule type="systempath">
+            <entry>mgba</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/bin/mgba</entry>
+        </rule>
+    </emulator>
+    <emulator name="MUPEN64PLUS">
+        <!-- Nintendo 64 emulator Mupen64Plus -->
+        <rule type="staticpath">
+            <entry>/boot/system/apps/Mupen64Plus/bin/Mupen64Plus</entry>
+        </rule>
+    </emulator>
+    <emulator name="PPSSPP">
+        <!-- Sony PlayStation Portable emulator PPSSPP -->
+        <rule type="staticpath">
+            <entry>/boot/system/apps/PPSSPP/PPSSPP</entry>
+        </rule>
+    </emulator>
+    <emulator name="SCUMMVM">
+        <!-- ScummVM game engine -->
+        <rule type="systempath">
+            <entry>ScummVM</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/boot/system/apps/ScummVM</entry>
+        </rule>
+    </emulator>
+    <emulator name="SOLARUS">
+        <!-- Solarus game engine -->
+        <rule type="systempath">
+            <entry>solarus-run</entry>
+        </rule>
+        <rule type="staticpath">
+            <entry>/bin/solarus-run</entry>
+        </rule>
+    </emulator>
+    <emulator name="ZESARUX">
+        <!-- Sinclair ZX Spectrum emulator ZEsarUX -->
+        <rule type="staticpath">
+            <entry>/boot/system/apps/ZEsarUX/ZEsarUX</entry>
+        </rule>
+    </emulator>
+</ruleList>

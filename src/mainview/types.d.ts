@@ -1,4 +1,9 @@
 declare const __HOST__: string;
+declare const __EMULATORS__: Record<string, string>;
+declare module "@emulators" {
+  const data: Record<string, string>;
+  export default data;
+}
 
 global
 {

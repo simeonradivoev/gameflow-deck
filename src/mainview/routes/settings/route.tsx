@@ -17,16 +17,18 @@ import
 {
   ArrowBigLeft,
   FingerprintPattern,
+  HardDrive,
   Info,
   MonitorCog,
 } from "lucide-react";
-import { JSX, useEffect } from "react";
+import { JSX, useEffect, useRef } from "react";
 import { useEventListener } from "usehooks-ts";
 import ShortcutPrompt from "../../components/ShortcutPrompt";
 import { twMerge } from "tailwind-merge";
 import z from "zod";
 import { SettingsSchema } from "../../../shared/constants";
 import { PopSource } from "../../scripts/spatialNavigation";
+import { Router } from "../..";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
@@ -78,8 +80,9 @@ function MenuItem (data: {
         className={twMerge(
           "group rounded-full p-3 pl-5 text-base-content/80",
           classNames({
-            "bg-primary/40 text-primary-content": !focused && acitve,
-            "bg-primary text-primary-content font-semibold": focused,
+            "bg-primary text-primary-content": acitve,
+            "font-semibold ring-7 ring-primary-content": focused,
+            "bg-secondary text-secondary-content ring-primary": data.return && focused,
           }),
           data.linkClassName,
         )}
@@ -100,7 +103,7 @@ function SettingsMenu (data: {})
   const { ref, focusKey } = useFocusable({
     focusable: true,
     focusKey: 'settings-menu',
-    preferredChildFocusKey: "/settings/accounts"
+    preferredChildFocusKey: location.hash.replace("#", '')
   });
 
   return <ul
@@ -122,6 +125,12 @@ function SettingsMenu (data: {})
       />
       <MenuItem
         focusSelect
+        route="/settings/directories"
+        label="Directories"
+        icon={<HardDrive />}
+      />
+      <MenuItem
+        focusSelect
         route="/settings/about"
         label="About"
         icon={<Info />}
@@ -138,15 +147,32 @@ function SettingsMenu (data: {})
   </ul>;
 }
 
+function HandleGoBack ()
+{
+
+  if (document.activeElement && document.activeElement !== document.body && document.activeElement instanceof HTMLElement)
+  {
+    document.activeElement.blur();
+  } else
+  {
+    const source = PopSource('settings');
+    if (source)
+    {
+      console.log("Found source ", source, " to go back to");
+    }
+    Router.navigate({ to: source ?? "/", viewTransition: { types: ['zoom-out'] } });
+  }
+
+}
+
 export function SettingsUI ()
 {
-  const navigate = useNavigate();
   const { ref, focusKey, focusSelf } = useFocusable({
     focusKey: "settings-page-layout",
     preferredChildFocusKey: 'settings-menu'
   });
 
-  useEventListener("cancel", () => navigate({ to: PopSource('settings') ?? "/", viewTransition: { types: ['zoom-out'] } }));
+  useEventListener("cancel", HandleGoBack, ref);
   useEffect(() =>
   {
     focusSelf();
@@ -166,7 +192,7 @@ export function SettingsUI ()
         </div>
         <div className="divider divider-end">
           <ShortcutPrompt
-            onClick={() => navigate({ to: "/" })}
+            onClick={HandleGoBack}
             icon="steamdeck_button_b"
             label="Back"
           />

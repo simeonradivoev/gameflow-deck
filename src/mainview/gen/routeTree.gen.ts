@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './../routes/__root'
 import { Route as SettingsRouteRouteImport } from './../routes/settings/route'
 import { Route as IndexRouteImport } from './../routes/index'
+import { Route as SettingsDirectoriesRouteImport } from './../routes/settings/directories'
 import { Route as SettingsAccountsRouteImport } from './../routes/settings/accounts'
-import { Route as PlatformIdRouteImport } from './../routes/platform/$id'
-import { Route as GameIdRouteImport } from './../routes/game/$id'
-import { Route as CollectionIdRouteImport } from './../routes/collection/$id'
+import { Route as SettingsAboutRouteImport } from './../routes/settings/about'
+import { Route as CollectionIdRouteImport } from './../routes/collection.$id'
+import { Route as PlatformSourceIdRouteImport } from './../routes/platform.$source.$id'
+import { Route as LauncherSourceIdRouteImport } from './../routes/launcher.$source.$id'
+import { Route as GameSourceIdRouteImport } from './../routes/game/$source.$id'
 
 const SettingsRouteRoute = SettingsRouteRouteImport.update({
   id: '/settings',
@@ -26,24 +29,39 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsDirectoriesRoute = SettingsDirectoriesRouteImport.update({
+  id: '/directories',
+  path: '/directories',
+  getParentRoute: () => SettingsRouteRoute,
+} as any)
 const SettingsAccountsRoute = SettingsAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
   getParentRoute: () => SettingsRouteRoute,
 } as any)
-const PlatformIdRoute = PlatformIdRouteImport.update({
-  id: '/platform/$id',
-  path: '/platform/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GameIdRoute = GameIdRouteImport.update({
-  id: '/game/$id',
-  path: '/game/$id',
-  getParentRoute: () => rootRouteImport,
+const SettingsAboutRoute = SettingsAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => SettingsRouteRoute,
 } as any)
 const CollectionIdRoute = CollectionIdRouteImport.update({
   id: '/collection/$id',
   path: '/collection/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlatformSourceIdRoute = PlatformSourceIdRouteImport.update({
+  id: '/platform/$source/$id',
+  path: '/platform/$source/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LauncherSourceIdRoute = LauncherSourceIdRouteImport.update({
+  id: '/launcher/$source/$id',
+  path: '/launcher/$source/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameSourceIdRoute = GameSourceIdRouteImport.update({
+  id: '/game/$source/$id',
+  path: '/game/$source/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -51,26 +69,35 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
   '/collection/$id': typeof CollectionIdRoute
-  '/game/$id': typeof GameIdRoute
-  '/platform/$id': typeof PlatformIdRoute
+  '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
+  '/settings/directories': typeof SettingsDirectoriesRoute
+  '/game/$source/$id': typeof GameSourceIdRoute
+  '/launcher/$source/$id': typeof LauncherSourceIdRoute
+  '/platform/$source/$id': typeof PlatformSourceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
   '/collection/$id': typeof CollectionIdRoute
-  '/game/$id': typeof GameIdRoute
-  '/platform/$id': typeof PlatformIdRoute
+  '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
+  '/settings/directories': typeof SettingsDirectoriesRoute
+  '/game/$source/$id': typeof GameSourceIdRoute
+  '/launcher/$source/$id': typeof LauncherSourceIdRoute
+  '/platform/$source/$id': typeof PlatformSourceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
   '/collection/$id': typeof CollectionIdRoute
-  '/game/$id': typeof GameIdRoute
-  '/platform/$id': typeof PlatformIdRoute
+  '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
+  '/settings/directories': typeof SettingsDirectoriesRoute
+  '/game/$source/$id': typeof GameSourceIdRoute
+  '/launcher/$source/$id': typeof LauncherSourceIdRoute
+  '/platform/$source/$id': typeof PlatformSourceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -78,33 +105,43 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/collection/$id'
-    | '/game/$id'
-    | '/platform/$id'
+    | '/settings/about'
     | '/settings/accounts'
+    | '/settings/directories'
+    | '/game/$source/$id'
+    | '/launcher/$source/$id'
+    | '/platform/$source/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/settings'
     | '/collection/$id'
-    | '/game/$id'
-    | '/platform/$id'
+    | '/settings/about'
     | '/settings/accounts'
+    | '/settings/directories'
+    | '/game/$source/$id'
+    | '/launcher/$source/$id'
+    | '/platform/$source/$id'
   id:
     | '__root__'
     | '/'
     | '/settings'
     | '/collection/$id'
-    | '/game/$id'
-    | '/platform/$id'
+    | '/settings/about'
     | '/settings/accounts'
+    | '/settings/directories'
+    | '/game/$source/$id'
+    | '/launcher/$source/$id'
+    | '/platform/$source/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
   CollectionIdRoute: typeof CollectionIdRoute
-  GameIdRoute: typeof GameIdRoute
-  PlatformIdRoute: typeof PlatformIdRoute
+  GameSourceIdRoute: typeof GameSourceIdRoute
+  LauncherSourceIdRoute: typeof LauncherSourceIdRoute
+  PlatformSourceIdRoute: typeof PlatformSourceIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -123,6 +160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/directories': {
+      id: '/settings/directories'
+      path: '/directories'
+      fullPath: '/settings/directories'
+      preLoaderRoute: typeof SettingsDirectoriesRouteImport
+      parentRoute: typeof SettingsRouteRoute
+    }
     '/settings/accounts': {
       id: '/settings/accounts'
       path: '/accounts'
@@ -130,19 +174,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAccountsRouteImport
       parentRoute: typeof SettingsRouteRoute
     }
-    '/platform/$id': {
-      id: '/platform/$id'
-      path: '/platform/$id'
-      fullPath: '/platform/$id'
-      preLoaderRoute: typeof PlatformIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/game/$id': {
-      id: '/game/$id'
-      path: '/game/$id'
-      fullPath: '/game/$id'
-      preLoaderRoute: typeof GameIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/settings/about': {
+      id: '/settings/about'
+      path: '/about'
+      fullPath: '/settings/about'
+      preLoaderRoute: typeof SettingsAboutRouteImport
+      parentRoute: typeof SettingsRouteRoute
     }
     '/collection/$id': {
       id: '/collection/$id'
@@ -151,15 +188,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/platform/$source/$id': {
+      id: '/platform/$source/$id'
+      path: '/platform/$source/$id'
+      fullPath: '/platform/$source/$id'
+      preLoaderRoute: typeof PlatformSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/launcher/$source/$id': {
+      id: '/launcher/$source/$id'
+      path: '/launcher/$source/$id'
+      fullPath: '/launcher/$source/$id'
+      preLoaderRoute: typeof LauncherSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/$source/$id': {
+      id: '/game/$source/$id'
+      path: '/game/$source/$id'
+      fullPath: '/game/$source/$id'
+      preLoaderRoute: typeof GameSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface SettingsRouteRouteChildren {
+  SettingsAboutRoute: typeof SettingsAboutRoute
   SettingsAccountsRoute: typeof SettingsAccountsRoute
+  SettingsDirectoriesRoute: typeof SettingsDirectoriesRoute
 }
 
 const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
+  SettingsAboutRoute: SettingsAboutRoute,
   SettingsAccountsRoute: SettingsAccountsRoute,
+  SettingsDirectoriesRoute: SettingsDirectoriesRoute,
 }
 
 const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
@@ -170,8 +232,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
   CollectionIdRoute: CollectionIdRoute,
-  GameIdRoute: GameIdRoute,
-  PlatformIdRoute: PlatformIdRoute,
+  GameSourceIdRoute: GameSourceIdRoute,
+  LauncherSourceIdRoute: LauncherSourceIdRoute,
+  PlatformSourceIdRoute: PlatformSourceIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

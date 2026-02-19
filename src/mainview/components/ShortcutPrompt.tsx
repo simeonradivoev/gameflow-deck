@@ -14,7 +14,7 @@ export default function ShortcutPrompt (data: {
     <span
       onClick={data.onClick}
       className={twMerge(
-        "flex md:gap-2 bg-base-100 text-base-content neutral-content md:pl-2 md:pr-3 md:py-1.5 rounded-full items-center md:text-lg drop-shadow-sm",
+        "flex md:gap-2 bg-base-100 text-base-content neutral-content md:pl-2 md:pr-3 md:py-1.5 rounded-full items-center md:text-lg drop-shadow-sm ring-[1px] ring-base-content/10 drop-shadow-black/30",
         "sm:text-sm",
         data.className,
         classNames({

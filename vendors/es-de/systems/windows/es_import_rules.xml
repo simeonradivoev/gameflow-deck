@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<!-- This is the ES-DE import rules configuration file for Windows -->
+<ruleList>
+    <system name="desktop">
+        <rule name="Shortcut File" type="file">
+            <extension>.lnk</extension>
+            <directory recursive="true">C:\ProgramData\Microsoft\Windows\Start Menu\Programs</directory>
+            <directory recursive="true">~\AppData\Roaming\Microsoft\Windows\Start Menu\Programs</directory>
+            <directory recursive="true">~\Desktop</directory>
+        </rule>
+    </system>
+    <system name="emulators">
+        <rule name="Shortcut File" type="file">
+            <extension>.lnk</extension>
+            <directory recursive="true">C:\ProgramData\Microsoft\Windows\Start Menu\Programs</directory>
+            <directory recursive="true">~\AppData\Roaming\Microsoft\Windows\Start Menu\Programs</directory>
+            <directory recursive="true">~\Desktop</directory>
+            <directory recursive="true">%ESPATH%\Emulators</directory>
+            <directory recursive="true">%ESPATH%\..\Emulators</directory>
+        </rule>
+    </system>
+    <system name="epic">
+        <rule name="Epic URL File" type="file">
+            <extension>.url</extension>
+            <directory recursive="false">~\Desktop</directory>
+        </rule>
+    </system>
+    <system name="steam">
+        <rule name="Steam URL File" type="file">
+            <extension>.url</extension>
+            <directory recursive="false">~\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Steam</directory>
+            <directory recursive="false">~\Desktop</directory>
+        </rule>
+    </system>
+    <system name="windows">
+        <rule name="Shortcut File" type="file">
+            <extension>.lnk</extension>
+            <directory recursive="true">C:\ProgramData\Microsoft\Windows\Start Menu\Programs</directory>
+            <directory recursive="true">~\AppData\Roaming\Microsoft\Windows\Start Menu\Programs</directory>
+            <directory recursive="true">~\Desktop</directory>
+        </rule>
+    </system>
+</ruleList>

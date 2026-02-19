@@ -22,3 +22,5 @@ dist-*
 settings.local.json
 .tanstack
 artifacts
+trace
+downloads

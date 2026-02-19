@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!-- This is the ES-DE import rules configuration file for Android -->
+<ruleList>
+    <system name="androidapps">
+        <rule name="Android Package" type="androidpackage">
+            <extension>.app</extension>
+        </rule>
+    </system>
+    <system name="androidgames">
+        <rule name="Android Package" type="androidpackage">
+            <extension>.app</extension>
+        </rule>
+    </system>
+    <system name="emulators">
+        <rule name="Android Package" type="androidpackage">
+            <extension>.app</extension>
+        </rule>
+    </system>
+    <system name="epic">
+        <rule name="Android Package" type="androidpackage">
+            <extension>.app</extension>
+        </rule>
+    </system>
+    <system name="n64">
+        <rule name="Android Package" type="androidpackage">
+            <extension>.app</extension>
+        </rule>
+    </system>
+</ruleList>
