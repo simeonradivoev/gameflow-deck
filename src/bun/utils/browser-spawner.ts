@@ -1,4 +1,8 @@
-import { type Subprocess } from "bun";
+import { $, type Subprocess } from "bun";
+import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import os from 'node:os';
 
 export type RunBrowserType = "chrome" | "chromium" | "firefox" | "edge";
 export type RunBrowserSource = "running" | "system" | "flatpak";
@@ -23,6 +27,11 @@ interface SpawnBrowserOptions
     source: RunBrowserSource; // How the browser was discovered (running, system, or flatpak)
     onExit?: () => void; // Called when the browser exists duh
     ipc?: (message: string) => void;
+}
+
+interface SpawnLastInfo
+{
+    PID: number;
 }
 
 /**
@@ -52,7 +61,7 @@ interface SpawnBrowserOptions
  *   });
  * }
  */
-export function spawnBrowser ({
+export async function spawnBrowser ({
     browser,
     args = [],
     env = {},
@@ -61,9 +70,8 @@ export function spawnBrowser ({
     source,
     onExit,
     ipc
-}: SpawnBrowserOptions): Subprocess
+}: SpawnBrowserOptions): Promise<Subprocess>
 {
-
     // Configuration for both Flatpak and Native
     // Contains Flatpak app IDs, internal container paths, and fallback binary names
     const config: Record<RunBrowserType, { id: string; internalCmd: string; bin: string[]; }> = {
@@ -91,7 +99,7 @@ export function spawnBrowser ({
 
     const target = config[browser];
     const useFlatpak = source === "flatpak";
-  
+
     let cmd: string[];
     let finalEnv: Record<string, string> | undefined;
 
@@ -100,9 +108,9 @@ export function spawnBrowser ({
         // --- Flatpak Mode (Steam Style) ---
         // Structure: flatpak run [ENV] [FLATPAK_OPTS] [APP_ID] @@u @@ [USER_ARGS]
         // The @@u @@ syntax enables file forwarding for URL arguments
-    
+
         const envFlags = Object.entries(env).map(([k, v]) => `--env=${k}=${v}`);
-    
+
         // We explicitly set the command to ensure we don't rely on the default entrypoint failing
         const flatpakOpts = [
             "run",
@@ -136,11 +144,14 @@ export function spawnBrowser ({
         console.log(`[Browser] Launching Native: ${execPath}`);
     }
 
+    const { signal } = new AbortController();
     const processSub = Bun.spawn(cmd, {
         env: finalEnv,
         stdin: "ignore",
         stdout: "inherit",
         stderr: "inherit",
+        detached,
+        signal,
         ipc,
         onExit (_proc, exitCode)
         {
@@ -157,6 +168,17 @@ export function spawnBrowser ({
     return processSub;
 }
 
+export async function killBrowser (browser: Subprocess)
+{
+    if (os.platform() === 'linux')
+    {
+        // kill chrome by your unique identifier
+        await $`pkill -KILL -P ${browser.pid}`.quiet().nothrow();
+    } else
+    {
+        browser?.kill(15);
+    }
+}
 
 // --- Test Run ---
 // spawnBrowser({ 

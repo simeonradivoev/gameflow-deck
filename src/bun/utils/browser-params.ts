@@ -59,6 +59,12 @@ export async function BuildParams ()
         args.push('--disabled-features=WindowControlsOverlay,navigationControls,Translate,msUndersideButton');
         args.push(`--profile-directory=Default`);
 
+        if (Bun.env.NODE_ENV !== 'production')
+        {
+            args.push('--auto-open-devtools-for-tabs');
+            args.push('--remote-debugging-port=9222');
+        }
+
         if (config.has('windowPosition'))
         {
             args.push(`--window-position=${config.get('windowPosition.x')},${config.get('windowPosition.y')}`);

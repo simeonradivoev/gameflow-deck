@@ -17,12 +17,17 @@ let setCurrentFocusedKey = SpatialNavigation.setCurrentFocusedKey.bind(SpatialNa
 
 type SaveFocusType = "session" | "local";
 
-type HistorySourceType = "settings" | 'details' | 'launch';
+type HistorySourceType = "settings" | 'details' | 'launch' | 'game-list';
 const historySourceMap = new Map<string, string>();
 
 export function SaveSource (id: HistorySourceType, url?: string)
 {
-  historySourceMap.set(id, url ?? location.hash.replace("#", ''));
+  const finalUrl = url ?? location.hash.replace("#", '');
+  if (finalUrl)
+  {
+    historySourceMap.set(id, finalUrl);
+  }
+
 }
 
 export function HasSource (id: HistorySourceType)
@@ -44,6 +49,27 @@ export function PopSource (id: HistorySourceType)
 export function GetFocusedElement (focusKey: string)
 {
   return (SpatialNavigation as any).focusableComponents[focusKey]?.node as HTMLElement;
+}
+
+export function GetFocusedTree (leaf: string): string[]
+{
+  const tree: string[] = [];
+  let component = (SpatialNavigation as any).focusableComponents[leaf];
+  while (component)
+  {
+    tree.push(component.focusKey);
+
+    if (component.parentFocusKey && !tree.includes(component.parentFocusKey))
+    {
+      component = (SpatialNavigation as any).focusableComponents[component.parentFocusKey];
+    }
+    else
+    {
+      break;
+    }
+  }
+
+  return tree;
 }
 
 export function dispatchFocusedEvent (event: Event, override?: Element | Window)

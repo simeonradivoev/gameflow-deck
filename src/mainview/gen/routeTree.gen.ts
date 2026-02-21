@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './../routes/__root'
 import { Route as SettingsRouteRouteImport } from './../routes/settings/route'
 import { Route as IndexRouteImport } from './../routes/index'
+import { Route as SettingsEmulatorsRouteImport } from './../routes/settings/emulators'
 import { Route as SettingsDirectoriesRouteImport } from './../routes/settings/directories'
 import { Route as SettingsAccountsRouteImport } from './../routes/settings/accounts'
 import { Route as SettingsAboutRouteImport } from './../routes/settings/about'
@@ -28,6 +29,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsEmulatorsRoute = SettingsEmulatorsRouteImport.update({
+  id: '/emulators',
+  path: '/emulators',
+  getParentRoute: () => SettingsRouteRoute,
 } as any)
 const SettingsDirectoriesRoute = SettingsDirectoriesRouteImport.update({
   id: '/directories',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
+  '/settings/emulators': typeof SettingsEmulatorsRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
+  '/settings/emulators': typeof SettingsEmulatorsRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
+  '/settings/emulators': typeof SettingsEmulatorsRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
+    | '/settings/emulators'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
+    | '/settings/emulators'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
+    | '/settings/emulators'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
@@ -159,6 +171,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/settings/emulators': {
+      id: '/settings/emulators'
+      path: '/emulators'
+      fullPath: '/settings/emulators'
+      preLoaderRoute: typeof SettingsEmulatorsRouteImport
+      parentRoute: typeof SettingsRouteRoute
     }
     '/settings/directories': {
       id: '/settings/directories'
@@ -216,12 +235,14 @@ interface SettingsRouteRouteChildren {
   SettingsAboutRoute: typeof SettingsAboutRoute
   SettingsAccountsRoute: typeof SettingsAccountsRoute
   SettingsDirectoriesRoute: typeof SettingsDirectoriesRoute
+  SettingsEmulatorsRoute: typeof SettingsEmulatorsRoute
 }
 
 const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
   SettingsAboutRoute: SettingsAboutRoute,
   SettingsAccountsRoute: SettingsAccountsRoute,
   SettingsDirectoriesRoute: SettingsDirectoriesRoute,
+  SettingsEmulatorsRoute: SettingsEmulatorsRoute,
 }
 
 const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(

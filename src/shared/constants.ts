@@ -79,6 +79,13 @@ export interface FrontEndGameTypeDetailed extends FrontEndGameType
     };
 };
 
+export interface Notification
+{
+    title?: string;
+    message: string;
+    type: 'success' | 'error';
+}
+
 export type SettingsType = z.infer<typeof SettingsSchema>;
 export interface GameInstallProgress
 {

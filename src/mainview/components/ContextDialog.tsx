@@ -4,6 +4,7 @@ import { createContext, JSX, useContext, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
 import { useEventListener } from "usehooks-ts";
 import { X } from "lucide-react";
+import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 
 const ContextDialogContext = createContext({} as {
     close: () => void,
@@ -75,14 +76,14 @@ export function ContextDialog (data: { id: string, children: any | any[], open: 
         }
     }, [data.open]);
 
-    useEventListener('cancel', (e) =>
-    {
-        if (data.open)
+    useShortcuts(focusKey, () => [{
+        label: "Close",
+        button: GamePadButtonCode.B,
+        action: () =>  
         {
-            e.stopPropagation();
             data.close();
         }
-    }, ref);
+    }], []);
 
     return <dialog ref={ref} open={data.open} closedby="any" className={
         twMerge("absolute modal cursor-pointer bg-base-300/80 backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",

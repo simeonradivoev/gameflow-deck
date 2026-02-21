@@ -6,6 +6,9 @@ import { Search, Settings2 } from 'lucide-react';
 import { JSX, Suspense } from 'react';
 import Shortcuts from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
+import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
+import { Router } from '..';
+import { PopSource } from '../scripts/spatialNavigation';
 
 export interface CollectionsDetailParams
 {
@@ -17,6 +20,16 @@ export interface CollectionsDetailParams
     footer?: JSX.Element;
 }
 
+function HandleGoBack ()
+{
+    const source = PopSource('game-list');
+    if (source)
+    {
+        console.log("Found source ", source, " to go back to");
+    }
+    Router.navigate({ to: source ?? "/", viewTransition: { types: ['zoom-out'] } });
+}
+
 export function CollectionsDetail (data: CollectionsDetailParams)
 {
     const focusKey = `game-list-${data.id}-${data.filters.platformId}-${data.filters.collectionId}`;
@@ -24,6 +37,9 @@ export function CollectionsDetail (data: CollectionsDetailParams)
         focusKey,
         preferredChildFocusKey: `${focusKey}-list`,
     });
+
+    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+    const { shortcuts } = useShortcutContext();
 
     return (
         <FocusContext value={focusKey}>
@@ -44,7 +60,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                     <div>
                         {data.footer}
                     </div>
-                    <Shortcuts shortcuts={[{ icon: 'steamdeck_button_b', label: 'Back' }]} />
+                    <Shortcuts shortcuts={shortcuts} />
                 </footer>
             </AnimatedBackground>
         </FocusContext>

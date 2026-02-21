@@ -1,12 +1,12 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { getPlatformsApiPlatformsGetOptions } from "../../clients/romm/@tanstack/react-query.gen";
-import { DefaultRommStaleTime, GameMeta, RPC_URL } from "../../shared/constants";
+import { DefaultRommStaleTime, RPC_URL } from "../../shared/constants";
 import { CardList, GameMetaExtra } from "./CardList";
 import classNames from "classnames";
 import { rommApi } from "../scripts/clientApi";
+import { SaveSource } from "../scripts/spatialNavigation";
 
-export function PlatformsList (data: { id: string, setBackground: (url: string) => void; className?: string; })
+export function PlatformsList (data: { id: string, setBackground: (url: string) => void; className?: string; onFocus?: (node: HTMLElement) => void; })
 {
     const navigate = useNavigate();
     const { data: platforms } = useSuspenseQuery(
@@ -27,6 +27,7 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
             type="platform"
             id={data.id}
             className={data.className}
+            onGameFocus={(id, node) => data.onFocus?.(node)}
             games={platforms.sort((a, b) => a.updated_at.getTime() - b.updated_at.getTime())
                 .map((g) => ({
                     id: g.slug,
@@ -42,6 +43,7 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
                     ),
                     onSelect: () =>
                     {
+                        SaveSource('game-list');
                         navigate({ to: `/platform/${g.source ?? g.id.source}/${g.source_id ?? g.id.id}`, viewTransition: { types: ['zoom-in'] } });
                     },
                     preview:

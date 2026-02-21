@@ -24,7 +24,7 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { DefaultRommStaleTime, RPC_URL } from "../../shared/constants";
-import { useEventListener, useLocalStorage } from "usehooks-ts";
+import { useEventListener } from "usehooks-ts";
 import
 {
   getCollectionsApiCollectionsGetOptions,
@@ -43,10 +43,14 @@ import { twMerge } from "tailwind-merge";
 import Shortcuts from "../components/Shortcuts";
 import { PlatformsList } from "../components/PlatformsList";
 import { systemApi } from "../scripts/clientApi";
+import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
+import z from "zod";
+import { Router } from "..";
+import CollectionList from "../components/CollectionList";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
-
+  validateSearch: z.object({ filter: z.string().optional().default('games') })
 });
 
 const filters = {
@@ -61,47 +65,6 @@ const filters = {
   },
 };
 
-function CollectionList (data: { id: string, setBackground: (url: string) => void; className?: string; })
-{
-  const navigate = useNavigate();
-  const { data: collections } = useSuspenseQuery({
-    ...getCollectionsApiCollectionsGetOptions(),
-    refetchOnWindowFocus: false,
-    staleTime: DefaultRommStaleTime
-  });
-
-  return (
-    <CardList
-      type="collection"
-      id={data.id}
-      className={data.className}
-      games={collections.sort((a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at))
-        .map((g) => ({
-          id: String(g.id),
-          title: g.name,
-          focusKey: `collection-${g.id}`,
-          subtitle: g.user__username,
-          previewUrl: `${RPC_URL(__HOST__)}/api/romm/${g.path_covers_large[0]}`,
-          badges: [
-            <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">
-              {g.rom_count}
-            </span>
-          ],
-        } satisfies GameMetaExtra))}
-      onSelectGame={(id) =>
-      {
-        navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
-      }}
-      onGameFocus={(id) =>
-      {
-        data.setBackground(
-          `https://picsum.photos/id/${10 + (id ?? 0)}/1920/1080.webp`,
-        );
-      }}
-    />
-  );
-}
-
 function HomeListError (data: { focused: boolean; })
 {
   const error = useErrorBoundary();
@@ -112,19 +75,26 @@ function HomeListError (data: { focused: boolean; })
 }
 
 function HomeList (data: {
-  selectedFilter: keyof typeof filters;
+  selectedFilter: string;
 })
 {
+  const [initFocus, setInitFocus] = useState(false);
   const bg = useContext(AnimatedBackgroundContext);
   const { ref, focused, focusKey, focusSelf } = useFocusable({
     focusKey: "home-list",
     preferredChildFocusKey: `${data.selectedFilter}-list`
   });
 
-  const lists = {
-    consoles: <PlatformsList className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />,
-    games: <GameList className="animate-slide-up" key="games-list" id="games-list" setBackground={bg.setBackground} />,
-    collections: <CollectionList className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />,
+  const handleNodeFocus = (node: HTMLElement) =>
+  {
+    node.scrollIntoView({ inline: 'center', behavior: initFocus ? 'smooth' : 'instant' });
+    setInitFocus(true);
+  };
+
+  const lists: Record<string, JSX.Element> = {
+    consoles: <PlatformsList onFocus={handleNodeFocus} className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />,
+    games: <GameList onFocus={handleNodeFocus} className="animate-slide-up" key="games-list" id="games-list" setBackground={bg.setBackground} />,
+    collections: <CollectionList onFocus={handleNodeFocus} className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />,
   };
 
   useEventListener('wheel', e =>
@@ -169,64 +139,6 @@ function HomeList (data: {
   );
 }
 
-export default function ConsoleHomeUI ()
-{
-  const [selectedFilter, setSelectedFilter] = useLocalStorage<
-    keyof typeof filters
-  >("home-filter-selected", "games");
-
-  const closeMutation = useMutation({
-    mutationKey: ['close'], mutationFn: async () =>
-    {
-      const { error } = await systemApi.api.system.exit.post();
-      if (error) throw error;
-    }
-  });
-
-  const { ref, focusKey, focusSelf } = useFocusable({
-    forceFocus: true,
-    autoRestoreFocus: false,
-    saveLastFocusedChild: false,
-    focusKey: "Home",
-    preferredChildFocusKey: `home-list`,
-  });
-
-  return (
-    <AnimatedBackground animated ref={ref} backgroundKey="home-background">
-      <FocusContext.Provider value={focusKey}>
-        <div className="px-3 w-full pt-2">
-          <HeaderUI buttons={[
-            { id: "search", icon: <Search /> },
-            { id: "power-button", icon: <Power />, external: true, action: () => closeMutation.mutate() }
-          ]} />
-        </div>
-        <div className="flex w-full flex-col grow justify-evenly">
-          <FilterUI
-            id="home"
-            options={filters}
-            selected={selectedFilter}
-            setSelected={setSelectedFilter as any}
-          />
-          <div className="-mb-1">
-            <HomeList
-              selectedFilter={selectedFilter}
-            />
-          </div>
-          <div>
-            <MainMenu />
-          </div>
-        </div>
-
-        <footer className="px-2 pb-2 flex items-center justify-between">
-          <div className="flex gap-2 text-sm">
-          </div>
-          <Shortcuts shortcuts={[{ icon: 'steamdeck_button_a', label: 'Select' }]} />
-        </footer>
-      </FocusContext.Provider>
-    </AnimatedBackground>
-  );
-}
-
 function MainMenu (data: {})
 {
   const { ref, focusKey, hasFocusedChild } = useFocusable({
@@ -234,7 +146,6 @@ function MainMenu (data: {})
     trackChildren: true,
     onBlur: (layout, props, details) => { },
   });
-  const location = useLocation();
   const navigate = useNavigate();
   return (
     <ul
@@ -278,10 +189,11 @@ function CircleIcon (data: {
   icon?: JSX.Element;
 })
 {
-  const { ref, focused } = useFocusable({
+  const { ref, focused, focusKey } = useFocusable({
     focusKey: `navigation-icon-${data.label}`,
     onEnterPress: data.action,
   });
+  useShortcuts(focusKey, () => [{ label: data.label, action: (e) => data.action?.(), button: GamePadButtonCode.A }]);
   const typeClasses = {
     secondary: "bg-secondary text-secondary-content",
     accent: "bg-accent text-accent-content",
@@ -303,5 +215,86 @@ function CircleIcon (data: {
     >
       {data.icon}
     </li>
+  );
+}
+
+export default function ConsoleHomeUI ()
+{
+  const { filter } = Route.useSearch();
+
+  const closeMutation = useMutation({
+    mutationKey: ['close'], mutationFn: async () =>
+    {
+      const { error } = await systemApi.api.system.exit.post();
+      if (error) throw error;
+    }
+  });
+
+  const { ref, focusKey, focusSelf } = useFocusable({
+    forceFocus: true,
+    autoRestoreFocus: false,
+    saveLastFocusedChild: false,
+    focusKey: "Home",
+    preferredChildFocusKey: `home-list`,
+  });
+
+  const setFilter = (filter: string) => Router.navigate({ to: '/', search: { filter } });
+
+  useShortcuts(focusKey, () => [
+    {
+      action: () =>
+      {
+        const filterKeys = Object.keys(filters);
+        const filterIndex = Math.max(0, filterKeys.indexOf(filter));
+        const selectedFilterIndex = Math.min(filterIndex + 1, filterKeys.length - 1);
+        Router.navigate({ to: '/', search: { filter: filterKeys[selectedFilterIndex] } });
+      },
+      button: GamePadButtonCode.R1
+    },
+    {
+      action: () =>
+      {
+        const filterKeys = Object.keys(filters);
+        const filterIndex = Math.max(0, filterKeys.indexOf(filter));
+        const selectedFilterIndex = Math.max(0, filterIndex - 1,);
+        Router.navigate({ to: '/', search: { filter: filterKeys[selectedFilterIndex] } });
+      },
+      button: GamePadButtonCode.L1
+    }], [filter]);
+
+  const { shortcuts } = useShortcutContext();
+
+  return (
+    <AnimatedBackground animated ref={ref} backgroundKey="home-background">
+      <FocusContext.Provider value={focusKey}>
+        <div className="px-3 w-full pt-2">
+          <HeaderUI buttons={[
+            { id: "search", icon: <Search /> },
+            { id: "power-button", icon: <Power />, external: true, action: () => closeMutation.mutate() }
+          ]} />
+        </div>
+        <div className="flex w-full flex-col grow justify-evenly">
+          <FilterUI
+            id="home"
+            options={filters}
+            selected={filter ? filter : 'games'}
+            setSelected={setFilter}
+          />
+          <div className="-mb-1">
+            <HomeList
+              selectedFilter={filter}
+            />
+          </div>
+          <div>
+            <MainMenu />
+          </div>
+        </div>
+        <footer className="px-2 pb-2 flex items-center justify-between h-12">
+          <div className="flex gap-2 text-sm">
+          </div>
+          <Shortcuts shortcuts={shortcuts} />
+        </footer>
+      </FocusContext.Provider>
+    </AnimatedBackground>
   );
 }

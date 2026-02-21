@@ -1,7 +1,7 @@
 declare const IS_BINARY: string;
 
 export type ActiveGame = {
-    process: Bun.Subprocess;
+    pid?: number;
     gameId: number;
     name: string;
     command: string;

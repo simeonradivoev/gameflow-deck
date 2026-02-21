@@ -3,6 +3,7 @@ import { dispatchFocusedEvent, GetFocusedElement } from "./spatialNavigation";
 
 let loopStarted = false;
 
+
 window.addEventListener("gamepadconnected", (evt) =>
 {
     if (!loopStarted)
@@ -11,6 +12,7 @@ window.addEventListener("gamepadconnected", (evt) =>
         loopStarted = true;
     }
 });
+
 window.addEventListener("gamepaddisconnected", (evt) =>
 {
 
@@ -45,7 +47,20 @@ window.addEventListener('keydown', e =>
     }
 });
 
+export class GamepadButtonEvent extends Event
+{
+    button: number;
+    gamepad?: Gamepad;
+    isClick: boolean;
 
+    constructor(type: string, init: EventInit & { button: number, gamepad?: Gamepad; isClick?: boolean; })
+    {
+        super(type, init);
+        this.button = init.button;
+        this.gamepad = init.gamepad;
+        this.isClick = init.isClick ?? false;
+    }
+}
 
 function updateStatus ()
 {
@@ -53,32 +68,25 @@ function updateStatus ()
     {
         const gamepadEvent = new GamepadEvent('gamepad-navigation', { gamepad, });
 
-        if (gamepad.buttons[0].pressed)
+        for (let i = 0; i < gamepad.buttons.length; i++)
         {
-            if (!throttleMap.has('enter'))
-            {
-                dispatchFocusedEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', charCode: 13, keyCode: 13, view: window, bubbles: true }), window);
-                throttleMap.set('enter', 0);
-            }
-        } else
-        {
-            if (throttleMap.delete('enter'))
-            {
-                dispatchFocusedEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
-            }
-        }
+            const button = gamepad.buttons[i];
+            const key = String(i);
 
-        if (gamepad.buttons[1].pressed)
-        {
-            if (!throttleMap.has('cancel'))
+            if (button.pressed)
             {
-                const evn = new Event('cancel', { bubbles: true, cancelable: true });
-                dispatchFocusedEvent(evn);
-                throttleMap.set('cancel', 0);
+                if (!throttleMap.has(key))
+                {
+                    window.dispatchEvent(new GamepadButtonEvent('gamepadbuttondown', { button: i, gamepad: gamepad }));
+                    throttleMap.set(key, 0);
+                }
+            } else
+            {
+                if (throttleMap.delete(key))
+                {
+                    window.dispatchEvent(new GamepadButtonEvent('gamepadbuttonup', { button: i, gamepad: gamepad }));
+                }
             }
-        } else
-        {
-            throttleMap.delete('cancel');
         }
 
         const activeFocus = GetFocusedElement(getCurrentFocusKey());

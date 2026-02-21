@@ -27,7 +27,7 @@ export interface GameCardParams
   id: string;
   badges?: JSX.Element[];
   className?: string;
-  onFocus?: (id: string) => void;
+  onFocus?: (id: string, node: HTMLElement) => void;
   onBlur?: (id: string) => void;
   onAction?: () => void;
   clickFocuses?: boolean;
@@ -37,22 +37,10 @@ export default function GameCard (data: GameCardParams)
 {
   const { ref, focused, focusSelf } = useFocusable({
     focusKey: data.focusKey,
-    onFocus: () => data.onFocus?.(data.id),
+    onFocus: () => data.onFocus?.(data.id, ref.current as any),
     onEnterPress: () => data.onAction?.(),
     onBlur: () => data.onBlur?.(data.id)
   });
-
-  useEffect(() =>
-  {
-    if (focused)
-    {
-      (ref.current as HTMLElement).scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: 'center'
-      });
-    }
-  }, [focused]);
 
   return (
     <li
@@ -86,14 +74,14 @@ export default function GameCard (data: GameCardParams)
     >
       <div className={twMerge("overflow-hidden bg-base-400 h-full rounded-t-xl rounded-b-md transition-all", focused ? "mt-2 mx-2" : "mt-2 mx-2")}>
         {typeof data.preview === "string" ? (
-          <img width={5192} height={5192} className={classNames({ "animate-rotate-small": focused })} src={data.preview} ></img>
+          <img className={classNames({ "animate-rotate-small": focused })} src={data.preview} ></img>
         ) : (
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
         )}</div>
 
       <div className="h-0 flex pr-2 justify-end items-center">
-        {data.badges?.map(b =>
-          <div
+        {data.badges?.map((b, i) =>
+          <div key={i}
             className={
               twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 mr-4 transition-colors",
                 classNames({ "bg-primary text-primary-content": focused }))}

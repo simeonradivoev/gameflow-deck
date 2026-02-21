@@ -5,12 +5,14 @@ import z from "zod";
 import * as schema from "../schema/app";
 import fs from "node:fs/promises";
 import { FrontEndGameType, FrontEndGameTypeDetailed } from "@shared/constants";
-import { getRomApiRomsIdGet, getRomsApiRomsGet } from "@clients/romm";
+import { getRomApiRomsIdGet, getRomsApiRomsGet, updateRomUserApiRomsIdPropsPut } from "@clients/romm";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
 import { calculateSize, checkInstalled, convertRomToFrontend, convertRomToFrontendDetailed, getLocalGameMatch } from "./services/utils";
 import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
+import { getErrorMessage } from "@/bun/utils";
+import { spawn } from "node:child_process";
 
 export default new Elysia()
     .get('/game/local/:id/cover', async ({ params: { id }, set }) =>
@@ -215,29 +217,89 @@ export default new Elysia()
 
                 const localGame = await db.query.games.findFirst({
                     where: eq(schema.games.id, validCommand.gameId), columns: {
-                        name: true
-
+                        name: true,
+                        source_id: true,
+                        source: true
                     }
                 });
 
-                const game = setActiveGame({
-                    process: Bun.spawn({
-                        cmd: validCommand.command.command.split(' '), onExit (subprocess, exitCode, signalCode, error)
-                        {
-                            events.emit('activegameexit', { subprocess, exitCode, signalCode, error });
-                        },
-                    }),
-                    name: localGame?.name ?? "Unknown",
-                    gameId: validCommand.gameId,
-                    command: validCommand.command.command
-                });
-
-                await game.process.exited;
-                if (game.process.exitCode && game.process.exitCode > 0)
+                try
                 {
-                    return status('Internal Server Error');
+                    await new Promise((resolve, reject) =>
+                    {
+                        const game = spawn(validCommand.command.command, {
+                            shell: true
+                        });
+                        game.stdout.on('data', data => console.log(data));
+                        game.on('close', (code) =>
+                        {
+                            events.emit('activegameexit', { exitCode: code, signalCode: null });
+                            resolve(code);
+                        });
+                        game.on('error', e =>
+                        {
+                            events.emit('activegameexit', { exitCode: null, signalCode: null, error: e });
+                            console.error(e);
+                        });
+
+                        setActiveGame({
+                            pid: game.pid,
+                            name: localGame?.name ?? "Unknown",
+                            gameId: validCommand.gameId,
+                            command: validCommand.command.command
+                        });
+
+                        function updateRommProps (id: number)
+                        {
+                            updateRomUserApiRomsIdPropsPut({ path: { id }, body: { update_last_played: true } });
+                            events.emit('notification', { message: "Updated Last Played", type: 'success' });
+                        }
+
+                        if (source === 'romm') 
+                        {
+                            updateRommProps(id);
+                        }
+                        else if (localGame?.source === 'romm' && localGame.source_id)
+                        {
+                            updateRommProps(localGame.source_id);
+                        }
+
+                    });
+
+                    /*
+                    const cmd = Array.from(validCommand.command.command.matchAll(/(".*?"|[^\s"]+)/g)).map(m => m[0]);
+                    const game = setActiveGame({
+                        process: Bun.spawn({
+                            cmd,
+                            env: {
+                                ...process.env
+                            },
+                            onExit (subprocess, exitCode, signalCode, error)
+                            {
+                                events.emit('activegameexit', { subprocess, exitCode, signalCode, error });
+                            },
+                            stdin: "ignore",
+                            stdout: "inherit",
+                            stderr: "inherit",
+                        }),
+                        name: localGame?.name ?? "Unknown",
+                        gameId: validCommand.gameId,
+                        command: validCommand.command.command
+                    });
+
+                    await game.process.exited;
+                    if (game.process.exitCode && game.process.exitCode > 0)
+                    {
+                        return status('Internal Server Error');
+                    }*/
+                    return status('OK');
+
+                } catch (error)
+                {
+                    return status('Internal Server Error', getErrorMessage(error));
                 }
-                return status('OK');
+
+
             }
         }
     }, {

@@ -8,7 +8,7 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import Conf from "conf";
 import projectPackage from '~/package.json';
-import { SERVER_URL, SettingsSchema, SettingsType } from "../../shared/constants";
+import { Notification, SERVER_URL, SettingsSchema, SettingsType } from "@shared/constants";
 import { client } from "@clients/romm/client.gen";
 import * as schema from "./schema/app";
 import * as emulatorSchema from "./schema/emulators";
@@ -18,6 +18,7 @@ import os from 'node:os';
 import { ActiveGame } from "../types/types";
 import EventEmitter from "node:events";
 import { ErrorLike } from "bun";
+import { getErrorMessage } from "../utils";
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,
@@ -58,7 +59,14 @@ export function setActiveGame (game: ActiveGame)
     return activeGame = game;
 }
 export const events = new EventEmitter<AppEventMap>();
-events.addListener('activegameexit', () => activeGame = undefined);
+events.addListener('activegameexit', ({ error }) =>
+{
+    activeGame = undefined;
+    if (error)
+    {
+        events.emit('notification', { message: getErrorMessage(error), type: 'error' });
+    }
+});
 console.log("Logging In to Romm");
 
 export async function cleanup ()
@@ -71,6 +79,7 @@ export async function cleanup ()
 
 interface AppEventMap
 {
-    activegameexit: [{ subprocess: Bun.Subprocess, exitCode: number | null, signalCode: number | null, error?: ErrorLike; }];
+    activegameexit: [{ subprocess?: Bun.Subprocess, exitCode: number | null, signalCode: number | null, error?: ErrorLike; }];
     exitapp: [];
+    notification: [Notification];
 }

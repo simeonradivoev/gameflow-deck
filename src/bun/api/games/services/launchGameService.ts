@@ -1,11 +1,12 @@
-import path, { basename, dirname } from 'node:path';
+import path from 'node:path';
 import { which } from 'bun';
 import fs from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import * as schema from '../../schema/emulators';
 import { eq } from 'drizzle-orm';
 import { config, emulatorsDb } from '../../app';
 import os from 'node:os';
+import { $ } from 'bun';
 
 export const varRegex = /%([^%]+)%/g;
 
@@ -78,40 +79,79 @@ export async function getValidLaunchCommands (data: {
     const formattedCommands = await Promise.all(system.commands.map(async command =>
     {
         const label = command.label;
-        const cmd = command.command;
+        let cmd = command.command;
 
-        const matches = cmd.match(varRegex);
-        if (matches)
+        let emulator: string | undefined = undefined;
+        let rom = validFiles[0];
+
+        if (cmd.includes('%ESCAPESPECIALS%'))
+            rom = rom.replace(/[&()^=;,]/g, '');
+
+        const staticVars: Record<string, string> = {
+            '%ROM%': $.escape(rom),
+            '%ROMRAW%': validFiles[0],
+            '%ROMRAWWIN%': validFiles[0].replace('/', '\\'),
+            '%ESPATH%': path.dirname(Bun.main),
+            '%ROMPATH%': $.escape(gamePath),
+            '%BASENAME%': path.basename(validFiles[0], path.extname(validFiles[0])),
+            '%FILENAME%': path.basename(validFiles[0])
+        };
+
+        cmd = cmd.replace(/\%INJECT\%=(?<inject>[\w\%.\/\\]+)/g, (subscring, injectFile: string) =>
         {
-            let emulator: string | undefined = undefined;
-            const varList = await Promise.all(matches.map(async (value) =>
+            try
             {
-                if (value.startsWith("%EMULATOR_"))
+                const resolvedInjectFile = injectFile.replace(varRegex, (a) =>
                 {
-                    const emulatorName = value.substring("%EMULATOR_".length, value.length - 1);
-                    let exec = await findExec(emulatorName);
-                    if (data.customEmulatorConfig.has(emulatorName))
-                    {
-                        exec = data.customEmulatorConfig.get(emulatorName);
-                    }
-
-                    emulator = emulatorName;
-                    return [value, exec];
+                    return staticVars[a] ?? a;
+                });
+                if (existsSync(resolvedInjectFile))
+                {
+                    const rawContents = readFileSync(resolvedInjectFile, { encoding: 'utf-8' });
+                    return rawContents.split('\n').map(v => v.replace('\r', '')).join(' ');
                 }
 
-                const key = value.substring(1, value.length - 1);
-                return [value, process.env[key]];
-            }));
-            const vars = Object.fromEntries(varList);
-            vars['%ROM%'] = validFiles[0];
-            vars['%ESPATH%'] = config.get('downloadPath');
+                return '';
+            } catch (error)
+            {
+                return '';
+            }
+        });
 
-            // missing variable
-            const invalid = Object.entries(vars).find(c => c[1] === undefined);
+        const matches = Array.from(cmd.matchAll(varRegex));
+        const varList = await Promise.all(matches.map(async ([value]) =>
+        {
+            if (value.startsWith("%EMULATOR_"))
+            {
+                const emulatorName = value.substring("%EMULATOR_".length, value.length - 1);
+                let exec = await findExec(emulatorName);
+                if (data.customEmulatorConfig.has(emulatorName))
+                {
+                    exec = data.customEmulatorConfig.get(emulatorName);
+                }
 
-            const command = cmd.replace(varRegex, (s) => vars[s] ?? '');
-            return { label: label ?? undefined, command, valid: !invalid, emulator } satisfies CommandEntry;
-        }
+                emulator = emulatorName;
+                return [[value, exec ? exec : undefined], ['%EMUDIR%', exec ? $.escape(path.dirname(exec)) : undefined]];
+            }
+
+            const key = value[0].substring(1, value.length - 1);
+            return [[value, process.env[key]]];
+        }));
+
+        const vars = { ...Object.fromEntries(varList.flatMap(l => l)), ...staticVars };
+        vars['%ESCAPESPECIALS%'] = "";
+        vars['%HIDEWINDOW%'] = '';
+
+        // missing variable
+        const invalid = Object.entries(vars).find(c => c[1] === undefined);
+
+        const formattedCommand = cmd.replace(varRegex, (s) => vars[s] ?? '').trim();
+
+        return {
+            label: label ?? undefined,
+            command: formattedCommand,
+            valid: !invalid, emulator
+        } satisfies CommandEntry;
     }));
 
     return formattedCommands.filter(c => !!c);
@@ -165,8 +205,8 @@ export async function findExec (emulatorName: string)
 async function readRegistryValue (text: string)
 {
     const params = text.split('|');
-    const key = dirname(params[0]);
-    const value = basename(params[0]);
+    const key = path.dirname(params[0]);
+    const value = path.basename(params[0]);
     const bin = params.length > 1 ? params[1] : undefined;
 
     const proc = Bun.spawn({
@@ -197,9 +237,10 @@ async function resolveStaticPath (entries: string[])
 {
     for (const entry of entries)
     {
-        for await (const match of fs.glob(entry))
+        const resolved = entry.replace("~", os.homedir());
+        if (await fs.exists(resolved))
         {
-            return match;
+            return resolved;
         }
     }
     return null;

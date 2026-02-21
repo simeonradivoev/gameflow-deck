@@ -18,7 +18,7 @@ export default function LoadingCardList (data: { placeholderCount: number, grid?
             }}
             style={{ scrollbarWidth: "none" }}
         >
-            {new Array(data.placeholderCount).fill(1).map(p => <GameCardSkeleton />)}
+            {new Array(data.placeholderCount).fill(1).map((p, i) => <GameCardSkeleton key={i} />)}
         </ul>
     );
 }

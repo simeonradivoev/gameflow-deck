@@ -1,14 +1,17 @@
 import { IJob, JobContext } from "../task-queue";
 import { mkdir } from 'node:fs/promises';
-import { eq, or } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import fs from 'node:fs/promises';
 import { DownloaderHelper } from 'node-downloader-helper';
 import StreamZip from 'node-stream-zip';
 import * as schema from "../schema/app";
 import * as emulatorSchema from "../schema/emulators";
 import path from 'node:path';
-import { getPlatformApiPlatformsIdGet, getRomApiRomsIdGet } from "@clients/romm";
+import { downloadRomsApiRomsDownloadGet, getPlatformApiPlatformsIdGet, getRomApiRomsIdGet } from "@clients/romm";
 import { config, db, emulatorsDb, jar } from "../app";
+import unzip from 'unzip-stream';
+import { Readable, Transform } from "node:stream";
+import { createWriteStream } from "node:fs";
 
 interface JobConfig
 {
@@ -39,6 +42,7 @@ export class InstallJob implements IJob
 
             if (this.config?.dryDownload !== true)
             {
+                /*
                 // download files for rom
                 const downloadUrl = new URL(`${config.get('rommAddress')}/api/roms/download`);
                 downloadUrl.searchParams.set('rom_ids', String(this.id));
@@ -84,7 +88,38 @@ export class InstallJob implements IJob
                 await zip.extract(null, downloadPath);
                 await zip.close();
 
-                await fs.rm(zipFilePath);
+                await fs.rm(zipFilePath);*/
+
+                cx.setProgress(0, 'download');
+                const downloadUrl = new URL(`${config.get('rommAddress')}/api/roms/download`);
+                downloadUrl.searchParams.set('rom_ids', String(this.id));
+                const res = await fetch(downloadUrl, {
+                    headers: {
+                        cookie: await jar.getCookieString(config.get('rommAddress') ?? '')
+                    },
+                });
+
+                const totalBytes = Number(res.headers.get("content-length")) || 0;
+                let bytesReceived = 0;
+
+                const progressStream = new Transform({
+                    transform (chunk, encoding, callback)
+                    {
+                        bytesReceived += chunk.length;
+                        if (totalBytes > 0)
+                        {
+                            const percent = (bytesReceived / totalBytes) * 100;
+                            cx.setProgress(percent, 'download');
+                        }
+                        this.push(chunk);
+                        callback();
+                    }
+                });
+
+                await new Promise((resolve, reject) =>
+                {
+                    Readable.fromWeb(res.body as any).pipe(progressStream).pipe(unzip.Extract({ path: downloadPath })).on('close', resolve).on('error', reject);
+                });
             }
 
             const rom = (await getRomApiRomsIdGet({ path: { id: this.id }, throwOnError: true })).data;
@@ -115,10 +150,9 @@ export class InstallJob implements IJob
                 if (romPlatform.moby_id) platformSearch.push(eq(schema.platforms.moby_id, romPlatform.moby_id));
 
                 const esPlatform = await emulatorsDb
-                    .select({ slug: emulatorSchema.systems.name, romm_slug: emulatorSchema.systemMappings.sourceSlug })
-                    .from(emulatorSchema.systems)
-                    .leftJoin(emulatorSchema.systemMappings, eq(emulatorSchema.systemMappings.source, 'romm'))
-                    .where(eq(emulatorSchema.systemMappings.sourceSlug, romPlatform.slug));
+                    .select({ slug: emulatorSchema.systemMappings.system, romm_slug: emulatorSchema.systemMappings.sourceSlug })
+                    .from(emulatorSchema.systemMappings)
+                    .where(and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.sourceSlug, romPlatform.slug)));
 
                 const existingPlatform = await tx.query.platforms.findFirst({ where: or(...platformSearch) });
                 let platformId: number;

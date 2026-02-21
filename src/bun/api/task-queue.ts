@@ -48,12 +48,14 @@ export class TaskQueue
 
     public waitForJob (id: string): Promise<void>
     {
-        return this.queue?.find(j => j.context.id === id)?.promise ?? Promise.resolve();
+        const job = this.queue?.find(j => j.context.id === id) ?? this.activeQueue?.find(j => j.context.id === id);
+        return job?.promise ?? Promise.resolve();
     }
 
     public findJob (id: string): IPublicJob | undefined
     {
-        return this.queue?.find(j => j.context.id === id)?.context;
+        const job = this.queue?.find(j => j.context.id === id) ?? this.activeQueue?.find(j => j.context.id === id);
+        return job?.context;
     }
 
     public on<E extends keyof EventsList> (event: E, listener: E extends keyof EventsList ? EventsList[E] extends unknown[] ? (...args: EventsList[E]) => void : never : never): () => void

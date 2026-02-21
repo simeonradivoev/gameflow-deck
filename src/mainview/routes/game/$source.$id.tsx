@@ -16,8 +16,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/r
 import { Router } from "../..";
 import { ContextDialog, ContextList, DialogEntry } from "../../components/ContextDialog";
 import Shortcuts from "../../components/Shortcuts";
-
-const placeholderText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam eleifend ante magna, id euismod quam tempus sit amet. Maecenas sem lectus, euismod imperdiet volutpat ac, posuere in turpis. Vestibulum commodo lacinia lectus sit amet ultricies. Integer euismod consequat elit, sit amet dapibus libero fermentum nec. Aliquam accumsan placerat dui a maximus. Nunc lectus urna, scelerisque a magna non, imperdiet lobortis turpis. Aliquam magna dui, porttitor in nisl vitae, pretium fringilla sem. ";
+import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 
 const gameQuery = (source: string, id: number) => queryOptions({
   queryKey: ['game', source, id],
@@ -50,53 +49,10 @@ function GameDetailsUIPending ()
   </AnimatedBackground>;
 }
 
-export function GameDetailsUI ()
-{
-  const { source, id } = Route.useParams();
-  const { data, isSuccess } = useQuery(gameQuery(source, Number(id)));
-  const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details", preferredChildFocusKey: "main-details" });
-  const backgroundImage = data?.path_cover ? `${RPC_URL(__HOST__)}${data?.path_cover}` : undefined;
-  const mainAreaRef = useRef<HTMLDivElement>(null);
-
-  useEventListener("cancel", (e) =>
-  {
-    e.stopPropagation();
-    HandleGoBack();
-  }, ref);
-
-  useEffect(() =>
-  {
-    if (isSuccess)
-    {
-      focusSelf();
-    }
-
-  }, [isSuccess]);
-
-  return (
-    <AnimatedBackground ref={ref} backgroundKey="game-details" backgroundUrl={backgroundImage}>
-      <div className="z-0 overflow-y-scroll">
-        <FocusContext value={focusKey}>
-          <div className="px-3 py-2" ref={mainAreaRef}>
-            <HeaderUI />
-            <Details mainAreaRef={mainAreaRef} game={data} />
-          </div>
-          <div className="divider"><div className="flex items-center gap-3 opacity-60"><Image className="size-6" />Screenshots</div></div>
-          {!!data && <Screenshots screenshots={data.paths_screenshots} />}
-          <footer className="absolute left-0 bottom-0 w-full p-2 flex items-center justify-between z-10">
-            <div className="flex gap-2 text-sm">
-            </div>
-            <Shortcuts shortcuts={[{ icon: 'steamdeck_button_a', label: "Play" }]} />
-          </footer>
-        </FocusContext>
-      </div>
-    </AnimatedBackground>
-  );
-}
-
 function HandleGoBack ()
 {
-  Router.navigate({ to: PopSource('details') ?? '/', viewTransition: { types: ['zoom-out'] } });
+  const source = PopSource('details');
+  Router.navigate({ to: source ?? '/', viewTransition: { types: ['zoom-out'] } });
 }
 
 function Details (data: { mainAreaRef: RefObject<HTMLDivElement | null>, game?: FrontEndGameTypeDetailed; })
@@ -153,7 +109,7 @@ function Details (data: { mainAreaRef: RefObject<HTMLDivElement | null>, game?: 
               {data.game?.source ?? data.game?.id.source}
               {data.game?.local && <small className="text-base-content/60 font-semibold">local</small>}</Detail>
           </div>
-          <p className="text-base-content/80 leading-relaxed grow text-wrap whitespace-break-spaces text-ellipsis overflow-hidden">
+          <div className="text-base-content/80 leading-relaxed grow text-wrap whitespace-break-spaces text-ellipsis overflow-hidden">
             {data.game?.summary ?? <div className="flex flex-col gap-4 w-full">
               <div className="skeleton h-4 w-[30%]"></div>
               <div className="skeleton h-4 w-[80%]"></div>
@@ -162,7 +118,7 @@ function Details (data: { mainAreaRef: RefObject<HTMLDivElement | null>, game?: 
               <div className="skeleton h-4 w-full"></div>
               <div className="skeleton h-4 w-[80%]"></div>
             </div>}
-          </p>
+          </div>
           {!!data.game && <ActionButtons key="actions" game={data.game} />}
         </div>
       </section>
@@ -275,6 +231,15 @@ function MainActions (data: { game: FrontEndGameTypeDetailed; })
     {
       queryClient.invalidateQueries({ queryKey: ['game', data.game.id] });
       location.reload();
+    });
+
+    es.addEventListener('error', (e) =>
+    {
+      if ((e as any).data)
+      {
+        const stats = JSON.parse((e as any).data) as GameInstallProgress;
+        toast.error(stats.error);
+      }
     });
 
     es.onerror = (event) =>
@@ -415,7 +380,7 @@ function ActionButtons (data: { game: FrontEndGameTypeDetailed; })
     error: 'bg-error text-error-content'
   };
 
-  return <div ref={ref} className="flex overflow-hidden p-2 gap-4 h-32 items-center">
+  return <div ref={ref} className="flex overflow-hidden p-2 gap-4 min-h-32 items-center">
     <FocusContext value={focusKey}>
       <MainActions game={data.game} />
       <AchievementsInfo game={data.game} />
@@ -486,5 +451,46 @@ function ActionButton (data: {
       {data.icon}
       {data.children}
     </button>
+  );
+}
+
+export default function GameDetailsUI ()
+{
+  const { source, id } = Route.useParams();
+  const { data, isSuccess } = useQuery(gameQuery(source, Number(id)));
+  const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details", preferredChildFocusKey: "main-details" });
+  const backgroundImage = data?.path_cover ? `${RPC_URL(__HOST__)}${data?.path_cover}` : undefined;
+  const mainAreaRef = useRef<HTMLDivElement>(null);
+
+  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+  const { shortcuts } = useShortcutContext();
+
+  useEffect(() =>
+  {
+    if (isSuccess)
+    {
+      focusSelf();
+    }
+
+  }, [isSuccess]);
+
+  return (
+    <AnimatedBackground ref={ref} backgroundKey="game-details" backgroundUrl={backgroundImage}>
+      <div className="z-0 overflow-y-scroll">
+        <FocusContext value={focusKey}>
+          <div className="px-3 py-2" ref={mainAreaRef}>
+            <HeaderUI />
+            <Details mainAreaRef={mainAreaRef} game={data} />
+          </div>
+          <div className="divider"><div className="flex items-center gap-3 opacity-60"><Image className="size-6" />Screenshots</div></div>
+          {!!data && <Screenshots screenshots={data.paths_screenshots} />}
+          <footer className="absolute left-0 bottom-0 w-full p-2 flex items-center justify-between z-10">
+            <div className="flex gap-2 text-sm">
+            </div>
+            <Shortcuts shortcuts={shortcuts} />
+          </footer>
+        </FocusContext>
+      </div>
+    </AnimatedBackground>
   );
 }

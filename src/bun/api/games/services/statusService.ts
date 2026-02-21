@@ -1,10 +1,13 @@
 import { GameInstallProgress, GameStatusType, } from "@shared/constants";
-import { activeGame, customEmulators, db, events, taskQueue } from "../../app";
+import { activeGame, config, customEmulators, db, events, taskQueue } from "../../app";
 import { getValidLaunchCommands } from "./launchGameService";
 import * as schema from '../../schema/app';
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "@/bun/utils";
 import { getLocalGameMatch } from "./utils";
+import { getRomApiRomsIdGet } from "@/clients/romm";
+import fs from 'node:fs/promises';
+import { ErrorLike } from "elysia/universal";
 
 class CommandSearchError extends Error
 {
@@ -116,9 +119,19 @@ export default async function buildStatusResponse (source: string, id: number)
                             enqueue({ status: 'installed', details: validCommand.command.label });
                         }
 
-                    } else
+                    } else if (source === 'romm')
                     {
-                        enqueue({ status: 'install', details: 'Install' });
+                        // TODO: Add Caching
+                        const remoteGame = await getRomApiRomsIdGet({ path: { id } });
+                        const stats = await fs.statfs(config.get('downloadPath'));
+                        if (remoteGame.data?.fs_size_bytes && remoteGame.data?.fs_size_bytes > stats.bsize * stats.bavail)
+                        {
+                            enqueue({ status: 'error', error: "Not Enough Free Space" });
+                        } else
+                        {
+                            enqueue({ status: 'install', details: 'Install' });
+                        }
+
                     }
                 }
             }
@@ -126,8 +139,15 @@ export default async function buildStatusResponse (source: string, id: number)
             await sendLatests();
 
             const dispose: Function[] = [];
-            const handleActiveExit = async () =>
+            const handleActiveExit = async (data: { error?: ErrorLike; }) =>
             {
+                if (data.error)
+                {
+                    enqueue({
+                        status: 'error',
+                        error: data.error
+                    }, 'error');
+                }
                 await sendLatests();
             };
             events.on('activegameexit', handleActiveExit);

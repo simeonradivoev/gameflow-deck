@@ -5,28 +5,30 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Attach to Edge",
-            "port": 9222,
-            "request": "attach",
-            "type": "msedge",
-            "webRoot": "${workspaceFolder}/src",
-        },
-        {
             "type": "bun",
             "internalConsoleOptions": "neverOpen",
             "request": "attach",
             "name": "Attach Bun",
-            "url": "ws://127.0.0.1:9229/54esztvxlfe",
+            "url": "ws://127.0.0.1:9229/fixed-session",
             "localRoot": "${workspaceFolder}",
             "stopOnEntry": false,
+        },
+        {
+            "type": "chrome",
+            "request": "attach",
+            "name": "Attach To Browser",
+            "url": "http://192.168.1.190:5173/",
+            "webRoot": "${workspaceFolder}/src/mainview",
+            "address": "localhost",
+            "outputCapture": "console",
+            "port": 9222
         }
     ],
     "compounds": [
         {
             "name": "Attach Debug App",
             "configurations": [
-                "Attach Bun",
-                "Attach to Edge"
+                "Attach Bun"
             ],
             "stopAll": true,
             "preLaunchTask": "bun: dev"

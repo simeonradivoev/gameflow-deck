@@ -5,6 +5,8 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import SvgIcon from "./SvgIcon";
 import classNames from "classnames";
+import { useSearch } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 function FilterCat (
   data: {
@@ -12,14 +14,25 @@ function FilterCat (
     children?: any;
     active: boolean;
     onFocus: () => void;
+    hasFocusedPeer: boolean;
   } & FilterOption,
 )
 {
   const { ref, focusSelf, focused } = useFocusable({
     focusKey: data.id,
     onFocus: data.onFocus,
-    onEnterPress: data.onAction,
+    onEnterPress: data.onAction
   });
+
+  const { filter } = useSearch({ from: '/' });
+  useEffect(() =>
+  {
+    if (filter == data.id && data.hasFocusedPeer)
+    {
+      focusSelf();
+    }
+  }, [filter]);
+
   return (
     <li
       ref={ref}
@@ -46,7 +59,14 @@ export function FilterUI (data: {
   setSelected: (id: string) => void;
 })
 {
-  const { ref, focusKey } = useFocusable({ focusKey: `filter-${data.id}` });
+  const { ref, focusKey, hasFocusedChild } = useFocusable({
+    focusKey: `filter-${data.id}`,
+    saveLastFocusedChild: false,
+    autoRestoreFocus: false,
+    preferredChildFocusKey: data.selected,
+    trackChildren: true
+  });
+
   return (
     <div
       ref={ref}
@@ -60,6 +80,7 @@ export function FilterUI (data: {
           </li>
           {Object.entries(data.options)?.map(([id, option]) => (
             <FilterCat
+              hasFocusedPeer={hasFocusedChild}
               id={id}
               key={id}
               onFocus={() => data.setSelected(id)}

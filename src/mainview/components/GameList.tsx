@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
 import { FrontEndId, RPC_URL } from "../../shared/constants";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { SaveSource } from "../scripts/spatialNavigation";
 import { rommApi } from "../scripts/clientApi";
 import { HardDrive } from "lucide-react";
@@ -20,6 +20,7 @@ export interface GameListParams
     grid?: boolean,
     setBackground?: (url: string) => void;
     onGameSelect?: (id: FrontEndId) => void;
+    onFocus?: (node: HTMLElement) => void;
     className?: string;
 }
 
@@ -35,7 +36,6 @@ export function GameList (data: GameListParams)
         }).then(d => d.data)
     });
     const navigator = useNavigate();
-    const location = useLocation();
 
     const handleFocus = (id: FrontEndId) =>
     {
@@ -61,6 +61,7 @@ export function GameList (data: GameListParams)
                 type="game"
                 grid={data.grid}
                 className={data.className}
+                onGameFocus={(id, node) => data.onFocus?.(node)}
                 games={games.data?.games
                     .map(
                         (g) =>

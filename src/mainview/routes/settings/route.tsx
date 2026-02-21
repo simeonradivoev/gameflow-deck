@@ -6,12 +6,11 @@ import
 import
 {
   Outlet,
-  Link,
   createFileRoute,
   useMatchRoute,
   useNavigate,
 } from "@tanstack/react-router";
-import { retainSearchParams, ViewTransitionOptions } from "@tanstack/router-core";
+import { ViewTransitionOptions } from "@tanstack/router-core";
 import classNames from "classnames";
 import
 {
@@ -19,16 +18,17 @@ import
   FingerprintPattern,
   HardDrive,
   Info,
+  Joystick,
   MonitorCog,
 } from "lucide-react";
-import { JSX, useEffect, useRef } from "react";
-import { useEventListener } from "usehooks-ts";
-import ShortcutPrompt from "../../components/ShortcutPrompt";
+import { JSX, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
 import z from "zod";
 import { SettingsSchema } from "../../../shared/constants";
 import { PopSource } from "../../scripts/spatialNavigation";
 import { Router } from "../..";
+import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
+import Shortcuts from "@/mainview/components/Shortcuts";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
@@ -125,6 +125,12 @@ function SettingsMenu (data: {})
       />
       <MenuItem
         focusSelect
+        route="/settings/emulators"
+        label="Emulators"
+        icon={<Joystick />}
+      />
+      <MenuItem
+        focusSelect
         route="/settings/directories"
         label="Directories"
         icon={<HardDrive />}
@@ -172,11 +178,13 @@ export function SettingsUI ()
     preferredChildFocusKey: 'settings-menu'
   });
 
-  useEventListener("cancel", HandleGoBack, ref);
   useEffect(() =>
   {
     focusSelf();
   }, []);
+
+  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+  const { shortcuts } = useShortcutContext();
 
   return (
     <FocusContext.Provider value={focusKey}>
@@ -191,11 +199,7 @@ export function SettingsUI ()
           </div>
         </div>
         <div className="divider divider-end">
-          <ShortcutPrompt
-            onClick={HandleGoBack}
-            icon="steamdeck_button_b"
-            label="Back"
-          />
+          <Shortcuts shortcuts={shortcuts} />
         </div>
       </div>
     </FocusContext.Provider>

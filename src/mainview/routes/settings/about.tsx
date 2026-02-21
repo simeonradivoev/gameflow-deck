@@ -1,6 +1,7 @@
 import { rommApi, systemApi } from '@/mainview/scripts/clientApi';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import prettyBytes from 'pretty-bytes';
 
 export const Route = createFileRoute('/settings/about')({
   component: RouteComponent,
@@ -49,6 +50,10 @@ function RouteComponent ()
         <tr>
           <th>Machine</th>
           <td>{systemInfo?.data?.machine}</td>
+        </tr>
+        <tr>
+          <th>Space</th>
+          <td>{!!systemInfo?.data && `${prettyBytes(systemInfo?.data?.freeSpace)}  Free / ${prettyBytes(systemInfo?.data?.totalSpace)} Total | ${(1 - (systemInfo?.data?.freeSpace / systemInfo?.data?.totalSpace)).toLocaleString('en-GB', { style: "percent" })}`}</td>
         </tr>
         <tr>
           <th>Steam Deck</th>

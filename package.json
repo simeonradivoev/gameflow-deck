@@ -5,7 +5,7 @@
   "description": "Game Launcher",
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development bun run build && WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222' bun run --inspect=127.0.0.1:9229 --watch ./src/bun/index.ts",
+    "dev": "NODE_ENV=development bun run build && WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222' bun run ./scripts/dev.ts",
     "dev:hmr": "PUBLIC_ACCESS=true conc -k 'bun run hmr' 'bun run dev'",
     "build": "vite build",
     "build:pro": "NODE_ENV=production bun run build",
@@ -37,6 +37,7 @@
     "pathe": "^2.0.3",
     "tough-cookie": "^6.0.0",
     "tough-cookie-file-store": "^3.3.0",
+    "unzip-stream": "^0.3.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -53,6 +54,7 @@
     "@types/bun": "latest",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
+    "@types/unzip-stream": "^0.3.4",
     "@vitejs/plugin-react": "^5.1.2",
     "animate.css": "^4.1.1",
     "babel-plugin-react-compiler": "^1.0.0",

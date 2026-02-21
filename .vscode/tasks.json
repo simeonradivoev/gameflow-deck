@@ -5,7 +5,12 @@
       "label": "Run Act",
       "type": "shell",
       "command": "act",
-      "args": ["--artifact-server-path", "artifacts", "-W", ".github/workflows/build.yml"],
+      "args": [
+        "--artifact-server-path",
+        "artifacts",
+        "-W",
+        ".github/workflows/build.yml"
+      ],
       "options": {
         "env": {
           "PATH": "${env:PATH}",
@@ -13,6 +18,36 @@
         },
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Start Dev",
+      "type": "shell",
+      "command": "bun run dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      "label": "Start Dev (Hot Reload)",
+      "type": "shell",
+      "command": "bun run dev:hmr",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
     }
   ]
 }

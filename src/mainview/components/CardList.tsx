@@ -3,11 +3,11 @@ import
   FocusContext,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { FrontEndId, GameMeta } from "../../shared/constants";
+import { GameMeta } from "../../shared/constants";
 import GameCard, { GameCardParams } from "./GameCard";
-import { JSX, useState } from "react";
-import classNames from "classnames";
+import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
+import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 
 export interface GameMetaExtra extends GameMeta
 {
@@ -22,7 +22,7 @@ export function CardList (data: {
   games: GameMetaExtra[];
   grid?: boolean;
   onSelectGame?: (id: string) => void;
-  onGameFocus?: (id: string) => void;
+  onGameFocus?: (id: string, node: HTMLElement) => void;
   className?: string;
 })
 {
@@ -30,13 +30,21 @@ export function CardList (data: {
     focusKey: data.id,
   });
 
-  function BuildGame (g: GameMetaExtra, i: number)
+  function BuildCard (g: GameMetaExtra, i: number)
   {
     let preview: GameCardParams['preview'] = g.preview;
     if (!preview && g.previewUrl)
     {
       preview = g.previewUrl;
     }
+
+    const handleAction = () =>
+    {
+      g.onSelect?.();
+      data.onSelectGame?.(g.id);
+    };
+    useShortcuts(g.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: handleAction }]);
+
     return (
       <GameCard
         key={g.id}
@@ -46,17 +54,12 @@ export function CardList (data: {
         data-index={i}
         title={g.title}
         subtitle={g.subtitle ?? ""}
-        onFocus={() =>
+        onFocus={(id, node) =>
         {
           g.onFocus?.();
-          data.onGameFocus?.(g.id);
-          (document.querySelector(":root") as HTMLElement).style.setProperty('--selected-card-offset', `${i}s`);
+          data.onGameFocus?.(id, node);
         }}
-        onAction={() =>
-        {
-          g.onSelect?.();
-          data.onSelectGame?.(g.id);
-        }}
+        onAction={handleAction}
         preview={preview}
         badges={g.badges}
         id={g.id}
@@ -82,7 +85,7 @@ export function CardList (data: {
       style={{ scrollbarWidth: "none" }}
     >
       <FocusContext.Provider value={focusKey}>
-        {data.games.map(BuildGame)}
+        {data.games.map(BuildCard)}
       </FocusContext.Provider>
     </ul>
   );
