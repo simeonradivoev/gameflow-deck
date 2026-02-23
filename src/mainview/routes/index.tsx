@@ -13,23 +13,16 @@ import
 import
 {
   createFileRoute,
-  useLocation,
   useNavigate,
 } from "@tanstack/react-router";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import
 {
   FocusContext,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { DefaultRommStaleTime, RPC_URL } from "../../shared/constants";
 import { useEventListener } from "usehooks-ts";
-import
-{
-  getCollectionsApiCollectionsGetOptions,
-} from "../../clients/romm/@tanstack/react-query.gen";
-import { CardList, GameMetaExtra } from "../components/CardList";
 import { HeaderUI } from "../components/Header";
 import { FilterUI } from "../components/Filters";
 import { AnimatedBackground, AnimatedBackgroundContext } from "../components/AnimatedBackground";
@@ -47,10 +40,11 @@ import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/
 import z from "zod";
 import { Router } from "..";
 import CollectionList from "../components/CollectionList";
+import { zodValidator } from '@tanstack/zod-adapter';
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
-  validateSearch: z.object({ filter: z.string().optional().default('games') })
+  validateSearch: zodValidator(z.object({ filter: z.string().optional().default('games') }))
 });
 
 const filters = {

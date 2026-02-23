@@ -26,11 +26,11 @@ const iconMap: Record<GamePadButtonCode, IconType> = {
 export default function Shortcuts (data: { shortcuts?: Shortcut[]; })
 {
     return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 z-1000">
             {data.shortcuts?.filter(s => !!s.label).map((s, i) => <ShortcutPrompt
                 key={s.button}
                 id={`shortcut-${s.button}`}
-                onClick={e => s.action(new GamepadButtonEvent('gamepadbuttondown', { button: s.button, isClick: true }))}
+                onClick={e => s.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: s.button, isClick: true }))}
                 icon={iconMap[s.button]}
                 label={s.label} />
             )}

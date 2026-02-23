@@ -3,20 +3,16 @@ import { dispatchFocusedEvent, GetFocusedElement } from "./spatialNavigation";
 
 let loopStarted = false;
 
-
-window.addEventListener("gamepadconnected", (evt) =>
+const handleLoop = () =>
 {
     if (!loopStarted)
     {
         requestAnimationFrame(updateStatus);
         loopStarted = true;
     }
-});
-
-window.addEventListener("gamepaddisconnected", (evt) =>
-{
-
-});
+};
+window.addEventListener("gamepadconnected", handleLoop);
+import.meta.hot.dispose(() => window.addEventListener('gamepaddisconnected', handleLoop));
 
 const throttleMap = new Map<string, number>();
 const throttleAcceleration = new Map<string, number>();
@@ -36,7 +32,7 @@ function throttleNav (key: string, dir: string, event: Event)
     }
 }
 
-window.addEventListener('keydown', e =>
+/*window.addEventListener('keydown', e =>
 {
     if (e.key === 'Escape')
     {
@@ -45,7 +41,7 @@ window.addEventListener('keydown', e =>
         const evn = new Event('cancel', { bubbles: true, cancelable: true });
         finalTarget.dispatchEvent(evn);
     }
-});
+});*/
 
 export class GamepadButtonEvent extends Event
 {

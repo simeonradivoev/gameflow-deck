@@ -1,11 +1,13 @@
 import { SERVER_URL } from "../../shared/constants";
 import os from 'node:os';
-import path, { dirname } from 'node:path';
+import path from 'node:path';
 import { getBrowserPath } from "./get-browser";
-import { host, isSteamDeckGameMode } from "../utils";
+import { isSteamDeckGameMode } from "../utils";
 import { config } from "../api/app";
+import { ensureDir } from 'fs-extra';
+import { host } from "./host";
 
-export async function BuildParams ()
+export async function BuildParams (data: { configPath: string; })
 {
     const validBrowser = await getBrowserPath({
         browserOrder: ['chrome', 'chromium']
@@ -28,15 +30,19 @@ export async function BuildParams ()
         const isEdge = validBrowser.path.toLowerCase().includes('edge') || validBrowser.path.toLowerCase().includes('msedge');
         console.log(`[Browser] Detected: ${validBrowser.type} from ${validBrowser.source} - ${isEdge ? 'Edge' : 'Chrome/Chromium'}`);
 
+        const dataPath = path.join(data.configPath, 'browser-data');
+        await ensureDir(dataPath);
+
         args.push(`--app=${SERVER_URL(host)}`);
         args.push(`--app-id=gameflow`);
         args.push(`--force-app-mode`);
         args.push('--no-default-browser-check');
+        args.push('--new-instance');
         args.push('--no-first-run');
         args.push('--disable-infobars');
         args.push("--disable-extensions");
         args.push("--disable-plugins");
-        args.push(`--user-data-dir=${path.join(dirname(config.path), 'browser-data')}`);
+        args.push(`--user-data-dir=${dataPath}`);
         args.push('--disable-sync'); //Disable syncing to a Google account
         args.push('--disable-sync-preferences');
         args.push('--disable-component-update');

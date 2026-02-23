@@ -1,12 +1,15 @@
 import z from "zod";
 import { SettingsSchema } from "@shared/constants";
-import Elysia from "elysia";
-import { config, customEmulators, db, emulatorsDb } from "./app";
+import Elysia, { status } from "elysia";
+import { config, customEmulators, db, emulatorsDb, taskQueue } from "./app";
 import * as appSchema from './schema/app';
 import { findExec } from "./games/services/launchGameService";
 import * as emulatorSchema from "./schema/emulators";
 import { eq, inArray } from 'drizzle-orm';
 import fs from 'node:fs/promises';
+import { existsSync } from "node:fs";
+import { InstallJob } from "./jobs/install-job";
+import { move } from "fs-extra";
 
 export const settings = new Elysia({ prefix: '/api/settings' })
     .get('/emulators/automatic', async () =>
@@ -89,6 +92,46 @@ export const settings = new Elysia({ prefix: '/api/settings' })
         return Object.keys(customEmulators.store);
     }, {
         response: z.array(z.string())
+    })
+    .put('/path/download', async ({ body: { manualPath, drive } }) =>
+    {
+        if (taskQueue.hasActiveOfType(InstallJob))
+        {
+            return status("Forbidden", "Installation in progress");
+        }
+
+        const oldDownloadPath = config.get('downloadPath');
+        if (!existsSync(oldDownloadPath))
+        {
+            return status("Not Found", "Old downlod path doesn't exist");
+        }
+
+        async function isDirEmpty (dirname: string)
+        {
+            const files = await fs.readdir(dirname);
+            return files.length === 0;
+        }
+
+        const path = manualPath ?? drive;
+
+        if (!path)
+        {
+            return;
+        }
+
+        if (existsSync(path) && !isDirEmpty(path))
+        {
+            return status("Conflict", "New location alaready exists and is not empty");
+        }
+
+        await move(oldDownloadPath, path);
+        config.set('downloadPath', manualPath);
+        return manualPath;
+    }, {
+        body: z.object({
+            manualPath: z.string().optional(),
+            drive: z.string().optional()
+        })
     })
     .get("/:id", async ({ params: { id } }) =>
     {

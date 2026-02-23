@@ -53,7 +53,7 @@ function MenuItem (data: {
   const acitve = matchRoute({ to: data.route });
   const handleNonFocusSelect = () => navigate({ to: data.return ? PopSource('settings') ?? data.route : data.route, viewTransition: data.viewTransition });
   const { ref, focusSelf, focused } = useFocusable({
-    focusKey: data.route,
+    focusKey: `menu-item-${data.route}`,
     forceFocus: !!acitve,
     onFocus: () =>
     {
@@ -119,8 +119,8 @@ function SettingsMenu (data: {})
       />
       <MenuItem
         focusSelect
-        route="/settings/visual"
-        label="Visual"
+        route="/settings/interface"
+        label="Interface"
         icon={<MonitorCog />}
       />
       <MenuItem
@@ -156,18 +156,12 @@ function SettingsMenu (data: {})
 function HandleGoBack ()
 {
 
-  if (document.activeElement && document.activeElement !== document.body && document.activeElement instanceof HTMLElement)
+  const source = PopSource('settings');
+  if (source)
   {
-    document.activeElement.blur();
-  } else
-  {
-    const source = PopSource('settings');
-    if (source)
-    {
-      console.log("Found source ", source, " to go back to");
-    }
-    Router.navigate({ to: source ?? "/", viewTransition: { types: ['zoom-out'] } });
+    console.log("Found source ", source, " to go back to");
   }
+  Router.navigate({ to: source ?? "/", viewTransition: { types: ['zoom-out'] } });
 
 }
 

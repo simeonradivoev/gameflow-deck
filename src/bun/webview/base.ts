@@ -1,6 +1,6 @@
 import { SERVER_URL } from "@/shared/constants";
 import Webview from "@rcompat/webview";
-import { host } from "../utils";
+import { host } from "../utils/host";
 
 export default function (webview: Webview)
 {

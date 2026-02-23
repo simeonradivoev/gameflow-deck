@@ -4,15 +4,15 @@ import { and, eq, getTableColumns } from "drizzle-orm";
 import z from "zod";
 import * as schema from "../schema/app";
 import fs from "node:fs/promises";
-import { FrontEndGameType, FrontEndGameTypeDetailed } from "@shared/constants";
+import { FrontEndGameType, FrontEndGameTypeDetailed, GameListFilterSchema } from "@shared/constants";
 import { getRomApiRomsIdGet, getRomsApiRomsGet, updateRomUserApiRomsIdPropsPut } from "@clients/romm";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
 import { calculateSize, checkInstalled, convertRomToFrontend, convertRomToFrontendDetailed, getLocalGameMatch } from "./services/utils";
 import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
+import { launchCommand } from "./services/launchGameService";
 import { getErrorMessage } from "@/bun/utils";
-import { spawn } from "node:child_process";
 
 export default new Elysia()
     .get('/game/local/:id/cover', async ({ params: { id }, set }) =>
@@ -55,54 +55,64 @@ export default new Elysia()
     }, {
         params: z.object({ id: z.number() }),
         response: z.object({ installed: z.boolean() })
-    }).get('/games', async ({ query: { platform_id, collection_id } }) =>
+    }).get('/games', async ({ query: { platform_source, platform_slug, platform_id, collection_id } }) =>
     {
         const where: any[] = [];
-        if (platform_id)
+        if (platform_slug)
         {
-            where.push(eq(schema.games.id, platform_id));
+            where.push(eq(schema.platforms.slug, platform_slug));
         }
 
         const games: FrontEndGameType[] = [];
+        let localGamesSet: Set<number> | undefined;
 
-        const localGames = await db.select({
-            platform_display_name: schema.platforms.name,
-            id: schema.games.id,
-            last_played: schema.games.last_played,
-            created_at: schema.games.created_at,
-            platform_id: schema.games.platform_id,
-            slug: schema.games.slug,
-            name: schema.games.name,
-            path_fs: schema.games.path_fs,
-            source_id: schema.games.source_id,
-            source: schema.games.source
-        }).from(schema.games).leftJoin(schema.platforms, eq(schema.games.platform_id, schema.platforms.id)).where(and(...where));
-
-        const localGamesSet = new Set(localGames.map(g => g.source_id));
-        games.push(...localGames.map(g =>
+        if (!collection_id)
         {
-            const game: FrontEndGameType = {
-                ...g,
-                platform_display_name: g.platform_display_name ?? "Local",
-                id: { id: g.id, source: 'local' },
-                updated_at: g.created_at,
-                path_cover: `/api/romm/game/local/${g.id}/cover`,
-                source_id: g.source_id,
-                source: g.source,
-                path_platform_cover: `/api/romm/platform/local/${g.platform_id}/cover`
-            };
-            return game;
-        }));
+            const localGames = await db.select({
+                platform_display_name: schema.platforms.name,
+                id: schema.games.id,
+                last_played: schema.games.last_played,
+                created_at: schema.games.created_at,
+                platform_id: schema.games.platform_id,
+                slug: schema.games.slug,
+                name: schema.games.name,
+                path_fs: schema.games.path_fs,
+                source_id: schema.games.source_id,
+                source: schema.games.source
+            }).from(schema.games)
+                .leftJoin(schema.platforms, eq(schema.games.platform_id, schema.platforms.id))
+                .where(and(...where));
 
-        const rommGames = await getRomsApiRomsGet({ query: { platform_ids: platform_id ? [platform_id] : undefined, collection_id }, throwOnError: true });
-        games.push(...rommGames.data.items.filter(g => !localGamesSet.has(g.id)).map(g =>
+            localGamesSet = new Set(localGames.filter(g => !!g.source_id).map(g => g.source_id!));
+            games.push(...localGames.map(g =>
+            {
+                const game: FrontEndGameType = {
+                    ...g,
+                    platform_display_name: g.platform_display_name ?? "Local",
+                    id: { id: g.id, source: 'local' },
+                    updated_at: g.created_at,
+                    path_cover: `/api/romm/game/local/${g.id}/cover`,
+                    source_id: g.source_id,
+                    source: g.source,
+                    path_platform_cover: `/api/romm/platform/local/${g.platform_id}/cover`
+                };
+                return game;
+            }));
+        }
+
+        if ((!platform_source || platform_source === 'romm') || !!collection_id)
         {
-            return convertRomToFrontend(g);
-        }));
+            const rommGames = await getRomsApiRomsGet({ query: { platform_ids: platform_id ? [platform_id] : undefined, collection_id }, throwOnError: true });
+            games.push(...rommGames.data.items.filter(g => !localGamesSet?.has(g.id)).map(g =>
+            {
+                return convertRomToFrontend(g);
+            }));
+        }
+
 
         return { games };
     }, {
-        query: z.object({ platform_id: z.coerce.number().optional(), collection_id: z.coerce.number().optional() }),
+        query: GameListFilterSchema,
     })
     .get('/game/:source/:id', async ({ params: { source, id } }) =>
     {
@@ -188,7 +198,7 @@ export default new Elysia()
     {
         if (!taskQueue.hasActive())
         {
-            taskQueue.enqueue(`install-rom-${source}-${id}`, new InstallJob(id));
+            taskQueue.enqueue(`install-rom-${source}-${id}`, new InstallJob(id, source, id));
             return status(200);
         } else
         {
@@ -209,97 +219,14 @@ export default new Elysia()
             }
             else
             {
-
-                if (activeGame && activeGame.process.killed === false)
-                {
-                    return status('Conflict', `${activeGame.name} currently running`);
-                }
-
-                const localGame = await db.query.games.findFirst({
-                    where: eq(schema.games.id, validCommand.gameId), columns: {
-                        name: true,
-                        source_id: true,
-                        source: true
-                    }
-                });
-
                 try
                 {
-                    await new Promise((resolve, reject) =>
-                    {
-                        const game = spawn(validCommand.command.command, {
-                            shell: true
-                        });
-                        game.stdout.on('data', data => console.log(data));
-                        game.on('close', (code) =>
-                        {
-                            events.emit('activegameexit', { exitCode: code, signalCode: null });
-                            resolve(code);
-                        });
-                        game.on('error', e =>
-                        {
-                            events.emit('activegameexit', { exitCode: null, signalCode: null, error: e });
-                            console.error(e);
-                        });
-
-                        setActiveGame({
-                            pid: game.pid,
-                            name: localGame?.name ?? "Unknown",
-                            gameId: validCommand.gameId,
-                            command: validCommand.command.command
-                        });
-
-                        function updateRommProps (id: number)
-                        {
-                            updateRomUserApiRomsIdPropsPut({ path: { id }, body: { update_last_played: true } });
-                            events.emit('notification', { message: "Updated Last Played", type: 'success' });
-                        }
-
-                        if (source === 'romm') 
-                        {
-                            updateRommProps(id);
-                        }
-                        else if (localGame?.source === 'romm' && localGame.source_id)
-                        {
-                            updateRommProps(localGame.source_id);
-                        }
-
-                    });
-
-                    /*
-                    const cmd = Array.from(validCommand.command.command.matchAll(/(".*?"|[^\s"]+)/g)).map(m => m[0]);
-                    const game = setActiveGame({
-                        process: Bun.spawn({
-                            cmd,
-                            env: {
-                                ...process.env
-                            },
-                            onExit (subprocess, exitCode, signalCode, error)
-                            {
-                                events.emit('activegameexit', { subprocess, exitCode, signalCode, error });
-                            },
-                            stdin: "ignore",
-                            stdout: "inherit",
-                            stderr: "inherit",
-                        }),
-                        name: localGame?.name ?? "Unknown",
-                        gameId: validCommand.gameId,
-                        command: validCommand.command.command
-                    });
-
-                    await game.process.exited;
-                    if (game.process.exitCode && game.process.exitCode > 0)
-                    {
-                        return status('Internal Server Error');
-                    }*/
-                    return status('OK');
-
+                    await launchCommand(validCommand.command.command, source, id, validCommand.gameId);
                 } catch (error)
                 {
+                    console.error(error);
                     return status('Internal Server Error', getErrorMessage(error));
                 }
-
-
             }
         }
     }, {

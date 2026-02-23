@@ -46,6 +46,18 @@ export class TaskQueue
         return this.activeQueue.length > 0;
     }
 
+    public hasActiveOfType (type: any)
+    {
+        for (const entry of this.activeQueue)
+        {
+            if (entry.context.job instanceof type)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public waitForJob (id: string): Promise<void>
     {
         const job = this.queue?.find(j => j.context.id === id) ?? this.activeQueue?.find(j => j.context.id === id);

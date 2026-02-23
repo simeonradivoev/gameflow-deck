@@ -12,6 +12,14 @@ export default new Elysia()
         const platforms: FrontEndPlatformType[] = [];
         let rommPlatformsSet: Set<string> | undefined;
         const { data: rommPlatforms } = await getPlatformsApiPlatformsGet();
+
+        const localPlatforms = await db.select({ ...getTableColumns(schema.platforms), game_count: count(schema.games.id) })
+            .from(schema.platforms)
+            .leftJoin(schema.games, eq(schema.games.platform_id, schema.platforms.id))
+            .groupBy(schema.platforms.id);
+
+        const localPlatformSet = new Set(localPlatforms.filter(p => p.game_count > 0).map(p => p.slug));
+
         if (rommPlatforms)
         {
             const frontEndPlatforms = rommPlatforms.map(p =>
@@ -24,22 +32,17 @@ export default new Elysia()
                     game_count: p.rom_count,
                     updated_at: new Date(p.updated_at),
                     id: { source: 'romm', id: p.id },
-                    source: null,
-                    source_id: null
+                    hasLocal: localPlatformSet.has(p.slug)
                 };
 
                 return platform;
             });
+
             rommPlatformsSet = new Set(rommPlatforms.map(p => p.slug));
             platforms.push(...frontEndPlatforms);
         }
 
-        const localPlatforms = await db.select({ ...getTableColumns(schema.platforms), game_count: count(schema.games.id) })
-            .from(schema.platforms)
-            .leftJoin(schema.games, eq(schema.games.platform_id, schema.platforms.id))
-            .groupBy(schema.platforms.id)
-            .where(notInArray(schema.platforms.slug, Array.from(rommPlatformsSet ?? [])));
-        platforms.push(...localPlatforms.map(p =>
+        platforms.push(...localPlatforms.filter(p => !rommPlatformsSet?.has(p.slug)).map(p =>
         {
             const platform: FrontEndPlatformType = {
                 slug: p.slug,
@@ -49,8 +52,7 @@ export default new Elysia()
                 game_count: p.game_count,
                 updated_at: p.created_at,
                 id: { source: 'local', id: p.id },
-                source: null,
-                source_id: null
+                hasLocal: true
             };
 
             return platform;

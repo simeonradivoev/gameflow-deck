@@ -19,6 +19,7 @@ import { ActiveGame } from "../types/types";
 import EventEmitter from "node:events";
 import { ErrorLike } from "bun";
 import { getErrorMessage } from "../utils";
+import { DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,
@@ -44,9 +45,10 @@ const fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path),
 console.log("Cookie Jar Path Located At: ", fileCookieStore.filePath);
 export const jar = new CookieJar(fileCookieStore);
 await fs.mkdir(config.get('downloadPath'), { recursive: true });
-const sqlite = new Database(path.join(config.get('downloadPath'), 'db.sqlite'), { create: true, readwrite: true });
-export const db = drizzle(sqlite, { schema });
-migrate(db, { migrationsFolder: "./drizzle" });
+let sqlite: Database;
+export let db: DrizzleSqliteDODatabase<typeof schema>;
+await reloadDatabase();
+migrate(db!, { migrationsFolder: "./drizzle" });
 const emulatorsSqlite = new Database(`./vendors/es-de/emulators.${os.platform()}.${os.arch()}.sqlite`, { readonly: true });
 export const emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
 export const taskQueue = new TaskQueue();
@@ -77,9 +79,15 @@ export async function cleanup ()
     emulatorsSqlite.close();
 }
 
+export async function reloadDatabase ()
+{
+    sqlite = new Database(path.join(config.get('downloadPath'), 'db.sqlite'), { create: true, readwrite: true });
+    db = drizzle(sqlite, { schema });
+}
+
 interface AppEventMap
 {
-    activegameexit: [{ subprocess?: Bun.Subprocess, exitCode: number | null, signalCode: number | null, error?: ErrorLike; }];
+    activegameexit: [{ source: string, id: number, subprocess?: Bun.Subprocess, exitCode: number | null, signalCode: number | null, error?: ErrorLike; }];
     exitapp: [];
     notification: [Notification];
 }

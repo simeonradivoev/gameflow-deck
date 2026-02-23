@@ -22,7 +22,6 @@ export function OptionInput (data: {
         focusKey: data.name, onEnterPress: () =>
         {
             inputRef.current?.focus();
-            systemApi.api.system.show_keyboard.post();
         }
     });
     const inputRef = useRef<HTMLInputElement>(null);
@@ -32,6 +31,21 @@ export function OptionInput (data: {
             inputRef.current?.focus();
         },
     });
+    const handleFocus = () =>
+    {
+        option.focus();
+        if (inputRef.current)
+        {
+            var rect = inputRef.current?.getBoundingClientRect();
+            systemApi.api.system.show_keyboard.post({
+                XPosition: rect.x,
+                YPosition: rect.y,
+                Width: rect.width,
+                Height: rect.height
+            });
+        }
+
+    };
 
     return (
         <label ref={ref} className={twMerge("flex items-center gap-3 rounded-full sm:flex-2 md:flex-1 divide-accent",
@@ -47,7 +61,7 @@ export function OptionInput (data: {
                 defaultValue={data.defaultValue}
                 type={data.type}
                 autoComplete={data.autocomplete}
-                onFocus={() => option.focus()}
+                onFocus={handleFocus}
                 placeholder={data.placeholder}
                 onChange={data.onChange}
                 onBlur={data.onBlur}

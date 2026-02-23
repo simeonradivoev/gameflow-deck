@@ -5,9 +5,9 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons-ng';
 import path from "node:path";
 import staticAssetsPlugin from 'vite-static-assets-plugin';
-import { host } from "./src/bun/utils";
 import os from 'node:os';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { host } from "@/bun/utils/host";
 
 export default defineConfig(() =>
 {

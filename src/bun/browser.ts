@@ -2,6 +2,8 @@ import { killBrowser, spawnBrowser } from './utils/browser-spawner';
 import { BuildParams } from './utils/browser-params';
 import os from 'node:os';
 import { EventEmitter } from 'node:stream';
+import { config } from './api/app';
+import { dirname } from 'node:path';
 
 export default async function init (events: EventEmitter, forceBrowser: boolean)
 {
@@ -51,7 +53,7 @@ async function runWebview (events: EventEmitter)
 
 async function runBrowser (events: EventEmitter)
 {
-    const browserParams = await BuildParams();
+    const browserParams = await BuildParams({ configPath: dirname(config.path) });
     if (!browserParams)
     {
         console.error("Could not find valid browser");
@@ -68,6 +70,7 @@ async function runBrowser (events: EventEmitter)
                 detached: false,
                 execPath: browserParams.browser.path,
                 source: browserParams.browser.source,
+                configPath: dirname(config.path),
                 ipc (message)
                 {
                     console.log(message);

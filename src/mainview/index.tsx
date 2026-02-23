@@ -9,12 +9,11 @@ import
   RouterProvider,
 } from "@tanstack/react-router";
 import { routeTree } from "./gen/routeTree.gen";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RPC_URL } from "../shared/constants";
 import "./scripts/gamepads";
 import "./scripts/windowEvents";
 import { client as rommClient } from "../clients/romm/client.gen";
-import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import "./scripts/spatialNavigation";
 
 const hashHistory = createHashHistory({});
@@ -50,6 +49,8 @@ export const Router = createRouter({
   },
 });
 
+
+
 // Register things for typesafety
 declare module "@tanstack/react-router" {
   interface Register
@@ -58,12 +59,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-setupRouterSsrQueryIntegration({
-  router: Router,
-  queryClient,
-  wrapQueryClient: true,
-});
-
 const rootElement = document.getElementById("root")!;
 
 if (!rootElement.innerHTML)
@@ -71,7 +66,9 @@ if (!rootElement.innerHTML)
   const root = createRoot(rootElement);
   root.render(
     <StrictMode>
-      <RouterProvider router={Router} />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={Router} />
+      </QueryClientProvider>
     </StrictMode>,
   );
 }

@@ -1,5 +1,6 @@
 import
 {
+  FocusDetails,
   getCurrentFocusKey,
   init,
   SpatialNavigation,
@@ -13,7 +14,7 @@ init({
 
 let addFocusable = SpatialNavigation.addFocusable.bind(SpatialNavigation);
 let removeFocusable = SpatialNavigation.removeFocusable.bind(SpatialNavigation);
-let setCurrentFocusedKey = SpatialNavigation.setCurrentFocusedKey.bind(SpatialNavigation);
+let setFocus = SpatialNavigation.setFocus.bind(SpatialNavigation);
 
 type SaveFocusType = "session" | "local";
 
@@ -27,7 +28,6 @@ export function SaveSource (id: HistorySourceType, url?: string)
   {
     historySourceMap.set(id, finalUrl);
   }
-
 }
 
 export function HasSource (id: HistorySourceType)
@@ -95,10 +95,10 @@ export function useFocusEventListener<K extends keyof FocusEventMap, O extends H
   }, [eventName, handler, element?.current]);
 }
 
-SpatialNavigation.setCurrentFocusedKey = (newFocusKey, focusDetails) =>
+SpatialNavigation.setFocus = (newFocusKey, focusDetails) =>
 {
-  setCurrentFocusedKey(newFocusKey, focusDetails);
-  dispatchFocusedEvent(new Event('focuschanged', { bubbles: true }));
+  setFocus(newFocusKey, focusDetails);
+  dispatchFocusedEvent(new CustomEvent<FocusDetails>('focuschanged', { bubbles: true, detail: focusDetails }));
 };
 
 SpatialNavigation.addFocusable = (toAdd) =>
@@ -174,8 +174,6 @@ SpatialNavigation.removeFocusable = ({ focusKey }) =>
 
     removeFocusable(component);
   }
-
-
 };
 
 SpatialNavigation.saveLastFocusedChildKey = (component, focusKey) =>

@@ -3,24 +3,38 @@ import open from 'open';
 import z from "zod";
 import os from 'node:os';
 import { config, events } from "./app";
-import { isSteamDeckGameMode } from "../utils";
+import { isSteamDeck, openExternal } from "../utils";
 import fs from 'node:fs/promises';
 import buildNotificationsStream from "./notifications";
+import path, { dirname } from "node:path";
+import { DirSchema, DownloadsDrive } from "@/shared/constants";
+import { getDevices, getDevicesCurated } from "./drives";
+import getFolderSize from "get-folder-size";
+import si from 'systeminformation';
 
 // steam://open/keyboard?XPosition=%i&YPosition=%i&Width=%i&Height=%i&Mode=%d
 export const system = new Elysia({ prefix: '/api/system' })
-    .post('/show_keyboard', async () =>
+    .post('/show_keyboard', async ({ body: { XPosition, YPosition, Width, Height } }) =>
     {
-        if (isSteamDeckGameMode())
+        if (await isSteamDeck())
         {
-            open('steam://open/keyboard');
+            const url = new URL('steam://open/keyboard');
+            if (XPosition) url.searchParams.set('XPosition', String(XPosition));
+            if (YPosition) url.searchParams.set('YPosition', String(YPosition));
+            if (Width) url.searchParams.set('Width', String(Width));
+            if (Height) url.searchParams.set('Height', String(Height));
+            open(url.href);
         }
+    }, {
+        body: z.object({
+            XPosition: z.coerce.number().optional(),
+            YPosition: z.coerce.number().optional(),
+            Width: z.coerce.number().optional(),
+            Height: z.coerce.number().optional()
+        })
     })
     .get('/info', async () =>
     {
-
-        const downloadStats = await fs.statfs(config.get('downloadPath'));
-
         return {
             homeDir: os.homedir(),
             user: os.userInfo().username,
@@ -29,9 +43,6 @@ export const system = new Elysia({ prefix: '/api/system' })
             hostname: os.hostname(),
             steamDeck: process.env.SteamDeck,
             machine: os.machine(),
-            freeSpace: downloadStats.bsize * downloadStats.bavail,
-            totalSpace: downloadStats.bsize * downloadStats.blocks,
-            downloadsType: downloadStats.type
         };
     })
     .get('/notifications', ({ set }) =>
@@ -41,13 +52,105 @@ export const system = new Elysia({ prefix: '/api/system' })
         set.headers['connection'] = 'keep-alive';
         return new Response(buildNotificationsStream());
     })
+    .get('/info/battery', async () =>
+    {
+        return si.battery();
+    })
+    .get('/info/wifi', async () =>
+    {
+        return si.wifiConnections();
+    })
+    .get('/info/bluetooth', async () =>
+    {
+        return si.bluetoothDevices();
+    })
+    .get('/drives', async () =>
+    {
+        const drives = await getDevices();
+        return drives;
+    })
+    .get('/drives/download', async () =>
+    {
+        const drives = await getDevicesCurated();
+        const downloadsPath = config.get('downloadPath');
+        const currentDownloadsSize = await getFolderSize(downloadsPath);
+        let used = false;
+        const drivesDownload: DownloadsDrive[] = drives
+            .filter(d => !!d.mountPoint)
+            .map(d => ({ ...d, depth: d.mountPoint!.split(path.sep).length }))
+            .sort((a, b) => b.depth - a.depth)
+            .map(d =>
+            {
+                const drive: DownloadsDrive = {
+                    device: d.device,
+                    label: d.label,
+                    mountPoint: path.join(d.mountPoint!, 'gameflow'),
+                    isRemovable: d.isRemovable,
+                    size: d.size,
+                    used: d.used,
+                    isCurrentlyUsed: false,
+                    unusableReason: null
+                };
+
+                if (!used && d.mountPoint && downloadsPath.startsWith(d.mountPoint))
+                {
+                    drive.isCurrentlyUsed = true;
+                    used = true;
+                }
+
+                if (!drive.isCurrentlyUsed && currentDownloadsSize && drive.size - drive.used <= currentDownloadsSize.size)
+                {
+                    drive.unusableReason = 'not_enough_space';
+                }
+                else if (drive.isCurrentlyUsed && downloadsPath === drive.mountPoint)
+                {
+                    drive.unusableReason = 'already_used';
+                }
+
+                return drive;
+            });
+        return {
+            downloadsSize: currentDownloadsSize.size,
+            configPath: dirname(config.path),
+            drives: drivesDownload,
+        };
+    })
+    .put('/dirs', async ({ body: { dirname, name } }) =>
+    {
+        await fs.mkdir(path.join(dirname, name));
+    }, {
+        body: z.object({ dirname: z.string(), name: z.string() })
+    })
+    .get('/dirs', async ({ query: { path: startingPath } }) =>
+    {
+        const currentPath = startingPath ?? dirname(Bun.main);
+        const paths = await fs.readdir(currentPath, { withFileTypes: true });
+        return {
+            name: path.basename(currentPath),
+            parentPath: path.dirname(currentPath),
+            dirs: paths.sort((a, b) => (b.isDirectory() ? 1 : 0) - (a.isDirectory() ? 1 : 0)).map(p =>
+            ({
+                name: p.name,
+                parentPath: p.parentPath,
+                isDirectory: p.isDirectory()
+            }))
+        };
+    },
+        {
+            query: z.object({ path: z.string().optional() }),
+            response: z.object({
+                name: z.string(),
+                parentPath: z.string(),
+                dirs: z.array(DirSchema)
+            })
+        })
     .post('/exit', () =>
     {
         events.emit('exitapp');
     })
-    .post('/open', async ({ query: { url } }) =>
+    .post('/open', async ({ body: { url } }) =>
     {
-        open(url);
+        await openExternal(url);
     }, {
-        query: z.object({ url: z.url() })
+        body: z.object({ url: z.string() })
     });

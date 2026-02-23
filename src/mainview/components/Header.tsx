@@ -6,7 +6,11 @@ import
 import classNames from "classnames";
 import
 {
+  BatteryCharging,
   BatteryFull,
+  BatteryLow,
+  BatteryMedium,
+  BatteryWarning,
   Bell,
   Bluetooth,
   Clock,
@@ -16,14 +20,18 @@ import
   Sun,
   User,
   Wifi,
+  WifiHigh,
+  WifiLow,
+  WifiZero,
 } from "lucide-react";
 import { RoundButton } from "./RoundButton";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "../../clients/romm/@tanstack/react-query.gen";
 import { RPC_URL } from "../../shared/constants";
-import { JSX } from "react";
+import { JSX, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { SaveSource } from "../scripts/spatialNavigation";
+import { systemApi } from "../scripts/clientApi";
 
 function HeaderAvatar (data: {
   id: string;
@@ -104,11 +112,128 @@ export interface HeaderAccount
   action?: () => void;
 }
 
+function NotificationStatus ()
+{
+  const hasUnread = false;
+  return <div className={classNames("p-2 rounded-full", { "bg-warning text-warning-content": hasUnread })}>
+    <Bell className="w-6 h-6" />
+  </div>;
+}
+
+function ClockStatus ()
+{
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() =>
+  {
+    function update ()
+    {
+      if (ref.current)
+      {
+        ref.current.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    }
+
+    // Update immediately
+    update();
+
+    // Wait until next minute boundary
+    const now = new Date();
+    const msUntilNextMinute =
+      (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+    const timeout = setTimeout(() =>
+    {
+      update();
+
+      // Then update every minute
+      const interval = setInterval(update, 60_000);
+      return () => clearInterval(interval);
+    }, msUntilNextMinute);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return <div className="flex gap-3"><span ref={ref}></span><Clock /></div>;
+}
+
+function BluetoothStatus ()
+{
+  const { data: bluetooth } = useQuery({
+    queryKey: ['wifi'],
+    queryFn: () => systemApi.api.system.info.bluetooth.get().then(d => d.data),
+    refetchInterval: 3000
+  });
+  return bluetooth && bluetooth.find(b => b.connected) && <div>
+    <Bluetooth className="w-6 h-6" />
+  </div>;
+}
+
+function WiFiStatus ()
+{
+  const { data: wifi } = useQuery({
+    queryKey: ['wifi'],
+    queryFn: () => systemApi.api.system.info.wifi.get().then(d => d.data),
+    refetchInterval: 3000
+  });
+
+  return <div>
+    {wifi?.map(w =>
+    {
+      const className = "w-6 h-6";
+      let icon = <Wifi className={className} />;
+      if (w.signalLevel >= -60)
+        icon = <Wifi className={className} />;
+      else if (w.signalLevel >= -70)
+        icon = <WifiHigh className={className} />;
+      else if (w.signalLevel >= -80)
+        icon = <WifiLow className={className} />;
+      else if (w.signalLevel >= -90)
+        icon = <WifiZero className={className} />;
+
+      return <div className="tooltip" data-tip={w.signalLevel}>
+        {icon}
+      </div>;
+    })}
+
+  </div>;
+}
+
+function BatteryStatus ()
+{
+  const { data: battery } = useQuery({
+    queryKey: ['battery'],
+    queryFn: () => systemApi.api.system.info.battery.get().then(d => d.data),
+    refetchInterval: 3000
+  });
+  const batteryClassName = "w-6 h-6";
+  let batteryIcon = <BatteryFull className={batteryClassName} />;
+  if (battery?.isCharging || battery?.acConnected)
+  {
+    batteryIcon = <BatteryCharging className={batteryClassName} />;
+  } else if (battery?.percent)
+  {
+    if (battery.percent < 5)
+    {
+      batteryIcon = <BatteryWarning className={batteryClassName} />;
+    }
+    else if (battery.percent < 15)
+    {
+      batteryIcon = <BatteryLow className={batteryClassName} />;
+    } else if (battery.percent < 50)
+    {
+      batteryIcon = <BatteryMedium className={batteryClassName} />;
+    }
+  }
+  return <div className="flex gap-2 items-center">
+    {batteryIcon}
+    <span className="font-semibold">{battery?.percent} %</span>
+  </div>;
+}
+
 export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAccount[], buttonElements?: JSX.Element[] | JSX.Element; title?: JSX.Element; })
 {
   const { ref, focusKey } = useFocusable({ focusKey: "header-elements" });
   const navigate = useNavigate();
-  const location = useLocation();
   const rommOnline = useQuery({
     ...statsApiStatsGetOptions(),
     refetchInterval: 30000,
@@ -161,18 +286,12 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
           {data.title}
         </div>
         <div className="flex items-center gap-2 text drop-shadow-sm">
-          <div className="flex gap-5">
-            <Clock />
-            <Wifi className="w-6 h-6" />
-            <Bluetooth className="w-6 h-6" />
-            <div className="indicator">
-              <span className="indicator-item status status-error"></span>
-              <Bell className="w-6 h-6" />
-            </div>
-            <div className="flex gap-2 items-center">
-              <BatteryFull className="w-6 h-6" />
-              <span className="font-semibold">100%</span>
-            </div>
+          <div className="flex gap-5  items-center">
+            <ClockStatus />
+            <WiFiStatus />
+            <BluetoothStatus />
+            <NotificationStatus />
+            <BatteryStatus />
           </div>
           {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}
           <div className="flex gap-2">

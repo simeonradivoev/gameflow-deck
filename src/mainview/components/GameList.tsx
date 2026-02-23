@@ -1,22 +1,16 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
-import { FrontEndId, RPC_URL } from "../../shared/constants";
+import { FrontEndId, GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
 import { SaveSource } from "../scripts/spatialNavigation";
 import { rommApi } from "../scripts/clientApi";
 import { HardDrive } from "lucide-react";
 import { JSX } from "react";
 
-export interface GameListFilter
-{
-    platformId?: number;
-    collectionId?: number;
-}
-
 export interface GameListParams
 {
     id: string,
-    filters?: GameListFilter,
+    filters?: GameListFilterType,
     grid?: boolean,
     setBackground?: (url: string) => void;
     onGameSelect?: (id: FrontEndId) => void;
@@ -29,10 +23,7 @@ export function GameList (data: GameListParams)
     const games = useSuspenseQuery({
         queryKey: ['games', data.filters ?? 'all'],
         queryFn: () => rommApi.api.romm.games.get({
-            query: {
-                platform_id: data.filters?.platformId,
-                collection_id: data.filters?.collectionId
-            }
+            query: data.filters
         }).then(d => d.data)
     });
     const navigator = useNavigate();

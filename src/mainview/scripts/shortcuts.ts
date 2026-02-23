@@ -32,8 +32,24 @@ export interface Shortcut
 {
     label?: string;
     button: GamePadButtonCode;
-    action: (e: GamepadButtonEvent) => void;
+    action?: (e: GamepadButtonEvent) => void;
 }
+
+let isDirty = false;
+const shortcutChangeDispatcher = setInterval(() =>
+{
+    window.dispatchEvent(new Event('shortcutsChanged'));
+    isDirty = false;
+}, 100);
+import.meta.hot.dispose(() => clearInterval(shortcutChangeDispatcher));
+
+function markDirtyThrottled ()
+{
+    isDirty = true;
+}
+
+window.addEventListener('focuschanged', markDirtyThrottled);
+import.meta.hot.dispose(() => window.removeEventListener('focuschanged', markDirtyThrottled));
 
 export function useShortcutContext ()
 {
@@ -44,7 +60,8 @@ export function useShortcutContext ()
         const handleShortcutRebuild = () =>
         {
             conflictSet.clear();
-            const newArray = GetFocusedTree(getCurrentFocusKey())
+            const focusKey = getCurrentFocusKey();
+            const newArray = GetFocusedTree(focusKey)
                 .filter(f => shortcutMap.has(f))
                 .flatMap(f => shortcutMap.get(f)!)
                 .filter(s =>
@@ -65,12 +82,26 @@ export function useShortcutContext ()
             const event = e as GamepadButtonEvent;
             if (shortcuts.has(event.button))
             {
-                shortcuts.get(event.button)?.action(event);
+                shortcuts.get(event.button)?.action?.(event);
             }
             else if (event.button === GamePadButtonCode.A)
             {
                 dispatchFocusedEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', charCode: 13, keyCode: 13, view: window, bubbles: true }));
                 hadEnterDown = true;
+            }
+        };
+
+        const handleKeyPress = (e: KeyboardEvent) =>
+        {
+            if (e.key === 'Escape')
+            {
+                shortcuts.get(GamePadButtonCode.B)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.B }));
+            } else if (e.key === 'Backspace')
+            {
+                shortcuts.get(GamePadButtonCode.X)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.X }));
+            } else if (e.key === ' ')
+            {
+                shortcuts.get(GamePadButtonCode.Y)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.Y }));
             }
         };
 
@@ -108,14 +139,16 @@ export function useShortcutContext ()
             handleShortcutRebuild();
         }
         window.addEventListener('gamepadbuttondown', handleGamepadButtonDown);
+        window.addEventListener('keydown', handleKeyPress);
         window.addEventListener('gamepadbuttonup', handleGamepadButtonUp);
-        window.addEventListener('focuschanged', handleShortcutRebuild);
+        window.addEventListener('shortcutsChanged', handleShortcutRebuild);
 
         return () =>
         {
-            window.removeEventListener('focuschanged', handleShortcutRebuild);
             window.removeEventListener('gamepadbuttondown', handleGamepadButtonDown);
             window.removeEventListener('gamepadbuttonup', handleGamepadButtonUp);
+            window.removeEventListener('shortcutsChanged', handleShortcutRebuild);
+            window.removeEventListener('keydown', handleKeyPress);
         };
     }, [array]);
 
@@ -127,6 +160,7 @@ export function useShortcuts (focusKey: string, build: () => Shortcut[], ...deps
     useEffect(() =>
     {
         shortcutMap.set(focusKey, build());
+        markDirtyThrottled();
 
         return () =>
         {

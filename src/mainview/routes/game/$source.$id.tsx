@@ -205,7 +205,15 @@ function MainActions (data: { game: FrontEndGameTypeDetailed; })
     mutationFn: async () =>
     {
       const { error } = await rommApi.api.romm.game({ source: data.game.id.source })({ id: data.game.id.id }).play.post();
-      if (error) throw error;
+      if (error)
+      {
+        if (error.value.message)
+        {
+          toast.error(error.value.message);
+        }
+
+        throw error;
+      };
     }
   });
   const [progress, setProgress] = useState<number | undefined>(undefined);

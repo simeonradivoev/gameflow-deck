@@ -5,7 +5,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { settingsApi } from '../../scripts/clientApi';
 import { useCallback, useState } from 'react';
 import { Button } from '../../components/options/Button';
-import { Check, ChevronDown, SearchAlert, Trash, TriangleAlert } from 'lucide-react';
+import { Check, ChevronDown, FolderSearch, SearchAlert, Trash, TriangleAlert } from 'lucide-react';
 import { ContextDialog, ContextList, DialogEntry, OptionElement } from '../../components/ContextDialog';
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
@@ -13,6 +13,8 @@ import { RPC_URL } from '../../../shared/constants';
 import emulators from '@emulators';
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
+import FilePicker from '@/mainview/components/FilePicker';
+import { dirname } from 'pathe';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -90,6 +92,7 @@ function NewEmulatorPath (data: { addOverride: (emulator: string) => void; isAdd
 
 function EmulatorPath (data: { id: string; })
 {
+  const [isSearching, setIsSearching] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [localValue, setLocalValue] = useState<string | undefined>();
   const { data: remoteValue } = useQuery({
@@ -109,6 +112,8 @@ function EmulatorPath (data: { id: string; })
     {
       ctx.client.invalidateQueries({ queryKey: ["emulator", data.id] });
       ctx.client.invalidateQueries({ queryKey: ["auto-emulators"] });
+      setLocalValue(v);
+      setDirty(false);
     }
   });
   const deleteMutation = useMutation({
@@ -129,10 +134,22 @@ function EmulatorPath (data: { id: string; })
   {
     if (dirty)
     {
-      setDirty(false);
       setSettingMutation.mutate(localValue ?? '');
     }
   }, [dirty, setDirty, localValue]);
+
+  const handleCloseSearch = () =>
+  {
+    setIsSearching(false);
+    setFocus(`search-${data.id}`);
+  };
+
+  const handleSelectPath = (path: string) =>
+  {
+    setIsSearching(false);
+    setSettingMutation.mutate(path);
+    setFocus(`search-${data.id}`);
+  };
 
   return (
     <OptionSpace label={<><p className='font-semibold'>{data.id}</p><small className='text-base-content/40'>{emulators[data.id]}</small></>}>
@@ -150,9 +167,33 @@ function EmulatorPath (data: { id: string; })
           }}
           value={localValue}
         />
-        <Button id={`delete-${data.id}`} className='p-2' onAction={() => deleteMutation.mutate()} type='button' >
+        <Button shortcutLabel="Remove" id={`delete-${data.id}`} className='p-2' onAction={() => deleteMutation.mutate()} type='button' >
           <Trash />
         </Button>
+        <Button
+          id={`search-${data.id}`}
+          className='p-2'
+          onAction={() => setIsSearching(true)}
+          shortcutLabel={"Search"}
+          type='button' >
+          <FolderSearch />
+        </Button>
+        <ContextDialog
+          className='h-[80vh] w-[60vw]'
+          id={`file-picker-${data.id}`}
+          open={isSearching}
+          close={handleCloseSearch}
+          preferredChildFocusKey={`main-download-path-${data.id}`}
+        >
+          {isSearching && <FilePicker
+            onSelect={handleSelectPath}
+            key={`download-path-${data.id}`}
+            startingPath={remoteValue ? dirname(remoteValue) : undefined}
+            id={`download-path-${data.id}`}
+            cancel={handleCloseSearch}
+          />
+          }
+        </ContextDialog>
       </div>
     </OptionSpace>
   );

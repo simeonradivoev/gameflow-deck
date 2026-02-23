@@ -9,12 +9,13 @@ import { AutoFocus } from './AutoFocus';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
 import { Router } from '..';
 import { PopSource } from '../scripts/spatialNavigation';
+import { GameListFilterType } from '@/shared/constants';
 
 export interface CollectionsDetailParams
 {
     id?: string;
     setBackground: (url: string) => void;
-    filters: GameListFilter;
+    filters?: GameListFilterType;
     headerTitle?: JSX.Element;
     title?: JSX.Element;
     footer?: JSX.Element;
@@ -32,7 +33,7 @@ function HandleGoBack ()
 
 export function CollectionsDetail (data: CollectionsDetailParams)
 {
-    const focusKey = `game-list-${data.id}-${data.filters.platformId}-${data.filters.collectionId}`;
+    const focusKey = `game-list-${data.id}-${data.filters ? Object.values(data.filters).map(f => String(f)).join(",") : ''}`;
     const { ref, focusSelf } = useFocusable({
         focusKey,
         preferredChildFocusKey: `${focusKey}-list`,
@@ -51,7 +52,14 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                     <div className="h-fit w-full px-6 pt-4 pb-32">
                         {data.title}
                         <Suspense>
-                            <GameList grid setBackground={data.setBackground} filters={data.filters} id={`${focusKey}-list`}></GameList>
+                            <GameList
+                                grid
+                                setBackground={data.setBackground}
+                                filters={data.filters}
+                                onFocus={(node) => node.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+                                id={`${focusKey}-list`}>
+
+                            </GameList>
                             <AutoFocus focus={focusSelf} />
                         </Suspense>
                     </div>

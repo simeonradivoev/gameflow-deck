@@ -79,19 +79,39 @@ export async function getValidLaunchCommandsForGame (source: string, id: number)
 export default async function buildStatusResponse (source: string, id: number)
 {
     let cleanup: (() => void) | undefined;
+    let closed = false;
     return new Response(new ReadableStream({
         async start (controller)
         {
-            function enqueue (data: GameInstallProgress, event?: 'error' | 'refresh')
+            const encoder = new TextEncoder();
+
+            function enqueue (data: GameInstallProgress, event?: 'error' | 'refresh' | 'ping')
             {
                 const evntString = event ? `event: ${event}\n` : '';
-                controller.enqueue(`${evntString}data: ${JSON.stringify(data)}\n\n`);
+                controller.enqueue(encoder.encode(`${evntString}data: ${JSON.stringify(data)}\n\n`));
             }
+
+            await sendLatests();
+
+            // seems to help with issue of buffers not flushing, keeping the connection open forcefully
+            const keepAlive = setInterval(() =>
+            {
+                if (closed) return clearInterval(keepAlive);
+                try
+                {
+                    enqueue({}, 'ping');
+                } catch
+                {
+                    closed = true;
+                    clearInterval(keepAlive);
+                }
+            }, 15000);
 
             const sourceId = `${source}-${id}`;
 
             async function sendLatests ()
             {
+                if (closed) return;
                 const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(id, source), columns: { id: true } });
                 const activeTask = taskQueue.findJob(`install-rom-${source}-${id}`);
                 if (activeTask)
@@ -136,8 +156,6 @@ export default async function buildStatusResponse (source: string, id: number)
                 }
             }
 
-            await sendLatests();
-
             const dispose: Function[] = [];
             const handleActiveExit = async (data: { error?: ErrorLike; }) =>
             {
@@ -179,6 +197,7 @@ export default async function buildStatusResponse (source: string, id: number)
 
             cleanup = () =>
             {
+                closed = true;
                 dispose.forEach(f => f());
             };
         },

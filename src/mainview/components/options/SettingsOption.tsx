@@ -15,6 +15,7 @@ export function SettingsOption (data: {
     type: HTMLInputTypeAttribute;
     placeholder?: string;
     icon?: JSX.Element;
+    children?: any;
 })
 {
     const [dirty, setDirty] = useState(false);
@@ -67,6 +68,7 @@ export function SettingsOption (data: {
                 }}
                 value={localValue}
             />
+            {data.children}
         </OptionSpace>
     );
 }

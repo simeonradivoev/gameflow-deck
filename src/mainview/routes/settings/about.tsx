@@ -52,10 +52,6 @@ function RouteComponent ()
           <td>{systemInfo?.data?.machine}</td>
         </tr>
         <tr>
-          <th>Space</th>
-          <td>{!!systemInfo?.data && `${prettyBytes(systemInfo?.data?.freeSpace)}  Free / ${prettyBytes(systemInfo?.data?.totalSpace)} Total | ${(1 - (systemInfo?.data?.freeSpace / systemInfo?.data?.totalSpace)).toLocaleString('en-GB', { style: "percent" })}`}</td>
-        </tr>
-        <tr>
           <th>Steam Deck</th>
           <td>{systemInfo?.data?.steamDeck ?? 'false'}</td>
         </tr>

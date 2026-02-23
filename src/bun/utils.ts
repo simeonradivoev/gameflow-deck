@@ -1,11 +1,5 @@
 
-import { networkInterfaces } from 'node:os';
-
-const localIp = Object.values(networkInterfaces())
-    .flat()
-    .find((iface) => iface?.family === 'IPv4' && !iface.internal)?.address || 'localhost';
-
-export const host = process.env.PUBLIC_ACCESS ? localIp : 'localhost';
+import { $ } from 'bun';
 
 export function checkRunning (pid: number)
 {
@@ -27,4 +21,38 @@ export function getErrorMessage (error: unknown): string
 export function isSteamDeckGameMode ()
 {
     return !!Bun.env.SteamDeck;
+}
+
+export async function isSteamDeck ()
+{
+    if (process.platform === 'linux')
+    {
+        try
+        {
+            const productName = await Bun.file("/sys/class/dmi/id/product_name").text();
+            const isSteamDeck = ["Jupiter", "Galileo"].includes(productName.trim());
+            return isSteamDeck;
+        } catch (error)
+        {
+            return isSteamDeckGameMode();
+        }
+    }
+}
+
+export async function openExternal (target: string)
+{
+    if (process.platform === "linux")
+    {
+        return $`xdg-open ${target}`.throws(true);
+    }
+
+    if (process.platform === "win32")
+    {
+        return $`cmd /c start ${target}`.throws(true);
+    }
+
+    if (process.platform === "darwin")
+    {
+        return $`open ${target}`.throws(true);
+    }
 }

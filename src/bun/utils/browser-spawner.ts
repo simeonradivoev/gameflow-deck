@@ -1,7 +1,4 @@
 import { $, type Subprocess } from "bun";
-import path from 'node:path';
-import { readFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import os from 'node:os';
 
 export type RunBrowserType = "chrome" | "chromium" | "firefox" | "edge";
@@ -25,6 +22,7 @@ interface SpawnBrowserOptions
     detached?: boolean;
     execPath: string; // Required: browser executable path from get-browser.ts
     source: RunBrowserSource; // How the browser was discovered (running, system, or flatpak)
+    configPath: string;
     onExit?: () => void; // Called when the browser exists duh
     ipc?: (message: string) => void;
 }
@@ -69,7 +67,8 @@ export async function spawnBrowser ({
     execPath,
     source,
     onExit,
-    ipc
+    ipc,
+    configPath
 }: SpawnBrowserOptions): Promise<Subprocess>
 {
     // Configuration for both Flatpak and Native
@@ -117,6 +116,7 @@ export async function spawnBrowser ({
             "--branch=stable",
             `--arch=${process.arch === "x64" ? "x86_64" : process.arch}`, // map node arch to flatpak arch
             `--command=${target.internalCmd}`,
+            `--filesystem=${configPath}`, // we must allw it to use our own config path to save profile data
             "--file-forwarding",
             ...envFlags // Inject env vars here
         ];

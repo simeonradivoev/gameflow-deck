@@ -3,10 +3,13 @@ import { which } from 'bun';
 import fs from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import * as schema from '../../schema/emulators';
+import * as appSchema from "../../schema/app";
 import { eq } from 'drizzle-orm';
-import { config, emulatorsDb } from '../../app';
+import { activeGame, config, db, emulatorsDb, events, setActiveGame } from '../../app';
 import os from 'node:os';
 import { $ } from 'bun';
+import { spawn } from 'node:child_process';
+import { updateRomUserApiRomsIdPropsPut } from '@/clients/romm';
 
 export const varRegex = /%([^%]+)%/g;
 
@@ -16,6 +19,92 @@ interface CommandEntry
     command: string;
     valid: boolean;
     emulator?: string;
+}
+
+export async function launchCommand (validCommand: string, source: string, sourceId: number, id: number)
+{
+    if (activeGame && activeGame.process?.killed === false)
+    {
+        throw new Error(`${activeGame.name} currently running`);
+    }
+
+    const localGame = await db.query.games.findFirst({
+        where: eq(appSchema.games.id, id), columns: {
+            name: true,
+            source_id: true,
+            source: true
+        }
+    });
+
+    await new Promise((resolve, reject) =>
+    {
+        const game = spawn(validCommand, {
+            shell: true
+        });
+        game.stdout.on('data', data => console.log(data));
+        game.on('close', (code) =>
+        {
+            events.emit('activegameexit', { source, id: sourceId, exitCode: code, signalCode: null });
+            resolve(code);
+        });
+        game.on('error', e =>
+        {
+            console.error(e);
+            events.emit('notification', { message: e.message, type: 'error' });
+            reject(e);
+        });
+
+        setActiveGame({
+            process: game,
+            name: localGame?.name ?? "Unknown",
+            gameId: id,
+            command: validCommand
+        });
+
+        function updateRommProps (id: number)
+        {
+            updateRomUserApiRomsIdPropsPut({ path: { id }, body: { update_last_played: true } });
+            events.emit('notification', { message: "Updated Last Played", type: 'success' });
+        }
+
+        if (source === 'romm') 
+        {
+            updateRommProps(sourceId);
+        }
+        else if (localGame?.source === 'romm' && localGame.source_id)
+        {
+            updateRommProps(localGame.source_id);
+        }
+
+    });
+
+    /* Old spawn lanching, cases issues, needs to be ran as shell
+
+    const cmd = Array.from(validCommand.command.command.matchAll(/(".*?"|[^\s"]+)/g)).map(m => m[0]);
+    const game = setActiveGame({
+        process: Bun.spawn({
+            cmd,
+            env: {
+                ...process.env
+            },
+            onExit (subprocess, exitCode, signalCode, error)
+            {
+                events.emit('activegameexit', { subprocess, exitCode, signalCode, error });
+            },
+            stdin: "ignore",
+            stdout: "inherit",
+            stderr: "inherit",
+        }),
+        name: localGame?.name ?? "Unknown",
+        gameId: validCommand.gameId,
+        command: validCommand.command.command
+    });
+
+    await game.process.exited;
+    if (game.process.exitCode && game.process.exitCode > 0)
+    {
+        return status('Internal Server Error');
+    }*/
 }
 
 export async function getValidLaunchCommands (data: {
@@ -90,11 +179,11 @@ export async function getValidLaunchCommands (data: {
         const staticVars: Record<string, string> = {
             '%ROM%': $.escape(rom),
             '%ROMRAW%': validFiles[0],
-            '%ROMRAWWIN%': validFiles[0].replace('/', '\\'),
-            '%ESPATH%': path.dirname(Bun.main),
+            '%ROMRAWWIN%': $.escape(validFiles[0].replace('/', '\\')),
+            '%ESPATH%': $.escape(path.dirname(Bun.main)),
             '%ROMPATH%': $.escape(gamePath),
-            '%BASENAME%': path.basename(validFiles[0], path.extname(validFiles[0])),
-            '%FILENAME%': path.basename(validFiles[0])
+            '%BASENAME%': $.escape(path.basename(validFiles[0], path.extname(validFiles[0]))),
+            '%FILENAME%': $.escape(path.basename(validFiles[0]))
         };
 
         cmd = cmd.replace(/\%INJECT\%=(?<inject>[\w\%.\/\\]+)/g, (subscring, injectFile: string) =>

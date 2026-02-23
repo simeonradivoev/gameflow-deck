@@ -2,16 +2,13 @@ import { IJob, JobContext } from "../task-queue";
 import { mkdir } from 'node:fs/promises';
 import { and, eq, or } from 'drizzle-orm';
 import fs from 'node:fs/promises';
-import { DownloaderHelper } from 'node-downloader-helper';
-import StreamZip from 'node-stream-zip';
 import * as schema from "../schema/app";
 import * as emulatorSchema from "../schema/emulators";
 import path from 'node:path';
-import { downloadRomsApiRomsDownloadGet, getPlatformApiPlatformsIdGet, getRomApiRomsIdGet } from "@clients/romm";
+import { getPlatformApiPlatformsIdGet, getRomApiRomsIdGet } from "@clients/romm";
 import { config, db, emulatorsDb, jar } from "../app";
 import unzip from 'unzip-stream';
 import { Readable, Transform } from "node:stream";
-import { createWriteStream } from "node:fs";
 
 interface JobConfig
 {
@@ -22,13 +19,17 @@ interface JobConfig
 export class InstallJob implements IJob
 {
     public id: number;
+    public source: string;
+    public sourceId: number;
 
     public config?: JobConfig;
 
-    constructor(id: number, config?: JobConfig)
+    constructor(id: number, source: string, sourceId: number, config?: JobConfig)
     {
         this.id = id;
         this.config = config;
+        this.sourceId = sourceId;
+        this.source = source;
     }
 
     public async start (cx: JobContext)

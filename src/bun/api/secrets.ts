@@ -118,7 +118,6 @@ class FallbackSecrets implements ISecrets
     }
 }
 
-/*
 try
 {
     await Bun.secrets.get({ service: 'test', name: 'test' });
@@ -126,8 +125,6 @@ try
 } catch
 {
     secrets = new FallbackSecrets();
-}*/
-
-secrets = new FallbackSecrets();
+}
 
 export default secrets;

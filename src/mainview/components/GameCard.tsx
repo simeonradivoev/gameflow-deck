@@ -79,11 +79,11 @@ export default function GameCard (data: GameCardParams)
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
         )}</div>
 
-      <div className="h-0 flex pr-2 justify-end items-center">
+      <div className="h-0 flex pr-2 justify-end items-center gap-2">
         {data.badges?.map((b, i) =>
           <div key={i}
             className={
-              twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 mr-4 transition-colors",
+              twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 last:mr-4 transition-colors",
                 classNames({ "bg-primary text-primary-content": focused }))}
           >
             {b}

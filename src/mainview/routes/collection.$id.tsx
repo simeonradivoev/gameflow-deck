@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useSessionStorage } from 'usehooks-ts';
 import { CollectionsDetail } from '../components/CollectionsDetail';
-import { getRomsApiRomsGetOptions } from '../../clients/romm/@tanstack/react-query.gen';
+import { getCollectionApiCollectionsIdGetOptions, getRomsApiRomsGetOptions } from '../../clients/romm/@tanstack/react-query.gen';
 import { DefaultRommStaleTime } from '../../shared/constants';
+import { useQuery } from '@tanstack/react-query';
 
 export const Route = createFileRoute('/collection/$id')({
   component: RouteComponent,
@@ -15,12 +16,13 @@ export const Route = createFileRoute('/collection/$id')({
 function RouteComponent ()
 {
   const { id } = Route.useParams();
+  const { data: collection } = useQuery({ ...getCollectionApiCollectionsIdGetOptions({ path: { id: Number(id) } }) });
   const [, setBackground] = useSessionStorage<string | undefined>(
     "home-background",
     undefined,
   );
 
   return (
-    <CollectionsDetail setBackground={setBackground} filters={{ collectionId: Number(id) }} />
+    <CollectionsDetail setBackground={setBackground} title={<div className="divider font-semibold text-2xl">{collection?.name}</div>} filters={{ collection_id: Number(id) }} />
   );
 }

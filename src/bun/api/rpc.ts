@@ -1,10 +1,10 @@
 import { cors } from "@elysiajs/cors";
 import Elysia from "elysia";
 import { RPC_PORT } from "../../shared/constants";
-import { host } from "../utils";
 import clients from "./clients";
 import { settings } from "./settings";
 import { system } from "./system";
+import { host } from "../utils/host";
 
 const api = new Elysia({ serve: {} })
     .use([cors(), clients, settings, system]);

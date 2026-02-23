@@ -1,7 +1,7 @@
 import { SERVER_PORT } from "../shared/constants";
 import path from 'node:path';
-import { host } from "./utils";
 import appInfo from '../../package.json';
+import { host } from "./utils/host";
 
 export function RunBunServer ()
 {
