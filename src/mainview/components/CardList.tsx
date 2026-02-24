@@ -1,10 +1,11 @@
 import
 {
   FocusContext,
+  FocusDetails,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { GameMeta } from "../../shared/constants";
-import GameCard, { GameCardParams } from "./GameCard";
+import GameCard, { GameCardFocusHandler, GameCardParams } from "./GameCard";
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
@@ -22,7 +23,7 @@ export function CardList (data: {
   games: GameMetaExtra[];
   grid?: boolean;
   onSelectGame?: (id: string) => void;
-  onGameFocus?: (id: string, node: HTMLElement) => void;
+  onGameFocus?: GameCardFocusHandler;
   className?: string;
 })
 {
@@ -54,10 +55,10 @@ export function CardList (data: {
         data-index={i}
         title={g.title}
         subtitle={g.subtitle ?? ""}
-        onFocus={(id, node) =>
+        onFocus={(id, node, details) =>
         {
-          g.onFocus?.();
-          data.onGameFocus?.(id, node);
+          g.onFocus?.(details);
+          data.onGameFocus?.(id, node, details);
         }}
         onAction={handleAction}
         preview={preview}
@@ -74,7 +75,7 @@ export function CardList (data: {
       ref={ref}
       save-child-focus="session"
       className={twMerge("my-6 items-center justify-center-safe h-(--game-card-height) ",
-        data.grid ? "card-grid h-fit gap-5" : 'card-list gap-6',
+        data.grid ? "card-grid h-fit gap-5" : 'card-list md:gap-6 sm:gap-2',
         data.className
       )}
       onKeyDown={(e) =>

@@ -12,7 +12,7 @@ export function Button (data: {
     children?: any,
     className?: string,
     disabled?: boolean,
-    type: "reset" | "button" | "submit" | undefined;
+    type?: "reset" | "button" | "submit";
     shortcutLabel?: string;
     focusClassName?: string;
 } & InteractParams & FocusParams)

@@ -7,7 +7,7 @@ import path from "node:path";
 import staticAssetsPlugin from 'vite-static-assets-plugin';
 import os from 'node:os';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import { host } from "@/bun/utils/host";
+import { host } from "./src/bun/utils/host";
 
 export default defineConfig(() =>
 {

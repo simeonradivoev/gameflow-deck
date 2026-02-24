@@ -30,7 +30,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     const handleAction = data.action ? () => data.action?.({ close: context.close, focus: focusSelf }) : undefined;
     const { ref, focused, focusSelf, focusKey, hasFocusedChild } = useFocusable({
         focusKey: `${context.id}-list-option-${data.id}`,
-        onEnterPress: handleAction,
+        onEnterPress: data.shortcuts ? handleAction : undefined,
         onFocus: handleFocus,
         trackChildren: typeof data.content !== 'string'
     });

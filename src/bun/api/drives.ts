@@ -32,7 +32,7 @@ export async function getDevices (): Promise<Drive[]>
 {
     const blockDevicesRaw = await si.blockDevices();
     const layout = await si.diskLayout();
-    const blockDevices = blockDevicesRaw.filter(l => l.device && l.type === 'part' && l.mount);
+    const blockDevices = blockDevicesRaw.filter(l => l.device && (l.type === 'part' || l.type === 'disk') && l.mount);
     const fsSizes = await si.fsSize();
     const sizes = new Map(fsSizes.map(s => [s.mount, s]));
     const layoutMap = new Map(layout.map(l => [l.device, l]));
@@ -65,26 +65,29 @@ export async function getDevicesCurated (): Promise<Drive[]>
     const devices = await getDevices();
     drives.push(...devices.filter(d => d.hasWriteAccess));
 
-    const homeDir = os.homedir();
-    const homeDirDevice = devices.filter(d => d.mountPoint).reverse()
-        .find(d => homeDir.startsWith(d.mountPoint!));
-    if (homeDirDevice)
+    if (process.platform !== 'win32')
     {
-        const [hasReadAccess, hasWriteAccess] = await getAccess(homeDir);
+        const homeDir = os.homedir();
+        const homeDirDevice = devices.filter(d => d.mountPoint).reverse()
+            .find(d => homeDir.startsWith(d.mountPoint!));
+        if (homeDirDevice)
+        {
+            const [hasReadAccess, hasWriteAccess] = await getAccess(homeDir);
 
-        drives.push({
-            parent: homeDirDevice.parent,
-            device: homeDirDevice.device,
-            size: homeDirDevice.size,
-            used: homeDirDevice.used,
-            isRemovable: homeDirDevice.isRemovable,
-            mountPoint: homeDir,
-            type: homeDirDevice.type,
-            label: 'Home',
-            interfaceType: homeDirDevice.interfaceType,
-            hasReadAccess,
-            hasWriteAccess
-        });
+            drives.push({
+                parent: homeDirDevice.parent,
+                device: homeDirDevice.device,
+                size: homeDirDevice.size,
+                used: homeDirDevice.used,
+                isRemovable: homeDirDevice.isRemovable,
+                mountPoint: homeDir,
+                type: homeDirDevice.type,
+                label: 'Home',
+                interfaceType: homeDirDevice.interfaceType,
+                hasReadAccess,
+                hasWriteAccess
+            });
+        }
     }
 
     return drives;

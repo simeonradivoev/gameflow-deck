@@ -12,7 +12,6 @@ import { getDevices, getDevicesCurated } from "./drives";
 import getFolderSize from "get-folder-size";
 import si from 'systeminformation';
 
-// steam://open/keyboard?XPosition=%i&YPosition=%i&Width=%i&Height=%i&Mode=%d
 export const system = new Elysia({ prefix: '/api/system' })
     .post('/show_keyboard', async ({ body: { XPosition, YPosition, Width, Height } }) =>
     {
@@ -67,12 +66,23 @@ export const system = new Elysia({ prefix: '/api/system' })
     .get('/drives', async () =>
     {
         const drives = await getDevices();
+        if (process.platform === 'win32')
+            return drives.map(d =>
+            {
+                d.mountPoint += '/';
+                return d;
+            });
         return drives;
     })
+    // Drives that are vaiable for downloads
     .get('/drives/download', async () =>
     {
         const drives = await getDevicesCurated();
-        const downloadsPath = config.get('downloadPath');
+        let downloadsPath = config.get('downloadPath');
+        if (!path.isAbsolute(downloadsPath))
+        {
+            downloadsPath = path.resolve(process.cwd(), downloadsPath);
+        }
         const currentDownloadsSize = await getFolderSize(downloadsPath);
         let used = false;
         const drivesDownload: DownloadsDrive[] = drives
@@ -115,6 +125,7 @@ export const system = new Elysia({ prefix: '/api/system' })
             drives: drivesDownload,
         };
     })
+    // Create Folder
     .put('/dirs', async ({ body: { dirname, name } }) =>
     {
         await fs.mkdir(path.join(dirname, name));
@@ -123,7 +134,11 @@ export const system = new Elysia({ prefix: '/api/system' })
     })
     .get('/dirs', async ({ query: { path: startingPath } }) =>
     {
-        const currentPath = startingPath ?? dirname(Bun.main);
+        let currentPath = startingPath ?? dirname(process.cwd());
+        if (!path.isAbsolute(currentPath))
+        {
+            currentPath = path.resolve(process.cwd(), currentPath);
+        }
         const paths = await fs.readdir(currentPath, { withFileTypes: true });
         return {
             name: path.basename(currentPath),

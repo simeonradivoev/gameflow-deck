@@ -14,10 +14,6 @@ import
   Bell,
   Bluetooth,
   Clock,
-  Lock,
-  Power,
-  ShieldAlert,
-  Sun,
   User,
   Wifi,
   WifiHigh,
@@ -29,9 +25,10 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "../../clients/romm/@tanstack/react-query.gen";
 import { RPC_URL } from "../../shared/constants";
 import { JSX, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { SaveSource } from "../scripts/spatialNavigation";
 import { systemApi } from "../scripts/clientApi";
+import { twMerge } from "tailwind-merge";
 
 function HeaderAvatar (data: {
   id: string;
@@ -116,7 +113,7 @@ function NotificationStatus ()
 {
   const hasUnread = false;
   return <div className={classNames("p-2 rounded-full", { "bg-warning text-warning-content": hasUnread })}>
-    <Bell className="w-6 h-6" />
+    <Bell className="md:size-6 sm:size-4" />
   </div>;
 }
 
@@ -170,13 +167,13 @@ function BluetoothStatus ()
 
 function WiFiStatus ()
 {
-  const { data: wifi } = useQuery({
+  const { data: wifi, isLoading } = useQuery({
     queryKey: ['wifi'],
     queryFn: () => systemApi.api.system.info.wifi.get().then(d => d.data),
     refetchInterval: 3000
   });
 
-  return <div>
+  return (!!wifi && wifi.length > 0) || isLoading ? <div>
     {wifi?.map(w =>
     {
       const className = "w-6 h-6";
@@ -195,7 +192,7 @@ function WiFiStatus ()
       </div>;
     })}
 
-  </div>;
+  </div> : undefined;
 }
 
 function BatteryStatus ()
@@ -224,7 +221,7 @@ function BatteryStatus ()
       batteryIcon = <BatteryMedium className={batteryClassName} />;
     }
   }
-  return <div className="flex gap-2 items-center">
+  return !!battery && battery.hasBattery && <div className="flex gap-2 items-center">
     {batteryIcon}
     <span className="font-semibold">{battery?.percent} %</span>
   </div>;
@@ -271,7 +268,9 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
     <FocusContext.Provider value={focusKey}>
       <header
         ref={ref}
-        className="h-14 mt-2 flex items-center justify-between text-white"
+        className={twMerge("md:relative md:h-14 md:mt-2 flex items-center justify-between text-white",
+          "sm:absolute sm:top-0 sm:right-0 sm:left-0"
+        )}
       >
         <div className="flex items-center gap-2 drop-shadow-sm">
           {accounts?.map(a => <HeaderAvatar
@@ -285,8 +284,8 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
           />)}
           {data.title}
         </div>
-        <div className="flex items-center gap-2 text drop-shadow-sm">
-          <div className="flex gap-5  items-center">
+        <div className="flex items-center md:gap-2 sm:gap-1 text drop-shadow-sm">
+          <div className="flex md:gap-5 sm:gap-2 items-center">
             <ClockStatus />
             <WiFiStatus />
             <BluetoothStatus />
@@ -297,7 +296,7 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
           <div className="flex gap-2">
             {data.buttonElements ?? data.buttons?.map(b => <RoundButton
               key={b.id}
-              className="header-icon size-16"
+              className="header-icon md:size-16 sm:size-10"
               id={b.id}
               icon={b.icon}
               external={b.external}

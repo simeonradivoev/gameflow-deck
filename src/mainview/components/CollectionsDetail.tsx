@@ -10,6 +10,7 @@ import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/
 import { Router } from '..';
 import { PopSource } from '../scripts/spatialNavigation';
 import { GameListFilterType } from '@/shared/constants';
+import { GameCardFocusHandler } from './GameCard';
 
 export interface CollectionsDetailParams
 {
@@ -42,6 +43,14 @@ export function CollectionsDetail (data: CollectionsDetailParams)
     useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
     const { shortcuts } = useShortcutContext();
 
+    const handleScroll: GameCardFocusHandler = (id, node, details) =>
+    {
+        if (!(details.nativeEvent instanceof MouseEvent))
+        {
+            node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+    };
+
     return (
         <FocusContext value={focusKey}>
             <AnimatedBackground animated ref={ref} backgroundKey="home-background" className='flex'>
@@ -56,7 +65,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                                 grid
                                 setBackground={data.setBackground}
                                 filters={data.filters}
-                                onFocus={(node) => node.scrollIntoView({ block: 'center', behavior: 'smooth' })}
+                                onFocus={handleScroll}
                                 id={`${focusKey}-list`}>
 
                             </GameList>

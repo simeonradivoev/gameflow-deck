@@ -36,7 +36,7 @@ function List (data: {
     const { setCurrentPath, startingPath, allowNewFolderCreation, currentPath, isDirectoryPicker } = useContext(FilePickerContext);
     const { ref, focusKey } = useFocusable({ focusKey: data.id, preferredChildFocusKey: `${data.id}...` });
     const handleReturn = () => setCurrentPath(data.parentPath);
-    useShortcuts(focusKey, () => [{ label: "Directoy Up", button: GamePadButtonCode.L1, action: handleReturn }], [handleReturn]);
+    useShortcuts(focusKey, () => [{ label: "Directory Up", button: GamePadButtonCode.L1, action: handleReturn }], [handleReturn]);
     return <div ref={ref}>
         <FocusContext value={focusKey}>
             <ContextList showCloseButton={false}
@@ -62,21 +62,25 @@ function List (data: {
                             icon = <></>;
                         }
                         const shortcuts: Shortcut[] = [];
+                        let action: () => void;
                         if (f.isDirectory)
                         {
                             shortcuts.push({ label: "Enter", button: GamePadButtonCode.A, action: () => setCurrentPath(fullPath) });
+                            action = () => setCurrentPath(fullPath);
                             if (isDirectoryPicker)
                                 shortcuts.push({ label: "Select", button: GamePadButtonCode.X, action: () => data.select(fullPath) });
                         } else
                         {
                             shortcuts.push({ label: "Select", button: GamePadButtonCode.A, action: () => data.select(fullPath) });
+                            action = () => data.select(fullPath);
                         }
                         const entry: DialogEntry = {
                             content: f.name,
                             id: `${data.id}-${f.name}`,
                             type: 'primary',
                             icon,
-                            shortcuts
+                            shortcuts,
+                            action
                         };
                         return entry;
                     }), ...(allowNewFolderCreation && currentPath ? [{
@@ -157,7 +161,7 @@ function DriveElement (data: { id: string, isActive: boolean, label: string; onS
 {
     const { ref, focused } = useFocusable({ focusKey: data.id, onEnterPress: data.onSelect });
     return <li ref={ref} onClick={data.onSelect} className={twMerge(
-        "flex bg-base-200 text-base-content rounded-full gap-2 items-center p-2 overflow-hidden max-w-xs",
+        "flex bg-base-200 text-base-content rounded-full gap-2 items-center p-2 px-4 overflow-hidden max-w-xs cursor-pointer text-nowrap hover:bg-primary/40",
         classNames({
             "bg-primary text-primary-content": data.isActive,
             "ring-7 ring-base-content": focused
@@ -238,8 +242,8 @@ export default function FilePicker (data: {
 {
     const [currentPath, setCurrentPath] = useState<string | undefined>(data.startingPath);
 
-    const { data: files, refetch: refetchFiles } = useQuery(filesQuery(currentPath, data.id));
-    const { data: drives } = useQuery(drivesQuery);
+    const { data: files, refetch: refetchFiles, isLoading: filesLoading } = useQuery(filesQuery(currentPath, data.id));
+    const { data: drives, isLoading: drivesLoading } = useQuery(drivesQuery);
 
     const fullPath = files ? path.join(files.parentPath, files.name) : '';
     const activeDrive = drives?.filter(d => !!d.mountPoint).sort((a, b) => b.mountPoint!.length - a.mountPoint!.length).filter(d => fullPath.startsWith(d.mountPoint!))[0];
@@ -268,6 +272,7 @@ export default function FilePicker (data: {
                             }>{p}</a>
                         </li>)}
                     </ul>
+                    {(filesLoading || drivesLoading) && <span className="loading loading-spinner loading-lg"></span>}
                 </div>}
 
             <ListWithDrives

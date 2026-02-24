@@ -1,4 +1,5 @@
 
+import { FocusDetails } from '@noriginmedia/norigin-spatial-navigation';
 import { JSX } from 'react';
 import * as z from 'zod';
 
@@ -14,7 +15,7 @@ export interface GameMeta
 {
     id: string,
     onSelect?: () => void,
-    onFocus?: () => void,
+    onFocus?: (details: FocusDetails) => void,
     title: string,
     subtitle: string | JSX.Element,
     previewUrl?: string;

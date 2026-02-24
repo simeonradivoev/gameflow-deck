@@ -22,6 +22,7 @@ export default function DownloadDirectoryOption (data: PathSettingsOptionParams)
         type={data.type}
         save={setSettingMutation.mutate}
         allowNewFolderCreation={data.allowNewFolderCreation}
+        requireConfirmation={data.requireConfirmation}
         isDirectoryPicker={true}
         localValue={localValue}
         setLocalValue={(v) =>

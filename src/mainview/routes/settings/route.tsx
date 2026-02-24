@@ -29,6 +29,7 @@ import { PopSource } from "../../scripts/spatialNavigation";
 import { Router } from "../..";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Shortcuts from "@/mainview/components/Shortcuts";
+import useActiveControl from "@/mainview/scripts/gamepads";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
@@ -68,6 +69,7 @@ function MenuItem (data: {
         ? handleNonFocusSelect
         : undefined,
   });
+  const { isMouse } = useActiveControl();
   return (
     <li
       ref={ref}
@@ -81,13 +83,13 @@ function MenuItem (data: {
           "group rounded-full p-3 pl-5 text-base-content/80",
           classNames({
             "bg-primary text-primary-content": acitve,
-            "font-semibold ring-7 ring-primary-content": focused,
+            "font-semibold ring-7 ring-primary-content": focused && !isMouse,
             "bg-secondary text-secondary-content ring-primary": data.return && focused,
           }),
           data.linkClassName,
         )}
       >
-        <div className={twMerge("flex gap-2 items-center transition-all group-hover:scale-110", classNames({
+        <div className={twMerge("flex gap-2 items-center transition-all", classNames({
           "scale-110": focused || acitve
         }))}>
           {data.icon}

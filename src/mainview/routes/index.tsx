@@ -9,6 +9,7 @@ import
   Search,
   Power,
   OctagonAlert,
+  Maximize,
 } from "lucide-react";
 import
 {
@@ -19,6 +20,7 @@ import { useMutation } from "@tanstack/react-query";
 import
 {
   FocusContext,
+  FocusDetails,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
@@ -79,9 +81,14 @@ function HomeList (data: {
     preferredChildFocusKey: `${data.selectedFilter}-list`
   });
 
-  const handleNodeFocus = (node: HTMLElement) =>
+  const handleNodeFocus = (id: string, node: HTMLElement, details: FocusDetails) =>
   {
-    node.scrollIntoView({ inline: 'center', behavior: initFocus ? 'smooth' : 'instant' });
+    const isMounseEvent = details.nativeEvent instanceof MouseEvent;
+    if (!isMounseEvent)
+    {
+      node?.scrollIntoView({ inline: 'center', behavior: initFocus ? 'smooth' : 'instant' });
+    }
+
     setInitFocus(true);
   };
 
@@ -101,7 +108,7 @@ function HomeList (data: {
       (ref.current as HTMLElement)?.scrollBy({
         top: 0,
         left: deltaY,
-        behavior: 'auto'
+        behavior: 'instant'
       });
 
     } else
@@ -109,7 +116,7 @@ function HomeList (data: {
       (ref.current as HTMLElement)?.scrollBy({
         top: 0,
         left: deltaY,
-        behavior: 'auto'
+        behavior: 'instant'
       });
     }
   });
@@ -145,7 +152,9 @@ function MainMenu (data: {})
     <ul
       ref={ref}
       save-child-focus="session"
-      className="flex items-center justify-center gap-3"
+      className={twMerge("md:relative flex items-center justify-center md:gap-3",
+        "sm:gap-1 sm:absolute sm:bottom-2 sm:left-0 sm:right-0"
+      )}
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon
@@ -199,7 +208,7 @@ function CircleIcon (data: {
       onClick={data.action}
       className={twMerge(
         `menu-icon text-base-300 md:w-20 md:h-20 rounded-full flex items-center justify-center drop-shadow-lg cursor-pointer transition-all`,
-        'sm:w-14 sm:h-14',
+        'sm:w-14 sm:h-10',
         typeClasses[data.type ?? "none"], classNames(
           {
             "focus ring-7 ring-primary drop-shadow-2xl animate-scale": focused,
@@ -263,18 +272,19 @@ export default function ConsoleHomeUI ()
       <FocusContext.Provider value={focusKey}>
         <div className="px-3 w-full pt-2">
           <HeaderUI buttons={[
+            { id: "fullscreen", icon: <Maximize />, action: () => document.documentElement.requestFullscreen() },
             { id: "search", icon: <Search /> },
             { id: "power-button", icon: <Power />, external: true, action: () => closeMutation.mutate() }
           ]} />
         </div>
-        <div className="flex w-full flex-col grow justify-evenly">
+        <div className="flex w-full flex-col grow justify-evenly md:pt-0">
           <FilterUI
             id="home"
             options={filters}
             selected={filter ? filter : 'games'}
             setSelected={setFilter}
           />
-          <div className="-mb-1">
+          <div className="md:-mb-1">
             <HomeList
               selectedFilter={filter}
             />
@@ -283,7 +293,9 @@ export default function ConsoleHomeUI ()
             <MainMenu />
           </div>
         </div>
-        <footer className="px-2 pb-2 flex items-center justify-between h-12">
+        <footer className={twMerge("md:relative px-2 md:pb-2 flex items-center justify-between h-12",
+          "sm:absolute bottom-0 left-0 right-0"
+        )}>
           <div className="flex gap-2 text-sm">
           </div>
           <Shortcuts shortcuts={shortcuts} />

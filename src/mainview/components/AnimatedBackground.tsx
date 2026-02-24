@@ -48,7 +48,7 @@ export function AnimatedBackground (data: {
     let backgroundElements: JSX.Element | undefined = undefined;
     if (true)
     {
-        backgroundElements = <div id="container">
+        backgroundElements = <div id="container" className='md:visible sm:invisible'>
             <div id="container-inside">
                 <div className={bgColor} id="circle-small"></div>
                 <div className={bgColor} id="circle-medium"></div>
@@ -66,7 +66,7 @@ export function AnimatedBackground (data: {
             >
                 {!!lastBackgroundUrl && <div className='absolute w-full h-full' style={{ background: backgroundStyle(lastBackgroundUrl), zIndex: -4 }}></div>}
                 {!!backgroundUrl && <div key={backgroundUrl} className='absolute w-full h-full animate__animated animate__fadeIn' style={{ background: backgroundStyle(backgroundUrl), zIndex: -3 }}></div>}
-                {blurBackground && <div className={"absolute w-full h-full backdrop-blur-3xl"} style={{ zIndex: -2 }}></div>}
+                {blurBackground && <div className={"absolute w-full h-full backdrop-blur-3xl md:visible sm:invisible"} style={{ zIndex: -2 }}></div>}
                 {data.animated && animateBackground && <div className="absolute overflow-hidden w-full h-full" style={{ zIndex: -1 }}>
                     {backgroundElements}
                 </div>}

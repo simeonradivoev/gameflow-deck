@@ -7,6 +7,7 @@ import SvgIcon from "./SvgIcon";
 import classNames from "classnames";
 import { useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
+import useActiveControl from "../scripts/gamepads";
 
 function FilterCat (
   data: {
@@ -33,16 +34,19 @@ function FilterCat (
     }
   }, [filter]);
 
+  const { isMouse } = useActiveControl();
+
   return (
     <li
       ref={ref}
       onClick={focusSelf}
       className={classNames(
-        "flex px-4 h-12 items-center justify-center rounded-full transition-all",
+        "flex md:px-4 items-center justify-center rounded-full transition-all md:text-lg",
+        "sm:text-xs sm:px-2",
         {
           "bg-base-content px-3 text-base-300 drop-shadow cursor-default":
             focused || data.active,
-          "ring-primary ring-7": focused,
+          "ring-primary ring-7": focused && !isMouse,
           "hover:bg-base-content/40 cursor-pointer": !focused,
         },
       )}
@@ -70,13 +74,13 @@ export function FilterUI (data: {
   return (
     <div
       ref={ref}
-      className="flex items-center justify-center gap-2"
+      className="flex items-center sm:justify-start md:justify-center sm:ml-[15%] md:ml-0 gap-2"
       save-child-focus="session"
     >
       <FocusContext.Provider value={focusKey}>
-        <ul className="flex flex-row bg-base-100 rounded-full p-1 drop-shadow-sm">
-          <li className=" flex px-4 h-12 items-center justify-center rounded-full">
-            <SvgIcon className="size-8" icon="steamdeck_button_l1_outline" />
+        <ul className="flex flex-row bg-base-100 rounded-full p-1 drop-shadow-sm md:h-14 sm:h-8">
+          <li className=" flex px-4 items-center justify-center rounded-full">
+            <SvgIcon className="sm:size-4 md:size-8" icon="steamdeck_button_l1_outline" />
           </li>
           {Object.entries(data.options)?.map(([id, option]) => (
             <FilterCat
@@ -88,8 +92,8 @@ export function FilterUI (data: {
               {...option}
             />
           ))}
-          <li className=" flex px-4 h-12 items-center justify-center rounded-full">
-            <SvgIcon className="size-8" icon="steamdeck_button_r1_outline" />
+          <li className="flex px-4 items-center justify-center rounded-full">
+            <SvgIcon className="sm:size-4 md:size-8" icon="steamdeck_button_r1_outline" />
           </li>
         </ul>
       </FocusContext.Provider>

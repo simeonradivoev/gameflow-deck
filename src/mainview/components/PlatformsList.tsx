@@ -7,8 +7,9 @@ import { rommApi } from "../scripts/clientApi";
 import { SaveSource } from "../scripts/spatialNavigation";
 import { JSX } from "react";
 import { HardDrive } from "lucide-react";
+import { GameCardFocusHandler } from "./GameCard";
 
-export function PlatformsList (data: { id: string, setBackground: (url: string) => void; className?: string; onFocus?: (node: HTMLElement) => void; })
+export function PlatformsList (data: { id: string, setBackground: (url: string) => void; className?: string; onFocus?: GameCardFocusHandler; })
 {
     const navigate = useNavigate();
     const { data: platforms } = useSuspenseQuery(
@@ -29,7 +30,7 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
             type="platform"
             id={data.id}
             className={data.className}
-            onGameFocus={(id, node) => data.onFocus?.(node)}
+            onGameFocus={data.onFocus}
             games={platforms.sort((a, b) => a.updated_at.getTime() - b.updated_at.getTime())
                 .map((g) =>
                 {

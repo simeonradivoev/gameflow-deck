@@ -4,12 +4,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CardList, GameMetaExtra } from "./CardList";
 import { SaveSource } from "../scripts/spatialNavigation";
+import { GameCardFocusHandler } from "./GameCard";
 
 export default function CollectionList (data: {
     id: string,
     setBackground: (url: string) => void;
     className?: string;
-    onFocus?: (node: HTMLElement) => void;
+    onFocus?: GameCardFocusHandler;
 })
 {
     const navigate = useNavigate();
@@ -42,12 +43,12 @@ export default function CollectionList (data: {
                 SaveSource('game-list');
                 navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
             }}
-            onGameFocus={(id, node) =>
+            onGameFocus={(id, node, details) =>
             {
                 data.setBackground(
                     `https://picsum.photos/id/${10 + (id ?? 0)}/1920/1080.webp`,
                 );
-                data.onFocus?.(node);
+                data.onFocus?.(id, node, details);
             }}
         />
     );

@@ -3,8 +3,7 @@
 @plugin "daisyui";
 
 @theme {
-    --game-card-height: calc(var(--spacing) * 100);
-    --game-card-width: calc(var(--spacing) * 64);
+    --breakpoint-xs: 20rem;
 
     --animate-wiggle: wiggle 0.3s ease-in-out 1;
     --animate-rotate: rotate 0.3s ease-in-out 1 0.2s;
@@ -107,6 +106,24 @@
     }
 }
 
+@layer base {
+    @variant sm {
+        :root {
+            --game-card-height: calc(var(--spacing) * 55);
+            --game-card-width: calc(var(--spacing) * 35.2);
+        }
+    }
+}
+
+@layer base {
+    @variant md {
+        :root {
+            --game-card-height: calc(var(--spacing) * 100);
+            --game-card-width: calc(var(--spacing) * 64);
+        }
+    }
+}
+
 symbol path {
     fill: var(--color-base-content) !important;
 }
@@ -135,7 +152,7 @@ html {
     }
 
     .menu-icon svg {
-        @apply sm:size-7 md:size-9 transition-all;
+        @apply sm:size-6 md:size-9 transition-all;
     }
 
     .menu-icon.focus svg {
@@ -143,7 +160,8 @@ html {
     }
 
     .header-icon svg {
-        @apply w-8 h-8 min-w-8 min-h-8;
+        @apply md:w-8 md:h-8 md:min-w-8 md:min-h-8;
+        @apply sm:w-5 sm:h-5 sm:min-w-5 sm:min-h-5;
     }
 
     .header-icon-small svg {

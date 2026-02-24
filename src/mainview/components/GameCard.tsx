@@ -1,7 +1,8 @@
-import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { FocusDetails, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { JSX, useEffect } from "react";
+import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
+import useActiveControl from "../scripts/gamepads";
 
 export function GameCardSkeleton ()
 {
@@ -16,6 +17,8 @@ export function GameCardSkeleton ()
   );
 }
 
+export type GameCardFocusHandler = (id: string, node: HTMLElement, details: FocusDetails) => void;
+
 export interface GameCardParams
 {
   title: string;
@@ -27,7 +30,7 @@ export interface GameCardParams
   id: string;
   badges?: JSX.Element[];
   className?: string;
-  onFocus?: (id: string, node: HTMLElement) => void;
+  onFocus?: GameCardFocusHandler;
   onBlur?: (id: string) => void;
   onAction?: () => void;
   clickFocuses?: boolean;
@@ -37,10 +40,11 @@ export default function GameCard (data: GameCardParams)
 {
   const { ref, focused, focusSelf } = useFocusable({
     focusKey: data.focusKey,
-    onFocus: () => data.onFocus?.(data.id, ref.current as any),
+    onFocus: (l, p, detals) => data.onFocus?.(data.id, ref.current as any, detals),
     onEnterPress: () => data.onAction?.(),
     onBlur: () => data.onBlur?.(data.id)
   });
+  const { isPointer } = useActiveControl();
 
   return (
     <li
@@ -60,21 +64,24 @@ export default function GameCard (data: GameCardParams)
         data.onAction?.();
       }}
       className={twMerge(
-        `game-card game-card-height flex flex-col justify-end z-5`,
+        `game-card bg-base-300 game-card-height flex flex-col justify-end z-5 ring-primary`,
         'max-h-(--game-card-height) min-w-(--game-card-width) w-(--game-card-width)',
         "overflow-hidden transition-all duration-200 drop-shadow-lg cursor-pointer",
-        focused ?
-          `focused animate-wiggle ring-7 bg-base-content text-base-300 ring-primary drop-shadow-xl drop-shadow-black/30 scale-102 z-10` :
-          "bg-base-300 hover:bg-base-100 hover:scale-102 text-base-content",
         classNames({
+          "focused animate-wiggle ring-7 bg-base-content text-base-300 drop-shadow-xl drop-shadow-black/30 scale-102 z-10": focused && !isPointer,
+          "group hover:focused hover:animate-wiggle hover:ring-7 hover:bg-base-content hover:text-base-300 hover:drop-shadow-xl hover:drop-shadow-black/30 hover:scale-102 hover:z-10": isPointer,
           "h-(--game-card-height)": typeof data.preview === "string"
         }),
         data.className
       )}
     >
-      <div className={twMerge("overflow-hidden bg-base-400 h-full rounded-t-xl rounded-b-md transition-all", focused ? "mt-2 mx-2" : "mt-2 mx-2")}>
+      <div className={twMerge(
+        "overflow-hidden bg-base-400 h-full rounded-t-xl rounded-b-md transition-all",
+        focused ? "md:mt-2 md:mx-2" : "md:mt-2 md:mx-2",
+        focused ? "sm:mt-1 sm:mx-1" : "sm:mt-1 sm:mx-1",
+      )}>
         {typeof data.preview === "string" ? (
-          <img className={classNames({ "animate-rotate-small": focused })} src={data.preview} ></img>
+          <img className={classNames({ "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
         ) : (
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
         )}</div>
@@ -83,18 +90,21 @@ export default function GameCard (data: GameCardParams)
         {data.badges?.map((b, i) =>
           <div key={i}
             className={
-              twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 last:mr-4 transition-colors",
-                classNames({ "bg-primary text-primary-content": focused }))}
+              twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 md:last:mr-4 transition-colors",
+                classNames({
+                  "bg-primary text-primary-content": focused && !isPointer,
+                  "group-hover:bg-primary group-hover:text-primary-content": isPointer
+                }))}
           >
             {b}
           </div>)
         }
       </div>
-      <div className="flex flex-col p-4">
-        <div className="text-xl font-bold text-nowrap text-ellipsis overflow-hidden">
+      <div className="flex flex-col md:p-4 sm:p-2">
+        <div className="md:text-xl sm:text-sm font-bold text-nowrap text-ellipsis overflow-hidden">
           {data.title}
         </div>
-        <div className="text-s">{data.subtitle}</div>
+        <div className="sm:text-xs md:text-sm text-nowrap">{data.subtitle}</div>
       </div>
     </li >
   );

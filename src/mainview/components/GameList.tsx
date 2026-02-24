@@ -6,6 +6,7 @@ import { SaveSource } from "../scripts/spatialNavigation";
 import { rommApi } from "../scripts/clientApi";
 import { HardDrive } from "lucide-react";
 import { JSX } from "react";
+import { GameCardFocusHandler } from "./GameCard";
 
 export interface GameListParams
 {
@@ -14,7 +15,7 @@ export interface GameListParams
     grid?: boolean,
     setBackground?: (url: string) => void;
     onGameSelect?: (id: FrontEndId) => void;
-    onFocus?: (node: HTMLElement) => void;
+    onFocus?: GameCardFocusHandler;
     className?: string;
 }
 
@@ -52,7 +53,7 @@ export function GameList (data: GameListParams)
                 type="game"
                 grid={data.grid}
                 className={data.className}
-                onGameFocus={(id, node) => data.onFocus?.(node)}
+                onGameFocus={data.onFocus}
                 games={games.data?.games
                     .map(
                         (g) =>
@@ -69,7 +70,7 @@ export function GameList (data: GameListParams)
                                 title: g.name ?? "",
                                 subtitle: (
                                     <div className="flex gap-1 items-center">
-                                        {!!g.path_platform_cover && <img className="size-4" src={`${RPC_URL(__HOST__)}${g.path_platform_cover}`} />}
+                                        {!!g.path_platform_cover && <img className="sm:hidden md:inline size-4" src={`${RPC_URL(__HOST__)}${g.path_platform_cover}`} />}
                                         <p className="opacity-80">{g.platform_display_name}</p>
                                     </div>
                                 ),
