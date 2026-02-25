@@ -41,8 +41,8 @@ function FilterCat (
       ref={ref}
       onClick={focusSelf}
       className={classNames(
+        "sm:text-sm sm:px-2",
         "flex md:px-4 items-center justify-center rounded-full transition-all md:text-lg",
-        "sm:text-xs sm:px-2",
         {
           "bg-base-content px-3 text-base-300 drop-shadow cursor-default":
             focused || data.active,
@@ -74,13 +74,12 @@ export function FilterUI (data: {
   return (
     <div
       ref={ref}
-      className="flex items-center sm:justify-start md:justify-center sm:ml-[15%] md:ml-0 gap-2"
       save-child-focus="session"
     >
       <FocusContext.Provider value={focusKey}>
-        <ul className="flex flex-row bg-base-100 rounded-full p-1 drop-shadow-sm md:h-14 sm:h-8">
+        <ul className="flex flex-row bg-base-100 rounded-full p-1 drop-shadow-sm sm:h-9 md:h-14">
           <li className=" flex px-4 items-center justify-center rounded-full">
-            <SvgIcon className="sm:size-4 md:size-8" icon="steamdeck_button_l1_outline" />
+            <SvgIcon className="sm:size-5 md:size-8" icon="steamdeck_button_l1_outline" />
           </li>
           {Object.entries(data.options)?.map(([id, option]) => (
             <FilterCat
@@ -93,7 +92,7 @@ export function FilterUI (data: {
             />
           ))}
           <li className="flex px-4 items-center justify-center rounded-full">
-            <SvgIcon className="sm:size-4 md:size-8" icon="steamdeck_button_r1_outline" />
+            <SvgIcon className="sm:size-5 md:size-8" icon="steamdeck_button_r1_outline" />
           </li>
         </ul>
       </FocusContext.Provider>

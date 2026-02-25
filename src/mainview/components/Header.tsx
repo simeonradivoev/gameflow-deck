@@ -25,10 +25,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "../../clients/romm/@tanstack/react-query.gen";
 import { RPC_URL } from "../../shared/constants";
 import { JSX, useEffect, useRef } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { SaveSource } from "../scripts/spatialNavigation";
 import { systemApi } from "../scripts/clientApi";
-import { twMerge } from "tailwind-merge";
+import { Router } from "..";
 
 function HeaderAvatar (data: {
   id: string;
@@ -56,13 +55,13 @@ function HeaderAvatar (data: {
       ref={ref}
       onClick={data.onSelect}
       className={classNames(
-        `avatar indicator ring-base-100 ring-offset-base-100 size-14 rounded-full flex items-center justify-center`,
+        `avatar indicator ring-base-100 ring-offset-base-100 sm:size-8 md:size-14 rounded-full flex items-center justify-center`,
         bgColors[data.type ?? "none"],
         "text-base-content cursor-pointer transition-all drop-shadow-md",
         "hover:ring-primary hover:ring-7",
         {
           "ring-5 hover:ring-offset-5": data.active,
-          "ring-7 ring-primary ring-offset-base-100": focused,
+          "sm:ring-4 md:ring-7 ring-primary ring-offset-base-100": focused,
           "ring-offset-5": focused && data.active,
         },
         data.className,
@@ -85,7 +84,7 @@ function HeaderAvatar (data: {
       ) : (
         <User />
       )}
-      <span className={classNames("indicator-item status left-1 top-1 ring-3 ring-base-100 z-1", data.status)}></span>
+      <span className={classNames("indicator-item status md:left-1 top-1 sm:ring-2 md:ring-3 ring-base-100 z-1", data.status)}></span>
 
     </div>
   );
@@ -113,7 +112,7 @@ function NotificationStatus ()
 {
   const hasUnread = false;
   return <div className={classNames("p-2 rounded-full", { "bg-warning text-warning-content": hasUnread })}>
-    <Bell className="md:size-6 sm:size-4" />
+    <Bell className="sm:size-4 md:size-8" />
   </div>;
 }
 
@@ -150,7 +149,7 @@ function ClockStatus ()
     return () => clearTimeout(timeout);
   }, []);
 
-  return <div className="flex gap-3"><span ref={ref}></span><Clock /></div>;
+  return <div className="flex gap-3 sm:text-xs md:text-2xl items-center"><span ref={ref}></span><Clock className="sm:size-4 md:size-8" /></div>;
 }
 
 function BluetoothStatus ()
@@ -227,10 +226,8 @@ function BatteryStatus ()
   </div>;
 }
 
-export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAccount[], buttonElements?: JSX.Element[] | JSX.Element; title?: JSX.Element; })
+export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 {
-  const { ref, focusKey } = useFocusable({ focusKey: "header-elements" });
-  const navigate = useNavigate();
   const rommOnline = useQuery({
     ...statsApiStatsGetOptions(),
     refetchInterval: 30000,
@@ -250,7 +247,6 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
   {
     indicator = "status-success";
   }
-
   const accounts: HeaderAccount[] = [{
     id: 'romm', previewUrl: [
       `${RPC_URL(__HOST__)}/api/romm/assets/logos/romm_logo_xbox_one_square.svg`,
@@ -258,52 +254,61 @@ export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAcc
     action: () =>
     {
       SaveSource('settings');
-      navigate({ to: '/settings/accounts', viewTransition: { types: ['zoom-in'] }, search: { focus: 'rommAddress' } });
+      Router.navigate({ to: '/settings/accounts', viewTransition: { types: ['zoom-in'] }, search: { focus: 'rommAddress' } });
     },
     status: user.data ? "status-success" : 'status-error',
     type: 'secondary'
   }, ...data.accounts ?? []];
 
+  return <div className="flex items-center gap-2 drop-shadow-sm">
+    {accounts?.map(a => <HeaderAvatar
+      key={`header-avatar-${a.id}`}
+      type={a.type}
+      id={`account-${a.id}`}
+      status={a.status}
+      locked={a.locked}
+      imageSrc={a.previewUrl}
+      onSelect={a.action}
+    />)}
+  </div>;
+}
+
+export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElements?: JSX.Element[] | JSX.Element; })
+{
+  return <div className="flex items-center sm:gap-1 md:gap-2 text drop-shadow-sm">
+    <div className="flex sm:gap-2 md:gap-5 items-center">
+      <ClockStatus />
+      <WiFiStatus />
+      <BluetoothStatus />
+      <NotificationStatus />
+      <BatteryStatus />
+    </div>
+    {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}
+    <div className="flex gap-2">
+      {data.buttonElements ?? data.buttons?.map(b => <RoundButton
+        key={b.id}
+        className="header-icon sm:size-10 md:size-16"
+        id={b.id}
+        icon={b.icon}
+        external={b.external}
+        action={b.action}
+      />)}
+    </div>
+  </div>;
+}
+
+export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAccount[]; buttonElements?: JSX.Element[] | JSX.Element; title?: JSX.Element; })
+{
+  const { ref, focusKey } = useFocusable({ focusKey: "header-elements" });
   return (
     <FocusContext.Provider value={focusKey}>
       <header
         ref={ref}
-        className={twMerge("md:relative md:h-14 md:mt-2 flex items-center justify-between text-white",
-          "sm:absolute sm:top-0 sm:right-0 sm:left-0"
-        )}
+        className={`flex items-center justify-between text-base-content`}
       >
-        <div className="flex items-center gap-2 drop-shadow-sm">
-          {accounts?.map(a => <HeaderAvatar
-            key={`header-avatar-${a.id}`}
-            type={a.type}
-            id={`account-${a.id}`}
-            status={a.status}
-            locked={a.locked}
-            imageSrc={a.previewUrl}
-            onSelect={a.action}
-          />)}
-          {data.title}
-        </div>
-        <div className="flex items-center md:gap-2 sm:gap-1 text drop-shadow-sm">
-          <div className="flex md:gap-5 sm:gap-2 items-center">
-            <ClockStatus />
-            <WiFiStatus />
-            <BluetoothStatus />
-            <NotificationStatus />
-            <BatteryStatus />
-          </div>
-          {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}
-          <div className="flex gap-2">
-            {data.buttonElements ?? data.buttons?.map(b => <RoundButton
-              key={b.id}
-              className="header-icon md:size-16 sm:size-10"
-              id={b.id}
-              icon={b.icon}
-              external={b.external}
-              action={b.action}
-            />)}
-          </div>
-        </div>
+        <HeaderAccounts accounts={data.accounts} />
+        {data.title}
+        <HeaderStatusBar buttonElements={data.buttonElements} buttons={data.buttons} />
       </header>
     </FocusContext.Provider>
   );

@@ -28,7 +28,7 @@ export function convertRomToFrontend (rom: SimpleRomSchema): FrontEndGameType
 {
     const game: FrontEndGameType = {
         id: { id: rom.id, source: 'romm' },
-        path_cover: `/api/romm${rom.path_cover_large}`,
+        path_cover: `/api/romm/image/romm${rom.path_cover_large}`,
         last_played: rom.rom_user.last_played ? new Date(rom.rom_user.last_played) : null,
         updated_at: new Date(rom.updated_at),
         slug: rom.slug,
@@ -36,9 +36,10 @@ export function convertRomToFrontend (rom: SimpleRomSchema): FrontEndGameType
         platform_display_name: rom.platform_display_name,
         name: rom.name,
         path_fs: null,
-        path_platform_cover: `/api/romm/assets/platforms/${rom.platform_slug}.svg`,
+        path_platform_cover: `/api/romm/image/romm/assets/platforms/${rom.platform_slug}.svg`,
         source: null,
-        source_id: null
+        source_id: null,
+        paths_screenshots: rom.merged_screenshots.map(s => `/api/romm/image/romm/${s}`),
     };
 
     return game;
@@ -50,7 +51,6 @@ export function convertRomToFrontendDetailed (rom: DetailedRomSchema)
         ...convertRomToFrontend(rom),
         summary: rom.summary,
         fs_size_bytes: rom.fs_size_bytes,
-        paths_screenshots: rom.merged_screenshots.map(s => `/api/romm${s}`),
         local: false,
         missing: rom.missing_from_fs
     };

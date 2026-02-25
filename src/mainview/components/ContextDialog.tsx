@@ -49,9 +49,9 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     return <li ref={ref}
         onClick={handleAction}
         className={
-            twMerge("flex cursor-pointer")}>
+            twMerge("flex cursor-pointer sm:text-sm md:text-base")}>
         <FocusContext value={focusKey}>
-            <div className={twMerge("flex w-full h-14 items-center px-4 rounded-2xl transition-all gap-2",
+            <div className={twMerge("flex w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl transition-all gap-2",
                 colors[data.type],
                 classNames({ "font-semibold": focused || hasFocusedChild }),
                 data.className)}>
@@ -115,11 +115,11 @@ export function ContextDialog (data: {
             <ContextDialogContext value={{ id: data.id, close: data.close }} >
                 <div
                     className={twMerge(
-                        "bg-base-100/80 delay-200 rounded-4xl p-6 min-w-[30vw] cursor-auto",
+                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[30vw] cursor-auto",
                         data.open ? "animate-scale-delayed" : "opacity-0",
                         data.className)
                     }
-                    style={{ backdropFilter: 'blur(24px)' }}
+                    style={{ backdropFilter: 'md:blur(24px)' }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {data.children}

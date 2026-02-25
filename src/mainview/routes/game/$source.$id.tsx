@@ -4,29 +4,19 @@ import { twJoin, twMerge } from "tailwind-merge";
 import { JSX, RefObject, useEffect, useRef, useState } from "react";
 import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { Clock, CloudDownload, Download, Folder, HardDrive, Image, PackageOpen, Play, Settings, Store, Trash, TriangleAlert, Trophy } from "lucide-react";
+import { Clock, CloudDownload, Download, HardDrive, Image, PackageOpen, Play, Settings, Store, Trash, TriangleAlert, Trophy } from "lucide-react";
 import { HeaderUI } from "../../components/Header";
 import prettyBytes from 'pretty-bytes';
-import { useEventListener } from "usehooks-ts";
 import { PopSource, SaveSource, useFocusEventListener } from "../../scripts/spatialNavigation";
 import { AnimatedBackground } from "../../components/AnimatedBackground";
 import { rommApi } from "../../scripts/clientApi";
 import toast from "react-hot-toast";
-import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Router } from "../..";
 import { ContextDialog, ContextList, DialogEntry } from "../../components/ContextDialog";
 import Shortcuts from "../../components/Shortcuts";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
-
-const gameQuery = (source: string, id: number) => queryOptions({
-  queryKey: ['game', source, id],
-  queryFn: async () =>
-  {
-    const { data, error } = await rommApi.api.romm.game({ source })({ id }).get();
-    if (error) throw error;
-    return data;
-  }
-});
+import { gameQuery } from "@/mainview/scripts/queries";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: ({ params, context }) =>
@@ -66,7 +56,8 @@ function Details (data: { mainAreaRef: RefObject<HTMLDivElement | null>, game?: 
     saveLastFocusedChild: false
   });
 
-  const platformCoverImg = `${RPC_URL(__HOST__)}${data.game?.path_platform_cover}`;
+  const platformCoverImg = new URL(`${RPC_URL(__HOST__)}${data.game?.path_platform_cover ?? ''}`);
+  platformCoverImg.searchParams.set("width", "64");
   const gameCoverImg = data.game?.path_cover ? `${RPC_URL(__HOST__)}${data.game?.path_cover}` : undefined;
 
   let fileSizeIcon: JSX.Element | undefined;
@@ -84,17 +75,17 @@ function Details (data: { mainAreaRef: RefObject<HTMLDivElement | null>, game?: 
     fileSizeIcon = <CloudDownload />;
   }
 
-  return <main ref={ref} className="flex p-3 flex-col h-[75vh]">
+  return <main ref={ref} className="flex p-3 flex-col flex-1 min-h-0">
     <FocusContext value={focusKey}>
-      <section className="flex my-4 p-12 pt-4 gap-12 h-full rounded-4xl z-0">
-        <div className="flex gap-6 overflow-hidden bg-base-300 justify-end h-full rounded-3xl aspect-3/4">
+      <section className="flex portrait:flex-col my-4 sm:p-0 md:p-12 pt-4 sm:gap-8 md:gap-12 portrait:w-full h-full min-h-0 rounded-4xl flex-1 z-0 sm:text-sm md:text-base">
+        <div className="flex gap-6 overflow-hidden bg-base-300 justify-end portrait:w-full rounded-3xl aspect-3/4 portrait:h-24">
           {gameCoverImg ?
-            <img className="drop-shadow-2xl drop-shadow-base-300/40 h-full" src={gameCoverImg}></img> :
+            <img className="drop-shadow-2xl drop-shadow-base-300/40 w-full object-cover" src={gameCoverImg}></img> :
             <div className="skeleton w-full h-full"></div>
           }
         </div>
-        <div className="flex-2 flex flex-col gap-6 pt-16">
-          <div className="flex gap-6">
+        <div className="flex-2 flex flex-col sm:gap-1 md:gap-6 sm:pt-2 md:pt-16 min-h-0">
+          <div className="flex flex-wrap sm:gap-4 md:gap-6 shrink-0">
             <Detail icon={<Clock />} >{data.game?.last_played ? new Date(data.game.last_played).toDateString() : "Never"}</Detail>
             {!!data.game && (data.game.fs_size_bytes !== null || data.game.missing) &&
               <div className={classNames({ "text-error": data.game.missing })}>
@@ -102,14 +93,15 @@ function Details (data: { mainAreaRef: RefObject<HTMLDivElement | null>, game?: 
                   <Detail icon={fileSizeIcon} >{data.game.missing ? 'Missing' : prettyBytes(data.game.fs_size_bytes!)}</Detail>
                 </div>
               </div>}
-            <Detail icon={<img className="size-6" src={platformCoverImg}></img>} >{data.game?.platform_display_name ?? <div className="skeleton h-4 w-32"></div>}</Detail>
+            <Detail icon={<img className="size-6" src={platformCoverImg.href}></img>} >{data.game?.platform_display_name ?? <div className="skeleton h-4 w-32"></div>}</Detail>
             <Detail icon={
               <Store />
             } >
               {data.game?.source ?? data.game?.id.source}
               {data.game?.local && <small className="text-base-content/60 font-semibold">local</small>}</Detail>
           </div>
-          <div className="text-base-content/80 leading-relaxed grow text-wrap whitespace-break-spaces text-ellipsis overflow-hidden">
+          <div className="md:hidden divider divider-vertical m-0"></div>
+          <div className="text-base-content/80 flex-1 min-h-0 leading-relaxed grow text-wrap whitespace-break-spaces text-ellipsis overflow-hidden ">
             {data.game?.summary ?? <div className="flex flex-col gap-4 w-full">
               <div className="skeleton h-4 w-[30%]"></div>
               <div className="skeleton h-4 w-[80%]"></div>
@@ -130,16 +122,18 @@ function Screenshot (data: { path: string; index: number; setFocused?: (index: n
 {
   const { ref, focused, focusSelf } = useFocusable({
     focusKey: `screenshot-${data.index}`,
-    onFocus: () =>
+    onFocus: (e, p, details) =>
     {
-      (ref.current as HTMLElement).scrollIntoView({ inline: 'center', behavior: 'smooth' });
       data.setFocused?.(data.index);
+      (ref.current as HTMLElement).scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+
+
     }
   }); 4096;
-  return <img className={twJoin("h-[60vh] rounded-3xl", classNames({
-    "ring-7 ring-primary": focused,
+  return <img className={twJoin("max-h-[60vh] rounded-3xl", classNames({
+    "sm:ring-4 md:ring-7 ring-primary": focused,
     "cursor-pointer": !focused
-  }))} onClick={focusSelf} ref={ref} src={`${RPC_URL(__HOST__)}${data.path}`} loading="lazy" />;
+  }))} onClick={e => focusSelf({ nativeEvent: e.nativeEvent })} ref={ref} src={`${RPC_URL(__HOST__)}${data.path}`} loading="lazy" />;
 }
 
 function Screenshots (data: { screenshots: string[]; })
@@ -148,24 +142,31 @@ function Screenshots (data: { screenshots: string[]; })
   const [focusedScreenshot, setFocusedScreenshot] = useState(-1);
   const { ref, focusKey } = useFocusable({
     focusKey: 'screenshot-list',
-    onFocus: () => (ref.current as HTMLElement).scrollIntoView({ block: 'center', behavior: 'smooth' }),
+    onFocus: (e, p, details) =>
+    {
+      if (!(details.nativeEvent instanceof TouchEvent))
+      {
+        (ref.current as HTMLElement).scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    },
     onBlur: () => setFocusedScreenshot(-1)
   });
 
-  return <div ref={ref} className="flex flex-col p-16 pt-2 w-full z-0">
+  return <div ref={ref} className="flex flex-col w-full z-0">
     <FocusContext value={focusKey}>
       <div
         ref={scrollRef}
-        className="flex gap-6 px-16 py-2 overflow-hidden justify-center-safe"
+        className="flex gap-6 px-16 py-2 sm:overflow-scroll md:overflow-hidden no-scrollbar justify-center-safe"
       >
         {data.screenshots.map((s, i) => <Screenshot key={s} setFocused={setFocusedScreenshot} index={i} path={s} />)}
       </div>
       <div className="flex gap-2 py-6 justify-center items-center h-3">{data.screenshots.map((s, i) =>
       {
         const focused = i === focusedScreenshot;
-        return <button key={i} onClick={() => setFocus(`screenshot-${i}`)} className={twMerge("cursor-pointer rounded-full size-2 bg-base-content/40 transition-all", classNames({
-          "size-3 bg-base-content drop-shadow-lg drop-shadow-base-300/40": focused
-        }))}></button>;
+        return <button key={i} onClick={(e) => setFocus(`screenshot-${i}`, { nativeEvent: e.nativeEvent })}
+          className={twMerge("cursor-pointer rounded-full size-2 bg-base-content/40 transition-all", classNames({
+            "size-3 bg-base-content drop-shadow-lg drop-shadow-base-300/40": focused
+          }))}></button>;
       })}</div>
     </FocusContext>
   </div>;
@@ -388,7 +389,7 @@ function ActionButtons (data: { game: FrontEndGameTypeDetailed; })
     error: 'bg-error text-error-content'
   };
 
-  return <div ref={ref} className="flex overflow-hidden p-2 gap-4 min-h-32 items-center">
+  return <div ref={ref} className="flex sm:gap-2 md:gap-4 sm:h-16 md:h-32 overflow-hidden p-2 items-center shrink-0">
     <FocusContext value={focusKey}>
       <MainActions game={data.game} />
       <AchievementsInfo game={data.game} />
@@ -402,7 +403,7 @@ function ActionButtons (data: { game: FrontEndGameTypeDetailed; })
       }}>
         <ContextList options={contextOptions} />
       </ContextDialog>
-      {!!hoverText && <p className={twMerge("flex py-2 px-4 rounded-4xl text-wrap wrap-anywhere", (tooltipStyles as any)[hoverTextType])}>{hoverText}</p>}
+      {!!hoverText && <p className={twMerge("flex sm:hidden md:inline py-1 md:py-2 md:px-4 rounded-4xl text-wrap wrap-anywhere text-base", (tooltipStyles as any)[hoverTextType])}>{hoverText}</p>}
     </FocusContext>
   </div>;
 }
@@ -435,16 +436,16 @@ function ActionButton (data: {
   const styles = {
     primary: twMerge("bg-primary text-primary-content",
       classNames({
-        "bg-base-content text-base-300 ring-7 ring-primary": focused
+        "bg-base-content text-base-300 sm:ring-4 md:ring-7 ring-primary": focused
       })),
     base: twMerge(" text-base-content border-dashed border-base-content/20 border-2", classNames({
-      "bg-base-content text-base-300 ring-7 ring-primary": focused
+      "bg-base-content text-base-300 sm:ring-4 md:ring-7 ring-primary": focused
     })),
     accent: twMerge("bg-primary text-primary-content ", classNames({
-      "bg-base-content text-base-300 ring-7 ring-primary": focused
+      "bg-base-content text-base-300 sm:ring-4 md:ring-7 ring-primary": focused
     })),
     error: twMerge("bg-error text-error-content ", classNames({
-      "bg-error text-error-content ring-7 ring-primary": focused
+      "bg-error text-error-content sm:ring-4 md:ring-7 ring-primary": focused
     })),
   };
   return (
@@ -454,8 +455,8 @@ function ActionButton (data: {
       onClick={data.onAction}
       data-tooltip={data.tooltip}
       data-tooltip_type={data.tooltip_type}
-      className={twMerge("header-icon flex flex-col gap-2 px-5 py-4 rounded-3xl text-2xl justify-center items-center cursor-pointer disabled:opacity-30",
-        "hover:ring-7 hover:ring-primary", styles[data.type], classNames({ "rounded-full size-21 hover:bg-base-content hover:text-base-300 hover:ring-7 hover:ring-primary": !data.square }), data.className)}>
+      className={twMerge("header-icon flex flex-col gap-2 md:px-5 md:py-4 rounded-3xl md:text-2xl justify-center items-center cursor-pointer disabled:opacity-30",
+        "hover:ring-7 hover:ring-primary", styles[data.type], classNames({ "rounded-full sm:size-14 md:size-21 hover:bg-base-content hover:text-base-300 hover:ring-7 hover:ring-primary": !data.square }), data.className)}>
       {data.icon}
       {data.children}
     </button>
@@ -467,7 +468,7 @@ export default function GameDetailsUI ()
   const { source, id } = Route.useParams();
   const { data, isSuccess } = useQuery(gameQuery(source, Number(id)));
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details", preferredChildFocusKey: "main-details" });
-  const backgroundImage = data?.path_cover ? `${RPC_URL(__HOST__)}${data?.path_cover}` : undefined;
+  const backgroundImage = data?.path_cover ? new URL(`${RPC_URL(__HOST__)}${data?.path_cover}`) : undefined;
   const mainAreaRef = useRef<HTMLDivElement>(null);
 
   useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
@@ -483,20 +484,22 @@ export default function GameDetailsUI ()
   }, [isSuccess]);
 
   return (
-    <AnimatedBackground ref={ref} backgroundKey="game-details" backgroundUrl={backgroundImage}>
-      <div className="z-0 overflow-y-scroll">
+    <AnimatedBackground ref={ref} backgroundKey="game-details" backgroundUrl={backgroundImage} scrolling>
+      <div className="z-0">
         <FocusContext value={focusKey}>
-          <div className="px-3 py-2" ref={mainAreaRef}>
+          <div className="flex flex-col px-3 py-2 h-[90vh] overflow-hidden bg-linear-to-t from-base-100 to-base-100/40" ref={mainAreaRef}>
             <HeaderUI />
             <Details mainAreaRef={mainAreaRef} game={data} />
           </div>
-          <div className="divider"><div className="flex items-center gap-3 opacity-60"><Image className="size-6" />Screenshots</div></div>
-          {!!data && <Screenshots screenshots={data.paths_screenshots} />}
-          <footer className="absolute left-0 bottom-0 w-full p-2 flex items-center justify-between z-10">
-            <div className="flex gap-2 text-sm">
-            </div>
-            <Shortcuts shortcuts={shortcuts} />
-          </footer>
+          <div className="bg-base-200">
+            <div className="divider m-0 pb-12"><div className="flex items-center gap-3 opacity-60"><Image className="sm:size-4 md:size-6" />Screenshots</div></div>
+            {!!data && <Screenshots screenshots={data.paths_screenshots} />}
+            <footer className="absolute left-0 bottom-0 w-full p-2 flex items-center justify-between z-10">
+              <div className="flex gap-2 text-sm">
+              </div>
+              <Shortcuts shortcuts={shortcuts} />
+            </footer>
+          </div>
         </FocusContext>
       </div>
     </AnimatedBackground>

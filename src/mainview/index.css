@@ -3,7 +3,8 @@
 @plugin "daisyui";
 
 @theme {
-    --breakpoint-xs: 20rem;
+    --breakpoint-sm: 0px;
+    --breakpoint-md: 1280px;
 
     --animate-wiggle: wiggle 0.3s ease-in-out 1;
     --animate-rotate: rotate 0.3s ease-in-out 1 0.2s;
@@ -13,6 +14,33 @@
     --animate-scale-delayed: scale 0.3s ease-in-out 1 100ms;
     --animate-scale-small: scale-small 0.3s ease-in-out 1;
     --animate-fade-out: fade-out 0.3s ease-out 1;
+    --animate-bg-zoom: zoom-in-scale 0.6s ease-out 1 forwards;
+    --animate-bg-zoom-big: zoom-in-scale-big 0.6s ease-out 1 forwards;
+    --animate-bg-zoom-scroll: zoom-in-bg 0.6s ease-out 1 forwards;
+
+    @keyframes zoom-in-scale-big {
+        0% {
+            scale: 150%;
+            opacity: 0;
+        }
+
+        100% {
+            scale: 100%;
+            opacity: 1;
+        }
+    }
+
+    @keyframes zoom-in-scale {
+        0% {
+            scale: 105%;
+            opacity: 0;
+        }
+
+        100% {
+            scale: 100%;
+            opacity: 1;
+        }
+    }
 
     @keyframes slide-up {
         0% {
@@ -109,16 +137,44 @@
 @layer base {
     @variant sm {
         :root {
-            --game-card-height: calc(var(--spacing) * 55);
-            --game-card-width: calc(var(--spacing) * 35.2);
+            --game-card-height: calc(var(--spacing) * 52);
+            --game-card-height-safe: calc(var(--spacing) * 52);
+            --game-card-width: calc(var(--spacing) * 33.28);
         }
     }
-}
 
-@layer base {
+    @variant landscape {
+        @keyframes zoom-in-bg {
+            0% {
+                background-size: 125% auto;
+                background-color: var(--color-base-100);
+            }
+
+            100% {
+                background-size: 120% auto;
+                background-color: var(--color-base-300);
+            }
+        }
+    }
+
+    @variant portrait {
+        @keyframes zoom-in-bg {
+            0% {
+                background-size: auto 125%;
+                background-color: var(--color-base-100);
+            }
+
+            100% {
+                background-size: auto 120%;
+                background-color: var(--color-base-300);
+            }
+        }
+    }
+
     @variant md {
         :root {
             --game-card-height: calc(var(--spacing) * 100);
+            --game-card-height-safe: calc(var(--spacing) * 100 + 3.5rem);
             --game-card-width: calc(var(--spacing) * 64);
         }
     }
@@ -132,6 +188,10 @@ html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: 'Alan Sans', sans-serif;
 }
 
 @layer components {
@@ -160,8 +220,7 @@ html {
     }
 
     .header-icon svg {
-        @apply md:w-8 md:h-8 md:min-w-8 md:min-h-8;
-        @apply sm:w-5 sm:h-5 sm:min-w-5 sm:min-h-5;
+        @apply md:w-8 md:h-8 md:min-w-8 md:min-h-8 sm:w-5 sm:h-5 sm:min-w-5 sm:min-h-5;
     }
 
     .header-icon-small svg {
@@ -172,11 +231,15 @@ html {
         display: flex;
     }
 
-    .card-grid {
+    .test {
         display: grid;
         grid-template-columns: repeat(auto-fill, var(--game-card-width));
         grid-auto-rows: var(--game-card-height);
-        padding-bottom: 16px;
+    }
+
+    .card-grid {
+
+        @apply grid pb-4;
     }
 
     .no-scrollbar {

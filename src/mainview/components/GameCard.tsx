@@ -69,7 +69,7 @@ export default function GameCard (data: GameCardParams)
         "overflow-hidden transition-all duration-200 drop-shadow-lg cursor-pointer",
         classNames({
           "focused animate-wiggle ring-7 bg-base-content text-base-300 drop-shadow-xl drop-shadow-black/30 scale-102 z-10": focused && !isPointer,
-          "group hover:focused hover:animate-wiggle hover:ring-7 hover:bg-base-content hover:text-base-300 hover:drop-shadow-xl hover:drop-shadow-black/30 hover:scale-102 hover:z-10": isPointer,
+          "group hover:focused hover:animate-wiggle sm:hover:ring-4 md:hover:ring-7 hover:bg-base-content hover:text-base-300 hover:drop-shadow-xl hover:drop-shadow-black/30 hover:scale-102 hover:z-10": isPointer,
           "h-(--game-card-height)": typeof data.preview === "string"
         }),
         data.className
@@ -77,20 +77,20 @@ export default function GameCard (data: GameCardParams)
     >
       <div className={twMerge(
         "overflow-hidden bg-base-400 h-full rounded-t-xl rounded-b-md transition-all",
-        focused ? "md:mt-2 md:mx-2" : "md:mt-2 md:mx-2",
         focused ? "sm:mt-1 sm:mx-1" : "sm:mt-1 sm:mx-1",
+        focused ? "md:mt-2 md:mx-2" : "md:mt-2 md:mx-2",
       )}>
         {typeof data.preview === "string" ? (
-          <img className={classNames({ "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
+          <img className={classNames("object-cover w-full h-full", { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
         ) : (
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
         )}</div>
 
-      <div className="h-0 flex pr-2 justify-end items-center gap-2">
+      <div className="h-0 flex pr-2 justify-end items-center sm:gap-1 md:gap-2">
         {data.badges?.map((b, i) =>
           <div key={i}
             className={
-              twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 md:last:mr-4 transition-colors",
+              twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 sm:last:mr-1 md:last:mr-4 transition-colors",
                 classNames({
                   "bg-primary text-primary-content": focused && !isPointer,
                   "group-hover:bg-primary group-hover:text-primary-content": isPointer
@@ -100,7 +100,7 @@ export default function GameCard (data: GameCardParams)
           </div>)
         }
       </div>
-      <div className="flex flex-col md:p-4 sm:p-2">
+      <div className="flex flex-col sm:p-2 md:p-4">
         <div className="md:text-xl sm:text-sm font-bold text-nowrap text-ellipsis overflow-hidden">
           {data.title}
         </div>

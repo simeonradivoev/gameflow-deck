@@ -25,7 +25,7 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { useEventListener } from "usehooks-ts";
-import { HeaderUI } from "../components/Header";
+import { HeaderAccounts, HeaderStatusBar, HeaderUI } from "../components/Header";
 import { FilterUI } from "../components/Filters";
 import { AnimatedBackground, AnimatedBackgroundContext } from "../components/AnimatedBackground";
 import { GameList } from "../components/GameList";
@@ -43,6 +43,7 @@ import z from "zod";
 import { Router } from "..";
 import CollectionList from "../components/CollectionList";
 import { zodValidator } from '@tanstack/zod-adapter';
+import { mobileCheck } from "../scripts/utils";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -60,6 +61,22 @@ const filters = {
     label: "Collections",
   },
 };
+
+let screenLock: WakeLockSentinel | undefined = undefined;
+async function handleFullscreen ()
+{
+  if (document.fullscreenElement)
+  {
+    await document.exitFullscreen();
+    if (screenLock)
+      screenLock.release();
+  } else
+  {
+    await document.documentElement.requestFullscreen();
+    screenLock = await navigator.wakeLock.request('screen');
+    return screenLock;
+  }
+}
 
 function HomeListError (data: { focused: boolean; })
 {
@@ -123,10 +140,10 @@ function HomeList (data: {
 
   return (
     <FocusContext value={focusKey}>
-      <div ref={ref} className="flex overflow-x-scroll no-scrollbar pb-3 mb-1 justify-center-safe" style={{
+      <div ref={ref} className="flex h-full w-full landscape:overflow-x-scroll portrait:overflow-y-scroll overflow-hidden no-scrollbar justify-center-safe sm:pt-2 md:py-6 md:pb-3 md:mb-1" style={{
         mask: `linear-gradient(to right, rgba(0,0,0,0.8) 0%, black 10%, black 90%, rgba(0,0,0,0.8) 100%)`
       }}>
-        <div className="flex px-16">
+        <div className="landscape:px-16 portrait:min-h-fit portrait:h-fit portrait:pb-32 portrait:w-full landscape:h-full">
           <ErrorBoundary fallback={<HomeListError focused={focused} />}>
             <Suspense key={data.selectedFilter} fallback={<LoadingCardList placeholderCount={8} />}>
               {lists[data.selectedFilter]}
@@ -152,9 +169,7 @@ function MainMenu (data: {})
     <ul
       ref={ref}
       save-child-focus="session"
-      className={twMerge("md:relative flex items-center justify-center md:gap-3",
-        "sm:gap-1 sm:absolute sm:bottom-2 sm:left-0 sm:right-0"
-      )}
+      className="flex items-center gap-y-1 sm:portrait:bg-base-100 sm:portrait:p-2 sm:portrait:rounded-full sm:gap-1 md:gap-3"
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon
@@ -207,8 +222,7 @@ function CircleIcon (data: {
       ref={ref}
       onClick={data.action}
       className={twMerge(
-        `menu-icon text-base-300 md:w-20 md:h-20 rounded-full flex items-center justify-center drop-shadow-lg cursor-pointer transition-all`,
-        'sm:w-14 sm:h-10',
+        `portrait:sm:size-12 sm:w-14 sm:h-10 menu-icon text-base-300 md:w-20 md:h-20 rounded-full flex items-center justify-center drop-shadow-lg cursor-pointer transition-all`,
         typeClasses[data.type ?? "none"], classNames(
           {
             "focus ring-7 ring-primary drop-shadow-2xl animate-scale": focused,
@@ -237,7 +251,7 @@ export default function ConsoleHomeUI ()
     forceFocus: true,
     autoRestoreFocus: false,
     saveLastFocusedChild: false,
-    focusKey: "Home",
+    focusKey: "HomePage",
     preferredChildFocusKey: `home-list`,
   });
 
@@ -266,40 +280,42 @@ export default function ConsoleHomeUI ()
     }], [filter]);
 
   const { shortcuts } = useShortcutContext();
+  const headerButtons = [];
+  if (mobileCheck())
+    headerButtons.push({ id: "fullscreen", icon: <Maximize />, action: handleFullscreen });
+  headerButtons.push({ id: "search", icon: <Search /> }, { id: "power-button", icon: <Power />, external: true, action: () => closeMutation.mutate() });
 
   return (
-    <AnimatedBackground animated ref={ref} backgroundKey="home-background">
+    <AnimatedBackground animated ref={ref} backgroundKey="home-background" className="grid grid-cols-3 sm:landscape:grid-rows-[3rem_minmax(var(--game-card-height-safe),1fr)_4rem] md:landscape:grid-rows-[5rem_4rem_minmax(var(--game-card-height-safe),1fr)_6rem_6rem] gap-1 portrait:grid-rows-[3rem_4rem_minmax(var(--game-card-height-safe),1fr)] max-h-screen overflow-hidden">
       <FocusContext.Provider value={focusKey}>
-        <div className="px-3 w-full pt-2">
-          <HeaderUI buttons={[
-            { id: "fullscreen", icon: <Maximize />, action: () => document.documentElement.requestFullscreen() },
-            { id: "search", icon: <Search /> },
-            { id: "power-button", icon: <Power />, external: true, action: () => closeMutation.mutate() }
-          ]} />
+        <div className="sm:landscape:hidden md:landscape:inline sm:portrait:col-start-1 md:inline flex col-span-1 md:pl-2 md:pt-2">
+          <HeaderAccounts />
         </div>
-        <div className="flex w-full flex-col grow justify-evenly md:pt-0">
+        <div className="sm:portrait:*:justify-center sm:portrait:col-span-3 sm:landscape:*:justify-start sm:px-2 sm:pt-2 md:row-start-2 md:col-start-1 sm:landscape:col-span-1 md:landscape:col-span-3 flex items-center md:*:justify-center! md:ml-0 gap-2 *:w-full *:flex">
           <FilterUI
             id="home"
             options={filters}
             selected={filter ? filter : 'games'}
             setSelected={setFilter}
           />
-          <div className="md:-mb-1">
-            <HomeList
-              selectedFilter={filter}
-            />
-          </div>
-          <div>
-            <MainMenu />
-          </div>
         </div>
-        <footer className={twMerge("md:relative px-2 md:pb-2 flex items-center justify-between h-12",
-          "sm:absolute bottom-0 left-0 right-0"
+        <div className="flex sm:landscape:col-span-2 sm:portrait:col-start-2 sm:portrait:col-span-2 sm:portrait:row-start-1 md:col-start-3 md:col-span-1 justify-end md:pr-2 md:pt-2">
+          <HeaderStatusBar buttons={headerButtons} />
+        </div>
+        <div className="col-span-3 min-h-0 landscape:flex landscape:items-center-safe">
+          <HomeList
+            selectedFilter={filter}
+          />
+        </div>
+        <div className="flex items-end sm:landscape:justify-end sm:portrait:justify-center sm:px-2 sm:pb-2 sm:portrait:absolute sm:portrait:left-0 sm:portrait:right-0 sm:portrait:bottom-0 sm:landscape:col-span-2 md:landscape:col-span-3 md:col-span-3 md:landscape:justify-center">
+          <MainMenu />
+        </div>
+        <footer className={twMerge(
+          "sm:portrait:hidden sm:col-span-1 md:col-start-2 md:col-span-2 md:relative px-2 pb-2 flex items-end justify-end",
         )}>
-          <div className="flex gap-2 text-sm">
-          </div>
           <Shortcuts shortcuts={shortcuts} />
         </footer>
+
       </FocusContext.Provider>
     </AnimatedBackground>
   );

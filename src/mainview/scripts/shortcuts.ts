@@ -38,6 +38,7 @@ export interface Shortcut
 let isDirty = false;
 const shortcutChangeDispatcher = setInterval(() =>
 {
+    if (!isDirty) return;
     window.dispatchEvent(new Event('shortcutsChanged'));
     isDirty = false;
 }, 100);

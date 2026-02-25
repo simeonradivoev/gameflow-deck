@@ -12,7 +12,7 @@ export const Route = createFileRoute("/platform/$source/$id")({
 
 function PlatformTitle (data: { platformSlug?: string, platformName?: string; })
 {
-  return <div className="flex flex-col gap-2 pl-2 text-2xl font-semibold text-base-content justify-center drop-shadow">
+  return <div className="sm:landscape:hidden flex flex-col gap-2 pl-2 text-2xl font-semibold text-base-content justify-center drop-shadow">
 
     <div className="divider mb-6 mt-0">
       {!!data.platformSlug && <img className="size-14 rounded-full p-2" src={`${RPC_URL(__HOST__)}/api/romm/assets/platforms/${data.platformSlug.toLocaleLowerCase()}.svg`} ></img>}

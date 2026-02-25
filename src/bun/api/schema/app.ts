@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql, relations } from "drizzle-orm";
 import { integer, text, sqliteTable, blob } from "drizzle-orm/sqlite-core";
 
 export const games = sqliteTable('games', {
@@ -19,6 +19,14 @@ export const games = sqliteTable('games', {
     summary: text("summary")
 });
 
+export const gamesRelations = relations(games, ({ many, one }) => ({
+    screenshots: many(screenshots),
+    platform: one(platforms, {
+        fields: [games.id],
+        references: [platforms.id]
+    })
+}));
+
 export const platforms = sqliteTable('platforms', {
     id: integer("id").primaryKey({ autoIncrement: true }),
     igdb_id: integer("igdb_id").unique(),
@@ -34,6 +42,8 @@ export const platforms = sqliteTable('platforms', {
     cover_type: text('type'),
     family_name: text("family_name")
 });
+
+export const platformsRelations = relations(platforms, ({ many }) => ({ games: many(games) }));
 
 export const collections_games = sqliteTable('collections_games', {
     collection_id: integer('collection_id').notNull().references(() => collections.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -52,3 +62,10 @@ export const screenshots = sqliteTable('screenshots', {
     content: blob('content', { mode: 'buffer' }).notNull(),
     type: text('type')
 });
+
+export const screenshotsRelations = relations(screenshots, ({ one }) => ({
+    game: one(games, {
+        fields: [screenshots.game_id],
+        references: [games.id]
+    })
+}));

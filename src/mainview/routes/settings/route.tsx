@@ -69,7 +69,7 @@ function MenuItem (data: {
         ? handleNonFocusSelect
         : undefined,
   });
-  const { isMouse } = useActiveControl();
+  const { isPointer } = useActiveControl();
   return (
     <li
       ref={ref}
@@ -80,10 +80,10 @@ function MenuItem (data: {
     >
       <div
         className={twMerge(
-          "group rounded-full p-3 pl-5 text-base-content/80",
+          "group rounded-full p-3 md:pl-5 text-base-content/80",
           classNames({
             "bg-primary text-primary-content": acitve,
-            "font-semibold ring-7 ring-primary-content": focused && !isMouse,
+            "font-semibold sm:ring-4 md:ring-7 ring-primary-content": focused && !isPointer,
             "bg-secondary text-secondary-content ring-primary": data.return && focused,
           }),
           data.linkClassName,
@@ -93,7 +93,7 @@ function MenuItem (data: {
           "scale-110": focused || acitve
         }))}>
           {data.icon}
-          {data.label}
+          <div className="sm:hidden md:inline">{data.label}</div>
         </div>
       </div>
     </li>
@@ -110,7 +110,7 @@ function SettingsMenu (data: {})
 
   return <ul
     ref={ref}
-    className="menu md:menu-xl flex-nowrap bg-base-200 w-56 p-4 gap-2 rounded-4xl overflow-y-scroll no-scrollbar"
+    className="menu portrait:menu-horizontal md:menu-xl landscape:flex-nowrap bg-base-200 sm:p-2 md:p-4 sm:portrait:gap-0 sm:landscape:gap-0 md:gap-2! rounded-4xl overflow-auto portrait:w-full"
   >
     <FocusContext value={focusKey}>
       <MenuItem
@@ -144,7 +144,7 @@ function SettingsMenu (data: {})
         icon={<Info />}
       />
       <MenuItem
-        className={"mt-auto"}
+        className={"landscape:mt-auto"}
         route={"/"}
         return
         label="Return"
@@ -184,17 +184,17 @@ export function SettingsUI ()
 
   return (
     <FocusContext.Provider value={focusKey}>
-      <div ref={ref} className="flex flex-col w-full h-full p-4 bg-base-100">
-        <div className="flex flex-row grow  overflow-hidden">
-          <div id="Menu" className="flex flex-row h-full">
+      <div ref={ref} className="flex flex-col w-full h-full md:p-4 bg-base-100">
+        <div className="flex landscape:flex-row portrait:flex-col-reverse grow overflow-hidden">
+          <div id="Menu" className="flex flex-row landscape:h-full md:landscape:w-56">
             <SettingsMenu />
           </div>
           <div className="divider divider-horizontal"></div>
-          <div id="Settings" className="flex flex-col grow h-full py-8 overflow-y-scroll">
+          <div id="Settings" className="flex flex-col grow landscape:h-full py-8 overflow-y-scroll">
             <Outlet />
           </div>
         </div>
-        <div className="divider divider-end">
+        <div className="portrait:hidden divider divider-end">
           <Shortcuts shortcuts={shortcuts} />
         </div>
       </div>

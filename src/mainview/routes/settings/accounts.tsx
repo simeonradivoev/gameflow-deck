@@ -46,17 +46,17 @@ function LoginControls (data: { hasPassword: boolean; })
       c.client.invalidateQueries({ queryKey: ["romm", "auth"] });
     }
   });
-  return <div className="flex gap-2 items-center">
+  return <div className="flex gap-2 items-center flex-wrap">
     {user.isError && <div className="badge badge-error gap-2 tooltip" data-tip={(user.error as any)?.detail ?? ''}>
       <Lock className="size-4" /></div>}
     {user.isSuccess && <>
-      <div className="badge badge-success badge-lg rounded-full gap-2"> Logged In As: <img className="size-6 rounded-full" src={`${RPC_URL(__HOST__)}/api/romm/assets/romm/assets/${user.data?.avatar_path}`} /><b>{user.data?.username}</b></div>
+      <div className="badge badge-success badge-lg rounded-full gap-2"> <p className="sm:hidden md:inline">Logged In As:</p> <img className="size-6 rounded-full" src={`${RPC_URL(__HOST__)}/api/romm/assets/romm/assets/${user.data?.avatar_path}`} /><b>{user.data?.username}</b></div>
     </>}
-    <Button disabled={!context.state.canSubmit || !context.state.isDirty} type="submit" onAction={() => context.handleSubmit()} >
+    <Button id="can-submit" disabled={!context.state.canSubmit || !context.state.isDirty} type="submit" onAction={() => context.handleSubmit()} >
       <Save /> Save
     </Button>
     {data.hasPassword &&
-      <Button onAction={() =>
+      <Button id="forget" onAction={() =>
       {
         toast("Logout", { id: 'romm-logout-noti' });
         logoutMutation.mutate();
@@ -64,7 +64,7 @@ function LoginControls (data: { hasPassword: boolean; })
         <Trash /> Forget
       </Button>
     }
-    <Button disabled={context.state.isDefaultValue} type="reset" onAction={() => context.reset()}>
+    <Button id="cancel" disabled={context.state.isDefaultValue} type="reset" onAction={() => context.reset()}>
       <X /> Cancel
     </Button>
   </div>;

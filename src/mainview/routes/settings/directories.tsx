@@ -37,7 +37,7 @@ function DriveComponent (data: { drive: DownloadsDrive; downloadsSize: number; r
     shortcuts.push({ label: "Move Downloads", button: GamePadButtonCode.A, action: handleAction });
   }
   useShortcuts(focusKey, () => shortcuts, [shortcuts]);
-  const { isMouse } = useActiveControl();
+  const { isPointer } = useActiveControl();
 
   return <li ref={ref} className={twMerge('flex flex-row p-4 bg-base-300 rounded-2xl gap-1 items-end',
     classNames({
@@ -67,7 +67,7 @@ function DriveComponent (data: { drive: DownloadsDrive; downloadsSize: number; r
         {!!data.drive.isCurrentlyUsed && <div className="h-full bg-base-content" style={{ width: usedPercentRaw.toLocaleString('en-US', { style: 'percent' }) }}></div>}
       </div>
     </div>
-    {valid && isMouse && <Button type="button" className='btn-circle' onAction={handleAction} id={`${data.drive.mountPoint}-select`}><Save /></Button>}
+    {valid && isPointer && <Button type="button" className='btn-circle' onAction={handleAction} id={`${data.drive.mountPoint}-select`}><Save /></Button>}
   </li>;
 }
 
@@ -87,7 +87,7 @@ function RouteComponent ()
       <div className="divider text-2xl mt-0 md:mt-4">
         <Download className='size-16' /> Downloads ({drives?.downloadsSize ? prettyBytes(drives?.downloadsSize) : <span className="loading loading-spinner loading-lg size-6"></span>})
       </div>
-      <ul className='p-2 grid grid-cols-2 gap-3'>
+      <ul className='p-2 grid grid-cols-2 portrait:sm:grid-cols-1 gap-3'>
         {drives?.drives.filter(d => d.mountPoint).map(d => <DriveComponent refetchDrives={refetch} downloadsSize={drives.downloadsSize} drive={d} />)}
       </ul>
       <DownloadDirectoryOption
@@ -100,10 +100,10 @@ function RouteComponent ()
 
       </DownloadDirectoryOption>
       <OptionSpace label="Config Path" id='config'>
-        <div className='flex gap-2 items-center'>
+        <div className='flex gap-2 items-center text-ellipsis text-nowrap overflow-hidden'>
           {drives?.configPath}
-          <Button id='open-config' type='button' onAction={() => systemApi.api.system.open.post({ url: drives?.configPath ?? '' })} ><FolderOpen /></Button>
         </div>
+        <Button id='open-config' type='button' onAction={() => systemApi.api.system.open.post({ url: drives?.configPath ?? '' })} ><FolderOpen /></Button>
       </OptionSpace>
     </ul>
 

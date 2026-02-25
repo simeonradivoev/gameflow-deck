@@ -37,6 +37,7 @@
     "node-stream-zip": "^1.15.0",
     "open": "^11.0.0",
     "pathe": "^2.0.3",
+    "sharp": "^0.34.5",
     "systeminformation": "^5.31.1",
     "tough-cookie": "^6.0.0",
     "tough-cookie-file-store": "^3.3.0",

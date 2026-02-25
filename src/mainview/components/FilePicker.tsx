@@ -45,7 +45,7 @@ function List (data: {
                         action: handleReturn,
                         id: `${data.id}...`,
                         type: 'primary',
-                        content: <div className="flex justify-between w-full items-center">...<SvgIcon className="md:size-8 sm:size-6" icon={'steamdeck_button_l1_outline'} /> </div>,
+                        content: <div className="flex justify-between w-full items-center">...<SvgIcon className="sm:size-6 md:size-8" icon={'steamdeck_button_l1_outline'} /> </div>,
                         icon: <FolderOutput />,
                         shortcuts: [{ label: "Up", action: handleReturn, button: GamePadButtonCode.A }]
                     },
@@ -149,10 +149,10 @@ function OptionButtons (data: {
 })
 {
     const { ref, focusKey } = useFocusable({ focusKey: `options-${data.id}`, onEnterPress: data.onSelect });
-    return <div ref={ref} className="flex h-12 w-full justify-end gap-2">
+    return <div ref={ref} className="flex md:inline h-12 w-full justify-end gap-2">
         <FocusContext value={focusKey}>
             {data.showConfirm && <Button className="p-6 ring-accent-content" onAction={data.onSelect} id={`${data.id}-select`} focusClassName="ring-7" type="button" ><Check />Select</Button>}
-            <Button className="p-6 ring-warning-content" onAction={data.onCancel} id={`${data.id}-cancel`} type="button" focusClassName="ring-7 btn-warning" ><X />Cancel</Button>
+            <Button className="md:p-6 ring-warning-content" onAction={data.onCancel} id={`${data.id}-cancel`} type="button" focusClassName="ring-7 btn-warning" ><X />Cancel</Button>
         </FocusContext>
     </div>;
 }
@@ -161,7 +161,7 @@ function DriveElement (data: { id: string, isActive: boolean, label: string; onS
 {
     const { ref, focused } = useFocusable({ focusKey: data.id, onEnterPress: data.onSelect });
     return <li ref={ref} onClick={data.onSelect} className={twMerge(
-        "flex bg-base-200 text-base-content rounded-full gap-2 items-center p-2 px-4 overflow-hidden max-w-xs cursor-pointer text-nowrap hover:bg-primary/40",
+        "flex bg-base-200 text-base-content rounded-full gap-2 sm:min-h-10 items-center p-2 min-w-fit px-4 overflow-hidden max-w-xs cursor-pointer text-nowrap hover:bg-primary/40",
         classNames({
             "bg-primary text-primary-content": data.isActive,
             "ring-7 ring-base-content": focused
@@ -185,7 +185,7 @@ function Drives (data: {
         autoRestoreFocus: false
     });
 
-    return <ul className="flex flex-col gap-2" ref={ref} >
+    return <ul className="flex not-portrait:flex-col sm:gap-1 md:gap-2 overflow-auto" ref={ref} >
         <FocusContext value={focusKey}>
             {drives?.filter(d => d.mountPoint)
                 .sort((a, b) => b.mountPoint!.length - a.mountPoint!.length)
@@ -208,7 +208,7 @@ function ListWithDrives (data: {
         focusKey: `main-${data.id}`,
         preferredChildFocusKey: `list-${data.id}`
     });
-    return <div ref={ref} className="flex grow min-h-0 gap-2">
+    return <div ref={ref} className="flex sm:portrait:flex-col grow min-h-0 gap-2">
         <FocusContext value={focusKey}>
             <div className="flex flex-col gap-1">
                 <Drives onSelect={p => setCurrentPath(p)} id={`drives-${data.id}`} />
@@ -264,7 +264,7 @@ export default function FilePicker (data: {
             activeDrive
         }}>
             {!!fullPath &&
-                <div className="breadcrumbs flex items-center text-sm min-h-12 max-h-12 h-12 px-4 py-2 overflow-hidden bg-base-300 text-base-content rounded-full">
+                <div className="breadcrumbs flex items-center text-sm sm:min-h-10 sm:max-h-10 sm:h-10 md:min-h-12 md:max-h-12 md:h-12 px-4 py-2 overflow-hidden bg-base-300 text-base-content rounded-full">
                     <ul>
                         {fullPathElements.map((p, i) => <li>
                             <a onClick={() =>
@@ -272,7 +272,7 @@ export default function FilePicker (data: {
                             }>{p}</a>
                         </li>)}
                     </ul>
-                    {(filesLoading || drivesLoading) && <span className="loading loading-spinner loading-lg"></span>}
+                    {(filesLoading || drivesLoading) && <span className="loading loading-spinner sm:loading-md md:loading-lg"></span>}
                 </div>}
 
             <ListWithDrives

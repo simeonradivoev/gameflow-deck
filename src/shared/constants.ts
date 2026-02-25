@@ -76,6 +76,7 @@ export interface FrontEndGameType
     slug: string | null,
     name: string | null,
     platform_id: number | null,
+    paths_screenshots: string[];
 };
 
 export interface FrontEndGameTypeDetailed extends FrontEndGameType
@@ -84,7 +85,6 @@ export interface FrontEndGameTypeDetailed extends FrontEndGameType
     fs_size_bytes: number | null;
     missing: boolean;
     local: boolean;
-    paths_screenshots: string[];
     achievements?: {
         unlocked: number;
         total: number;

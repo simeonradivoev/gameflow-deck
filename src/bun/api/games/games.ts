@@ -1,11 +1,11 @@
 import Elysia, { status } from "elysia";
-import { activeGame, config, db, events, setActiveGame, taskQueue } from "../app";
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { config, db, taskQueue } from "../app";
+import { and, eq, getTableColumns, sql } from "drizzle-orm";
 import z from "zod";
 import * as schema from "../schema/app";
 import fs from "node:fs/promises";
 import { FrontEndGameType, FrontEndGameTypeDetailed, GameListFilterSchema } from "@shared/constants";
-import { getRomApiRomsIdGet, getRomsApiRomsGet, updateRomUserApiRomsIdPropsPut } from "@clients/romm";
+import { getRomApiRomsIdGet, getRomsApiRomsGet } from "@clients/romm";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
 import { calculateSize, checkInstalled, convertRomToFrontend, convertRomToFrontendDetailed, getLocalGameMatch } from "./services/utils";
@@ -13,9 +13,10 @@ import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/s
 import { errorToResponse } from "elysia/adapter/bun/handler";
 import { launchCommand } from "./services/launchGameService";
 import { getErrorMessage } from "@/bun/utils";
+import sharp from 'sharp';
 
 export default new Elysia()
-    .get('/game/local/:id/cover', async ({ params: { id }, set }) =>
+    .get('/game/local/:id/cover', async ({ params: { id }, query: { blur, width, height }, set }) =>
     {
         const coverBlob = await db.query.games.findFirst({ columns: { cover: true, cover_type: true }, where: eq(schema.games.id, id) });
         if (!coverBlob || !coverBlob.cover)
@@ -26,9 +27,23 @@ export default new Elysia()
         {
             set.headers["content-type"] = coverBlob.cover_type;
         }
-        return status(200, coverBlob.cover);
-    }, { response: { 200: z.instanceof(Buffer<ArrayBufferLike>), 404: z.any() }, params: z.object({ id: z.coerce.number() }) })
-    .get('/screenshot/:id', async ({ params: { id }, set }) =>
+
+        return sharp(coverBlob.cover).resize({ width, height, withoutEnlargement: true }).blur(blur);
+    }, {
+        params: z.object({ id: z.coerce.number() }),
+        query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() })
+    })
+    .get('/image/:source/*', async ({ params: { source, "*": path }, query: { blur, width, height } }) =>
+    {
+        if (source === 'romm')
+        {
+            const rommAdress = config.get('rommAddress');
+            const rommFetch = await fetch(`${rommAdress}/${path}`);
+            return sharp(await rommFetch.arrayBuffer()).resize({ width, height, withoutEnlargement: true }).sharpen().blur(blur);
+        }
+        return status('Not Found');
+    }, { query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() }) })
+    .get('/screenshot/:id', async ({ params: { id }, query: { blur, width, height }, set }) =>
     {
         const screenshot = await db.query.screenshots.findFirst({ where: eq(schema.screenshots.id, id), columns: { content: true, type: true } });
         if (screenshot)
@@ -37,12 +52,15 @@ export default new Elysia()
             {
                 set.headers["content-type"] = screenshot.type;
             }
-            return screenshot.content;
+            return sharp(screenshot.content).resize({ width, height, withoutEnlargement: true }).blur(blur);
 
         }
 
         return status(404);
-    }, { params: z.object({ id: z.coerce.number() }) })
+    }, {
+        params: z.object({ id: z.coerce.number() }),
+        query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() })
+    })
     .get("/game/local/:id/installed", async ({ params: { id } }) =>
     {
         const data = await db.query.games.findFirst({ where: eq(schema.games.id, id) });
@@ -69,32 +87,34 @@ export default new Elysia()
         if (!collection_id)
         {
             const localGames = await db.select({
-                platform_display_name: schema.platforms.name,
-                id: schema.games.id,
-                last_played: schema.games.last_played,
-                created_at: schema.games.created_at,
-                platform_id: schema.games.platform_id,
-                slug: schema.games.slug,
-                name: schema.games.name,
-                path_fs: schema.games.path_fs,
-                source_id: schema.games.source_id,
-                source: schema.games.source
-            }).from(schema.games)
-                .leftJoin(schema.platforms, eq(schema.games.platform_id, schema.platforms.id))
+                ...getTableColumns(schema.games),
+                platform: schema.platforms,
+                screenshotIds: sql<number[]>`coalesce(json_group_array(${schema.screenshots.id}),json('[]'))`.mapWith(d => JSON.parse(d) as number[]),
+            })
+                .from(schema.games)
+                .leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id))
+                .leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id))
+                .groupBy(schema.games.id)
+
                 .where(and(...where));
 
             localGamesSet = new Set(localGames.filter(g => !!g.source_id).map(g => g.source_id!));
             games.push(...localGames.map(g =>
             {
                 const game: FrontEndGameType = {
-                    ...g,
-                    platform_display_name: g.platform_display_name ?? "Local",
+                    platform_display_name: g.platform?.name ?? "Local",
                     id: { id: g.id, source: 'local' },
                     updated_at: g.created_at,
                     path_cover: `/api/romm/game/local/${g.id}/cover`,
                     source_id: g.source_id,
                     source: g.source,
-                    path_platform_cover: `/api/romm/platform/local/${g.platform_id}/cover`
+                    path_platform_cover: `/api/romm/platform/local/${g.platform_id}/cover`,
+                    paths_screenshots: g.screenshotIds?.map(s => `/api/romm/screenshot/${s}`) ?? [],
+                    path_fs: g.path_fs,
+                    last_played: g.last_played,
+                    slug: g.slug,
+                    name: g.name,
+                    platform_id: g.platform_id
                 };
                 return game;
             }));
@@ -118,25 +138,35 @@ export default new Elysia()
     {
         async function getLocalGameDetailed (match: any)
         {
-            const localGames = await db.select({
-                platform_display_name: schema.platforms.name,
-                ...getTableColumns(schema.games)
-            }).from(schema.games).where(match).leftJoin(schema.platforms, eq(schema.games.platform_id, schema.platforms.id));
-            if (localGames.length > 0)
+            const localGame = await db.query.games.findFirst({
+                where: match,
+                with: {
+                    screenshots: { columns: { id: true } },
+                    platform: { columns: { name: true } }
+                }
+            });
+            if (localGame)
             {
-                const screenshots = await db.query.screenshots.findMany({ where: eq(schema.screenshots.game_id, localGames[0].id), columns: { id: true } });
-                const exists = await checkInstalled(localGames[0].path_fs);
-                const fileSize = await calculateSize(localGames[0].path_fs);
+                const exists = await checkInstalled(localGame.path_fs);
+                const fileSize = await calculateSize(localGame.path_fs);
                 const game: FrontEndGameTypeDetailed = {
-                    ...localGames[0],
-                    path_cover: `/api/romm/game/local/${localGames[0].id}/cover`,
-                    updated_at: localGames[0].created_at,
-                    id: { id: localGames[0].id, source: 'local' },
-                    path_platform_cover: `/api/romm/platform/local/${localGames[0].platform_id}/cover`,
+                    path_cover: `/api/romm/game/local/${localGame.id}/cover`,
+                    updated_at: localGame.created_at,
+                    id: { id: localGame.id, source: 'local' },
+                    path_platform_cover: `/api/romm/platform/local/${localGame.platform_id}/cover`,
                     fs_size_bytes: fileSize ?? null,
-                    paths_screenshots: screenshots.map(s => `/api/romm/screenshot/${s.id}`),
+                    paths_screenshots: localGame.screenshots.map(s => `/api/romm/screenshot/${s.id}`),
                     local: true,
-                    missing: !exists
+                    missing: !exists,
+                    platform_display_name: localGame.platform.name,
+                    summary: localGame.summary,
+                    source: localGame.source,
+                    source_id: localGame.source_id,
+                    path_fs: localGame.path_fs,
+                    last_played: localGame.last_played,
+                    slug: localGame.slug,
+                    name: localGame.name,
+                    platform_id: localGame.platform_id
                 };
                 return game;
             }
@@ -146,14 +176,12 @@ export default new Elysia()
 
         if (source === 'local')
         {
-
             const localGame = await getLocalGameDetailed(eq(schema.games.id, id));
             if (localGame) return localGame;
             return status('Not Found');
         }
         else
         {
-
             const localGame = await getLocalGameDetailed(getLocalGameMatch(id, source));
             if (localGame) return localGame;
 

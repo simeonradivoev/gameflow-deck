@@ -10,7 +10,7 @@ import { host } from "./host";
 export async function BuildParams (data: { configPath: string; })
 {
     const validBrowser = await getBrowserPath({
-        browserOrder: ['chrome', 'chromium']
+        browserOrder: Bun.env.BROWSER_PRIORITY ? Bun.env.BROWSER_PRIORITY.split(',') as any : ['chrome', 'chromium']
     });
 
     if (!validBrowser)

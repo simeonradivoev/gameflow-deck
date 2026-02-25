@@ -67,7 +67,7 @@ export function OptionSpace (data: {
         <OptionContext value={{ focused, focus: focusSelf, eventTarget }}>
             <li
                 ref={ref}
-                className={twMerge("flex sm:p-2 md:p-4 pl-8! rounded-full bg-base-content/1", classNames(
+                className={twMerge("flex portrait:flex-col portrait:gap-2 portrait:p-4 md:flex-row sm:p-2 md:p-4 md:pl-8! portrait:rounded-3xl landscape:rounded-full bg-base-content/1", classNames(
                     {
                         "text-primary-content bg-primary ": focused || hasFocusedChild,
                     }),
@@ -87,7 +87,9 @@ export function OptionSpace (data: {
                         data.label
                     )}
                 </div>
-                {data.children}
+                <div className="flex">
+                    {data.children}
+                </div>
             </li>
         </OptionContext>
     </FocusContext>

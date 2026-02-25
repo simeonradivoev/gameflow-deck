@@ -48,7 +48,7 @@ export default function Shortcuts (data: { shortcuts?: Shortcut[]; })
     const { control } = useActiveControl();
     const showKeyboard = control === 'keyboard' || control === 'mouse';
     return (
-        <div className="flex gap-2 z-1000">
+        <div className="flex gap-2 z-1000 h-10">
             {data.shortcuts?.filter(s => !!s.label).map((s, i) => <ShortcutPrompt
                 key={s.button}
                 id={`shortcut-${s.button}`}

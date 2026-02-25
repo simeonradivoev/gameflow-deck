@@ -1,5 +1,5 @@
 import { keepPreviousData, mutationOptions, queryOptions } from "@tanstack/react-query";
-import { settingsApi, systemApi } from "./clientApi";
+import { rommApi, settingsApi, systemApi } from "./clientApi";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "react-error-boundary";
 
@@ -49,6 +49,15 @@ export const changeDownloadsMutation = mutationOptions({
         });
 
         return response;
-
     }
+});
+
+export const gameQuery = (source: string, id: number) => queryOptions({
+    queryKey: ['game', source, id],
+    queryFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).get();
+        if (error) throw error;
+        return data;
+    },
 });

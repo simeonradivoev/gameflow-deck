@@ -9,7 +9,7 @@ import { RefObject, useEffect } from "react";
 
 init({
   shouldFocusDOMNode: false,
-  throttle: 200
+  throttle: 200,
 });
 
 let addFocusable = SpatialNavigation.addFocusable.bind(SpatialNavigation);

@@ -57,8 +57,8 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                 <div className="px-3 w-full pt-2">
                     <HeaderUI title={data.headerTitle} buttons={[{ id: "search", icon: <Search /> }, { id: "filter", icon: <Settings2 /> }]} />
                 </div>
-                <div className="w-full grow mt-4 rounded-2xl px-2 overflow-y-scroll justify-center mask-alpha mask-t-from-transparent mask-t-to-20 mask-t-to-black">
-                    <div className="h-fit w-full px-6 pt-4 pb-32">
+                <div className="w-full grow mt-4 rounded-2xl px-2 overflow-y-scroll justify-center mask-alpha sm:portrait:mask-t-from-transparent md:landscape:mask-t-from-transparent mask-t-to-20 mask-t-to-black">
+                    <div className="h-fit w-full md:px-6 pt-4 pb-32">
                         {data.title}
                         <Suspense>
                             <GameList

@@ -74,8 +74,9 @@ export function CardList (data: {
       id={`card-list-${data.id}`}
       ref={ref}
       save-child-focus="session"
-      className={twMerge("my-6 items-center justify-center-safe h-(--game-card-height) ",
-        data.grid ? "card-grid h-fit gap-5" : 'card-list md:gap-6 sm:gap-2',
+      className={twMerge("items-center justify-center-safe landscape:h-(--game-card-height) ",
+        data.grid ? "grid h-fit sm:gap-2 md:gap-5 auto-rows-(--game-card-height) grid-cols-[repeat(auto-fill,var(--game-card-width))]" :
+          'landscape:flex sm:gap-2 md:gap-6 portrait:grid portrait:auto-rows-(--game-card-height) portrait:grid-cols-[repeat(auto-fill,var(--game-card-width))]',
         data.className
       )}
       onKeyDown={(e) =>

@@ -39,6 +39,10 @@
       "type": "shell",
       "command": "bun run dev:hmr",
       "isBackground": true,
+      "options": {
+        "env": {
+         }
+      },
       "problemMatcher": [],
       "presentation": {
         "echo": true,

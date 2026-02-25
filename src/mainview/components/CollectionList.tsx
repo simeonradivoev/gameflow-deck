@@ -46,7 +46,7 @@ export default function CollectionList (data: {
             onGameFocus={(id, node, details) =>
             {
                 data.setBackground(
-                    `https://picsum.photos/id/${10 + (id ?? 0)}/1920/1080.webp`,
+                    `https://picsum.photos/id/${10 + (id ?? 0)}/100/100.webp?blur=10`,
                 );
                 data.onFocus?.(id, node, details);
             }}

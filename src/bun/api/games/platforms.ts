@@ -28,7 +28,7 @@ export default new Elysia()
                     slug: p.slug,
                     name: p.display_name,
                     family_name: p.family_name,
-                    path_cover: `/api/romm/assets/platforms/${p.slug}.svg`,
+                    path_cover: `/api/romm/image/romm/assets/platforms/${p.slug}.svg`,
                     game_count: p.rom_count,
                     updated_at: new Date(p.updated_at),
                     id: { source: 'romm', id: p.id },
