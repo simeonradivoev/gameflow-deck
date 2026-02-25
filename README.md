@@ -16,9 +16,12 @@ Focused on building a simple user experience and intuitive UI.
   - On linux it uses WebKitGTK or a browser even from flatpak
   - Not tested on Mac yet
 - **Steam Deck Support**: Extensively tested with the steam deck. It can use flatpak installed browsers.
+  - Automatic Keyboard prompts
 - **Great for Controllers**: The UI is inspired by the switch and works great with joysticks and dpads.
 - **Automatic Download** Downloads roms from ROMM automatically
-- **Automatic Emulator Discovery** Using the configs of the excellent ES-DE to discover installed emulators and launch games. 
+- **Automatic Emulator Discovery** Using the configs of the excellent ES-DE to discover installed emulators and launch games.
+  - Easy fallback configuration with built in file browser.
+- **Responsive Layout** Optimized mainly for the steam deck with responsive layout support and dynamic switching of inputs.
 
 ## Screenshots
 
@@ -27,6 +30,12 @@ Focused on building a simple user experience and intuitive UI.
 <img src=".github/screenshots/EWPHmIBEE5.png" width="25%"></img>
 <img src=".github/screenshots/J5BHVZBh7k.png" width="25%"></img>
 <img src=".github/screenshots/8jipsHiLST.png" width="25%"></img>
+
+## Goals
+
+I want to build an open and free platform where you can play and discover new hidden gems from the past.
+I plan to add a free store where you can download all your needed emulators, the goal is to not have to leave the UI for anything.
+I really want to add matrix chat support in the app for engaging with your favorite community. Having access to so many nodejs libraries would make it quite straight forward.
 
 ## Development
 
@@ -44,18 +53,19 @@ Focused on building a simple user experience and intuitive UI.
    ```
 
 3. Build for production:
+
    ```bash
    bun run package:auto-prod
    ```
+
    Builds will go in `/builds/<platform>`.
 
 4. Additional Commands:
-   - ```bun run mappings:generate``` converts the es-de configs into local sqlite configs with mappings to rom systems
-   -    ```bun run drizzle:generate``` generates sqlite migrations based on the app schema
-   - ```bun run openapi-ts``` generated the openapi client calls from romm's API
-   - ```bun run package``` builds an executable
-   - ```bun run package:auto-prod``` builds and executable for production
-
+   - `bun run mappings:generate` converts the es-de configs into local sqlite configs with mappings to rom systems
+   - `bun run drizzle:generate` generates sqlite migrations based on the app schema
+   - `bun run openapi-ts` generated the openapi client calls from romm's API
+   - `bun run package` builds an executable
+   - `bun run package:auto-prod` builds and executable for production
 
 ### Tech Stack
 
