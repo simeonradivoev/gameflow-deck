@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       # 1. FIX: Install system dependencies BEFORE setup-bun
       - name: Install system dependencies
