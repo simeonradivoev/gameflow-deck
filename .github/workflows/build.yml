@@ -17,8 +17,6 @@ jobs:
       - name: Get Version
         id: package-version
         uses: martinbeentjes/npm-get-version-action@v1.3.1
-        with:
-          path: release/app
 
       - name: Get Changelog Entry
         id: changelog_reader
