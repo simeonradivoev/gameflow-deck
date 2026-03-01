@@ -74,6 +74,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+
       - name: Publish Release
         uses: ncipollo/release-action@v1
         with:
@@ -82,4 +85,6 @@ jobs:
           tag: ${{ needs.create-draft.outputs.current-version }}
           omitNameDuringUpdate: true
           omitBodyDuringUpdate: true
+          replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: ${{ github.workspace }}/**/*.zip
