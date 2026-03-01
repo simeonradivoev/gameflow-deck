@@ -15,7 +15,7 @@ jobs:
       - name: Initialize LFS
         run: |
           curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-          sudo apt-get install git-lfs
+          apt-get install git-lfs
 
       - name: Checkout code
         uses: actions/checkout@v4
