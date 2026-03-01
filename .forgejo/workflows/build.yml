@@ -14,8 +14,8 @@ jobs:
         #fix for runner not having Git LFS
       - name: Initialize LFS
         run: |
-          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-          apt-get install git-lfs
+          apt-get update
+          apt-get install -y git-lfs
 
       - name: Checkout code
         uses: actions/checkout@v4
