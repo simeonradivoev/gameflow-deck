@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import { appBuilderPath, } from 'app-builder-bin';
 import path from 'node:path';
 import { ensureDir } from "fs-extra";
+import { rmdir } from "node:fs";
 
 // ─────────────────────────────────────────────
 // CONFIGURE THESE FOR YOUR APP
@@ -17,7 +18,7 @@ const TMP_FOLDER = ".";
 
 const APP_NAME = pkg.displayName ?? pkg.name;
 const APP_ID = pkg.name;
-const APPDIR = path.resolve(path.join(TMP_FOLDER, `${APP_ID}.AppDir`));
+const APPDIR = path.resolve(TMP_FOLDER, `${APP_ID}.AppDir`);
 
 console.log(`>>> Building AppImage for ${APP_NAME} (${APP_ID})...`);
 
@@ -65,8 +66,11 @@ const config = {
     ]
 };
 
-const OUTPUT = path.resolve(path.join("build", `${APP_NAME}.AppImage`));
-const STAGE = path.resolve(path.join(TMP_FOLDER, `${APP_ID}.stage`));
+// Remove the build dir, mainly to help with CIs
+await fs.rm(path.resolve("build", "linux"), { recursive: true });
+await ensureDir(path.resolve("build", "linux"));
+const OUTPUT = path.resolve("build", "linux", `${APP_NAME}.AppImage`);
+const STAGE = path.resolve(TMP_FOLDER, `${APP_ID}.stage`);
 
 await ensureDir(STAGE);
 

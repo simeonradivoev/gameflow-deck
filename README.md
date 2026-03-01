@@ -55,7 +55,7 @@ I really want to add matrix chat support in the app for engaging with your favor
 3. Build for production:
 
    ```bash
-   bun run package:auto-prod
+   bun run build:prod
    ```
 
    Builds will go in `/builds/<platform>`.
@@ -64,8 +64,8 @@ I really want to add matrix chat support in the app for engaging with your favor
    - `bun run mappings:generate` converts the es-de configs into local sqlite configs with mappings to rom systems
    - `bun run drizzle:generate` generates sqlite migrations based on the app schema
    - `bun run openapi-ts` generated the openapi client calls from romm's API
-   - `bun run package` builds an executable
-   - `bun run package:auto-prod` builds and executable for production
+   - `bun run package:windows` builds an package to be distributed on windows
+   - `bun run package:linux` builds an AppImage to be distributed on linux
 
 ### Tech Stack
 

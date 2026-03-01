@@ -39,11 +39,11 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build Canary
-        run: bun run appimage:build:prod
+        run: bun run package:linux
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: canary-build
-          path: build/Gameflow.AppImage
+          path: build/linux
           retention-days: 7

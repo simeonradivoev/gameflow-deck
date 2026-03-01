@@ -6,28 +6,45 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux:
+  create-draft:
     runs-on: ubuntu-latest
+    outputs:
+      current-version: ${{ steps.package-version.outputs }}
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Bun Install
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build Canary
-        run: bun run appimage:build:prod
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Get Version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
         with:
-          name: canary-build-${{ runner.os }}
-          path: build/Gameflow.AppImage
-  build-windows:
-    runs-on: windows-latest
+          path: release/app
+
+      - name: Get Changelog Entry
+        id: changelog_reader
+        uses: artlaman/conventional-changelog-reader-action@v1.1.0
+        with:
+          version: ${{ steps.package-version.outputs.current-version }}
+          path: ./CHANGELOG.md
+
+      - name: Create release draft
+        uses: ncipollo/release-action@v1
+        with:
+          # This pulls from the "Get Changelog Entry" step above, referencing it's ID to get its outputs object.
+          # See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          draft: true
+          tag: ${{ steps.changelog_reader.outputs.version }}
+          name: Release ${{ steps.changelog_reader.outputs.version }}
+          body: ${{ steps.changelog_reader.outputs.changes }}
+          prerelease: ${{ steps.changelog_reader.outputs.status == 'prereleased' }}
+          allowUpdates: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+  build:
+    needs: create-draft
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,12 +56,26 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build Canary
-        run: bun run package:auto-prod
+        run: bun run package:${{ runner.os }}
         env:
           BUILD_DIR: ./build/${{ runner.os }}
 
-      - name: Upload Artifact
+      - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
           name: canary-build-${{ runner.os }}
           path: build/${{ runner.os }}
+  release:
+    needs: [build, create-draft]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Publish Release
+        uses: ncipollo/release-action@v1
+        with:
+          draft: false
+          allowUpdates: true
+          tag: ${{ needs.create-draft.outputs.current-version }}
+          omitNameDuringUpdate: true
+          omitBodyDuringUpdate: true
+          token: ${{ secrets.GITHUB_TOKEN }}
