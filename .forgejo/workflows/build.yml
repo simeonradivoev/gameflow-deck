@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          persist-credentials: 'true' # Optional; should be the default
+          persist-credentials: "true" # Optional; should be the default
 
       - name: Checkout lfs
         run: |
@@ -53,7 +53,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
 
       - name: Build Canary
-        run: bun run package:linux
+        run: bun run package:Linux
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3

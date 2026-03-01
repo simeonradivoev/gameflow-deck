@@ -9,7 +9,8 @@ import { rmdir } from "node:fs";
 // ─────────────────────────────────────────────
 // CONFIGURE THESE FOR YOUR APP
 // ─────────────────────────────────────────────
-const APP_DIR = "./build/linux";
+const BUILD_DIR = process.env.BUILD_DIR ?? process.platform;
+const APP_DIR = `./build/${BUILD_DIR}`;
 const BINARY_NAME = pkg.bin;
 const ICON = "./src/mainview/assets/256x256.png";
 const DESKTOP = "./flatpak/com.simeonradivoev.gameflow-deck.desktop";
