@@ -87,4 +87,4 @@ jobs:
           omitBodyDuringUpdate: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{ github.workspace }}/**/*.zip
+          artifacts: ${{ github.workspace }}/canary-build-${{ runner.os }}/*.{AppImage|zip}
