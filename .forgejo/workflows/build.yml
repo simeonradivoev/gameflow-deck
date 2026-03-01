@@ -14,7 +14,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          lfs: true
+          persist-credentials: 'true' # Optional; should be the default
+
+      - name: Checkout lfs
+        run: |
+          git lfs install --local
+          AUTH=$(git config --local http.${{ forge.server_url }}/.extraheader)
+          git config --local --unset http.${{ forge.server_url }}/.extraheader
+          git config --local http.${{ forge.server_url }}/${{ forge.repository }}.git/info/lfs/objects/batch.extraheader "$AUTH"
+          git lfs pull
 
         # 1. FIX: Install system dependencies BEFORE setup-bun
       - name: Install system dependencies
