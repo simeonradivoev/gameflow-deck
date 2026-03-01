@@ -1,7 +1,7 @@
 {
   "name": "com.simeonradivoev.gameflow-deck",
   "displayName": "Gameflow",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Game Launcher",
   "icon": "./src/mainview/assets/icon.svg",
   "main": "./src/bun/index.ts",
