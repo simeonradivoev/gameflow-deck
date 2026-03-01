@@ -9,7 +9,7 @@ jobs:
   create-draft:
     runs-on: ubuntu-latest
     outputs:
-      current-version: ${{ steps.package-version.outputs }}
+      current-version: ${{ steps.package-version.outputs.current-version }}
 
     steps:
       - name: Checkout
@@ -61,7 +61,7 @@ jobs:
           BUILD_DIR: ./build/${{ runner.os }}
 
       - name: Install 7zip (minimal)
-        if: runner.os == 'Linux'
+        if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install -y p7zip-full
 
       - name: Upload Linux Artifact
