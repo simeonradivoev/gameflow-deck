@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: docker
     container:
-      image: ghcr.io/catthehacker/ubuntu:gh-22.04
+      image: ghcr.io/catthehacker/ubuntu:act-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
 
       - name: Install 7zip (minimal)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y p7zip
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
 
       - name: Build Canary
         run: bun run package:linux
