@@ -99,6 +99,7 @@
     "react-error-boundary": "^6.1.0",
     "react-hot-toast": "^2.6.0",
     "sass-embedded": "^1.97.3",
+    "standard-version": "^9.5.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
