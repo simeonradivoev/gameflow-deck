@@ -78,7 +78,6 @@ jobs:
         uses: actions/download-artifact@v5
 
       - name: Archive Windows Release
-        if: matrix.os == 'ubuntu-latest'
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: "zip"
