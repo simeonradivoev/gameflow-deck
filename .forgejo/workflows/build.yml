@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: docker
     container:
-      image: ghcr.io/catthehacker/ubuntu:act-latest
+      image: ghcr.io/catthehacker/ubuntu:js-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
