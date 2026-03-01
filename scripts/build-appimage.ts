@@ -9,8 +9,7 @@ import { rmdir } from "node:fs";
 // ─────────────────────────────────────────────
 // CONFIGURE THESE FOR YOUR APP
 // ─────────────────────────────────────────────
-const BUILD_DIR = process.env.BUILD_DIR ?? process.platform;
-const APP_DIR = `./build/${BUILD_DIR}`;
+const APP_DIR = process.env.BUILD_DIR ?? `./build/${process.platform}`;
 const BINARY_NAME = pkg.bin;
 const ICON = "./src/mainview/assets/256x256.png";
 const DESKTOP = "./flatpak/com.simeonradivoev.gameflow-deck.desktop";
@@ -68,9 +67,9 @@ const config = {
 };
 
 // Remove the build dir, mainly to help with CIs
-await fs.rm(path.resolve("build", "linux"), { recursive: true });
-await ensureDir(path.resolve("build", "linux"));
-const OUTPUT = path.resolve("build", "linux", `${APP_NAME}.AppImage`);
+await fs.rm(APP_DIR, { recursive: true });
+await ensureDir(APP_DIR);
+const OUTPUT = path.resolve(APP_DIR, `${APP_NAME}.AppImage`);
 const STAGE = path.resolve(TMP_FOLDER, `${APP_ID}.stage`);
 
 await ensureDir(STAGE);
