@@ -62,12 +62,12 @@ window.addEventListener('touchcancel', handleTouchEnd);
 window.addEventListener("gamepadconnected", handleLoop);
 window.addEventListener('mousemove', handleMouseMove);
 window.addEventListener('keydown', handleKeyDown);
-import.meta.hot.dispose(() => window.removeEventListener('gamepaddisconnected', handleLoop));
-import.meta.hot.dispose(() => window.removeEventListener('mousemove', handleMouseMove));
-import.meta.hot.dispose(() => window.removeEventListener('keydown', handleKeyDown));
-import.meta.hot.dispose(() => window.removeEventListener('touchstart', handleTouchStart));
-import.meta.hot.dispose(() => window.removeEventListener('touchend', handleTouchEnd));
-import.meta.hot.dispose(() => window.removeEventListener('touchcancel', handleTouchEnd));
+import.meta.hot?.dispose(() => window.removeEventListener('gamepaddisconnected', handleLoop));
+import.meta.hot?.dispose(() => window.removeEventListener('mousemove', handleMouseMove));
+import.meta.hot?.dispose(() => window.removeEventListener('keydown', handleKeyDown));
+import.meta.hot?.dispose(() => window.removeEventListener('touchstart', handleTouchStart));
+import.meta.hot?.dispose(() => window.removeEventListener('touchend', handleTouchEnd));
+import.meta.hot?.dispose(() => window.removeEventListener('touchcancel', handleTouchEnd));
 
 export default function useActiveControl ()
 {

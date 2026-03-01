@@ -43,7 +43,7 @@ export function GameList (data: GameListParams)
                 const previewUrl = localStorage.getItem('background-blur') !== "false" ? coverUrl : screenshotUrl;
                 previewUrl.searchParams.delete('ts');
                 data.setBackground?.(previewUrl.href);
-                queryClient.prefetchQuery(gameQuery(source ?? id.source, sourceId ?? id.id));
+                //queryClient.prefetchQuery(gameQuery(source ?? id.source, sourceId ?? id.id));
             } catch
             {
 

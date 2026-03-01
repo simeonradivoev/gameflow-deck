@@ -13,10 +13,40 @@ import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/s
 import { errorToResponse } from "elysia/adapter/bun/handler";
 import { launchCommand } from "./services/launchGameService";
 import { getErrorMessage } from "@/bun/utils";
-import sharp from 'sharp';
+import { Jimp } from 'jimp';
+
+async function processImage (img: string | Buffer | ArrayBuffer, { blur, width, height }: { blur?: number, width?: number, height?: number; })
+{
+    if (blur)
+    {
+        const jimp = await Jimp.read(img);
+        if (width)
+        {
+            jimp.resize({ w: width, h: height });
+        }
+        if (height)
+        {
+            jimp.resize({ w: width, h: height });
+        }
+        if (blur)
+        {
+            jimp.blur(blur);
+        }
+
+        return jimp.getBuffer('image/png');
+    }
+
+    if (typeof img === 'string')
+    {
+        const rommFetch = await fetch(img);
+        return rommFetch;
+    }
+
+    return img;
+}
 
 export default new Elysia()
-    .get('/game/local/:id/cover', async ({ params: { id }, query: { blur, width, height }, set }) =>
+    .get('/game/local/:id/cover', async ({ params: { id }, query, set }) =>
     {
         const coverBlob = await db.query.games.findFirst({ columns: { cover: true, cover_type: true }, where: eq(schema.games.id, id) });
         if (!coverBlob || !coverBlob.cover)
@@ -28,22 +58,32 @@ export default new Elysia()
             set.headers["content-type"] = coverBlob.cover_type;
         }
 
-        return sharp(coverBlob.cover).resize({ width, height, withoutEnlargement: true }).blur(blur);
+        return processImage(coverBlob.cover, query);
+        /*return sharp(coverBlob.cover)
+            .resize({ width, height, withoutEnlargement: true })
+            .blur(blur)
+            .toBuffer();*/
     }, {
         params: z.object({ id: z.coerce.number() }),
         query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() })
     })
-    .get('/image/:source/*', async ({ params: { source, "*": path }, query: { blur, width, height } }) =>
+    .get('/image/:source/*', async ({ params: { source, "*": path }, query }) =>
     {
         if (source === 'romm')
         {
             const rommAdress = config.get('rommAddress');
+            return processImage(`${rommAdress}/${path}`, query);
+
+            /*
             const rommFetch = await fetch(`${rommAdress}/${path}`);
-            return sharp(await rommFetch.arrayBuffer()).resize({ width, height, withoutEnlargement: true }).sharpen().blur(blur);
+            return sharp(await rommFetch.arrayBuffer())
+                .resize({ width, height, withoutEnlargement: true })
+                .blur(blur)
+                .toBuffer();*/
         }
         return status('Not Found');
     }, { query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() }) })
-    .get('/screenshot/:id', async ({ params: { id }, query: { blur, width, height }, set }) =>
+    .get('/screenshot/:id', async ({ params: { id }, query, set }) =>
     {
         const screenshot = await db.query.screenshots.findFirst({ where: eq(schema.screenshots.id, id), columns: { content: true, type: true } });
         if (screenshot)
@@ -52,8 +92,10 @@ export default new Elysia()
             {
                 set.headers["content-type"] = screenshot.type;
             }
-            return sharp(screenshot.content).resize({ width, height, withoutEnlargement: true }).blur(blur);
 
+            return processImage(screenshot.content, query);
+            //return sharp(screenshot.content).resize({ width, height, withoutEnlargement: true }).blur(blur).toBuffer();
+            //return screenshot.content;
         }
 
         return status(404);
@@ -158,7 +200,7 @@ export default new Elysia()
                     paths_screenshots: localGame.screenshots.map(s => `/api/romm/screenshot/${s.id}`),
                     local: true,
                     missing: !exists,
-                    platform_display_name: localGame.platform.name,
+                    platform_display_name: localGame.platform?.name,
                     summary: localGame.summary,
                     source: localGame.source,
                     source_id: localGame.source_id,

@@ -44,7 +44,7 @@ export default function GameCard (data: GameCardParams)
     onEnterPress: () => data.onAction?.(),
     onBlur: () => data.onBlur?.(data.id)
   });
-  const { isPointer } = useActiveControl();
+  const { isMouse, isPointer } = useActiveControl();
 
   return (
     <li
@@ -69,7 +69,7 @@ export default function GameCard (data: GameCardParams)
         "overflow-hidden transition-all duration-200 drop-shadow-lg cursor-pointer",
         classNames({
           "focused animate-wiggle ring-7 bg-base-content text-base-300 drop-shadow-xl drop-shadow-black/30 scale-102 z-10": focused && !isPointer,
-          "group hover:focused hover:animate-wiggle sm:hover:ring-4 md:hover:ring-7 hover:bg-base-content hover:text-base-300 hover:drop-shadow-xl hover:drop-shadow-black/30 hover:scale-102 hover:z-10": isPointer,
+          "group hover:focused hover:animate-wiggle sm:hover:ring-4 md:hover:ring-7 hover:bg-base-content hover:text-base-300 hover:drop-shadow-xl hover:drop-shadow-black/30 hover:scale-102 hover:z-10": isMouse,
           "h-(--game-card-height)": typeof data.preview === "string"
         }),
         data.className

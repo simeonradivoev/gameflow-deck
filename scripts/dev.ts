@@ -21,6 +21,10 @@ function spawnServer ()
                 events.emit('exitapp');
             }
         },
+        onExit (subprocess, exitCode, signalCode)
+        {
+            process.exit();
+        }
     });
 }
 
@@ -35,5 +39,5 @@ function spawnBrowser ()
     };
 }
 
-spawnServer();
-spawnBrowser();
+const server = spawnServer();
+spawnBrowser()?.then(e => server.send({ type: 'exitapp' }));

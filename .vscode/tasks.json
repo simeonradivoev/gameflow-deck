@@ -39,10 +39,6 @@
       "type": "shell",
       "command": "bun run dev:hmr",
       "isBackground": true,
-      "options": {
-        "env": {
-         }
-      },
       "problemMatcher": [],
       "presentation": {
         "echo": true,
@@ -52,6 +48,20 @@
         "showReuseMessage": true,
         "clear": false
       }
+    },
+    {
+      "label": "Build Flatpak",
+      "type": "shell",
+      "command": "flatpak",
+      "args": [
+        "run",
+        "com.simeonradivoev.gameflow-deck",
+        "build/flatpak",
+        "flatpak/com.simeonradivoev.gameflow-deck.json",
+        "--force-clean"
+      ],
+      "group": "build",
+      "problemMatcher": []
     }
   ]
 }

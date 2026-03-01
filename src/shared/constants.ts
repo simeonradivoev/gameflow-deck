@@ -24,10 +24,9 @@ export interface GameMeta
 export const SettingsSchema = z.object({
     rommAddress: z.url().optional(),
     rommUser: z.string().default('admin').optional(),
-    disableBlur: z.boolean().default(false),
-    windowSize: z.object({ width: z.number(), height: z.number() }).default({ width: 1280, height: 800 }),
+    windowSize: z.object({ width: z.number(), height: z.number() }).optional(),
     windowPosition: z.object({ x: z.number(), y: z.number() }).optional(),
-    downloadPath: z.string().default('./downloads')
+    downloadPath: z.string()
 });
 
 export const GameListFilterSchema = z.object({

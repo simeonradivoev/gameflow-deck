@@ -1,0 +1,96 @@
+{
+    "app-id": "com.simeonradivoev.gameflow-deck",
+    "runtime": "org.kde.Platform",
+    "runtime-version": "6.10",
+    "sdk": "org.kde.Sdk",
+    "command": "/app/bin/gameflow",
+    "base": "io.qt.qtwebengine.BaseApp",
+    "base-version": "6.10",
+    "finish-args": [
+        "--share=ipc",
+        "--share=network",
+        "--socket=pulseaudio",
+        "--socket=wayland",
+        "--socket=x11",
+        "--device=all",
+        "--filesystem=host",
+        "--filesystem=home",
+        "--env=PKG_CONFIG_LIBDIR=/app/lib",
+        "--env=FLATPAK_BUILD=true",
+        "--allow=devel"
+    ],
+    "modules": [
+        {
+            "name": "gameflow-bun",
+            "buildsystem": "simple",
+            "build-commands": [
+                "mkdir -p /app/bin",
+                "mkdir -p /app/share/gameflow",
+                "mkdir -p /app/lib",
+                "install -Dm644 256x256.png /app/share/icons/hicolor/256x256/apps/com.simeonradivoev.gameflow-deck.png",
+                "install -Dm644 com.simeonradivoev.gameflow-deck.desktop /app/share/applications/com.simeonradivoev.gameflow-deck.desktop",
+                "mv libvips-cpp.so.* /app/lib",
+                "mv * /app/share/gameflow/",
+                "mv /app/share/gameflow/gameflow /app/bin",
+                "mv /app/share/gameflow/bun /app/bin",
+                "chmod +x /app/bin/gameflow",
+                "chmod +x /app/bin/bun"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "../build/linux"
+                },
+                {
+                    "type": "file",
+                    "path": "../flatpak/com.simeonradivoev.gameflow-deck.desktop"
+                },
+                {
+                    "type": "file",
+                    "path": "../src/mainview/assets/256x256.png"
+                },
+                {
+                    "type": "script",
+                    "dest-filename": "gameflow",
+                    "commands": [
+                        "cd /app/share/gameflow",
+                        "exec bun run index.js \"$@\""
+                    ]
+                },
+                {
+                    "type": "archive",
+                    "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.3.9/bun-linux-x64.zip",
+                    "sha256": "4680e80e44e32aa718560ceae85d22ecfbf2efb8f3641782e35e4b7efd65a1aa",
+                    "only-arches": [
+                        "x86_64"
+                    ]
+                },
+                {
+                    "type": "archive",
+                    "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.3.9/bun-linux-aarch64.zip",
+                    "sha256": "a2c2862bcc1fd1c0b3a8dcdc8c7efb5e2acd871eb20ed2f17617884ede81c844",
+                    "only-arches": [
+                        "aarch64"
+                    ]
+                },
+                {
+                    "type": "file",
+                    "path": "../node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.8.17.3",
+                    "only-arches": [
+                        "x86_64"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "webview",
+            "buildsystem": "cmake-ninja",
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "../flatpak/webview"
+                }
+            ]
+        }
+    ]
+}

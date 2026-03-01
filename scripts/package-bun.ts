@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path, { } from "node:path";
 import os from "node:os";
-import { Glob } from "bun";
 
 const system = getPlatform();
 const buildSubDir = process.env.BUILD_DIR ?? `./build/${system.platform}`;
@@ -12,7 +11,7 @@ const compileOption: Bun.CompileBuildOptions = {
     autoloadTsconfig: true,
     autoloadPackageJson: true,
     autoloadDotenv: true,
-    autoloadBunfig: true
+    autoloadBunfig: true,
 };
 
 if (process.env.TARGET)
@@ -23,7 +22,7 @@ if (process.env.TARGET)
 await Bun.build({
     entrypoints: ["./src/bun/index.ts", `./src/bun/webview/${system.platform}.ts`],
     metafile: true,
-    compile: compileOption,
+    compile: process.env.NON_COMPILED ? undefined : compileOption,
     outdir: buildSubDir,
     root: './src/bun',
     define: {

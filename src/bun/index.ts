@@ -23,6 +23,15 @@ async function cleanup ()
 
 if (Bun.env.HEADLESS)
 {
+  // Called by outside force
+  process.on('message', ({ type }) =>
+  {
+    if (type === 'exitapp')
+    {
+      cleanup();
+    }
+  });
+  // Called by user
   events.on('exitapp', () =>
   {
     process.send?.({ type: 'exitapp' });

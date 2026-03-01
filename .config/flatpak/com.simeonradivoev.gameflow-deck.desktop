@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=GameFlow
+Comment=GameFlow Deck
+Exec=gameflow
+Icon=com.simeonradivoev.gameflow-deck
+Type=Application
+Categories=Game;

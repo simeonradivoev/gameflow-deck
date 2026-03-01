@@ -22,7 +22,7 @@ export const games = sqliteTable('games', {
 export const gamesRelations = relations(games, ({ many, one }) => ({
     screenshots: many(screenshots),
     platform: one(platforms, {
-        fields: [games.id],
+        fields: [games.platform_id],
         references: [platforms.id]
     })
 }));

@@ -34,6 +34,12 @@ export const system = new Elysia({ prefix: '/api/system' })
     })
     .get('/info', async () =>
     {
+        let source = 'unknown';
+        if (process.env.APPIMAGE === 'true')
+            source = "AppImage";
+        if (process.env.FLATPAK === 'true')
+            source = "Flatpak";
+
         return {
             homeDir: os.homedir(),
             user: os.userInfo().username,
@@ -42,6 +48,7 @@ export const system = new Elysia({ prefix: '/api/system' })
             hostname: os.hostname(),
             steamDeck: process.env.SteamDeck,
             machine: os.machine(),
+            source
         };
     })
     .get('/notifications', ({ set }) =>

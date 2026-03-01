@@ -42,7 +42,7 @@ const shortcutChangeDispatcher = setInterval(() =>
     window.dispatchEvent(new Event('shortcutsChanged'));
     isDirty = false;
 }, 100);
-import.meta.hot.dispose(() => clearInterval(shortcutChangeDispatcher));
+import.meta.hot?.dispose(() => clearInterval(shortcutChangeDispatcher));
 
 function markDirtyThrottled ()
 {
@@ -50,7 +50,7 @@ function markDirtyThrottled ()
 }
 
 window.addEventListener('focuschanged', markDirtyThrottled);
-import.meta.hot.dispose(() => window.removeEventListener('focuschanged', markDirtyThrottled));
+import.meta.hot?.dispose(() => window.removeEventListener('focuschanged', markDirtyThrottled));
 
 export function useShortcutContext ()
 {

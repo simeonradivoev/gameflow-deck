@@ -1,16 +1,23 @@
 {
   "files.readonlyInclude": {
-    "**/*.gen.ts": true,
+    "**/*.gen.*": true,
     "src/mainview/gen/*": true,
   },
   "files.watcherExclude": {
-    "**/*.gen.ts": true,
+    "**/*.gen.*": true,
     "src/mainview/gen/*": true,
   },
   "search.exclude": {
-    "**/*.gen.ts": true,
+    "**/*.gen.*": true,
+    ".flatpak-builder/**/*": true,
     "src/mainview/gen/*": true,
   },
+  "npm.scriptRunner": "bun",
+  "npm.exclude": [
+    "**/.flatpak-builder/**/*",
+    "**/build/flatpack/**",
+    "**/flatpack/repo/**",
+  ],
   "editor.formatOnSave": true,
   "[typescriptreact]": {
     "editor.defaultFormatter": "vscode.typescript-language-features",
@@ -30,12 +37,6 @@
     "noriginmedia",
     "romm"
   ],
-  "terminal.integrated.env.linux": {
-    "DISPLAY": ":0",
-    "WAYLAND_DISPLAY": "wayland-0",
-    "XDG_RUNTIME_DIR": "/run/user/1000",
-    "GPG_TTY": "/dev/tty"
-  },
   "editor.suggest.preview": true,
   "editor.suggest.snippetsPreventQuickSuggestions": false,
   "editor.wordWrap": "on"

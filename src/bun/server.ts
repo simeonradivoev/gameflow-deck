@@ -2,6 +2,7 @@ import { SERVER_PORT } from "../shared/constants";
 import path from 'node:path';
 import appInfo from '../../package.json';
 import { host } from "./utils/host";
+import { appPath } from "./utils";
 
 export function RunBunServer ()
 {
@@ -10,9 +11,9 @@ export function RunBunServer ()
     port: SERVER_PORT,
     hostname: host,
     routes: {
-      "/": Bun.file("./dist/index.html"),
+      "/": Bun.file(appPath("./dist/index.html")),
       // Serve a file by lazily loading it into memory
-      "/favicon.ico": Bun.file("./dist/favicon.ico"),
+      "/favicon.ico": Bun.file(appPath("./dist/favicon.ico")),
       "/.well-known/appspecific/com.chrome.devtools.json": new Response(
         JSON.stringify({
           name: appInfo.name,
@@ -30,7 +31,7 @@ export function RunBunServer ()
     fetch: async (req) =>
     {
       const url = new URL(req.url);
-      return new Response(Bun.file(`./${path.join('dist', url.pathname)}`));
+      return new Response(Bun.file(appPath(`./${path.join('dist', url.pathname)}`)));
     },
   });
 }

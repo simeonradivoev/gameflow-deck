@@ -24,3 +24,5 @@ settings.local.json
 artifacts
 trace
 downloads
+.flatpak-builder
+gameflow-deck.code-workspace

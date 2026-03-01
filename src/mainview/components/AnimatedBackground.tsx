@@ -71,7 +71,8 @@ export function AnimatedBackground (data: {
                     backgroundSize: '100%',
                     backgroundPositionY: 'bottom',
                     backgroundPositionX: 'center',
-                    backgroundColor: "var(--color-base-300)",
+                    backgroundBlendMode: 'soft-light',
+                    backgroundColor: "var(--color-base-100)",
                 } : {}}
             >
                 {!data.scrolling && <div className='absolute top-0 left-0 overflow-hidden w-full h-full'>
@@ -88,6 +89,6 @@ export function AnimatedBackground (data: {
                 </div>}
                 {data.children}
             </div>
-        </AnimatedBackgroundContext>
+        </AnimatedBackgroundContext >
     );
 }

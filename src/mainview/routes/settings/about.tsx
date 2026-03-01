@@ -1,7 +1,6 @@
-import { rommApi, systemApi } from '@/mainview/scripts/clientApi';
+import { systemApi } from '@/mainview/scripts/clientApi';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import prettyBytes from 'pretty-bytes';
 
 export const Route = createFileRoute('/settings/about')({
   component: RouteComponent,
@@ -50,6 +49,10 @@ function RouteComponent ()
         <tr>
           <th>Machine</th>
           <td>{systemInfo?.data?.machine}</td>
+        </tr>
+        <tr>
+          <th>Source</th>
+          <td>{systemInfo?.data?.source}</td>
         </tr>
         <tr>
           <th>Steam Deck</th>

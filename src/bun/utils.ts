@@ -1,5 +1,6 @@
 
 import { $ } from 'bun';
+import path from 'node:path';
 
 export function checkRunning (pid: number)
 {
@@ -37,6 +38,19 @@ export async function isSteamDeck ()
             return isSteamDeckGameMode();
         }
     }
+}
+
+export function appPath (input: string): string
+{
+    if (path.isAbsolute(input))
+    {
+        return input;
+    }
+    if (process.env.APPDIR)
+    {
+        return path.join(process.env.APPDIR ?? '', 'usr', 'share', input);
+    }
+    return input;
 }
 
 export async function openExternal (target: string)

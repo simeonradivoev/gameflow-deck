@@ -65,7 +65,7 @@ export async function BuildParams (data: { configPath: string; })
         args.push('--disabled-features=WindowControlsOverlay,navigationControls,Translate,msUndersideButton');
         args.push(`--profile-directory=Default`);
 
-        if (Bun.env.NODE_ENV !== 'production')
+        if (Bun.env.NODE_ENV === 'development')
         {
             args.push('--auto-open-devtools-for-tabs');
             args.push('--remote-debugging-port=9222');
