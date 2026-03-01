@@ -11,12 +11,18 @@ jobs:
     container:
       image: node:20
     steps:
+        #fix for runner not having Git LFS
+      - name: Initialize LFS
+        run: |
+          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+          sudo apt-get install git-lfs
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      # 1. FIX: Install system dependencies BEFORE setup-bun
+        # 1. FIX: Install system dependencies BEFORE setup-bun
       - name: Install system dependencies
         run: |
           apt-get update
@@ -39,6 +45,10 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Install 7zip (minimal)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y p7zip
 
       - name: Build Canary
         run: bun run package:linux

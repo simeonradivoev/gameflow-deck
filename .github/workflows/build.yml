@@ -62,6 +62,10 @@ jobs:
         env:
           BUILD_DIR: ./build/${{ runner.os }}
 
+      - name: Install 7zip (minimal)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y p7zip
+
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
