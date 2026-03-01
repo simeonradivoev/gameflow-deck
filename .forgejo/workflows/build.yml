@@ -9,14 +9,8 @@ jobs:
   build:
     runs-on: docker
     container:
-      image: node:20
+      image: ghcr.io/catthehacker/ubuntu:gh-22.04
     steps:
-        #fix for runner not having Git LFS
-      - name: Initialize LFS
-        run: |
-          apt-get update
-          apt-get install -y git-lfs
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
