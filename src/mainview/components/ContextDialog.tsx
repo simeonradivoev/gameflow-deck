@@ -115,7 +115,7 @@ export function ContextDialog (data: {
             <ContextDialogContext value={{ id: data.id, close: data.close }} >
                 <div
                     className={twMerge(
-                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[30vw] cursor-auto",
+                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] cursor-auto",
                         data.open ? "animate-scale-delayed" : "opacity-0",
                         data.className)
                     }

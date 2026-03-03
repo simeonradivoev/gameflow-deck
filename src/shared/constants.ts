@@ -3,6 +3,7 @@ import { FocusDetails } from '@noriginmedia/norigin-spatial-navigation';
 import { JSX } from 'react';
 import * as z from 'zod';
 
+export const LOGIN_PORT = 5196;
 export const SERVER_PORT = 5173;
 export const SERVER_URL = (host: string) => `http://${host}:${SERVER_PORT}`;
 export const WINDOW_PORT = 4656;

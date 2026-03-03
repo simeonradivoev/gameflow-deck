@@ -28,6 +28,7 @@ await ensureDir("build");
 // Copy app dir
 await fs.cp(`${APP_DIR}/.`, path.join(APPDIR, `usr`, 'share'), { recursive: true });
 await fs.rename(path.join(APPDIR, `usr`, 'share', BINARY_NAME), path.join(APPDIR, `usr`, 'bin', BINARY_NAME));
+await fs.rename(path.join(APPDIR, `usr`, 'share', `libwebview-${process.arch}.so`), path.join(APPDIR, `usr`, 'lib', `libwebview-${process.arch}.so`));
 
 await fs.writeFile(path.join(APPDIR, `${APP_ID}.desktop`), `[Desktop Entry]
 Version=${pkg.version}

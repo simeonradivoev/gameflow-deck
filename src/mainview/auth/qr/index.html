@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quick Login</title>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body
+    class="flex overflow-hidden relative items-center justify-center min-h-screen bg-base-300"
+  >
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col items-center justify-center gap-4">
+        <h1 class="text-4xl font-semibold">Quick Login</h1>
+        <div
+          id="arc"
+          class="radial-progress"
+          aria-valuenow="70"
+          role="progressbar"
+        >
+          70%
+        </div>
+        <div class="alert alert-dash alert-info" id="expiryNote">
+          Fetching session info…
+        </div>
+      </div>
+
+      <form
+        id="loginForm"
+        class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4"
+      >
+        <label class="label" for="host">Host</label>
+        <input
+          type="text"
+          id="host"
+          name="host"
+          placeholder="my-server.local"
+          autocomplete="off"
+          class="input"
+        />
+
+        <label class="label" for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="your-username"
+          autocomplete="username"
+          class="input"
+        />
+
+        <label class="label" for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          class="input join-item"
+        />
+
+        <button class="btn btn-primary mt-4" id="loginBtn" type="submit">
+          Login →
+        </button>
+        <button
+          onclick="handleCancel()"
+          class="btn btn-primary mt-4"
+          id="loginBtn"
+          type="button"
+        >
+          Cancel
+        </button>
+
+        <div class="alert hidden" id="statusPill">
+          <div class="dot"></div>
+          <span id="statusText"></span>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      const _base = window.location.href.split("?")[0].replace(/\/[^\/]*$/, "");
+      const ENDPOINT = _base + "/login";
+      const STATUS_EP = _base + "/status";
+      const DEFAULTS_EP = _base + "/defaults";
+      const CANCEL_EP = _base + "/cancel";
+
+      const arc = document.getElementById("arc");
+      const expireBar = document.getElementById("expireBar");
+      const expiryNote = document.getElementById("expiryNote");
+      const loginForm = document.getElementById("loginForm");
+      const pill = document.getElementById("statusPill");
+      const statusText = document.getElementById("statusText");
+
+      let expiresAt = null;
+      let totalSpan = null;
+
+      function handleCancel() {
+        fetch(CANCEL_EP, { method: "POST" });
+      }
+
+      async function fetchDefault() {
+        try {
+          const res = await fetch(DEFAULTS_EP, { method: "GET" });
+          const data = await res.json();
+          document.getElementById("host").defaultValue = data.host;
+          document.getElementById("username").defaultValue =
+            data.username ?? "";
+        } catch (e) {
+          showStatus("Could not fetch defaults", "err");
+        }
+      }
+
+      fetchDefault();
+
+      async function fetchExpiry() {
+        try {
+          const res = await fetch(STATUS_EP, { method: "GET" });
+          const data = await res.json();
+          if (data.expires_at) {
+            expiresAt = new Date(data.expires_at);
+            totalSpan = data.max_time;
+            renderExpiryNote();
+          } else {
+            expiryNote.textContent = "No expiry info from server";
+          }
+        } catch (e) {
+          expiryNote.textContent = "Could not reach server";
+        }
+      }
+
+      function renderExpiryNote() {
+        if (!expiresAt) return;
+        const fmt = expiresAt.toLocaleString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        expiryNote.textContent = `Active until ${fmt}`;
+      }
+
+      fetchExpiry();
+
+      // Countdown timer
+      function updateTimer() {
+        const loginBtn = document.getElementById("loginBtn");
+
+        if (!expiresAt) {
+          arc.style.setProperty("--value", 70);
+          arc.innerHTML = "<small>loading…</small>";
+          return;
+        }
+
+        const remainMs = expiresAt - Date.now();
+
+        if (remainMs <= 0) {
+          arc.style.setProperty("--value", 0);
+          arc.innerHTML = "<small>Expired</small>";
+          loginBtn.disabled = true;
+          return;
+        }
+
+        const pct = Math.min(remainMs / (totalSpan || remainMs), 1);
+        arc.style.setProperty("--value", pct * 100);
+
+        const totalSec = Math.ceil(remainMs / 1000);
+        const d = Math.floor(totalSec / 86400);
+        const h = Math.floor((totalSec % 86400) / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+
+        let main, sub;
+        if (d > 0) {
+          main = `${d}d`;
+          sub = `${h}h left`;
+        } else if (h > 0) {
+          main = `${h}h`;
+          sub = `${m}m left`;
+        } else if (m > 0) {
+          main = `${m}:${String(s).padStart(2, "0")}`;
+          sub = "left";
+        } else {
+          main = `${s}s`;
+          sub = "left";
+        }
+
+        arc.innerHTML = `${main}<br><small>${sub}</small>`;
+      }
+
+      updateTimer();
+      setInterval(updateTimer, 1000);
+
+      function showStatus(msg, type) {
+        pill.className = "alert " + type;
+        statusText.textContent = msg;
+        if (type === "ok") setTimeout(() => pill.classList.add("hidden"), 4000);
+      }
+
+      // Login submit
+      loginForm.onsubmit = async (e) => {
+        e.preventDefault();
+        if (!e.target.host.value) {
+          showStatus("Host is required", "alert-error");
+          return;
+        }
+        if (!e.target.username.value) {
+          showStatus("Username is required", "alert-error");
+          return;
+        }
+        if (!e.target.password.value) {
+          showStatus("Password is required", "alert-error");
+          return;
+        }
+
+        const btn = document.getElementById("loginBtn");
+        btn.textContent = "Logging in…";
+        btn.style.opacity = "0.75";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              host: e.target.host.value,
+              username: e.target.username.value,
+              password: e.target.password.value,
+            }),
+          });
+
+          if (res.ok) {
+            showStatus("Logged in!", "alert-success");
+            setTimeout(() => window.close(), 1000);
+          } else {
+            showStatus(`Error ${res.status}: ${res.statusText}`, "alert-error");
+          }
+        } catch (e) {
+          showStatus("Could not reach server", "alert-error");
+        } finally {
+          btn.textContent = "Login →";
+          btn.style.opacity = "1";
+          btn.disabled = false;
+        }
+      };
+    </script>
+  </body>
+</html>

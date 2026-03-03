@@ -87,7 +87,7 @@ export function OptionSpace (data: {
                         data.label
                     )}
                 </div>
-                <div className="flex">
+                <div className="flex grow justify-end-safe">
                     {data.children}
                 </div>
             </li>

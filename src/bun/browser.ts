@@ -24,8 +24,9 @@ export default async function init (events: EventEmitter, forceBrowser: boolean)
 
 async function runWebview (events: EventEmitter)
 {
-    const webviewWorker = new Worker(Bun.env.IS_BINARY ? `./webview/${os.platform()}.ts` : new URL(`./webview/${os.platform()}`, import.meta.url).href, {
+    const webviewWorker = new Worker(Bun.env.IS_BINARY ? new URL(`./webview/${os.platform()}`, import.meta.url).href : `./webview/${os.platform()}.ts`, {
         smol: true,
+        ref: false
     });
 
     return new Promise((resolve, reject) =>
@@ -47,6 +48,7 @@ async function runWebview (events: EventEmitter)
         events.on('exitapp', () =>
         {
             resolve(true);
+            webviewWorker.terminate();
         });
     });
 }

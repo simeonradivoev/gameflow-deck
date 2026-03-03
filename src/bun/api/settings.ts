@@ -1,5 +1,5 @@
 import z from "zod";
-import { SettingsSchema } from "@shared/constants";
+import { LOGIN_PORT, SettingsSchema } from "@shared/constants";
 import Elysia, { status } from "elysia";
 import { config, customEmulators, db, emulatorsDb, taskQueue } from "./app";
 import * as appSchema from './schema/app';
@@ -103,7 +103,7 @@ export const settings = new Elysia({ prefix: '/api/settings' })
         const oldDownloadPath = config.get('downloadPath');
         if (!existsSync(oldDownloadPath))
         {
-            return status("Not Found", "Old downlod path doesn't exist");
+            return status("Not Found", "Old download path doesn't exist");
         }
 
         async function isDirEmpty (dirname: string)
@@ -121,7 +121,7 @@ export const settings = new Elysia({ prefix: '/api/settings' })
 
         if (existsSync(path) && !isDirEmpty(path))
         {
-            return status("Conflict", "New location alaready exists and is not empty");
+            return status("Conflict", "New location already exists and is not empty");
         }
 
         await move(oldDownloadPath, path);

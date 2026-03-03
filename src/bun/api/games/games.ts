@@ -59,10 +59,6 @@ export default new Elysia()
         }
 
         return processImage(coverBlob.cover, query);
-        /*return sharp(coverBlob.cover)
-            .resize({ width, height, withoutEnlargement: true })
-            .blur(blur)
-            .toBuffer();*/
     }, {
         params: z.object({ id: z.coerce.number() }),
         query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() })
@@ -73,13 +69,6 @@ export default new Elysia()
         {
             const rommAdress = config.get('rommAddress');
             return processImage(`${rommAdress}/${path}`, query);
-
-            /*
-            const rommFetch = await fetch(`${rommAdress}/${path}`);
-            return sharp(await rommFetch.arrayBuffer())
-                .resize({ width, height, withoutEnlargement: true })
-                .blur(blur)
-                .toBuffer();*/
         }
         return status('Not Found');
     }, { query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() }) })
@@ -94,8 +83,6 @@ export default new Elysia()
             }
 
             return processImage(screenshot.content, query);
-            //return sharp(screenshot.content).resize({ width, height, withoutEnlargement: true }).blur(blur).toBuffer();
-            //return screenshot.content;
         }
 
         return status(404);

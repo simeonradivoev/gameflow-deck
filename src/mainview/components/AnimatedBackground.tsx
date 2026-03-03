@@ -71,7 +71,7 @@ export function AnimatedBackground (data: {
                     backgroundSize: '100%',
                     backgroundPositionY: 'bottom',
                     backgroundPositionX: 'center',
-                    backgroundBlendMode: 'soft-light',
+                    backgroundBlendMode: blur ? 'normal' : 'soft-light',
                     backgroundColor: "var(--color-base-100)",
                 } : {}}
             >

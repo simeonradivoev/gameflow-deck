@@ -20,6 +20,7 @@ import EventEmitter from "node:events";
 import { ErrorLike } from "bun";
 import { appPath, getErrorMessage } from "../utils";
 import { DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
+import { ensureDir } from "fs-extra";
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,
@@ -48,11 +49,9 @@ console.log("App Directory is ", process.env.APPDIR);
 const fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path), 'cookies.json'));
 console.log("Cookie Jar Path Located At: ", fileCookieStore.filePath);
 export const jar = new CookieJar(fileCookieStore);
-await fs.mkdir(config.get('downloadPath'), { recursive: true });
 let sqlite: Database;
 export let db: DrizzleSqliteDODatabase<typeof schema>;
 await reloadDatabase();
-migrate(db!, { migrationsFolder: appPath("./drizzle") });
 const emulatorsSqlite = new Database(appPath(`./vendors/es-de/emulators.${os.platform()}.${os.arch()}.sqlite`), { readonly: true });
 export const emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
 export const taskQueue = new TaskQueue();
@@ -73,7 +72,7 @@ events.addListener('activegameexit', ({ error }) =>
         events.emit('notification', { message: getErrorMessage(error), type: 'error' });
     }
 });
-console.log("Logging In to Romm");
+config.onDidChange('downloadPath', () => reloadDatabase());
 
 export async function cleanup ()
 {
@@ -85,8 +84,10 @@ export async function cleanup ()
 
 export async function reloadDatabase ()
 {
+    await ensureDir(config.get('downloadPath'));
     sqlite = new Database(path.join(config.get('downloadPath'), 'db.sqlite'), { create: true, readwrite: true });
     db = drizzle(sqlite, { schema });
+    migrate(db!, { migrationsFolder: appPath("./drizzle") });
 }
 
 interface AppEventMap

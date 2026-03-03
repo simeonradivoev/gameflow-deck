@@ -19,7 +19,7 @@ export const { useAppForm: useSettingsForm, useTypedAppFormContext: useSettingsF
 function FormOption (data: { type: HTMLInputTypeAttribute, icon?: JSX.Element; label?: string | JSX.Element; placeholder?: string; })
 {
     const field = useFieldContext<string>();
-    return <OptionSpace label={<div className="flex gap-2">
+    return <OptionSpace label={<div className="flex flex-1 gap-2">
         {data.label}
         {field.getMeta().errors.length > 0 && <div className="badge badge-error">
             {field.state.meta.errors.map(e => e.message).join(',')}
@@ -32,7 +32,7 @@ function FormOption (data: { type: HTMLInputTypeAttribute, icon?: JSX.Element; l
             type={data.type}
             onChange={e => field.handleChange(e.target.value)}
             placeholder={data.placeholder}
-            className={classNames({ "ring-4 ring-accent": field.getMeta().isDirty })}
+            className={classNames({ " flex-3 ring-4 ring-accent": field.getMeta().isDirty })}
         />
     </OptionSpace>;;
 }

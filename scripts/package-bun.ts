@@ -19,6 +19,17 @@ if (process.env.TARGET)
     compileOption.target = process.env.TARGET as any;
 }
 
+let webviewLib = "libwebview.dll";
+if (process.platform === 'linux' && system.arch === 'x64')
+    webviewLib = "libwebview-x64.so";
+if (process.platform === 'linux' && system.arch === 'arm64')
+    webviewLib = "libwebview-arm64.so";
+if (process.platform === 'darwin')
+    webviewLib = "libwebview-arm64.dylib";
+
+if (process.env.APPIMAGE === "true")
+    webviewLib = `./usr/lib/${webviewLib}`;
+
 await Bun.build({
     entrypoints: ["./src/bun/index.ts", `./src/bun/webview/${system.platform}.ts`],
     metafile: true,
@@ -26,7 +37,8 @@ await Bun.build({
     outdir: buildSubDir,
     root: './src/bun',
     define: {
-        "process.env.IS_BINARY": "true"
+        "process.env.IS_BINARY": "true",
+        "process.env.WEBVIEW_PATH": `./${webviewLib}`,
     },
     minify: process.env.NODE_ENV !== 'development',
     sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : "linked",
@@ -55,6 +67,7 @@ await Bun.build({
                 await fs.cp('./dist', `${buildSubDir}/dist`, { recursive: true });
                 await fs.cp('./drizzle', `${buildSubDir}/drizzle`, { recursive: true });
                 await fs.cp(`./vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, `${buildSubDir}/vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, { recursive: true });
+                await fs.cp(path.join(`node_modules/webview-bun/build/`, webviewLib), path.join(buildSubDir, webviewLib));
             });
         },
     }]

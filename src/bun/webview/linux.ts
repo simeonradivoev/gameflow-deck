@@ -1,5 +1,4 @@
-import Webview from "@rcompat/webview";
-import platform from "@rcompat/webview/linux-x64";
+import { Webview } from 'webview-bun';
 import webviewWorkerBase from "./base";
 
 if (process.env.FLATPAK_BUILD === "true")
@@ -29,6 +28,6 @@ if (process.env.FLATPAK_BUILD === "true")
 } else
 {
     console.log("Launching Webview");
-    const webview = new Webview({ debug: import.meta.env.NODE_ENV === 'development', platform });
+    const webview = new Webview(import.meta.env.NODE_ENV === 'development');
     webviewWorkerBase(webview);
 }

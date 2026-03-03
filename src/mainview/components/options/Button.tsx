@@ -38,7 +38,7 @@ export function Button (data: {
             classNames({
                 "btn-accent": focused,
             }, data.className))}
-        type={data.type}
+        type={data.type ?? 'button'}
     >
         {data.children}
     </button>;

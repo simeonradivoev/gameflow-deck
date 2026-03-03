@@ -44,7 +44,6 @@
     "@elysiajs/cors": "^1.4.1",
     "@elysiajs/eden": "^1.4.6",
     "@elysiajs/static": "^1.4.7",
-    "@rcompat/webview": "^0.18.0",
     "cheerio": "^1.2.0",
     "conf": "^15.0.2",
     "drizzle-orm": "^0.45.1",
@@ -61,6 +60,7 @@
     "tough-cookie": "^6.0.0",
     "tough-cookie-file-store": "^3.3.0",
     "unzip-stream": "^0.3.4",
+    "webview-bun": "^2.4.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -99,6 +99,7 @@
     "react-dom": "^19.2.4",
     "react-error-boundary": "^6.1.0",
     "react-hot-toast": "^2.6.0",
+    "react-qr-code": "^2.0.18",
     "sass-embedded": "^1.97.3",
     "standard-version": "^9.5.0",
     "tailwind-merge": "^3.4.0",

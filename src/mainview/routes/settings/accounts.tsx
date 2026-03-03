@@ -1,12 +1,13 @@
 import
 {
   FocusContext,
+  setFocus,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import classNames from "classnames";
-import { Key, Link, Lock, Save, Trash, User, X } from "lucide-react";
+import { Key, Link, Lock, Save, ScanQrCode, Trash, User, X } from "lucide-react";
 import
 {
   useEffect,
@@ -23,10 +24,21 @@ import { OptionSpace } from "../../components/options/OptionSpace";
 import { useSettingsForm, useSettingsFormContext } from "../../components/options/SettingsAppForm";
 import { rommApi, settingsApi } from "../../scripts/clientApi";
 import { Button } from "../../components/options/Button";
+import { ContextDialog } from "@/mainview/components/ContextDialog";
+import QRCode from "react-qr-code";
+import { useAsyncGenerator } from "@/mainview/scripts/utils";
 
 export const Route = createFileRoute("/settings/accounts")({
   component: RouteComponent,
 });
+
+function LoginQR (data: { id: string, isOpen: boolean, cancel: () => void, url: string; endsAt: Date; })
+{
+  return <ContextDialog id={data.id} open={data.isOpen} close={() => data.cancel()} className="flex flex-col justify-center items-center gap-2">
+    <QRCode value={data.url} />
+    <Button id="qr-login-cancel" focusClassName="btn-warning" type="button" onAction={() => data.cancel()}><X /> Cancel</Button>
+  </ContextDialog>;
+}
 
 function LoginControls (data: { hasPassword: boolean; })
 {
@@ -36,8 +48,27 @@ function LoginControls (data: { hasPassword: boolean; })
     refetchOnWindowFocus: false,
     retry: 0
   });
+  const { data: qrLoginStatusGen, refetch } = useQuery({
+    queryKey: ['login', 'qr'], queryFn: async () =>
+    {
+      const { data, error } = await rommApi.api.romm.login.remote.status.get();
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const statusValue = useAsyncGenerator(qrLoginStatusGen, [qrLoginStatusGen]);
+  const cancelQrMutation = useMutation({
+    mutationKey: ['login', 'qr', 'cancel'],
+    mutationFn: () => rommApi.api.romm.login.remote.cancel.post(),
+    onSuccess: () => refetch()
+  });
+  const requestQrLoginMutation = useMutation({
+    mutationKey: ['login', 'qr'],
+    mutationFn: () => rommApi.api.romm.login.remote.start.post(),
+    onSuccess: () => refetch()
+  });
   const context = useSettingsFormContext({});
-  context.state.canSubmit;
   const isMutatingRomm = useIsMutating({ mutationKey: ["romm", "auth"] }) > 0;
   const logoutMutation = useMutation({
     mutationKey: ["romm", "auth", "logout"], mutationFn: () => rommApi.api.romm.logout.post(),
@@ -52,6 +83,7 @@ function LoginControls (data: { hasPassword: boolean; })
     {user.isSuccess && <>
       <div className="badge badge-success badge-lg rounded-full gap-2"> <p className="sm:hidden md:inline">Logged In As:</p> <img className="size-6 rounded-full" src={`${RPC_URL(__HOST__)}/api/romm/assets/romm/assets/${user.data?.avatar_path}`} /><b>{user.data?.username}</b></div>
     </>}
+    <Button id="qr-login" type="button" onAction={() => requestQrLoginMutation.mutate()}><ScanQrCode /> </Button>
     <Button id="can-submit" disabled={!context.state.canSubmit || !context.state.isDirty} type="submit" onAction={() => context.handleSubmit()} >
       <Save /> Save
     </Button>
@@ -67,6 +99,11 @@ function LoginControls (data: { hasPassword: boolean; })
     <Button id="cancel" disabled={context.state.isDefaultValue} type="reset" onAction={() => context.reset()}>
       <X /> Cancel
     </Button>
+    {statusValue?.data?.endsAt && <LoginQR id="qr-login-context" endsAt={statusValue.data.endsAt} isOpen={true} cancel={() =>
+    {
+      setFocus(`qr-login`);
+      cancelQrMutation.mutate();
+    }} url={statusValue?.data?.url ?? ''} />}
   </div>;
 }
 
@@ -119,9 +156,10 @@ function RouteComponent ()
 
   const loginMutation = useMutation({
     mutationKey: ["romm", "login"],
-    mutationFn: (data: z.infer<typeof dataSchema>) =>
+    mutationFn: async (data: z.infer<typeof dataSchema>) =>
     {
-      return rommApi.api.romm.login.post({ username: data.username, password: data.password, host: data.hostname });
+      const { error } = await rommApi.api.romm.login.post({ username: data.username, password: data.password, host: data.hostname });
+      if (error) throw error;
     },
     onSuccess: (d, v, r, c) =>
     {

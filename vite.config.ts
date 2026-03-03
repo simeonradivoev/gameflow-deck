@@ -49,6 +49,10 @@ export default defineConfig(() =>
       minify: production,
       sourcemap: production ? false : 'inline',
       rollupOptions: {
+        input: {
+          main: 'src/mainview/index.html',
+          login: 'src/mainview/auth/qr/index.html'
+        },
         output: {
           manualChunks: (id
           ) =>

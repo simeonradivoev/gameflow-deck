@@ -138,6 +138,7 @@ export interface IPublicJob
     state?: string;
     status: JobStatus;
     job: any;
+    abort: (reason?: any) => void;
 }
 
 export class JobContext implements IPublicJob
@@ -177,7 +178,7 @@ export class JobContext implements IPublicJob
         } catch (error)
         {
             console.error(error);
-            this.events.emit('error', { id: this.m_id, error });
+            this.events.emit('error', { id: this.m_id, job: this.m_job, error });
             this.error = error;
         } finally
         {

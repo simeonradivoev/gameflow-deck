@@ -1,6 +1,6 @@
 import { networkInterfaces } from "node:os";
 
-const localIp = Object.values(networkInterfaces())
+export const localIp = Object.values(networkInterfaces())
     .flat()
     .find((iface) => iface?.family === 'IPv4' && !iface.internal)?.address || 'localhost';
 
