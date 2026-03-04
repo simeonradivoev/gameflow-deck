@@ -1,5 +1,5 @@
 import Elysia, { status } from "elysia";
-import { getPlatformApiPlatformsIdGet, getPlatformsApiPlatformsGet } from "@clients/romm";
+import { getPlatformApiPlatformsIdGet, getPlatformsApiPlatformsGet, getRomsApiRomsGet } from "@clients/romm";
 import z from "zod";
 import { count, eq, getTableColumns, notInArray } from "drizzle-orm";
 import { db } from "../app";
@@ -22,8 +22,9 @@ export default new Elysia()
 
         if (rommPlatforms)
         {
-            const frontEndPlatforms = rommPlatforms.map(p =>
+            const frontEndPlatforms = await Promise.all(rommPlatforms.map(async p =>
             {
+                const game = await getRomsApiRomsGet({ query: { platform_ids: [p.id] } });
                 const platform: FrontEndPlatformType = {
                     slug: p.slug,
                     name: p.display_name,
@@ -32,18 +33,20 @@ export default new Elysia()
                     game_count: p.rom_count,
                     updated_at: new Date(p.updated_at),
                     id: { source: 'romm', id: p.id },
-                    hasLocal: localPlatformSet.has(p.slug)
+                    hasLocal: localPlatformSet.has(p.slug),
+                    paths_screenshots: game.data?.items[0]?.merged_screenshots.map(s => `/api/romm/image/romm/${s}`) ?? []
                 };
 
                 return platform;
-            });
+            }));
 
             rommPlatformsSet = new Set(rommPlatforms.map(p => p.slug));
             platforms.push(...frontEndPlatforms);
         }
 
-        platforms.push(...localPlatforms.filter(p => !rommPlatformsSet?.has(p.slug)).map(p =>
+        platforms.push(...await Promise.all(localPlatforms.filter(p => !rommPlatformsSet?.has(p.slug)).map(async p =>
         {
+            const game = await db.query.games.findFirst({ where: eq(schema.games.platform_id, p.id), with: { screenshots: true }, columns: {} });
             const platform: FrontEndPlatformType = {
                 slug: p.slug,
                 name: p.name,
@@ -52,11 +55,13 @@ export default new Elysia()
                 game_count: p.game_count,
                 updated_at: p.created_at,
                 id: { source: 'local', id: p.id },
-                hasLocal: true
+                hasLocal: true,
+                paths_screenshots: game?.screenshots?.map(s => `/api/romm/screenshot/${s.id}`) ?? []
+
             };
 
             return platform;
-        }));
+        })));
 
         return { platforms };
     }).get('/platforms/:source/:id', async ({ params: { source, id } }) =>

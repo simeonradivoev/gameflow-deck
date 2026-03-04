@@ -3,7 +3,6 @@ import { HTMLInputTypeAttribute, JSX } from "react";
 import { OptionInput } from "./OptionInput";
 import { OptionSpace } from "./OptionSpace";
 import classNames from "classnames";
-import { TriangleAlert } from "lucide-react";
 
 // export useFieldContext for use in your custom components
 export const { fieldContext, formContext, useFieldContext } =
@@ -30,7 +29,7 @@ function FormOption (data: { type: HTMLInputTypeAttribute, icon?: JSX.Element; l
             name={field.name}
             value={field.state.value}
             type={data.type}
-            onChange={e => field.handleChange(e.target.value)}
+            onChange={v => field.handleChange(v)}
             placeholder={data.placeholder}
             className={classNames({ " flex-3 ring-4 ring-accent": field.getMeta().isDirty })}
         />

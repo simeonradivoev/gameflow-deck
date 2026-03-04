@@ -8,6 +8,7 @@ import { HardDrive } from "lucide-react";
 import { JSX } from "react";
 import { GameCardFocusHandler } from "./GameCard";
 import { gameQuery } from "../scripts/queries";
+import { useLocalSetting } from "../scripts/utils";
 
 export interface GameListParams
 {
@@ -30,6 +31,7 @@ export function GameList (data: GameListParams)
     });
     const navigator = useNavigate();
     const queryClient = useQueryClient();
+    const blur = useLocalSetting('backgroundBlur');
 
     const handleFocus = (id: FrontEndId, source: string | null, sourceId: number | null) =>
     {
@@ -40,10 +42,9 @@ export function GameList (data: GameListParams)
             {
                 const screenshotUrl = new URL(`${RPC_URL(__HOST__)}${game.paths_screenshots[new Date().getMinutes() % game.paths_screenshots.length]}`);
                 const coverUrl = new URL(`${RPC_URL(__HOST__)}${game.path_cover}`);
-                const previewUrl = localStorage.getItem('background-blur') !== "false" ? coverUrl : screenshotUrl;
+                const previewUrl = blur ? coverUrl : screenshotUrl;
                 previewUrl.searchParams.delete('ts');
                 data.setBackground?.(previewUrl.href);
-                //queryClient.prefetchQuery(gameQuery(source ?? id.source, sourceId ?? id.id));
             } catch
             {
 

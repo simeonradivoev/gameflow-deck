@@ -113,6 +113,7 @@ function RouteComponent ()
 {
   const { focus } = Route.useSearch();
   const { ref, focusKey, focusSelf } = useFocusable({
+    focusKey: "accounts",
     preferredChildFocusKey: focus
   });
 

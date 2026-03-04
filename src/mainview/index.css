@@ -2,9 +2,12 @@
 @import 'animate.css';
 @plugin "daisyui";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 @theme {
     --breakpoint-sm: 0px;
     --breakpoint-md: 1280px;
+    --page-scroll-bg: transparent;
 
     --animate-wiggle: wiggle 0.3s ease-in-out 1;
     --animate-rotate: rotate 0.3s ease-in-out 1 0.2s;

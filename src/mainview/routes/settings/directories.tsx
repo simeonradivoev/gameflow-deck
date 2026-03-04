@@ -41,7 +41,7 @@ function DriveComponent (data: { drive: DownloadsDrive; downloadsSize: number; r
 
   return <li ref={ref} className={twMerge('flex flex-row p-4 bg-base-300 rounded-2xl gap-1 items-end',
     classNames({
-      "ring-7": focused,
+      "ring-7 ring-accent": focused,
       "border-dashed border-primary border-4": data.drive.isCurrentlyUsed,
       "border-solid": data.drive.unusableReason === 'already_used',
       "ring-error": data.drive.unusableReason === 'not_enough_space',
@@ -75,6 +75,7 @@ function RouteComponent ()
 {
   const { focus } = Route.useSearch();
   const { ref, focusKey, focusSelf } = useFocusable({
+    focusKey: "directories",
     preferredChildFocusKey: focus
   });
 

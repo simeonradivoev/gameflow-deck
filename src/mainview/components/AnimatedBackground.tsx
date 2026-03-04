@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import { createContext, JSX, Ref, useContext, useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useSessionStorage } from 'usehooks-ts';
+import { useLocalSetting } from '../scripts/utils';
 
 export const AnimatedBackgroundContext = createContext({} as { setBackground: (url: string) => void; });
 
@@ -28,8 +29,13 @@ export function AnimatedBackground (data: {
         setBackgroundUrl(data.backgroundUrl ? (data.backgroundUrl instanceof URL ? data.backgroundUrl.href : data.backgroundUrl) : undefined);
     }, [data.backgroundUrl]);
 
-    const finalBackgroundUrl = backgroundUrl ? new URL(backgroundUrl) : undefined;
-    const blur = localStorage.getItem('background-blur') !== "false";
+    let finalBackgroundUrl;
+    try
+    {
+        finalBackgroundUrl = backgroundUrl ? new URL(backgroundUrl) : undefined;
+    } catch { }
+
+    const blur = useLocalSetting('backgroundBlur');
     if (blur)
     {
         if (!finalBackgroundUrl?.searchParams.has('blur'))

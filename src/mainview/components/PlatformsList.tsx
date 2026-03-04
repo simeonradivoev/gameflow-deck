@@ -42,7 +42,7 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
                 previewUrl: "",
                 badges,
                 onFocus: () => data.setBackground(
-                    `https://picsum.photos/id/${10 + i}/100/100.webp?blur=10`,
+                    g.paths_screenshots.length > 0 ? `${RPC_URL(__HOST__)}${g.paths_screenshots[new Date().getMinutes() % g.paths_screenshots.length]}` : `${RPC_URL(__HOST__)}/api/romm/image?url=https://picsum.photos/id/${10 + i}/1280/720.webp`,
                 ),
                 onSelect: () =>
                 {

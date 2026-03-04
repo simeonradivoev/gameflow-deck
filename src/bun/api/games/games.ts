@@ -72,6 +72,10 @@ export default new Elysia()
         }
         return status('Not Found');
     }, { query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() }) })
+    .get('/image', async ({ query }) =>
+    {
+        return processImage(query.url, query);
+    }, { query: z.object({ url: z.url(), blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() }) })
     .get('/screenshot/:id', async ({ params: { id }, query, set }) =>
     {
         const screenshot = await db.query.screenshots.findFirst({ where: eq(schema.screenshots.id, id), columns: { content: true, type: true } });

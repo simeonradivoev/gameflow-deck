@@ -4,7 +4,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { RouterContext } from "..";
 import Notifications from "../components/Notifications";
 import { Toaster } from "react-hot-toast";
-import { mobileCheck } from "../scripts/utils";
+import { mobileCheck, useLocalSetting } from "../scripts/utils";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
@@ -13,9 +13,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 function RootComponent ()
 {
   const isMobile = mobileCheck();
+  const theme = useLocalSetting('theme');
 
   return (
-    <div className="w-screen h-screen overflow-hidden">
+    <div data-theme={theme === 'auto' ? undefined : theme} className="w-screen h-screen overflow-hidden">
       <Outlet />
       <Notifications />
       <Toaster containerStyle={{ viewTimelineName: 'toasters' }} />

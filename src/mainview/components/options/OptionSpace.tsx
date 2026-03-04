@@ -43,7 +43,7 @@ export function OptionSpace (data: {
     className?: string;
     focusable?: boolean;
     children?: any | any[];
-    label?: string | JSX.Element;
+    label?: string | JSX.Element | ((focused: boolean) => JSX.Element);
     saveLastFocusedChild?: boolean;
 })
 {
@@ -62,32 +62,37 @@ export function OptionSpace (data: {
             eventTarget.dispatchEvent(new CustomEvent("onEnterPress"));
         },
     });
+    let labelElement: any = data.label;
+    if (data.label instanceof Function)
+    {
+        labelElement = data.label(focused);
+    } else if (typeof data.label === 'string')
+    {
+        labelElement = <label
+            className={classNames({
+                "font-semibold": focused,
+            })}
+        >
+            {data.label}
+        </label>;
+    }
 
     return (<FocusContext value={focusKey}>
         <OptionContext value={{ focused, focus: focusSelf, eventTarget }}>
             <li
                 ref={ref}
-                className={twMerge("flex portrait:flex-col portrait:gap-2 portrait:p-4 md:flex-row sm:p-2 md:p-4 md:pl-8! portrait:rounded-3xl landscape:rounded-full bg-base-content/1", classNames(
-                    {
-                        "text-primary-content bg-primary ": focused || hasFocusedChild,
-                    }),
+                className={twMerge("flex portrait:flex-col portrait:gap-2 portrait:p-4 md:flex-row sm:p-2 md:p-4 md:pl-8! rounded-3xl border-b border-base-content/5",
+                    classNames(
+                        {
+                            "bg-base-300": focused || hasFocusedChild,
+                        }),
                     data.className,
                 )}
             >
-                <div className="label flex-1 md:text-lg pr-4">
-                    {typeof data.label === "string" ? (
-                        <label
-                            className={classNames({
-                                "text-primary-content font-semibold": focused,
-                            })}
-                        >
-                            {data.label}
-                        </label>
-                    ) : (
-                        data.label
-                    )}
-                </div>
-                <div className="flex grow justify-end-safe">
+                {!!labelElement && <div className="flex gap-2 items-center flex-1 md:text-lg pr-4">
+                    {labelElement}
+                </div>}
+                <div className="flex flex-1 justify-end-safe">
                     {data.children}
                 </div>
             </li>

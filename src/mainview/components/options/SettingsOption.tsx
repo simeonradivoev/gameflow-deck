@@ -61,9 +61,9 @@ export function SettingsOption (data: {
                 type={data.type}
                 placeholder={data.placeholder}
                 onBlur={handleSave}
-                onChange={(e) =>
+                onChange={(v) =>
                 {
-                    setLocalValue(e.currentTarget.value);
+                    setLocalValue(v);
                     setDirty(true);
                 }}
                 value={localValue}

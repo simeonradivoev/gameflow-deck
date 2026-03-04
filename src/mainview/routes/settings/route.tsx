@@ -83,7 +83,7 @@ function MenuItem (data: {
           "group rounded-full p-3 md:pl-5 text-base-content/80",
           classNames({
             "bg-primary text-primary-content": acitve,
-            "font-semibold sm:ring-4 md:ring-7 ring-primary-content": focused && !isPointer,
+            "font-semibold sm:ring-4 md:ring-7 ring-accent": focused && !isPointer,
             "bg-secondary text-secondary-content ring-primary": data.return && focused,
           }),
           data.linkClassName,
@@ -110,7 +110,7 @@ function SettingsMenu (data: {})
 
   return <ul
     ref={ref}
-    className="menu portrait:menu-horizontal md:menu-xl landscape:flex-nowrap bg-base-200 sm:p-2 md:p-4 sm:portrait:gap-0 sm:landscape:gap-0 md:gap-2! rounded-4xl overflow-auto portrait:w-full"
+    className="menu portrait:menu-horizontal md:menu-xl landscape:flex-nowrap bg-base-200 sm:p-2 md:p-4 sm:portrait:gap-0 sm:landscape:gap-0 md:landscape:w-128 md:gap-2! rounded-4xl overflow-auto portrait:w-full"
   >
     <FocusContext value={focusKey}>
       <MenuItem
@@ -184,7 +184,7 @@ export function SettingsUI ()
 
   return (
     <FocusContext.Provider value={focusKey}>
-      <div ref={ref} className="flex flex-col w-full h-full md:p-4 bg-base-100">
+      <div ref={ref} className="bg-base-100 flex flex-col w-full h-full md:p-4">
         <div className="flex landscape:flex-row portrait:flex-col-reverse grow overflow-hidden">
           <div id="Menu" className="flex flex-row landscape:h-full md:landscape:w-56">
             <SettingsMenu />

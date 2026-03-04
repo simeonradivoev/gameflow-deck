@@ -49,8 +49,6 @@ export const Router = createRouter({
   },
 });
 
-
-
 // Register things for typesafety
 declare module "@tanstack/react-router" {
   interface Register

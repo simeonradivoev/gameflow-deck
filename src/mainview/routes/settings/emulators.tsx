@@ -32,11 +32,14 @@ function EmulatorsPending ()
 
 function EmulatorListCat (data: { selected: string, set: (c: string) => void; })
 {
-  const { ref, focusKey } = useFocusable({ focusKey: 'categories' });
+  const { ref, focused, focusKey } = useFocusable({ focusKey: 'categories' });
   return <ul className='flex gap-1' ref={ref}>
     <FocusContext value={focusKey}>
       {[..."ABCDEFGHIJKLMNOPQRSTVWXYZ"].map(c =>
-        <OptionElement key={c} className={classNames('p-2 justify-center size-8 text-base-content bg-base-300 text-lg', { "ring-4 ring-primary": data.selected === c })} onFocus={() => data.set(c)} content={c} id={c} action={(ctx) => ctx.focus()} type="primary" />
+        <OptionElement key={c} className={twMerge('p-2 justify-center size-8 text-base-content bg-base-300 text-lg',
+          classNames({
+            "ring-4 ring-primary": data.selected === c,
+          }))} onFocus={() => data.set(c)} content={c} id={c} action={(ctx) => ctx.focus()} type="primary" />
       )}
     </FocusContext>
   </ul>;
@@ -47,7 +50,7 @@ function EmulatorListType (data: { category: string, action: (e: string) => void
   const { ref, focusKey } = useFocusable({ focusKey: 'list-section' });
   return <div ref={ref} className='grow'>
     <FocusContext value={focusKey}>
-      <ContextList className='h-[60vh]' options={Object.keys(emulators).filter(e => e.startsWith(data.category)).map(e => ({
+      <ContextList className='sm:h-[80vh] md:h-[60vh] overflow-auto' options={Object.keys(emulators).filter(e => e.startsWith(data.category)).map(e => ({
         id: e,
         action: (ctx) =>
         {
@@ -152,7 +155,12 @@ function EmulatorPath (data: { id: string; })
   };
 
   return (
-    <OptionSpace label={<><p className='font-semibold'>{data.id}</p><small className='text-base-content/40'>{emulators[data.id]}</small></>}>
+    <OptionSpace label={
+      focus => <>
+        <p className='font-semibold'>{data.id}</p>
+        <small className='opacity-40'>{emulators[data.id]}</small>
+      </>
+    }>
       <div className='flex gap-2'>
         <OptionInput
           name={data.id ?? ""}
@@ -160,9 +168,9 @@ function EmulatorPath (data: { id: string; })
           onBlur={handleSave}
           autocomplete="off"
           defaultValue={remoteValue}
-          onChange={(e) =>
+          onChange={(v) =>
           {
-            setLocalValue(e.currentTarget.value);
+            setLocalValue(v);
             setDirty(true);
           }}
           value={localValue}
@@ -223,8 +231,9 @@ function EmulatorBadge (data: {
     <div ref={ref} className={
       twMerge('flex flex-col rounded-3xl bg-base-300 w-64 h-16 justify-center items-center p-4 overflow-hidden',
         classNames({
-          "bg-base-200/50": !data.path,
-          "border-dashed border-base-content/40 border-2": focused
+          "bg-base-200": !data.path,
+          "border-dashed border-base-content/40 border-2": !data.path && !focused,
+          "border-dashed border-accent border-4": focused
 
         }))
     }>
@@ -253,6 +262,7 @@ function RouteComponent ()
 {
   const { focus } = Route.useSearch();
   const { ref, focusKey, focusSelf } = useFocusable({
+    focusKey: "emulators-setting",
     preferredChildFocusKey: focus
   });
 

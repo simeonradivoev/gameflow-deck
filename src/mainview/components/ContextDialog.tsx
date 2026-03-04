@@ -15,7 +15,7 @@ export function ContextList (data: { options?: DialogEntry[]; className?: string
     const context = useContext(ContextDialogContext);
     return <ul className={twMerge("list", data.className)}>
         {data.options?.map(o => <OptionElement className="list-row" key={o.id} {...o} />)}
-        {data.showCloseButton !== false && <OptionElement className="list-row" type='accent' icon={<X />} action={context.close} id="close" content="Close" />}
+        {data.showCloseButton !== false && <OptionElement className="list-row" type='accent' icon={<X />} action={() => context.close()} id="close-context-dialog" content="Close" />}
     </ul>;
 }
 
@@ -30,7 +30,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     const handleAction = data.action ? () => data.action?.({ close: context.close, focus: focusSelf }) : undefined;
     const { ref, focused, focusSelf, focusKey, hasFocusedChild } = useFocusable({
         focusKey: `${context.id}-list-option-${data.id}`,
-        onEnterPress: data.shortcuts ? handleAction : undefined,
+        onEnterPress: data.shortcuts ? undefined : handleAction,
         onFocus: handleFocus,
         trackChildren: typeof data.content !== 'string'
     });
@@ -52,9 +52,9 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
             twMerge("flex cursor-pointer sm:text-sm md:text-base")}>
         <FocusContext value={focusKey}>
             <div className={twMerge("flex w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl transition-all gap-2",
-                colors[data.type],
                 classNames({ "font-semibold": focused || hasFocusedChild }),
-                data.className)}>
+                data.className,
+                colors[data.type])}>
                 {data.icon}
                 {data.content}
             </div>
@@ -75,7 +75,8 @@ export interface DialogEntry
 export function ContextDialog (data: {
     id: string,
     children: any | any[],
-    open: boolean, close: () => void;
+    open: boolean,
+    close: () => void;
     className?: string;
     preferredChildFocusKey?: string;
 })

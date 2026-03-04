@@ -30,6 +30,11 @@ export const SettingsSchema = z.object({
     downloadPath: z.string()
 });
 
+export const LocalSettingsSchema = z.object({
+    backgroundBlur: z.stringbool().or(z.boolean()).default(true),
+    theme: z.enum(['dark', 'light', 'auto']).default('auto')
+});
+
 export const GameListFilterSchema = z.object({
     platform_source: z.string().optional(),
     platform_slug: z.string().optional(),
@@ -60,6 +65,7 @@ export interface FrontEndPlatformType
     game_count: number;
     updated_at: Date;
     hasLocal: boolean;
+    paths_screenshots: string[];
 }
 
 export interface FrontEndGameType
@@ -126,6 +132,7 @@ export interface Notification
 }
 
 export type SettingsType = z.infer<typeof SettingsSchema>;
+export type LocalSettingsType = z.infer<typeof LocalSettingsSchema>;
 export interface GameInstallProgress
 {
     progress?: number;
