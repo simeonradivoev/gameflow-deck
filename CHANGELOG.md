@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.1.0...v1.2.0) (2026-03-14)
+
+
+### Features
+
+* Added interface options ([2f32cbc](https://github.com/simeonradivoev/gameflow-deck/commit/2f32cbc730053c6959e026aca1a030159f50e48b))
+* Added QR login ([4739b89](https://github.com/simeonradivoev/gameflow-deck/commit/4739b89933f9dd6082d40f84f8fedd19a013ee98))
+* implemented a basic store and emulatorjs ([7286541](https://github.com/simeonradivoev/gameflow-deck/commit/7286541822251e001f2a49c1afbb03520c8d9c4b))
+
 ## 1.1.0 (2026-03-01)
 
 
