@@ -4,12 +4,12 @@ import
   Gamepad2,
   Settings,
   MessageSquare,
-  ShoppingBag,
   Image,
   Search,
   Power,
   OctagonAlert,
   Maximize,
+  Store,
 } from "lucide-react";
 import
 {
@@ -21,13 +21,14 @@ import
 {
   FocusContext,
   FocusDetails,
+  getCurrentFocusKey,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { useEventListener } from "usehooks-ts";
-import { HeaderAccounts, HeaderStatusBar, HeaderUI } from "../components/Header";
+import { HeaderAccounts, HeaderStatusBar } from "../components/Header";
 import { FilterUI } from "../components/Filters";
-import { AnimatedBackground, AnimatedBackgroundContext } from "../components/AnimatedBackground";
+import { AnimatedBackground } from "../components/AnimatedBackground";
 import { GameList } from "../components/GameList";
 import { SaveSource } from "../scripts/spatialNavigation";
 import LoadingCardList from "../components/LoadingCardList";
@@ -43,7 +44,9 @@ import z from "zod";
 import { Router } from "..";
 import CollectionList from "../components/CollectionList";
 import { zodValidator } from '@tanstack/zod-adapter';
-import { mobileCheck } from "../scripts/utils";
+import { mobileCheck, useDragScroll } from "../scripts/utils";
+import { AnimatedBackgroundContext } from "../scripts/contexts";
+import { FrontEndId } from "@/shared/constants";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -93,6 +96,7 @@ function HomeList (data: {
 {
   const [initFocus, setInitFocus] = useState(false);
   const bg = useContext(AnimatedBackgroundContext);
+  const { } = Route.useSearch;
   const { ref, focused, focusKey, focusSelf } = useFocusable({
     focusKey: "home-list",
     preferredChildFocusKey: `${data.selectedFilter}-list`
@@ -103,17 +107,53 @@ function HomeList (data: {
     const isMounseEvent = details.nativeEvent instanceof MouseEvent;
     if (!isMounseEvent)
     {
-      node?.scrollIntoView({ inline: 'center', behavior: initFocus ? 'smooth' : 'instant' });
+      node?.scrollIntoView({ inline: 'center', block: 'center', behavior: initFocus ? 'smooth' : 'instant' });
     }
 
     setInitFocus(true);
   };
 
-  const lists: Record<string, JSX.Element> = {
-    consoles: <PlatformsList onFocus={handleNodeFocus} className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />,
-    games: <GameList onFocus={handleNodeFocus} className="animate-slide-up" key="games-list" id="games-list" setBackground={bg.setBackground} />,
-    collections: <CollectionList onFocus={handleNodeFocus} className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />,
+  function handleGameSelect (id: FrontEndId, source: string | null, sourceId: string | null)
+  {
+    SaveSource('details', { search: { filter: data.selectedFilter } });
+    Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source }, viewTransition: { types: ['zoom-in'] } });
   };
+
+  const handleCollectionSelect = (id: string) =>
+  {
+    SaveSource('game-list', { search: { filter: data.selectedFilter } });
+    Router.navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
+  };
+
+  const handlePlatformSelect = (source: string, id: string) =>
+  {
+    SaveSource('game-list', { search: { filter: data.selectedFilter } });
+    Router.navigate({ to: `/platform/${source}/${id}`, viewTransition: { types: ['zoom-in'] } });
+  };
+
+  let activeList: JSX.Element;
+  switch (data.selectedFilter)
+  {
+    case 'consoles':
+      activeList = <>
+        <PlatformsList onSelect={handlePlatformSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />
+        <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
+      </>;
+      break;
+    case 'collections':
+      activeList = <>
+        <CollectionList onSelect={handleCollectionSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />
+        <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
+      </>;
+      break;
+    default:
+      activeList = <>
+        <GameList onGameSelect={handleGameSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="games-list" id="games-list" setBackground={bg.setBackground} />
+        <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
+      </>;
+      break;
+
+  }
 
   useEventListener('wheel', e =>
   {
@@ -138,17 +178,18 @@ function HomeList (data: {
     }
   });
 
+  useDragScroll(ref);
+
   return (
     <FocusContext value={focusKey}>
-      <div ref={ref} className="flex h-full w-full landscape:overflow-x-scroll portrait:overflow-y-scroll overflow-hidden no-scrollbar justify-center-safe sm:pt-2 md:py-6 md:pb-3 md:mb-1" style={{
+      <div ref={ref} className="flex h-full w-full landscape:overflow-x-scroll portrait:overflow-y-scroll overflow-hidden no-scrollbar justify-center-safe sm:py-2 md:py-6 md:pb-6 md:mb-1 not-mobile:sm:pb-4" style={{
         mask: `linear-gradient(to right, rgba(0,0,0,0.8) 0%, black 10%, black 90%, rgba(0,0,0,0.8) 100%)`
       }}>
-        <div className="landscape:px-16 portrait:min-h-fit portrait:h-fit portrait:pb-32 portrait:w-full landscape:h-full">
+        <div className="landscape:flex landscape:px-16 portrait:min-h-fit portrait:h-fit portrait:pb-32 portrait:w-full landscape:h-full landscape:items-center">
           <ErrorBoundary fallback={<HomeListError focused={focused} />}>
             <Suspense key={data.selectedFilter} fallback={<LoadingCardList placeholderCount={8} />}>
-              {lists[data.selectedFilter]}
+              {activeList}
               <SaveScroll id={`card-list-${data.selectedFilter}`} ref={ref} />
-              <AutoFocus focus={focusSelf} delay={10} />
             </Suspense>
           </ErrorBoundary>
         </div>
@@ -179,7 +220,7 @@ function MainMenu (data: {})
           type="secondary"
         />
         <CircleIcon icon={<MessageSquare />} label="News" />
-        <CircleIcon icon={<ShoppingBag />} label="Shop" />
+        <CircleIcon type="info" icon={<Store />} action={() => navigate({ to: "/store/tab", viewTransition: { types: ['zoom-in'] } })} label="Shop" />
         <CircleIcon icon={<Image />} label="Album" />
         <CircleIcon
           icon={<Gamepad2 />}
@@ -202,7 +243,7 @@ function MainMenu (data: {})
 
 function CircleIcon (data: {
   action?: () => void;
-  type?: "secondary" | "accent";
+  type?: "secondary" | "accent" | "info";
   label?: string;
   icon?: JSX.Element;
 })
@@ -215,6 +256,7 @@ function CircleIcon (data: {
   const typeClasses = {
     secondary: "bg-secondary text-secondary-content",
     accent: "bg-accent text-accent-content",
+    info: "bg-info text-info-content",
     none: "bg-base-content",
   };
   return (
@@ -222,15 +264,9 @@ function CircleIcon (data: {
       ref={ref}
       onClick={data.action}
       className={twMerge(
-        `portrait:sm:size-12 sm:w-14 sm:h-10 menu-icon text-base-300 md:w-20 md:h-20 rounded-full flex items-center justify-center drop-shadow-lg cursor-pointer transition-all`,
-        typeClasses[data.type ?? "none"], classNames(
-          {
-            "focus ring-7 ring-primary drop-shadow-2xl animate-scale": focused,
-            "hover:ring-7 hover:ring-primary": true,
-          })
-      )}
+        `portrait:sm:size-12 sm:w-14 sm:h-10 menu-icon text-base-300 md:w-20 md:h-20 rounded-full flex items-center justify-center drop-shadow-lg cursor-pointer transition-all focusable focusable-primary focused:drop-shadow-2xl focused:animate-scale focusable-hover bg-base-content border-6 md:border-12 border-base-content focused:border-0 hover:border-0 z-1 active:border-0 active:bg-base-300 active:text-base-content active:transition-none`, typeClasses[data.type ?? 'none'])}
     >
-      {data.icon}
+      <div className="in-focused:animate-rotate-instant animation-size-5">{data.icon}</div>
     </li>
   );
 }
@@ -291,11 +327,11 @@ export default function ConsoleHomeUI ()
         <div className="sm:landscape:hidden md:landscape:inline sm:portrait:col-start-1 md:inline flex col-span-1 md:pl-2 md:pt-2">
           <HeaderAccounts />
         </div>
-        <div className="sm:portrait:*:justify-center sm:portrait:col-span-3 sm:landscape:*:justify-start sm:px-2 sm:pt-2 md:row-start-2 md:col-start-1 sm:landscape:col-span-1 md:landscape:col-span-3 flex items-center md:*:justify-center! md:ml-0 gap-2 *:w-full *:flex">
+        <div className=" sm:portrait:col-span-3 sm:px-2 sm:pt-2 md:row-start-2 md:col-start-1 sm:landscape:col-span-1 md:landscape:col-span-3 flex items-center  md:ml-0 gap-2">
           <FilterUI
             id="home"
-            options={filters}
-            selected={filter ? filter : 'games'}
+            containerClassName="flex w-full sm:landscape:justify-start sm:portrait:justify-center md:justify-center!"
+            options={Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, { ...value, selected: key === filter }]))}
             setSelected={setFilter}
           />
         </div>
@@ -311,7 +347,7 @@ export default function ConsoleHomeUI ()
           <MainMenu />
         </div>
         <footer className={twMerge(
-          "sm:portrait:hidden sm:col-span-1 md:col-start-2 md:col-span-2 md:relative px-2 pb-2 flex items-end justify-end",
+          "fixed bottom-4 left-4 right-4 sm:portrait:hidden sm:col-span-1 md:col-start-2 md:col-span-2 flex items-end justify-end",
         )}>
           <Shortcuts shortcuts={shortcuts} />
         </footer>

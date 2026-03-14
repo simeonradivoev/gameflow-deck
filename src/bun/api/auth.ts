@@ -1,45 +1,117 @@
 import Elysia, { sse, status } from "elysia";
-import { config, jar, taskQueue } from "./app";
+import { config, events, jar, taskQueue } from "./app";
 import z from "zod";
 import { client } from "@clients/romm/client.gen";
 import { loginApiLoginPost, logoutApiLogoutPost } from "@clients/romm";
 import secrets from '../api/secrets';
 import { LoginJob } from "./jobs/login-job";
+import TwitchLoginJob from "./jobs/twitch-login-job";
 
 export default new Elysia()
-    .post('/login/remote/start', async () =>
+    .post('/login/twitch', async ({ body: { openInBrowser } }) =>
+    {
+        if (taskQueue.hasActiveOfType(TwitchLoginJob))
+        {
+            return status("Conflict", `Twitch Authentication already in progress`);
+        }
+
+        if (!process.env.TWITCH_CLIENT_ID)
+        {
+            return status("Not Found", "Twitch Client ID not set");
+        }
+
+        return taskQueue.enqueue(TwitchLoginJob.id, new TwitchLoginJob(process.env.TWITCH_CLIENT_ID, openInBrowser ?? false));
+    },
+        { body: z.object({ openInBrowser: z.boolean().optional() }) })
+    .post('/logout/twitch', async () =>
+    {
+        if (!process.env.TWITCH_CLIENT_ID)
+        {
+            return status("Not Found", "Twitch Client ID not set");
+        }
+
+        const res = await fetch('https://id.twitch.tv/oauth2/revoke', {
+            method: "POST", headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                client_id: process.env.TWITCH_CLIENT_ID
+            })
+        });
+
+        await secrets.delete({ service: 'gamflow_twitch', name: 'access_token' });
+        await secrets.delete({ service: 'gamflow_twitch', name: 'refresh_token' });
+        await secrets.delete({ service: 'gamflow_twitch', name: 'expires_in' });
+
+        return status(res.status, res.statusText);
+    })
+    .get('/login/twitch', async () =>
+    {
+        const access_token = await secrets.get({ service: 'gamflow_twitch', name: 'access_token' });
+        if (!access_token)
+        {
+            return status('Not Found', "Not Logged In");
+        }
+
+        const res = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${access_token}` } });
+        if (res.ok)
+        {
+            return await res.json() as { login: string, expires_in: number; client_id: string, user_id: string; };
+        }
+
+        if (!process.env.TWITCH_CLIENT_ID)
+        {
+            return status("Not Found", "Twitch Client ID not set");
+        }
+
+        const refresh_token = await secrets.get({ service: 'gamflow_twitch', name: "refresh_token" });
+        if (!refresh_token)
+        {
+            return status("Not Found", "Refresh Token Not Found");
+        }
+
+        // refresh token
+        const refreshResponse = await fetch('https://id.twitch.tv/oauth2/token', {
+            method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({
+                client_id: process.env.TWITCH_CLIENT_ID,
+                access_token,
+                grant_type: "refresh_token",
+                refresh_token
+            })
+        });
+
+        if (refreshResponse.ok)
+        {
+            const data: {
+                access_token: string,
+                refresh_token: string,
+                token_type: string;
+                expires_in: number;
+            } = await refreshResponse.json();
+
+            await secrets.set({ service: 'gamflow_twitch', name: 'access_token', value: data.access_token });
+            await secrets.set({ service: 'gamflow_twitch', name: 'refresh_token', value: data.refresh_token });
+            await secrets.set({ service: 'gamflow_twitch', name: 'expires_in', value: new Date(new Date().getTime() + data.expires_in).toString() });
+
+            events.emit('notification', { message: "Twitch Refresh Successful", type: 'success' });
+
+            const res = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${data.access_token}` } });
+            if (res.ok)
+            {
+                return await res.json() as { login: string, expires_in: number; client_id: string, user_id: string; };
+            }
+        }
+
+        return status(400, res.statusText);
+    })
+    .post('/login/romm', async () =>
     {
         if (taskQueue.hasActiveOfType(LoginJob))
         {
             return status("Conflict", "Login Already Active");
         }
 
-        const job = new LoginJob();
-        taskQueue.enqueue("login", job);
-        return status("OK");
-    })
-    .get('/login/remote/status', async function* ()
-    {
-        const job = taskQueue.findJob("login");
-        if (job)
-        {
-            const loginJob = job.job as LoginJob;
-            yield sse({ data: { endsAt: loginJob.endsAt, url: loginJob.url } });
-            await taskQueue.waitForJob('login');
-            yield sse({ data: {} });
-        }
-
-        yield sse({ data: {} });
-    })
-    .post('/login/remote/cancel', async () =>
-    {
-        const job = taskQueue.findJob("login");
-        if (job)
-        {
-            job.abort("cancel");
-            await taskQueue.waitForJob('login');
-        }
-        return {};
+        return taskQueue.enqueue(LoginJob.id, new LoginJob());
     })
     .post('/login', async ({ body }) => tryLoginAndSave(body), { body: z.object({ host: z.url(), username: z.string(), password: z.string() }) })
     .get('/login', async () =>

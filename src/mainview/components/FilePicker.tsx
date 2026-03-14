@@ -1,11 +1,11 @@
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
-import { ContextList, DialogEntry, OptionElement } from "./ContextDialog";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ContextList, DialogEntry } from "./ContextDialog";
 import { systemApi } from "../scripts/clientApi";
-import { createContext, useContext, useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import path from "pathe";
-import { Check, File, Folder, FolderClosed, FolderInput, FolderOutput, FolderPlus, HardDrive, Plus, Save, Undo, Usb, X } from "lucide-react";
+import { Check, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { DirType, Drive } from "@/shared/constants";
+import { DirType } from "@/shared/constants";
 import classNames from "classnames";
 import { twMerge } from "tailwind-merge";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts";
@@ -13,17 +13,8 @@ import SvgIcon from "./SvgIcon";
 import { Button } from "./options/Button";
 import toast from "react-hot-toast";
 import { drivesQuery, filesQuery } from "../scripts/queries";
-
-const FilePickerContext = createContext<{
-    allowNewFolderCreation: boolean;
-    isDirectoryPicker: boolean;
-    setCurrentPath: (path: string) => void;
-    currentPath: string | undefined,
-    startingPath: string | undefined;
-    refetchFiles: () => void;
-    drives: Drive[],
-    activeDrive: Drive | undefined;
-}>({} as any);
+import { FilePickerContext } from "../scripts/contexts";
+import useActiveControl from "../scripts/gamepads";
 
 function List (data: {
     id: string,
@@ -137,7 +128,7 @@ function NewFolderOption (data: { id: string, dirname: string; })
     });
     return <div className="flex gap-2 grow -ml-2">
         <NewFolderInput className="grow" id={`${data.id}-input`} setName={setName} name={name} />
-        <Button id={`${data.id}-create`} onAction={createMutation.mutate} type="button" ><FolderPlus /></Button>
+        <Button id={`${data.id}-create`} onAction={e => createMutation.mutate()} type="button" ><FolderPlus /></Button>
     </div>;
 }
 
@@ -149,7 +140,7 @@ function OptionButtons (data: {
 })
 {
     const { ref, focusKey } = useFocusable({ focusKey: `options-${data.id}`, onEnterPress: data.onSelect });
-    return <div ref={ref} className="flex md:inline h-12 w-full justify-end gap-2">
+    return <div ref={ref} className="flex h-12 w-full justify-end gap-2">
         <FocusContext value={focusKey}>
             {data.showConfirm && <Button className="p-6 ring-accent-content" onAction={data.onSelect} id={`${data.id}-select`} focusClassName="ring-7" type="button" ><Check />Select</Button>}
             <Button className="md:p-6 ring-warning-content" onAction={data.onCancel} id={`${data.id}-cancel`} type="button" focusClassName="ring-7 btn-warning" ><X />Cancel</Button>
@@ -252,6 +243,8 @@ export default function FilePicker (data: {
         [<><HardDrive />{activeDrive?.label}</>, ...fullPath.substring(activeDriveMount?.length ?? 0).split(path.sep)] :
         fullPath.substring(activeDriveMount?.length ?? 0).split(path.sep);
 
+    const { isPointer } = useActiveControl();
+
     return <div className="flex flex-col h-full max-h-full gap-3">
         <FilePickerContext value={{
             setCurrentPath,
@@ -271,8 +264,9 @@ export default function FilePicker (data: {
                                 setCurrentPath(path.join(...fullPath.slice(-i)))
                             }>{p}</a>
                         </li>)}
+
+                        {(filesLoading || drivesLoading) && <li className="mr-2 loading loading-spinner sm:loading-md md:loading-sm"></li>}
                     </ul>
-                    {(filesLoading || drivesLoading) && <span className="loading loading-spinner sm:loading-md md:loading-lg"></span>}
                 </div>}
 
             <ListWithDrives
@@ -281,11 +275,11 @@ export default function FilePicker (data: {
                 onSelect={data.onSelect}
                 parentPath={files?.parentPath ?? ''}
             />
-            <OptionButtons
+            {isPointer && <OptionButtons
                 showConfirm={!!data.isDirectoryPicker}
                 onCancel={data.cancel}
                 onSelect={() => currentPath ? data.onSelect(currentPath) : undefined}
-                id={data.id} />
+                id={data.id} />}
         </FilePickerContext>
     </div>;
 }

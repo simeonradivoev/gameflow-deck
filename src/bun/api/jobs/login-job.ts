@@ -4,19 +4,26 @@ import { LOGIN_PORT, SERVER_URL } from "@/shared/constants";
 import { host, localIp } from "@/bun/utils/host";
 import cors from "@elysiajs/cors";
 import { tryLoginAndSave } from "../auth";
-import z from "zod";
 import { config } from "../app";
+import z from "zod";
+import { delay } from "@/shared/utils";
 
 export class LoginJob implements IJob
 {
     endsAt: Date;
+    startedAt: Date;
     url: string;
+    static id = "login-job" as const;
+    static dataSchema = z.object({ endsAt: z.date(), startedAt: z.date(), url: z.url() });
 
     constructor()
     {
-        this.endsAt = new Date();
+        this.endsAt = new Date(new Date().getTime() + 300000);
+        this.startedAt = new Date();
         this.url = `http://${localIp}:${LOGIN_PORT}/`;
     }
+
+    exposeData = (): z.infer<typeof LoginJob.dataSchema> => ({ endsAt: this.endsAt, startedAt: this.startedAt, url: this.url });
 
     async start (context: JobContext): Promise<any>
     {
@@ -44,12 +51,7 @@ export class LoginJob implements IJob
         try
         {
             loginServer.listen({});
-            await new Promise((resolve, reject) =>
-            {
-                this.endsAt = new Date(new Date().getTime() + 300000);
-                context.abortSignal.addEventListener('abort', () => reject());
-                setTimeout(() => { reject('timeout'); }, 300000); // auto close after 5 minutes
-            });
+            await delay(this.endsAt, context.abortSignal);
         } catch
         {
         } finally

@@ -1,4 +1,5 @@
 declare const __HOST__: string;
+declare const __PUBLIC__: boolean;
 declare const __EMULATORS__: Record<string, string>;
 declare module "@emulators" {
   const data: Record<string, string>;
@@ -19,15 +20,16 @@ global
 
 interface FocusParams
 {
-  onFocus?: () => void;
+  onFocus?: (focusKey: string, node: HTMLElement, details: Record<string, any>) => void;
 }
 
 interface InteractParams
 {
-  onAction?: () => void;
+  onAction?: (e?: Event) => void;
 }
 
 interface FilterOption extends FocusParams, InteractParams
 {
   label: string;
+  selected: boolean;
 }

@@ -2,26 +2,19 @@ import path from 'node:path';
 import { which } from 'bun';
 import fs from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
-import * as schema from '../../schema/emulators';
-import * as appSchema from "../../schema/app";
+import * as schema from '@schema/emulators';
+import * as appSchema from "@schema/app";
 import { eq } from 'drizzle-orm';
 import { activeGame, config, db, emulatorsDb, events, setActiveGame } from '../../app';
 import os from 'node:os';
 import { $ } from 'bun';
 import { spawn } from 'node:child_process';
 import { updateRomUserApiRomsIdPropsPut } from '@/clients/romm';
+import { CommandEntry } from '@/shared/constants';
 
 export const varRegex = /%([^%]+)%/g;
 
-interface CommandEntry
-{
-    label?: string;
-    command: string;
-    valid: boolean;
-    emulator?: string;
-}
-
-export async function launchCommand (validCommand: string, source: string, sourceId: number, id: number)
+export async function launchCommand (validCommand: string, source: string, sourceId: string, id: number)
 {
     if (activeGame && activeGame.process?.killed === false)
     {
@@ -69,13 +62,12 @@ export async function launchCommand (validCommand: string, source: string, sourc
 
         if (source === 'romm') 
         {
-            updateRommProps(sourceId);
+            updateRommProps(Number(sourceId));
         }
         else if (localGame?.source === 'romm' && localGame.source_id)
         {
-            updateRommProps(localGame.source_id);
+            updateRommProps(Number(localGame.source_id));
         }
-
     });
 
     /* Old spawn lanching, cases issues, needs to be ran as shell
@@ -117,7 +109,10 @@ export async function getValidLaunchCommands (data: {
 }): Promise<CommandEntry[]>
 {
 
-    const system = await emulatorsDb.query.systems.findFirst({ with: { commands: true }, where: eq(schema.systems.name, data.systemSlug) });
+    const system = await emulatorsDb.query.systems.findFirst({
+        with: { commands: true },
+        where: eq(schema.systems.name, data.systemSlug)
+    });
 
     if (!system)
     {
@@ -165,7 +160,7 @@ export async function getValidLaunchCommands (data: {
         }
     }
 
-    const formattedCommands = await Promise.all(system.commands.map(async command =>
+    const formattedCommands = await Promise.all(system.commands.map(async (command, index) =>
     {
         const label = command.label;
         let cmd = command.command;
@@ -213,14 +208,14 @@ export async function getValidLaunchCommands (data: {
             if (value.startsWith("%EMULATOR_"))
             {
                 const emulatorName = value.substring("%EMULATOR_".length, value.length - 1);
-                let exec = await findExec(emulatorName);
+                let exec = await findExecByName(emulatorName);
                 if (data.customEmulatorConfig.has(emulatorName))
                 {
-                    exec = data.customEmulatorConfig.get(emulatorName);
+                    exec = { path: data.customEmulatorConfig.get(emulatorName)!, type: 'custom' };
                 }
 
                 emulator = emulatorName;
-                return [[value, exec ? exec : undefined], ['%EMUDIR%', exec ? $.escape(path.dirname(exec)) : undefined]];
+                return [[value, exec ? exec : undefined], ['%EMUDIR%', exec ? $.escape(path.dirname(exec.path)) : undefined]];
             }
 
             const key = value[0].substring(1, value.length - 1);
@@ -237,6 +232,7 @@ export async function getValidLaunchCommands (data: {
         const formattedCommand = cmd.replace(varRegex, (s) => vars[s] ?? '').trim();
 
         return {
+            id: index,
             label: label ?? undefined,
             command: formattedCommand,
             valid: !invalid, emulator
@@ -246,13 +242,18 @@ export async function getValidLaunchCommands (data: {
     return formattedCommands.filter(c => !!c);
 }
 
-export async function findExec (emulatorName: string)
+export async function findExecByName (emulatorName: string)
 {
     const emulator = await emulatorsDb.query.emulators.findFirst({ where: eq(schema.emulators.name, emulatorName) });
     if (!emulator)
     {
         throw new Error(`Could not find emulator ${emulatorName}`);
     }
+    return findExec(emulator);
+}
+
+export async function findExec (emulator: { winregistrypath: string[], systempath: string[], staticpath: string[]; })
+{
     if (os.platform() === 'win32')
     {
         const regValues = emulator.winregistrypath;
@@ -263,7 +264,7 @@ export async function findExec (emulatorName: string)
                 const registryValue = await readRegistryValue(node);
                 if (registryValue)
                 {
-                    return registryValue;
+                    return { path: registryValue, type: 'registry' };
                 }
             }
 
@@ -276,7 +277,7 @@ export async function findExec (emulatorName: string)
         const systemPath = await resolveSystemPath(systempaths);
         if (systemPath)
         {
-            return systemPath;
+            return { path: systemPath, type: 'system' };
         }
     }
 
@@ -286,7 +287,7 @@ export async function findExec (emulatorName: string)
         const staticPath = await resolveStaticPath(staticPaths);
         if (staticPath)
         {
-            return staticPath;
+            return { path: staticPath, type: 'static' };
         }
     }
 }

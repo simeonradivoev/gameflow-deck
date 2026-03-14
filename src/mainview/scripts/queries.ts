@@ -1,5 +1,5 @@
 import { keepPreviousData, mutationOptions, queryOptions } from "@tanstack/react-query";
-import { rommApi, settingsApi, systemApi } from "./clientApi";
+import { rommApi, settingsApi, storeApi, systemApi } from "./clientApi";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "react-error-boundary";
 
@@ -52,7 +52,7 @@ export const changeDownloadsMutation = mutationOptions({
     }
 });
 
-export const gameQuery = (source: string, id: number) => queryOptions({
+export const gameQuery = (source: string, id: string) => queryOptions({
     queryKey: ['game', source, id],
     queryFn: async () =>
     {
@@ -60,4 +60,49 @@ export const gameQuery = (source: string, id: number) => queryOptions({
         if (error) throw error;
         return data;
     },
+});
+
+export const autoEmulatorsQuery = queryOptions({
+    queryKey: ['auto-emulators'], queryFn: async () =>
+    {
+        const { data, error } = await settingsApi.api.settings.emulators.automatic.get();
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const storeEmulatorsQuery = queryOptions({
+    queryKey: ['store-emulators'], queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.emulators.get();
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const storeFeaturedGamesQuery = queryOptions({
+    queryKey: ['store-emulators', 'recommended'], queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.games.featured.get();
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const storeEmulatorsRecommendedQuery = queryOptions({
+    queryKey: ['store-emulators', 'recommended'], queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.emulators.get({ query: { limit: 6, missing: true, orderBy: 'importance' } });
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const storeEmulatorDetailsQuery = (id: string) => queryOptions({
+    queryKey: ['store-emulator', id], queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.details.emulator({ id }).get();
+        if (error) throw error;
+        return data;
+    }
 });

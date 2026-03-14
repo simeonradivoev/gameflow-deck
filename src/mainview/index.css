@@ -8,15 +8,18 @@
     --breakpoint-sm: 0px;
     --breakpoint-md: 1280px;
     --page-scroll-bg: transparent;
+    --animation-size: 1;
 
     --animate-wiggle: wiggle 0.3s ease-in-out 1;
-    --animate-rotate: rotate 0.3s ease-in-out 1 0.2s;
-    --animate-rotate-small: rotate-small 0.3s ease-in-out 1 0.2s;
+    --animate-rotate-instant: rotate 0.3s ease-in-out 1;
+    --animate-rotate: rotate 0.3s ease-in-out 1 200ms;
+    --animate-rotate-small: rotate-small 0.3s ease-in-out 1 200ms;
     --animate-scale: scale 0.3s ease-in-out 1;
     --animate-slide-up: slide-up 0.2s ease-in-out 1;
     --animate-scale-delayed: scale 0.3s ease-in-out 1 100ms;
     --animate-scale-small: scale-small 0.3s ease-in-out 1;
     --animate-fade-out: fade-out 0.3s ease-out 1;
+    --animate-fade-in: fade-out 0.6s ease-out 1 reverse forwards;
     --animate-bg-zoom: zoom-in-scale 0.6s ease-out 1 forwards;
     --animate-bg-zoom-big: zoom-in-scale-big 0.6s ease-out 1 forwards;
     --animate-bg-zoom-scroll: zoom-in-bg 0.6s ease-out 1 forwards;
@@ -116,11 +119,11 @@
         }
 
         25% {
-            transform: rotate(1deg);
+            transform: rotate(calc(1deg * var(--animation-size)));
         }
 
         75% {
-            transform: rotate(-1deg);
+            transform: rotate(calc(-1deg * var(--animation-size)));
         }
     }
 
@@ -197,7 +200,87 @@ body {
     font-family: 'Alan Sans', sans-serif;
 }
 
+@utility focusable-* {
+    --focus-ring-color: --value(--color-*);
+}
+
+@utility hide-scrollbar {
+    scrollbar-width: none;
+}
+
+@utility no-scrollbar {
+    scrollbar-width: none;
+}
+
+@utility scrollbar-* {
+    scrollbar-width: --value(integer);
+    scrollbar-width: --value([integer]);
+    scrollbar-width: --value("none");
+}
+
+@utility animation-size-* {
+    --animation-size: --value(number);
+}
+
+@utility animation-delay-* {
+    --tw-animation-delay: --value([*]);
+    --tw-animation-delay: --value(integer)ms;
+    animation-delay: var(--tw-animation-delay);
+}
+
+@custom-variant focused {
+
+    &:where([data-active-control="gamepad"] &[data-focused=true]),
+    &:where([data-active-control="keyboard"] &[data-focused=true]) {
+        @slot;
+    }
+}
+
+@custom-variant focused-child {
+
+    &:where([data-active-control="gamepad"] &:has([data-focused=true])),
+    &:where([data-active-control="keyboard"] &:has([data-focused=true])) {
+        @slot;
+    }
+}
+
+@custom-variant in-focused {
+
+    &:where([data-active-control="gamepad"] [data-focused=true] *),
+    &:where([data-active-control="keyboard"] [data-focused=true] *) {
+        @slot;
+    }
+}
+
+@custom-variant control-mouse (&:where([data-active-control="mouse"] *));
+@custom-variant control-touch (&:where([data-active-control="touch"] *));
+@custom-variant control-keyboard (&:where([data-active-control="keyboard"] *));
+@custom-variant control-gamepad (&:where([data-active-control="gamepad"] *));
+@custom-variant control-pointer (&:where([data-active-control="mouse"] *), &:where([data-active-control="touch"] *));
+@custom-variant mobile (&:where([data-device="mobile"] *));
+
+@container scroll-state(stuck: top) {
+    .sticky-header {
+        background-color: var(--color-base-100);
+    }
+
+}
+
 @layer components {
+
+    .focusable {
+        --focus-ring-color: --value(--color-accent);
+        @apply md:ring-14 sm:ring-8 ring-transparent transition-shadow;
+    }
+
+    [data-active-control="keyboard"] .group-focusable[data-focused="true"] .focusable,
+    [data-active-control="gamepad"] .group-focusable[data-focused="true"] .focusable,
+    [data-active-control="keyboard"] .focusable[data-focused=true],
+    [data-active-control="gamepad"] .focusable[data-focused=true],
+    [data-active-control="mouse"] .group-focusable:hover .focusable-hover,
+    [data-active-control="mouse"] .focusable-hover:hover {
+        @apply md:ring-7 sm:ring-4 ring-(--focus-ring-color);
+    }
 
     .background {
         -webkit-backface-visibility: hidden;
@@ -208,6 +291,17 @@ body {
         perspective: 1000;
         transform: translate3d(0, 0, 0);
         transform: translateZ(0);
+    }
+
+    .container-scroll {
+        container-type: scroll-state;
+    }
+
+    .sticky-header {
+        position: sticky;
+        top: 0;
+        left: 0;
+        right: 0;
     }
 
     .game-card {
@@ -245,8 +339,52 @@ body {
         @apply grid pb-4;
     }
 
-    .no-scrollbar {
-        scrollbar-width: none;
+    .bg-gradient {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        --bg-gradient-opacity: 15%;
+
+        background:
+            radial-gradient(at 10% 20%, rgb(from var(--color-error) r g b / var(--bg-gradient-opacity)), transparent 60%),
+            radial-gradient(at 80% 30%, rgb(from var(--color-info) r g b / var(--bg-gradient-opacity)), transparent 60%),
+            radial-gradient(at 40% 90%, rgb(from var(--color-success) r g b / var(--bg-gradient-opacity)), transparent 60%),
+            radial-gradient(at 90% 80%, rgb(from var(--color-warning) r g b / var(--bg-gradient-opacity)), transparent 60%);
+
+        background-blend-mode: lighten;
+        background-repeat: repeat;
+        background-color: var(--color-base-100);
+        @apply mobile:hidden;
+    }
+
+    .bg-noise {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background-image: url("https://momentsingraphics.de/Media/BlueNoise/BlueNoise470.png");
+        mix-blend-mode: color-dodge;
+        opacity: 0.1;
+    }
+
+    .bg-gradient-back {
+
+        --bg-opacity: 90%;
+        background:
+            radial-gradient(at 10% 20%, color-mix(in srgb, var(--color-secondary), transparent var(--bg-opacity)), transparent 60%),
+            radial-gradient(at 80% 30%, color-mix(in srgb, var(--color-info), transparent var(--bg-opacity)), transparent 60%),
+            radial-gradient(at 40% 90%, color-mix(in srgb, var(--color-success), transparent var(--bg-opacity)), transparent 60%),
+            radial-gradient(at 90% 80%, color-mix(in srgb, var(--color-warning), transparent var(--bg-opacity)), transparent 60%);
+
+        background-blend-mode: screen;
+        background-repeat: repeat;
+    }
+
+    @keyframes scroll-bg {
+        to {
+            transform: translateY(800px);
+        }
     }
 
     &::view-transition-old(.game-card),

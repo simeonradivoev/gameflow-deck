@@ -10,10 +10,10 @@ import Conf from "conf";
 import projectPackage from '~/package.json';
 import { Notification, SettingsSchema, SettingsType } from "@shared/constants";
 import { client } from "@clients/romm/client.gen";
-import * as schema from "./schema/app";
-import * as emulatorSchema from "./schema/emulators";
+import * as schema from "@schema/app";
+import cacheSchema from "@schema/cache";
+import * as emulatorSchema from "@schema/emulators";
 import { login, logout } from "./auth";
-import fs from 'node:fs/promises';
 import os from 'node:os';
 import { ActiveGame } from "../types/types";
 import EventEmitter from "node:events";
@@ -21,6 +21,7 @@ import { ErrorLike } from "bun";
 import { appPath, getErrorMessage } from "../utils";
 import { DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
 import { ensureDir } from "fs-extra";
+import UpdateStoreJob from "./jobs/update-store";
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,
@@ -50,7 +51,10 @@ const fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path),
 console.log("Cookie Jar Path Located At: ", fileCookieStore.filePath);
 export const jar = new CookieJar(fileCookieStore);
 let sqlite: Database;
+export const cachePath = path.join(os.tmpdir(), 'gameflow', 'cache.sqlite');
+let cacheSqlite: Database;
 export let db: DrizzleSqliteDODatabase<typeof schema>;
+export let cache: DrizzleSqliteDODatabase<typeof cacheSchema>;
 await reloadDatabase();
 const emulatorsSqlite = new Database(appPath(`./vendors/es-de/emulators.${os.platform()}.${os.arch()}.sqlite`), { readonly: true });
 export const emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
@@ -73,6 +77,7 @@ events.addListener('activegameexit', ({ error }) =>
     }
 });
 config.onDidChange('downloadPath', () => reloadDatabase());
+taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
 
 export async function cleanup ()
 {
@@ -86,13 +91,25 @@ export async function reloadDatabase ()
 {
     await ensureDir(config.get('downloadPath'));
     sqlite = new Database(path.join(config.get('downloadPath'), 'db.sqlite'), { create: true, readwrite: true });
+    await ensureDir(path.join(os.tmpdir(), 'gameflow'));
+    console.log("Loaded Cache from: ", cachePath);
+    cacheSqlite = new Database(cachePath, { create: true, readwrite: true });
     db = drizzle(sqlite, { schema });
+    cache = drizzle(cacheSqlite, { schema: cacheSchema });
     migrate(db!, { migrationsFolder: appPath("./drizzle") });
+    cache.run(`
+        CREATE TABLE IF NOT EXISTS item_cache (
+            key TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            expire_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL
+        )
+    `);
 }
 
 interface AppEventMap
 {
-    activegameexit: [{ source: string, id: number, subprocess?: Bun.Subprocess, exitCode: number | null, signalCode: number | null, error?: ErrorLike; }];
+    activegameexit: [{ source: string, id: string, subprocess?: Bun.Subprocess, exitCode: number | null, signalCode: number | null, error?: ErrorLike; }];
     exitapp: [];
     notification: [Notification];
 }

@@ -1,16 +1,25 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { DefaultRommStaleTime, RPC_URL } from "../../shared/constants";
+import { DefaultRommStaleTime, RPC_URL } from "@shared/constants";
 import { CardList, GameMetaExtra } from "./CardList";
-import classNames from "classnames";
 import { rommApi } from "../scripts/clientApi";
 import { SaveSource } from "../scripts/spatialNavigation";
 import { JSX, useMemo } from "react";
 import { HardDrive } from "lucide-react";
-import { GameCardFocusHandler } from "./GameCard";
+import { GameCardFocusHandler } from "./CardElement";
+import { mobileCheck } from "../scripts/utils";
+import { twMerge } from "tailwind-merge";
 
-export function PlatformsList (data: { id: string, setBackground: (url: string) => void; className?: string; onFocus?: GameCardFocusHandler; grid?: boolean; })
+export function PlatformsList (data: {
+    id: string,
+    setBackground: (url: string) => void;
+    className?: string;
+    onFocus?: GameCardFocusHandler;
+    grid?: boolean;
+    onSelect?: (source: string, id: string) => void;
+})
 {
+    const isMobile = mobileCheck();
     const navigate = useNavigate();
     const { data: platforms } = useSuspenseQuery(
         {
@@ -24,6 +33,12 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
             refetchOnWindowFocus: false,
             staleTime: DefaultRommStaleTime,
         });
+
+    const handleDefaultSelect = (source: string, id: string) =>
+    {
+        SaveSource('game-list');
+        navigate({ to: `/platform/${source}/${id}`, viewTransition: { types: ['zoom-in'] } });
+    };
 
     const platformsMapped = useMemo(() => platforms.sort((a, b) => a.updated_at.getTime() - b.updated_at.getTime())
         .map((g, i) =>
@@ -44,13 +59,9 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
                 onFocus: () => data.setBackground(
                     g.paths_screenshots.length > 0 ? `${RPC_URL(__HOST__)}${g.paths_screenshots[new Date().getMinutes() % g.paths_screenshots.length]}` : `${RPC_URL(__HOST__)}/api/romm/image?url=https://picsum.photos/id/${10 + i}/1280/720.webp`,
                 ),
-                onSelect: () =>
-                {
-                    SaveSource('game-list');
-                    navigate({ to: `/platform/${g.id.source}/${g.id.id}`, viewTransition: { types: ['zoom-in'] } });
-                },
+                onSelect: () => data.onSelect ? data.onSelect(g.id.source, g.id.id) : handleDefaultSelect(g.id.source, g.id.id),
                 preview:
-                    ({ focused }) => <div
+                    () => <div
                         className="flex p-6 bg-base-100 justify-center"
                         style={{
                             background: `linear-gradient(
@@ -58,11 +69,11 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
       color-mix(in srgb, var(--color-base-300) 60%, transparent)
     ), url(https://picsum.photos/id/${10 + i}/100/100.webp?blur=10) center / cover`,
 
-                            backgroundBlendMode: "screen",
-                            boxShadow: 'inset 0 0 32px rgba(0,0,0,0.6)'
+                            backgroundBlendMode: isMobile ? undefined : "screen",
+                            boxShadow: isMobile ? undefined : 'inset 0 0 32px rgba(0,0,0,0.6)'
                         }}
                     >
-                        <img className={classNames("drop-shadow-2xl", { "animate-rotate": focused })}
+                        <img draggable={false} className={"not-mobile:drop-shadow-2xl in-focus:animate-rotate"}
                             src={coverUrl.href}
                         ></img>
                     </div>
@@ -76,7 +87,7 @@ export function PlatformsList (data: { id: string, setBackground: (url: string) 
             type="platform"
             id={data.id}
             grid={data.grid}
-            className={data.className}
+            className={twMerge('*:aspect-8/10! md:py-12', data.className)}
             onGameFocus={data.onFocus}
             games={platformsMapped}
             onSelectGame={(id) =>

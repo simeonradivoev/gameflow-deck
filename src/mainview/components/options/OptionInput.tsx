@@ -1,10 +1,9 @@
-import classNames from "classnames";
-import { ChangeEventHandler, FocusEventHandler, HTMLInputAutoCompleteAttribute, HTMLInputTypeAttribute, JSX, useRef } from "react";
+import { FocusEventHandler, HTMLInputAutoCompleteAttribute, HTMLInputTypeAttribute, JSX, useRef } from "react";
 import { twMerge } from "tailwind-merge";
 import { useOptionContext } from "./OptionSpace";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { systemApi } from "../../scripts/clientApi";
-import { Check, CheckIcon, X } from "lucide-react";
+import { CheckIcon, X } from "lucide-react";
 
 export function OptionInput (data: {
     name: string;
@@ -52,11 +51,8 @@ export function OptionInput (data: {
     };
 
     return (
-        <label ref={ref} className={twMerge("flex items-center gap-3 rounded-full sm:flex-2 md:flex-1 divide-accent",
-            classNames({ "[&_.focus-target]:not-focus:ring-7 [&_.focus-target]:not-focus:ring-accent": focused, "pl-1": data.type === 'checkbox' }))}>
-            {!!data.icon && <span className={twMerge("text-base-content/80", classNames({
-                "text-primary-content": option.focused
-            }))}>{data.icon}</span>}
+        <label ref={ref} className={`flex items-center gap-3 rounded-full sm:flex-2 md:flex-1 divide-accent group-focusable`}>
+            {!!data.icon && <span className="text-base-content/80">{data.icon}</span>}
             {data.type !== 'checkbox' && <input
                 ref={inputRef}
                 id={data.name}
@@ -72,17 +68,11 @@ export function OptionInput (data: {
                 onBlur={data.onBlur}
                 defaultChecked={typeof data.defaultValue === 'boolean' ? data.defaultValue : undefined}
                 className={twMerge(
-                    "focus-target text-base-content",
-                    "input grow rounded-full ring-primary-content focus:ring-7", classNames({
-                        "bg-base-200": !focused
-                    }),
+                    "flex text-base-content px-4 py-2 items-center justify-center border border-base-content/20 grow rounded-full focus:ring-base-content in-focused:bg-base-200 focusable focusable-accent focus:not-focused:ring-7 control-mouse:ring-0! hover:border-base-content",
                     data.className
                 )}
             />}
-            {data.type === 'checkbox' && <div className={classNames("toggle focus-target toggle-primary toggle-xl border-base-content/30 rounded-full  before:rounded-full text-base-content", {
-                "bg-base-200": !focused,
-                "border-0": focused,
-            })}>
+            {data.type === 'checkbox' && <div className="toggle toggle-xl before:size-6 h-8 border-base-content/30 rounded-full before:rounded-full text-base-content not-in-focus:bg-base-200 focused-child:border-0 ml-1 ring-7 hover:border-base-content focusable focusable-accent">
                 <input
                     ref={inputRef}
                     id={data.name}

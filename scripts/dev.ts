@@ -1,19 +1,28 @@
 // watcher.ts - run this instead of --watch
 import EventEmitter from "events";
-import { watch } from "fs";
 import browser from '../src/bun/browser';
+import { tmpdir } from "os";
+import path from "path";
 const events = new EventEmitter();
+const abortController = new AbortController();
+
+process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222";
+process.env.NODE_ENV = "development";
+
+let retries = 0;
 
 function spawnServer ()
 {
-    return Bun.spawn(["bun", "run", "--inspect=127.0.0.1:9229/fixed-session", '--watch', "./src/bun/index.ts"], {
+    return Bun.spawn(["bun", "run", '--watch', "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
         env: {
             ...Bun.env,
             HEADLESS: "true",
         },
         stdout: "inherit",
         stderr: "inherit",
-        stdin: "inherit",
+        stdin: "pipe",
+        signal: abortController.signal,
+        killSignal: 'SIGUSR1',
         ipc (message, subprocess, handle)
         {
             if (message.type === 'exitapp')
@@ -23,7 +32,15 @@ function spawnServer ()
         },
         onExit (subprocess, exitCode, signalCode)
         {
-            process.exit();
+            if (exitCode === 1 && retries <= 3)
+            {
+                server = spawnServer();
+                retries++;
+            } else
+            {
+                process.exit();
+            }
+
         }
     });
 }
@@ -32,12 +49,18 @@ function spawnBrowser ()
 {
     try
     {
-        return browser(events, !!Bun.env.FORCE_BROWSER);
+
+        return browser(events, Bun.env.FORCE_BROWSER === "true", { configPath: path.join(tmpdir(), 'gameflow') });
     } catch (error)
     {
         console.error(error);
     };
 }
 
-const server = spawnServer();
-spawnBrowser()?.then(e => server.send({ type: 'exitapp' }));
+let server = spawnServer();
+spawnBrowser()?.then(async e =>
+{
+    console.log("Sending exit Signal to server");
+    await server.stdin.write('shutdown\n');
+    await server.stdin.flush();
+});

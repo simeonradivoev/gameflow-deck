@@ -16,7 +16,7 @@ export default function ShortcutPrompt (data: {
       onClick={data.onClick}
       style={{ viewTransitionName: data.id }}
       className={twMerge("xs:text-xs sm:p-1 sm:text-sm",
-        "flex md:gap-2 bg-base-100 text-base-content neutral-content md:pl-2 md:pr-3 md:py-1.5 rounded-full items-center md:text-lg drop-shadow-sm ring-[1px] ring-base-content/10 drop-shadow-black/30",
+        "flex md:gap-2 bg-base-100 text-base-content neutral-content md:pl-2 md:pr-3 md:py-1.5 rounded-full items-center md:text-lg drop-shadow-sm ring-[1px] ring-base-content/10 drop-shadow-black/30 active:text-base-300 active:bg-base-content",
         data.className,
         classNames({
           "hover:bg-base-300 cursor-pointer": !!data.onClick,

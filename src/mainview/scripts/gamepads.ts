@@ -1,11 +1,12 @@
 import { getCurrentFocusKey, navigateByDirection } from "@noriginmedia/norigin-spatial-navigation";
 import { GetFocusedElement } from "./spatialNavigation";
 import { useEffect, useState } from "react";
+import { mobileCheck } from "./utils";
 
 let loopStarted = false;
 let isTouching = false;
 type ActiveControlType = 'keyboard' | 'gamepad' | 'mouse' | 'touch' | undefined;
-let activeControls: ActiveControlType = undefined;
+let activeControls: ActiveControlType = mobileCheck() ? 'touch' : 'mouse';
 let mouseUpdateTimeout: any | undefined = undefined;
 let touchStopTimeout: any | undefined = undefined;
 
@@ -79,7 +80,7 @@ export default function useActiveControl ()
         return () => window.removeEventListener('activecontrolschange', handler);
     });
 
-    return { isMouse: c === 'mouse', isPointer: c === 'mouse' || c === 'touch', control: c };
+    return { isMouse: c === 'mouse', isTouch: c === 'touch', isPointer: c === 'mouse' || c === 'touch', control: c };
 }
 
 const throttleMap = new Map<string, number>();
@@ -97,7 +98,10 @@ function throttleNav (key: string, dir: string, event: Event)
         navigateByDirection(dir, { event });
         throttleMap.set(key, currentDate.getTime());
         throttleAcceleration.set(key, acceleration + 1);
+        return true;
     }
+
+    return false;
 }
 
 function focusControl (control: typeof activeControls)
@@ -214,12 +218,14 @@ function updateStatus ()
             {
                 if (gamepad.axes[0] > deadzone)
                 {
-                    throttleNav('gpa-right', "right", gamepadEvent);
+                    if (throttleNav('gpa-right', "right", gamepadEvent))
+                        focusControl('gamepad');
                     return;
                 }
                 else if (gamepad.axes[0] < -deadzone)
                 {
-                    throttleNav('gpa-left', "left", gamepadEvent);
+                    if (throttleNav('gpa-left', "left", gamepadEvent))
+                        focusControl('gamepad');
                     return;
                 }
                 else if ((throttleMap.has('gpa-left') || throttleMap.has('gpa-left')) && gamepad.axes[0] < cancelDeadzone && gamepad.axes[0] > -cancelDeadzone)
@@ -232,11 +238,13 @@ function updateStatus ()
 
                 if (gamepad.axes[1] > deadzone)
                 {
-                    throttleNav('gpa-down', "down", gamepadEvent);
+                    if (throttleNav('gpa-down', "down", gamepadEvent))
+                        focusControl('gamepad');
                 }
                 else if (gamepad.axes[1] < -deadzone)
                 {
-                    throttleNav('gpa-up', "up", gamepadEvent);
+                    if (throttleNav('gpa-up', "up", gamepadEvent))
+                        focusControl('gamepad');
                 } else
                 {
                     throttleAcceleration.delete('gpa-up');

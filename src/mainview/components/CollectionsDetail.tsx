@@ -1,16 +1,16 @@
 import { AnimatedBackground } from './AnimatedBackground';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { HeaderUI } from './Header';
-import { GameList, GameListFilter } from './GameList';
+import { GameList } from './GameList';
 import { Search, Settings2 } from 'lucide-react';
 import { JSX, Suspense } from 'react';
 import Shortcuts from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
 import { Router } from '..';
-import { PopSource } from '../scripts/spatialNavigation';
+import { PopNavigateSource, PopSource } from '../scripts/spatialNavigation';
 import { GameListFilterType } from '@/shared/constants';
-import { GameCardFocusHandler } from './GameCard';
+import { GameCardFocusHandler } from './CardElement';
 
 export interface CollectionsDetailParams
 {
@@ -22,16 +22,6 @@ export interface CollectionsDetailParams
     footer?: JSX.Element;
 }
 
-function HandleGoBack ()
-{
-    const source = PopSource('game-list');
-    if (source)
-    {
-        console.log("Found source ", source, " to go back to");
-    }
-    Router.navigate({ to: source ?? "/", viewTransition: { types: ['zoom-out'] } });
-}
-
 export function CollectionsDetail (data: CollectionsDetailParams)
 {
     const focusKey = `game-list-${data.id}-${data.filters ? Object.values(data.filters).map(f => String(f)).join(",") : ''}`;
@@ -40,7 +30,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
         preferredChildFocusKey: `${focusKey}-list`,
     });
 
-    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => PopNavigateSource('game-list', '/') }]);
     const { shortcuts } = useShortcutContext();
 
     const handleScroll: GameCardFocusHandler = (id, node, details) =>

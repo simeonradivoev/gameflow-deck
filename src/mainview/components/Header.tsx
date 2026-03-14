@@ -22,10 +22,10 @@ import
 } from "lucide-react";
 import { RoundButton } from "./RoundButton";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "../../clients/romm/@tanstack/react-query.gen";
+import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "@clients/romm/@tanstack/react-query.gen";
 import { RPC_URL } from "../../shared/constants";
 import { JSX, useEffect, useRef } from "react";
-import { SaveSource } from "../scripts/spatialNavigation";
+import { SaveSource, useFocusableDynamic } from "../scripts/spatialNavigation";
 import { systemApi } from "../scripts/clientApi";
 import { Router } from "..";
 
@@ -54,14 +54,14 @@ function HeaderAvatar (data: {
       id={data.id}
       ref={ref}
       onClick={data.onSelect}
+      style={{ viewTransitionName: `header-account-${data.id}` }}
       className={classNames(
-        `avatar indicator ring-base-100 ring-offset-base-100 sm:size-8 md:size-14 rounded-full flex items-center justify-center`,
+        `avatar indicator ring-offset-base-100 sm:size-8 md:size-14 rounded-full flex items-center justify-center`,
         bgColors[data.type ?? "none"],
         "text-base-content cursor-pointer transition-all drop-shadow-md",
-        "hover:ring-primary hover:ring-7",
+        "hover:ring-primary hover:ring-7 focusable focusable-primary focused:ring-offset-base-100",
         {
           "ring-5 hover:ring-offset-5": data.active,
-          "sm:ring-4 md:ring-7 ring-primary ring-offset-base-100": focused,
           "ring-offset-5": focused && data.active,
         },
         data.className,
@@ -276,7 +276,7 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElements?: JSX.Element[] | JSX.Element; })
 {
   return <div className="flex items-center sm:gap-1 md:gap-2 text drop-shadow-sm">
-    <div className="flex sm:gap-2 md:gap-5 items-center">
+    <div className="flex sm:gap-2 md:gap-5 items-center" style={{ viewTransitionName: 'status-bar-icons' }}>
       <ClockStatus />
       <WiFiStatus />
       <BluetoothStatus />
@@ -289,22 +289,29 @@ export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElement
         key={b.id}
         className="header-icon sm:size-10 md:size-16"
         id={b.id}
-        icon={b.icon}
         external={b.external}
-        action={b.action}
-      />)}
+        style={{ viewTransitionName: `header-button-${b.id}` }}
+        onAction={b.action}
+      >{b.icon}</RoundButton>)}
     </div>
   </div>;
 }
 
-export function HeaderUI (data: { buttons?: HeaderButton[]; accounts?: HeaderAccount[]; buttonElements?: JSX.Element[] | JSX.Element; title?: JSX.Element; })
+export function HeaderUI (data: {
+  buttons?: HeaderButton[];
+  accounts?: HeaderAccount[];
+  buttonElements?: JSX.Element[] | JSX.Element;
+  title?: JSX.Element;
+  preferredChildFocusKey?: string;
+})
 {
-  const { ref, focusKey } = useFocusable({ focusKey: "header-elements" });
+  const { ref, focusKey } = useFocusable({ focusKey: "header-elements", preferredChildFocusKey: data.preferredChildFocusKey });
   return (
     <FocusContext.Provider value={focusKey}>
       <header
         ref={ref}
-        className={`flex items-center justify-between text-base-content`}
+        className="flex items-center justify-between text-base-content"
+        style={{ viewTimelineName: 'header' }}
       >
         <HeaderAccounts accounts={data.accounts} />
         {data.title}

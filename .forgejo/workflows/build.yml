@@ -4,6 +4,8 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+env:
+  TWITCH_CLIENT_ID: ${{ env.TWITCH_CLIENT_ID }}
 
 jobs:
   build:
@@ -54,6 +56,8 @@ jobs:
 
       - name: Build Canary
         run: bun run package:Linux
+        env:
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3

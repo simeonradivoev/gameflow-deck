@@ -9,7 +9,7 @@
             "internalConsoleOptions": "neverOpen",
             "request": "attach",
             "name": "Attach Bun",
-            "url": "ws://127.0.0.1:9229/fixed-session",
+            "url": "ws://127.0.0.1:9228/fixed-session",
             "localRoot": "${workspaceFolder}",
             "stopOnEntry": false,
         },

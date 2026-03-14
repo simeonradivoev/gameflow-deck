@@ -51,6 +51,7 @@ function markDirtyThrottled ()
 
 window.addEventListener('focuschanged', markDirtyThrottled);
 import.meta.hot?.dispose(() => window.removeEventListener('focuschanged', markDirtyThrottled));
+import.meta.hot?.dispose(() => shortcutMap.clear());
 
 export function useShortcutContext ()
 {
@@ -81,6 +82,12 @@ export function useShortcutContext ()
         const handleGamepadButtonDown = (e: Event) =>
         {
             const event = e as GamepadButtonEvent;
+            if (event.button == GamePadButtonCode.B && document.fullscreenElement)
+            {
+                document.exitFullscreen();
+                return;
+            }
+
             if (shortcuts.has(event.button))
             {
                 shortcuts.get(event.button)?.action?.(event);
@@ -166,6 +173,7 @@ export function useShortcuts (focusKey: string, build: () => Shortcut[], ...deps
         return () =>
         {
             shortcutMap.delete(focusKey);
+            markDirtyThrottled();
         };
     }, [...deps, focusKey]);
 

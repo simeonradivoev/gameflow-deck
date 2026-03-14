@@ -1,13 +1,19 @@
-import { SERVER_URL } from "../../shared/constants";
+import { SERVER_URL } from "@shared/constants";
 import os from 'node:os';
 import path from 'node:path';
 import { getBrowserPath } from "./get-browser";
 import { isSteamDeckGameMode } from "../utils";
-import { config } from "../api/app";
 import { ensureDir } from 'fs-extra';
 import { host } from "./host";
 
-export async function BuildParams (data: { configPath: string; })
+export interface BrowserParams
+{
+    configPath: string;
+    windowPosition?: { x: number, y: number; };
+    windowSize?: { width?: number, height?: number; };
+}
+
+export async function BuildParams (data: BrowserParams)
 {
     const validBrowser = await getBrowserPath({
         browserOrder: Bun.env.BROWSER_PRIORITY ? Bun.env.BROWSER_PRIORITY.split(',') as any : ['chrome', 'chromium']
@@ -52,9 +58,9 @@ export async function BuildParams (data: { configPath: string; })
         if (isSteamDeckGameMode())
         {
             args.push('--kiosk');
-        } else
+        } else if (data.windowSize)
         {
-            args.push(`--window-size=${config.get('windowSize.width')},${config.get('windowSize.height')}`);
+            args.push(`--window-size=${data.windowSize.width},${data.windowSize.height}`);
         }
 
         args.push('--password-store=basic');
@@ -71,9 +77,9 @@ export async function BuildParams (data: { configPath: string; })
             args.push('--remote-debugging-port=9222');
         }
 
-        if (config.has('windowPosition'))
+        if (data.windowPosition)
         {
-            args.push(`--window-position=${config.get('windowPosition.x')},${config.get('windowPosition.y')}`);
+            args.push(`--window-position=${data.windowPosition.x},${data.windowPosition.y}`);
         }
 
         if (isEdge)

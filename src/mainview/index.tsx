@@ -15,6 +15,8 @@ import "./scripts/gamepads";
 import "./scripts/windowEvents";
 import { client as rommClient } from "../clients/romm/client.gen";
 import "./scripts/spatialNavigation";
+import NotFound from "./components/NotFound";
+import Error from "./components/Error";
 
 const hashHistory = createHashHistory({});
 
@@ -38,15 +40,9 @@ export const Router = createRouter({
   defaultPreload: "intent",
   context: { queryClient },
   scrollRestoration: false,
-  defaultNotFoundComponent: () =>
-  {
-    return (
-      <div>
-        <p> {window.location.href} Not found!</p>
-        <Link to="/">Go home</Link>
-      </div>
-    );
-  },
+  defaultNotFoundComponent: NotFound,
+  defaultPendingMs: 300,
+  defaultErrorComponent: Error
 });
 
 // Register things for typesafety

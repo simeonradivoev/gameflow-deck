@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
@@ -9,7 +9,7 @@ import os from 'node:os';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { host } from "./src/bun/utils/host";
 
-export default defineConfig(() =>
+export default defineConfig(({ command }) =>
 {
   const production = process.env.NODE_ENV === 'production';
   console.log(`Building Vite in ${process.env.NODE_ENV}`);
@@ -28,7 +28,7 @@ export default defineConfig(() =>
         target: 'react',
         routesDirectory: "./routes/",
         generatedRouteTree: "./gen/routeTree.gen.ts",
-        autoCodeSplitting: true,
+        autoCodeSplitting: command === 'build',
         routeFileIgnorePrefix: "-",
         quoteStyle: "single"
       }),
@@ -51,7 +51,8 @@ export default defineConfig(() =>
       rollupOptions: {
         input: {
           main: 'src/mainview/index.html',
-          login: 'src/mainview/auth/qr/index.html'
+          login: 'src/mainview/auth/qr/index.html',
+          emulatorjs: 'src/mainview/emulatorjs/index.html',
         },
         output: {
           manualChunks: (id
@@ -79,7 +80,15 @@ export default defineConfig(() =>
       port: 5173,
       strictPort: true,
       allowedHosts: true,
+      cors: true,
       host,
+      watch: {
+        usePolling: true
+      },
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp'
+      }
     },
     resolve: {
       alias: {
@@ -87,7 +96,8 @@ export default defineConfig(() =>
       }
     },
     define: {
-      __HOST__: JSON.stringify(host)
+      __HOST__: JSON.stringify(host),
+      __PUBLIC__: process.env.PUBLIC_ACCESS ? true : false
     }
   };
 });

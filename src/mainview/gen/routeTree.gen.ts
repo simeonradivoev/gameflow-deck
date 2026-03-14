@@ -17,9 +17,15 @@ import { Route as SettingsDirectoriesRouteImport } from './../routes/settings/di
 import { Route as SettingsAccountsRouteImport } from './../routes/settings/accounts'
 import { Route as SettingsAboutRouteImport } from './../routes/settings/about'
 import { Route as CollectionIdRouteImport } from './../routes/collection.$id'
+import { Route as StoreTabRouteRouteImport } from './../routes/store/tab/route'
+import { Route as StoreTabIndexRouteImport } from './../routes/store/tab/index'
+import { Route as StoreTabGamesRouteImport } from './../routes/store/tab/games'
+import { Route as StoreTabEmulatorsRouteImport } from './../routes/store/tab/emulators'
 import { Route as PlatformSourceIdRouteImport } from './../routes/platform.$source.$id'
 import { Route as LauncherSourceIdRouteImport } from './../routes/launcher.$source.$id'
 import { Route as GameSourceIdRouteImport } from './../routes/game/$source.$id'
+import { Route as EmbeddedSourceIdRouteImport } from './../routes/embedded.$source.$id'
+import { Route as StoreDetailsEmulatorIdRouteImport } from './../routes/store/details.emulator.$id'
 
 const SettingsRouteRoute = SettingsRouteRouteImport.update({
   id: '/settings',
@@ -61,6 +67,26 @@ const CollectionIdRoute = CollectionIdRouteImport.update({
   path: '/collection/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreTabRouteRoute = StoreTabRouteRouteImport.update({
+  id: '/store/tab',
+  path: '/store/tab',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreTabIndexRoute = StoreTabIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoreTabRouteRoute,
+} as any)
+const StoreTabGamesRoute = StoreTabGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => StoreTabRouteRoute,
+} as any)
+const StoreTabEmulatorsRoute = StoreTabEmulatorsRouteImport.update({
+  id: '/emulators',
+  path: '/emulators',
+  getParentRoute: () => StoreTabRouteRoute,
+} as any)
 const PlatformSourceIdRoute = PlatformSourceIdRouteImport.update({
   id: '/platform/$source/$id',
   path: '/platform/$source/$id',
@@ -76,19 +102,35 @@ const GameSourceIdRoute = GameSourceIdRouteImport.update({
   path: '/game/$source/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmbeddedSourceIdRoute = EmbeddedSourceIdRouteImport.update({
+  id: '/embedded/$source/$id',
+  path: '/embedded/$source/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreDetailsEmulatorIdRoute = StoreDetailsEmulatorIdRouteImport.update({
+  id: '/store/details/emulator/$id',
+  path: '/store/details/emulator/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/store/tab': typeof StoreTabRouteRouteWithChildren
   '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
+  '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
+  '/store/tab/emulators': typeof StoreTabEmulatorsRoute
+  '/store/tab/games': typeof StoreTabGamesRoute
+  '/store/tab/': typeof StoreTabIndexRoute
+  '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,38 +141,55 @@ export interface FileRoutesByTo {
   '/settings/directories': typeof SettingsDirectoriesRoute
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
+  '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
+  '/store/tab/emulators': typeof StoreTabEmulatorsRoute
+  '/store/tab/games': typeof StoreTabGamesRoute
+  '/store/tab': typeof StoreTabIndexRoute
+  '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/store/tab': typeof StoreTabRouteRouteWithChildren
   '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
+  '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
+  '/store/tab/emulators': typeof StoreTabEmulatorsRoute
+  '/store/tab/games': typeof StoreTabGamesRoute
+  '/store/tab/': typeof StoreTabIndexRoute
+  '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/settings'
+    | '/store/tab'
     | '/collection/$id'
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
     | '/settings/emulators'
     | '/settings/interface'
+    | '/embedded/$source/$id'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
+    | '/store/tab/emulators'
+    | '/store/tab/games'
+    | '/store/tab/'
+    | '/store/details/emulator/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -141,31 +200,45 @@ export interface FileRouteTypes {
     | '/settings/directories'
     | '/settings/emulators'
     | '/settings/interface'
+    | '/embedded/$source/$id'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
+    | '/store/tab/emulators'
+    | '/store/tab/games'
+    | '/store/tab'
+    | '/store/details/emulator/$id'
   id:
     | '__root__'
     | '/'
     | '/settings'
+    | '/store/tab'
     | '/collection/$id'
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
     | '/settings/emulators'
     | '/settings/interface'
+    | '/embedded/$source/$id'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
+    | '/store/tab/emulators'
+    | '/store/tab/games'
+    | '/store/tab/'
+    | '/store/details/emulator/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
+  StoreTabRouteRoute: typeof StoreTabRouteRouteWithChildren
   CollectionIdRoute: typeof CollectionIdRoute
+  EmbeddedSourceIdRoute: typeof EmbeddedSourceIdRoute
   GameSourceIdRoute: typeof GameSourceIdRoute
   LauncherSourceIdRoute: typeof LauncherSourceIdRoute
   PlatformSourceIdRoute: typeof PlatformSourceIdRoute
+  StoreDetailsEmulatorIdRoute: typeof StoreDetailsEmulatorIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -226,6 +299,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/store/tab': {
+      id: '/store/tab'
+      path: '/store/tab'
+      fullPath: '/store/tab'
+      preLoaderRoute: typeof StoreTabRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/tab/': {
+      id: '/store/tab/'
+      path: '/'
+      fullPath: '/store/tab/'
+      preLoaderRoute: typeof StoreTabIndexRouteImport
+      parentRoute: typeof StoreTabRouteRoute
+    }
+    '/store/tab/games': {
+      id: '/store/tab/games'
+      path: '/games'
+      fullPath: '/store/tab/games'
+      preLoaderRoute: typeof StoreTabGamesRouteImport
+      parentRoute: typeof StoreTabRouteRoute
+    }
+    '/store/tab/emulators': {
+      id: '/store/tab/emulators'
+      path: '/emulators'
+      fullPath: '/store/tab/emulators'
+      preLoaderRoute: typeof StoreTabEmulatorsRouteImport
+      parentRoute: typeof StoreTabRouteRoute
+    }
     '/platform/$source/$id': {
       id: '/platform/$source/$id'
       path: '/platform/$source/$id'
@@ -245,6 +346,20 @@ declare module '@tanstack/react-router' {
       path: '/game/$source/$id'
       fullPath: '/game/$source/$id'
       preLoaderRoute: typeof GameSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/embedded/$source/$id': {
+      id: '/embedded/$source/$id'
+      path: '/embedded/$source/$id'
+      fullPath: '/embedded/$source/$id'
+      preLoaderRoute: typeof EmbeddedSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/details/emulator/$id': {
+      id: '/store/details/emulator/$id'
+      path: '/store/details/emulator/$id'
+      fullPath: '/store/details/emulator/$id'
+      preLoaderRoute: typeof StoreDetailsEmulatorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -270,13 +385,32 @@ const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
   SettingsRouteRouteChildren,
 )
 
+interface StoreTabRouteRouteChildren {
+  StoreTabEmulatorsRoute: typeof StoreTabEmulatorsRoute
+  StoreTabGamesRoute: typeof StoreTabGamesRoute
+  StoreTabIndexRoute: typeof StoreTabIndexRoute
+}
+
+const StoreTabRouteRouteChildren: StoreTabRouteRouteChildren = {
+  StoreTabEmulatorsRoute: StoreTabEmulatorsRoute,
+  StoreTabGamesRoute: StoreTabGamesRoute,
+  StoreTabIndexRoute: StoreTabIndexRoute,
+}
+
+const StoreTabRouteRouteWithChildren = StoreTabRouteRoute._addFileChildren(
+  StoreTabRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
+  StoreTabRouteRoute: StoreTabRouteRouteWithChildren,
   CollectionIdRoute: CollectionIdRoute,
+  EmbeddedSourceIdRoute: EmbeddedSourceIdRoute,
   GameSourceIdRoute: GameSourceIdRoute,
   LauncherSourceIdRoute: LauncherSourceIdRoute,
   PlatformSourceIdRoute: PlatformSourceIdRoute,
+  StoreDetailsEmulatorIdRoute: StoreDetailsEmulatorIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

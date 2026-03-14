@@ -29,6 +29,10 @@ export const systemMappings = sqliteTable('systemMappings', {
     system: text().notNull().references(() => systems.name)
 });
 
+export const systemMappingsRelations = relations(systemMappings, ({ one }) => ({
+    system: one(systems, { fields: [systemMappings.system], references: [systems.name] })
+}));
+
 export const commands = sqliteTable('commands', {
     system: text().references(() => systems.name, { onDelete: 'cascade', onUpdate: 'cascade' }),
     label: text(),
@@ -36,7 +40,7 @@ export const commands = sqliteTable('commands', {
 });
 
 export const commandsRelations = relations(commands, ({ one }) => ({
-    author: one(systems, {
+    system: one(systems, {
         fields: [commands.system],
         references: [systems.name],
     }),

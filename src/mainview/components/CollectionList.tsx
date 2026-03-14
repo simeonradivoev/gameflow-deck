@@ -4,13 +4,15 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CardList, GameMetaExtra } from "./CardList";
 import { SaveSource } from "../scripts/spatialNavigation";
-import { GameCardFocusHandler } from "./GameCard";
+import { GameCardFocusHandler } from "./CardElement";
+import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 
 export default function CollectionList (data: {
     id: string,
     setBackground: (url: string) => void;
     className?: string;
     onFocus?: GameCardFocusHandler;
+    onSelect?: (id: string) => void;
 })
 {
     const navigate = useNavigate();
@@ -19,6 +21,12 @@ export default function CollectionList (data: {
         refetchOnWindowFocus: false,
         staleTime: DefaultRommStaleTime
     });
+
+    const handleDefaultSelect = (id: string) =>
+    {
+        SaveSource('game-list', { search: { focus: getCurrentFocusKey() } });
+        navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
+    };
 
     return (
         <CardList
@@ -38,11 +46,7 @@ export default function CollectionList (data: {
                         </span>
                     ],
                 } satisfies GameMetaExtra))}
-            onSelectGame={(id) =>
-            {
-                SaveSource('game-list');
-                navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
-            }}
+            onSelectGame={data.onSelect ? data.onSelect : handleDefaultSelect}
             onGameFocus={(id, node, details) =>
             {
                 data.setBackground(

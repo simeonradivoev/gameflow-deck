@@ -1,11 +1,10 @@
 import
 {
   FocusContext,
-  FocusDetails,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { GameMeta } from "../../shared/constants";
-import GameCard, { GameCardFocusHandler, GameCardParams } from "./GameCard";
+import CardElement, { GameCardFocusHandler, GameCardParams } from "./CardElement";
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
@@ -47,7 +46,7 @@ export function CardList (data: {
     useShortcuts(g.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: handleAction }]);
 
     return (
-      <GameCard
+      <CardElement
         key={g.id}
         type={data.type}
         index={i}
@@ -74,9 +73,9 @@ export function CardList (data: {
       id={`card-list-${data.id}`}
       ref={ref}
       save-child-focus="session"
-      className={twMerge("items-center justify-center-safe landscape:h-(--game-card-height) ",
-        data.grid ? "grid h-fit sm:gap-2 md:gap-5 auto-rows-(--game-card-height) grid-cols-[repeat(auto-fill,var(--game-card-width))]" :
-          'landscape:flex sm:gap-2 md:gap-6 portrait:grid portrait:auto-rows-(--game-card-height) portrait:grid-cols-[repeat(auto-fill,var(--game-card-width))]',
+      className={twMerge("items-center justify-center-safe h-full",
+        data.grid ? "grid h-fit sm:gap-2 md:gap-5 auto-rows-min grid-cols-[repeat(auto-fill,var(--game-card-width))]" :
+          'landscape:grid landscape:grid-flow-col landscape:auto-cols-min auto-rows-[1fr] sm:gap-2 md:gap-4 portrait:grid portrait:auto-rows-min portrait:grid-cols-[repeat(auto-fill,var(--game-card-width))] *:portrait:aspect-8/10 *:landscape:aspect-8/12 sm:landscape:max-h-84 md:max-h-128!',
         data.className
       )}
       onKeyDown={(e) =>

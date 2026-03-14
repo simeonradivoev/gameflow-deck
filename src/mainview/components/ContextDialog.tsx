@@ -1,14 +1,10 @@
-import { FocusContext, FocusDetails, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { FocusContext, FocusDetails, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { createContext, JSX, useContext, useEffect } from "react";
+import { JSX, useContext, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
 import { X } from "lucide-react";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts";
-
-const ContextDialogContext = createContext({} as {
-    close: () => void,
-    id: string;
-});
+import { ContextDialogContext } from "../scripts/contexts";
 
 export function ContextList (data: { options?: DialogEntry[]; className?: string; showCloseButton?: boolean; })
 {
@@ -35,12 +31,12 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
         trackChildren: typeof data.content !== 'string'
     });
     const colors = {
-        primary: classNames("hover:bg-primary/40", { "bg-primary text-primary-content": focused || hasFocusedChild }),
-        secondary: classNames("hover:bg-secondary/40", { "bg-secondary text-secondary-content": focused || hasFocusedChild }),
-        accent: classNames("hover:bg-accent/40", { "bg-accent text-accent-content": focused || hasFocusedChild }),
-        info: classNames("hover:bg-info/40", { "bg-info text-info-content": focused || hasFocusedChild }),
-        warning: classNames("hover:bg-warning/40", { "bg-warning text-warning-content": focused || hasFocusedChild }),
-        error: classNames("hover:bg-error/40", { "bg-error text-error-content": focused || hasFocusedChild })
+        primary: "active:bg-primary control-pointer:hover:bg-primary focused:bg-primary focused:text-primary-content in-focused:bg-primary in-focused:text-primary-content",
+        secondary: "active:bg-secondary control-pointer:hover:bg-secondary focused:bg-secondary focused:text-secondary-content in-focused:bg-secondary in-focused:text-secondary-content",
+        accent: "active:bg-accent control-pointer:hover:bg-accent focused:bg-accent focused:text-accent-content in-focused:bg-accent in-focused:text-accent-content",
+        info: "active:bg-info control-pointer:hover:bg-info focused:bg-info focused:text-info-content in-focused:bg-info in-focused:text-info-content",
+        warning: "active:bg-warning control-pointer:hover:bg-warning focused:bg-warning focused:text-warning-content in-focused:bg-warning in-focused:text-warning-content",
+        error: "active:bg-error control-pointer:hover:bg-error focused:bg-error focused:text-error-content in-focused:bg-error in-focused:text-error-content"
     };
     if (data.shortcuts)
     {
@@ -51,8 +47,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
         className={
             twMerge("flex cursor-pointer sm:text-sm md:text-base")}>
         <FocusContext value={focusKey}>
-            <div className={twMerge("flex w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl transition-all gap-2",
-                classNames({ "font-semibold": focused || hasFocusedChild }),
+            <div className={twMerge("flex w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl transition-all gap-2  active:animate-scale in-focused:font-semibold",
                 data.className,
                 colors[data.type])}>
                 {data.icon}
@@ -105,7 +100,7 @@ export function ContextDialog (data: {
     }] : [], [data.open]);
 
     return <dialog ref={ref} open={data.open} closedby="any" className={
-        twMerge("absolute modal cursor-pointer bg-base-300/80 backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
+        twMerge("fixed modal cursor-pointer bg-base-300/80 backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
             classNames({ "opacity-0": !data.open }))
     }
         onClick={() =>

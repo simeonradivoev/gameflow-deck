@@ -110,7 +110,7 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
     };
 
     return (
-        <OptionSpace id={data.id} className="gap-2" label={<>{data.label}{changed && <Pen />}</>}>
+        <OptionSpace id={`${data.id}-space`} className="gap-2" label={<>{data.label}{changed && <Pen />}</>}>
             <OptionInput
                 icon={data.icon}
                 name={`${data.id}-input`}

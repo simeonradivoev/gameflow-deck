@@ -7,7 +7,7 @@ import
 {
   Outlet,
   createFileRoute,
-  useMatchRoute,
+  useMatch,
   useNavigate,
 } from "@tanstack/react-router";
 import { ViewTransitionOptions } from "@tanstack/router-core";
@@ -29,7 +29,6 @@ import { PopSource } from "../../scripts/spatialNavigation";
 import { Router } from "../..";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Shortcuts from "@/mainview/components/Shortcuts";
-import useActiveControl from "@/mainview/scripts/gamepads";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
@@ -49,10 +48,13 @@ function MenuItem (data: {
   label: string;
 })
 {
-  const matchRoute = useMatchRoute();
   const navigate = useNavigate();
-  const acitve = matchRoute({ to: data.route });
-  const handleNonFocusSelect = () => navigate({ to: data.return ? PopSource('settings') ?? data.route : data.route, viewTransition: data.viewTransition });
+  const acitve = !!useMatch({ from: data.route as any, shouldThrow: false });;
+  const handleNonFocusSelect = () =>
+  {
+    const { to, search } = PopSource('settings');
+    navigate({ to: data.return ? to ?? data.route : data.route, viewTransition: data.viewTransition, search: data.return ? search : undefined });
+  };
   const { ref, focusSelf, focused } = useFocusable({
     focusKey: `menu-item-${data.route}`,
     forceFocus: !!acitve,
@@ -69,29 +71,26 @@ function MenuItem (data: {
         ? handleNonFocusSelect
         : undefined,
   });
-  const { isPointer } = useActiveControl();
+
   return (
     <li
       ref={ref}
       key={data.route}
       onClick={data.focusSelect ? focusSelf : handleNonFocusSelect}
       onFocus={focusSelf}
-      className={data.className}
+      className={twMerge("flex group-focusable cursor-pointer", data.className)}
     >
       <div
+        aria-selected={!!acitve}
         className={twMerge(
-          "group rounded-full p-3 md:pl-5 text-base-content/80",
+          "rounded-full p-3 md:pl-5 text-base-content/80 focusable focusable-accent in-focused:font-semibold aria-selected:bg-primary aria-selected:text-primary-content w-full hover:bg-primary/40 active:bg-base-content active:text-base-100",
           classNames({
-            "bg-primary text-primary-content": acitve,
-            "font-semibold sm:ring-4 md:ring-7 ring-accent": focused && !isPointer,
-            "bg-secondary text-secondary-content ring-primary": data.return && focused,
+            "in-focused:bg-secondary in-focused:text-secondary-content in-focused:ring-primary": data.return,
           }),
           data.linkClassName,
         )}
       >
-        <div className={twMerge("flex gap-2 items-center transition-all", classNames({
-          "scale-110": focused || acitve
-        }))}>
+        <div className="flex gap-2 items-center transition-all in-focused:scale-110">
           {data.icon}
           <div className="sm:hidden md:inline">{data.label}</div>
         </div>
@@ -110,7 +109,7 @@ function SettingsMenu (data: {})
 
   return <ul
     ref={ref}
-    className="menu portrait:menu-horizontal md:menu-xl landscape:flex-nowrap bg-base-200 sm:p-2 md:p-4 sm:portrait:gap-0 sm:landscape:gap-0 md:landscape:w-128 md:gap-2! rounded-4xl overflow-auto portrait:w-full"
+    className="flex flex-col portrait:flex-row md:text-2xl landscape:flex-nowrap bg-base-200 sm:p-2 md:p-4 sm:portrait:gap-0 sm:landscape:gap-0 md:landscape:w-128 md:gap-2! rounded-4xl overflow-auto portrait:w-full"
   >
     <FocusContext value={focusKey}>
       <MenuItem
@@ -158,12 +157,12 @@ function SettingsMenu (data: {})
 function HandleGoBack ()
 {
 
-  const source = PopSource('settings');
-  if (source)
+  const { to, search } = PopSource('settings');
+  if (to)
   {
-    console.log("Found source ", source, " to go back to");
+    console.log("Found source ", to, " to go back to");
   }
-  Router.navigate({ to: source ?? "/", viewTransition: { types: ['zoom-out'] } });
+  Router.navigate({ to: to ?? "/", viewTransition: { types: ['zoom-out'] }, search });
 
 }
 
@@ -184,7 +183,7 @@ export function SettingsUI ()
 
   return (
     <FocusContext.Provider value={focusKey}>
-      <div ref={ref} className="bg-base-100 flex flex-col w-full h-full md:p-4">
+      <div ref={ref} className="bg-base-100 flex flex-col w-full h-full sm:p-2 md:p-4">
         <div className="flex landscape:flex-row portrait:flex-col-reverse grow overflow-hidden">
           <div id="Menu" className="flex flex-row landscape:h-full md:landscape:w-56">
             <SettingsMenu />

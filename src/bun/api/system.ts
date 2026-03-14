@@ -2,7 +2,7 @@ import Elysia from "elysia";
 import open from 'open';
 import z from "zod";
 import os from 'node:os';
-import { config, events } from "./app";
+import { cachePath, config, events } from "./app";
 import { isSteamDeck, openExternal } from "../utils";
 import fs from 'node:fs/promises';
 import buildNotificationsStream from "./notifications";
@@ -11,6 +11,7 @@ import { DirSchema, DownloadsDrive } from "@/shared/constants";
 import { getDevices, getDevicesCurated } from "./drives";
 import getFolderSize from "get-folder-size";
 import si from 'systeminformation';
+import { getStoreFolder } from "./store/store";
 
 export const system = new Elysia({ prefix: '/api/system' })
     .post('/show_keyboard', async ({ body: { XPosition, YPosition, Width, Height } }) =>
@@ -48,7 +49,9 @@ export const system = new Elysia({ prefix: '/api/system' })
             hostname: os.hostname(),
             steamDeck: process.env.SteamDeck,
             machine: os.machine(),
-            source
+            source,
+            cacheSize: (await fs.stat(cachePath)).size,
+            storeSize: (await getFolderSize(getStoreFolder())).size
         };
     })
     .get('/notifications', ({ set }) =>

@@ -4,11 +4,14 @@ import { JSX } from 'react';
 import * as z from 'zod';
 
 export const LOGIN_PORT = 5196;
+export const OAUTH_REDIRECT_PORT = 5194;
 export const SERVER_PORT = 5173;
+export const EMULATORJS_PORT = 5176;
 export const SERVER_URL = (host: string) => `http://${host}:${SERVER_PORT}`;
 export const WINDOW_PORT = 4656;
 export const RPC_PORT = 8787;
 export const RPC_URL = (host: string) => `http://${host}:${RPC_PORT}`;
+export const EMULATORJS_URL = (host: string) => `http://${host}:${EMULATORJS_PORT}`;
 export const SOCKETS_URL = (host: string) => `ws://${host}:${RPC_PORT}`;
 
 export const DefaultRommStaleTime = 60 * 1000; // A minute
@@ -32,6 +35,7 @@ export const SettingsSchema = z.object({
 
 export const LocalSettingsSchema = z.object({
     backgroundBlur: z.stringbool().or(z.boolean()).default(true),
+    backgroundAnimation: z.stringbool().or(z.boolean()).default(true),
     theme: z.enum(['dark', 'light', 'auto']).default('auto')
 });
 
@@ -39,7 +43,10 @@ export const GameListFilterSchema = z.object({
     platform_source: z.string().optional(),
     platform_slug: z.string().optional(),
     platform_id: z.coerce.number().optional(),
-    collection_id: z.coerce.number().optional()
+    collection_id: z.coerce.number().optional(),
+    limit: z.coerce.number().optional(),
+    offset: z.coerce.number().optional(),
+    source: z.string().optional(),
 });
 
 export type GameListFilterType = z.infer<typeof GameListFilterSchema>;
@@ -51,7 +58,7 @@ export const CustomEmulatorSchema = z.record(z.string(), z.string());
 
 export interface FrontEndId
 {
-    id: number;
+    id: string;
     source: string;
 }
 
@@ -74,7 +81,7 @@ export interface FrontEndGameType
     path_platform_cover: string | null;
     id: FrontEndId,
     source: string | null,
-    source_id: number | null,
+    source_id: string | null,
     path_fs: string | null,
     path_cover: string | null,
     last_played: Date | null,
@@ -82,8 +89,65 @@ export interface FrontEndGameType
     slug: string | null,
     name: string | null,
     platform_id: number | null,
+    platform_slug: string | null,
     paths_screenshots: string[];
 };
+
+export const GithubManifestSchema = z.object({
+    sha: z.hash('sha1'),
+    url: z.url(),
+    tree: z.array(z.object({
+        path: z.string(),
+        mode: z.string(),
+        type: z.enum(['blob', 'tree']),
+        sha: z.hash('sha1'),
+        url: z.url()
+    }))
+});
+
+export const StoreGameSchema = z.object({
+    system: z.string(),
+    title: z.string(),
+    url: z.string().optional(),
+    file: z.url(),
+    description: z.string(),
+    pictures: z.object({
+        screenshots: z.array(z.string()),
+        titlescreens: z.array(z.string())
+    }),
+    tags: z.array(z.string())
+});
+
+export const EmulatorPackageSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    homepage: z.url(),
+    logo: z.url(),
+    type: z.enum(['emulator']),
+    os: z.array(z.enum(['darwin', 'linux', 'win32', 'android'])),
+    keywords: z.array(z.string()).optional(),
+    downloads: z.record(z.string(), z.object({ type: z.string(), url: z.url() })).optional(),
+    systems: z.array(z.string())
+});
+
+export type EmulatorPackageType = z.infer<typeof EmulatorPackageSchema>;
+export type StoreGameType = z.infer<typeof StoreGameSchema>;
+
+export interface FrontEndEmulator extends Omit<EmulatorPackageType, 'systems'>
+{
+    systems: { id: string, name: string, icon: string; }[];
+    gameCount: number;
+    exists: boolean;
+}
+
+export interface FrontEndEmulatorDetailed extends FrontEndEmulator
+{
+    screenshots: string[];
+    status: {
+        source?: string;
+        location?: string;
+    };
+}
 
 export interface FrontEndGameTypeDetailed extends FrontEndGameType
 {
@@ -128,7 +192,16 @@ export interface Notification
 {
     title?: string;
     message: string;
-    type: 'success' | 'error';
+    type: 'success' | 'error' | 'info';
+}
+
+export interface CommandEntry
+{
+    id: string | number;
+    label?: string;
+    command: string;
+    valid: boolean;
+    emulator?: string;
 }
 
 export type SettingsType = z.infer<typeof SettingsSchema>;
@@ -138,6 +211,7 @@ export interface GameInstallProgress
     progress?: number;
     status?: GameStatusType;
     details?: string;
+    commands?: CommandEntry[];
     error?: any;
 }
 

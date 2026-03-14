@@ -1,4 +1,4 @@
-import { SERVER_URL } from "@/shared/constants";
+import { SERVER_URL } from "@shared/constants";
 import { host } from "../utils/host";
 
 export default function (webview: { navigate: (url: string) => void; run: () => void; destroy: () => void; })
@@ -14,4 +14,5 @@ export default function (webview: { navigate: (url: string) => void; run: () => 
     };
     webview.navigate(SERVER_URL(host));
     webview.run();
+    postMessage({ data: 'destroyed' });
 }

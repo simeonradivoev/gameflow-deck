@@ -3,7 +3,7 @@ import { integer, text, sqliteTable, blob } from "drizzle-orm/sqlite-core";
 
 export const games = sqliteTable('games', {
     id: integer('id').primaryKey({ autoIncrement: true }),
-    source_id: integer('source_id').unique(),
+    source_id: text('source_id'),
     source: text("source"),
     igdb_id: integer("igdb_id").unique(),
     name: text("name"),

@@ -1,32 +1,42 @@
 import { killBrowser, spawnBrowser } from './utils/browser-spawner';
-import { BuildParams } from './utils/browser-params';
+import { BrowserParams, BuildParams } from './utils/browser-params';
 import os from 'node:os';
 import { EventEmitter } from 'node:stream';
-import { config } from './api/app';
-import { dirname } from 'node:path';
 
-export default async function init (events: EventEmitter, forceBrowser: boolean)
+export default async function init (events: EventEmitter, forceBrowser: boolean, params: BrowserParams)
 {
     if (forceBrowser)
     {
-        await runBrowser(events);
+        await runBrowser(events, params);
     } else
     {
         try
         {
-            await runWebview(events);
+            await runWebview(events, params);
         } catch (error)
         {
-            await runBrowser(events);
+            await runBrowser(events, params);
         }
     }
 }
 
-async function runWebview (events: EventEmitter)
+async function runWebview (events: EventEmitter, params: BrowserParams)
 {
-    const webviewWorker = new Worker(new URL(`./webview/${os.platform()}`, import.meta.url).href, {
+    const webviewPath = process.env.IS_BINARY ? `./webview/${os.platform()}` : new URL(`./webview/${os.platform()}`, import.meta.url).href;
+    console.log("Launching Webview Worker at: ", webviewPath);
+    const config: Record<string, string> = {};
+    if (params.windowSize)
+    {
+        config.WINDOW_WIDTH = String(params.windowSize?.width);
+        config.WINDOW_HEIGHT = String(params.windowSize?.height);
+    }
+    const webviewWorker = new Worker(webviewPath, {
         smol: true,
-        ref: false
+        ref: false,
+        env: {
+            ...config,
+            ...process.env as any
+        }
     });
 
     return new Promise((resolve, reject) =>
@@ -39,8 +49,9 @@ async function runWebview (events: EventEmitter)
 
         webviewWorker.addEventListener('message', (e) =>
         {
-            if (e.data === 'destroyed')
+            if (e.data.data === 'destroyed')
             {
+                console.log("Webview Destroyed");
                 resolve(true);
             }
         });
@@ -48,14 +59,15 @@ async function runWebview (events: EventEmitter)
         events.on('exitapp', () =>
         {
             resolve(true);
+            console.log("Terminating Webview Worker");
             webviewWorker.terminate();
         });
     });
 }
 
-async function runBrowser (events: EventEmitter)
+async function runBrowser (events: EventEmitter, params: BrowserParams)
 {
-    const browserParams = await BuildParams({ configPath: dirname(config.path) });
+    const browserParams = await BuildParams(params);
     if (!browserParams)
     {
         console.error("Could not find valid browser");
@@ -72,7 +84,7 @@ async function runBrowser (events: EventEmitter)
                 detached: false,
                 execPath: browserParams.browser.path,
                 source: browserParams.browser.source,
-                configPath: dirname(config.path),
+                configPath: params.configPath,
                 ipc (message)
                 {
                     console.log(message);

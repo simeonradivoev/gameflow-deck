@@ -1,10 +1,12 @@
 import { RunBunServer } from './server';
 import { RunAPIServer } from './api/rpc';
-import { cleanup as appCleanup, events } from './api/app';
+import { cleanup as appCleanup, config, events } from './api/app';
 import init from './browser';
+import { dirname } from 'pathe';
+import { createInterface } from 'readline';
 
 const api = RunAPIServer();
-let bunServer: { stop: () => void; url: URL; } | undefined;
+let bunServer: { stop: () => void; } | undefined;
 
 if (!Bun.env.PUBLIC_ACCESS)
 {
@@ -16,21 +18,25 @@ async function cleanup ()
   console.log("Cleaning Up");
   await appCleanup();
   bunServer?.stop();
-  await api.apiServer.stop();
+  await api.apiServer.stop(true);
   await api.cleanup();
+  console.log("Finished Cleaning Up");
   process.exit(0);
 }
 
 if (Bun.env.HEADLESS)
 {
-  // Called by outside force
-  process.on('message', ({ type }) =>
+  const rl = createInterface({ input: process.stdin });
+
+  rl.on("line", async (line) =>
   {
-    if (type === 'exitapp')
+    if (line.trim() === "shutdown")
     {
-      cleanup();
+      console.log("Graceful Shutdown");
+      await cleanup();
     }
   });
+
   // Called by user
   events.on('exitapp', () =>
   {
@@ -39,7 +45,11 @@ if (Bun.env.HEADLESS)
   });
 } else
 {
-  await init(events, !!Bun.env.FORCE_BROWSER);
+  await init(events, Bun.env.FORCE_BROWSER === "true", {
+    configPath: dirname(config.path),
+    windowPosition: config.get('windowPosition'),
+    windowSize: config.get('windowSize')
+  });
   await cleanup();
 }
 

@@ -54,7 +54,7 @@ export function SettingsOption (data: {
     }, [dirty, setDirty, localValue]);
 
     return (
-        <OptionSpace label={data.label}>
+        <OptionSpace id={`${data.id}-space`} label={data.label}>
             <OptionInput
                 icon={data.icon}
                 name={data.id ?? ""}

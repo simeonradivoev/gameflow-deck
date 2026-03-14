@@ -1,11 +1,10 @@
 
 import classNames from 'classnames';
-import { createContext, JSX, Ref, useContext, useEffect, useState } from 'react';
+import { CSSProperties, JSX, Ref, useEffect, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useSessionStorage } from 'usehooks-ts';
-import { useLocalSetting } from '../scripts/utils';
-
-export const AnimatedBackgroundContext = createContext({} as { setBackground: (url: string) => void; });
+import { mobileCheck, useLocalSetting } from '../scripts/utils';
+import { AnimatedBackgroundContext } from '../scripts/contexts';
 
 export function AnimatedBackground (data: {
     children?: any;
@@ -15,24 +14,41 @@ export function AnimatedBackground (data: {
     className?: string;
     animated?: boolean,
     scrolling?: boolean;
+    style?: CSSProperties;
 })
 {
-    const animateBackground = true;
+    const animateBackground = useLocalSetting('backgroundAnimation');
+    const [backgroundUrl, setBackgroundUrl] = data.backgroundKey ?
+        useSessionStorage<string | undefined>(
+            data.backgroundKey,
+            data.backgroundUrl ? (data.backgroundUrl instanceof URL ? data.backgroundUrl.href : data.backgroundUrl) : undefined,
+        )
+        : useState<string | undefined>();
 
-    const [backgroundUrl, setBackgroundUrl] = data.backgroundKey ? useSessionStorage<string | undefined>(
-        data.backgroundKey!,
-        data.backgroundUrl ? (data.backgroundUrl instanceof URL ? data.backgroundUrl.href : data.backgroundUrl) : undefined,
-    ) : useState<string | undefined>();
+    const [lastBackgroundUrl, setLastBackgroundUrl] = useState<string | undefined>(undefined);
+    const backgroundElementRef = useRef<HTMLDivElement>(null);
 
     useEffect(() =>
     {
-        setBackgroundUrl(data.backgroundUrl ? (data.backgroundUrl instanceof URL ? data.backgroundUrl.href : data.backgroundUrl) : undefined);
+        const lastBg = backgroundUrl;
+
+        if (data.backgroundUrl != backgroundUrl)
+        {
+            setBackgroundUrl(data.backgroundUrl ? (data.backgroundUrl instanceof URL ? data.backgroundUrl.href : data.backgroundUrl) : undefined);
+            setLastBackgroundUrl(lastBg);
+        }
     }, [data.backgroundUrl]);
 
-    let finalBackgroundUrl;
+    let finalBackgroundUrl: URL | undefined;
     try
     {
         finalBackgroundUrl = backgroundUrl ? new URL(backgroundUrl) : undefined;
+    } catch { }
+
+    let finalLastBackgroundUrl: URL | undefined;
+    try
+    {
+        finalLastBackgroundUrl = lastBackgroundUrl ? new URL(lastBackgroundUrl) : undefined;
     } catch { }
 
     const blur = useLocalSetting('backgroundBlur');
@@ -43,11 +59,41 @@ export function AnimatedBackground (data: {
             finalBackgroundUrl?.searchParams.set('blur', String(24));
         }
 
+        if (!finalLastBackgroundUrl?.searchParams.has('blur'))
+        {
+            finalLastBackgroundUrl?.searchParams.set('blur', String(24));
+        }
+
         finalBackgroundUrl?.searchParams.set('height', String(320));
+        finalLastBackgroundUrl?.searchParams.set('height', String(320));
     }
+
+    useEffect(() =>
+    {
+        if (finalBackgroundUrl && backgroundElementRef.current)
+        {
+            const finalBackgroundImg = new Image();
+            finalBackgroundImg.addEventListener('load', e =>
+            {
+                if (backgroundElementRef.current)
+                {
+                    backgroundElementRef.current.style.backgroundImage = `url('${finalBackgroundUrl.href}')`;
+                    backgroundElementRef.current.style.opacity = "1";
+                    backgroundElementRef.current.style.backgroundSize = "100%";
+                }
+            });
+            finalBackgroundImg.src = finalBackgroundUrl.href;
+        }
+
+
+    }, [finalBackgroundUrl]);
+
+    const isMobile = mobileCheck();
 
     function handleSetBackground (url: string)
     {
+
+        setLastBackgroundUrl(backgroundUrl);
         setBackgroundUrl(url);
     }
 
@@ -70,30 +116,40 @@ export function AnimatedBackground (data: {
     return (
         <AnimatedBackgroundContext value={{ setBackground: handleSetBackground }}>
             <div ref={data.ref}
-                className={twMerge("w-full h-full flex flex-col", data.scrolling ? "overflow-y-scroll animate-bg-zoom-scroll" : "overflow-hidden", data.className)}
-                style={data.scrolling ? {
-                    backgroundImage: `url('${finalBackgroundUrl?.href}')`,
-                    backgroundAttachment: 'local',
-                    backgroundSize: '100%',
-                    backgroundPositionY: 'bottom',
-                    backgroundPositionX: 'center',
-                    backgroundBlendMode: blur ? 'normal' : 'soft-light',
-                    backgroundColor: "var(--color-base-100)",
-                } : {}}
+                style={data.style}
+                className={twMerge("relative w-full h-full flex flex-col", data.scrolling ? "overflow-y-scroll animate-bg-zoom-scroll" : "overflow-hidden", data.className)}
+
             >
-                {!data.scrolling && <div className='absolute top-0 left-0 overflow-hidden w-full h-full'>
-                    {<img
+                {!data.scrolling && <div className='absolute top-0 left-0 right-0 bottom-0 overflow-hidden'>
+                    <div className='fixed bg-base-100 top-0 left-0 right-0 bottom-0 -z-5'></div>
+                    {blur && finalLastBackgroundUrl && <img className='absolute w-full h-full object-cover object-center -z-4' src={finalLastBackgroundUrl.href}></img>}
+                    {finalBackgroundUrl ? <img
                         key={finalBackgroundUrl?.href}
-                        className={classNames('absolute w-full h-full object-cover object-center opacity-0 -z-3')}
+                        className={'absolute w-full h-full object-cover object-center opacity-0 -z-3'}
                         src={finalBackgroundUrl?.href}
                         onLoad={e => e.currentTarget.classList.add(blur ? "animate-bg-zoom-big" : "animate-bg-zoom")}
-                    ></img>}
-                    <div className='absolute w-full h-full bg-linear-to-b from-base-100/60 to-base-300/80 -z-2' />
+                    ></img> : <><div className='mobile:hidden bg-gradient'></div></>}
+                    <div className='absolute top-0 left-0 right-0 bottom-0 bg-linear-to-b from-base-100/60 to-base-300/80 -z-2' />
+                    <div className='mobile:hidden bg-noise'></div>
                 </div>}
-                {data.animated && animateBackground && <div className="absolute overflow-hidden w-full h-full" style={{ zIndex: -1 }}>
+                {data.animated && animateBackground && <div className="fixed overflow-hidden top-0 left-0 right-0 bottom-0" style={{ zIndex: -1 }}>
                     {backgroundElements}
                 </div>}
                 {data.children}
+                {!!data.scrolling && <>
+                    <div key={finalBackgroundUrl?.href} ref={backgroundElementRef} className='absolute top-0 bottom-0 left-0 right-0' style={data.scrolling ? {
+                        backgroundAttachment: 'local',
+                        backgroundSize: '105%',
+                        opacity: 0,
+                        transition: 'all ease-out',
+                        backgroundPositionY: 'bottom',
+                        backgroundPositionX: 'center',
+                        transitionDuration: "400ms",
+                        backgroundBlendMode: blur ? 'normal' : 'soft-light',
+                        backgroundColor: "var(--color-base-300)",
+                    } : {}}></div>
+                    <div className='mobile:hidden bg-noise opacity-30 z-1'></div>
+                </>}
             </div>
         </AnimatedBackgroundContext >
     );

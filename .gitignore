@@ -26,3 +26,4 @@ trace
 downloads
 .flatpak-builder
 gameflow-deck.code-workspace
+.env.local

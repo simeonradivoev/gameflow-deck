@@ -4,29 +4,36 @@ import
   getCurrentFocusKey,
   init,
   SpatialNavigation,
+  useFocusable,
+  UseFocusableConfig,
+  UseFocusableResult,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { RefObject, useEffect } from "react";
+import { RefObject, useEffect, useState } from "react";
+import { Router } from "..";
+import { RouteIds } from "@tanstack/react-router";
 
 init({
   shouldFocusDOMNode: false,
-  throttle: 200,
+  throttle: 200
 });
 
 let addFocusable = SpatialNavigation.addFocusable.bind(SpatialNavigation);
+let updateFocusable = SpatialNavigation.updateFocusable.bind(SpatialNavigation);
+let sortSiblingsByPriority = SpatialNavigation.sortSiblingsByPriority.bind(SpatialNavigation);
 let removeFocusable = SpatialNavigation.removeFocusable.bind(SpatialNavigation);
 let setFocus = SpatialNavigation.setFocus.bind(SpatialNavigation);
 
 type SaveFocusType = "session" | "local";
 
-type HistorySourceType = "settings" | 'details' | 'launch' | 'game-list';
-const historySourceMap = new Map<string, string>();
+type HistorySourceType = "settings" | 'details' | 'launch' | 'game-list' | 'store-details';
+const historySourceMap = new Map<string, { to: string, search?: Record<string, any>; }>();
 
-export function SaveSource (id: HistorySourceType, url?: string)
+export function SaveSource (id: HistorySourceType, init?: { url?: string, search?: Record<string, any>; })
 {
-  const finalUrl = url ?? location.hash.replace("#", '');
+  let finalUrl = init?.url ?? location.hash.replaceAll(/#|(\?.+)/g, '');
   if (finalUrl)
   {
-    historySourceMap.set(id, finalUrl);
+    historySourceMap.set(id, { to: finalUrl, search: init?.search });
   }
 }
 
@@ -39,16 +46,22 @@ export function PopSource (id: HistorySourceType)
 {
   if (!historySourceMap.has(id))
   {
-    return undefined;
+    return { to: undefined, search: undefined };
   }
   const source = historySourceMap.get(id);
   historySourceMap.delete(id);
-  return source;
+  return source ?? { to: undefined, search: undefined };
+}
+
+export function PopNavigateSource (id: HistorySourceType, fallback: RouteIds<typeof Router.routeTree>)
+{
+  const { to, search } = PopSource(id);
+  Router.navigate({ to: to ?? fallback, viewTransition: { types: ['zoom-out'] }, search });
 }
 
 export function GetFocusedElement (focusKey: string)
 {
-  return (SpatialNavigation as any).focusableComponents[focusKey]?.node as HTMLElement;
+  return (SpatialNavigation as any).focusableComponents[focusKey]?.node as HTMLElement | undefined;
 }
 
 export function GetFocusedTree (leaf: string): string[]
@@ -95,10 +108,36 @@ export function useFocusEventListener<K extends keyof FocusEventMap, O extends H
   }, [eventName, handler, element?.current]);
 }
 
+export function useGlobalFocus ()
+{
+  const [focused, setFocused] = useState<string | undefined>(undefined);
+  useEffect(() =>
+  {
+    const handler = () => setFocused(getCurrentFocusKey());
+    window.addEventListener('focuschanged', handler);
+
+    return () => window.removeEventListener('focuschanged', handler);
+  }, []);
+
+  return focused;
+}
+
 SpatialNavigation.setFocus = (newFocusKey, focusDetails) =>
 {
   setFocus(newFocusKey, focusDetails);
   dispatchFocusedEvent(new CustomEvent<FocusDetails>('focuschanged', { bubbles: true, detail: focusDetails }));
+};
+
+
+SpatialNavigation.updateFocusable = (key, data) =>
+{
+  updateFocusable(key, data);
+};
+
+SpatialNavigation.sortSiblingsByPriority = (siblings, currentLayout, direction, focusKey) =>
+{
+  const sorted = sortSiblingsByPriority(siblings, currentLayout, direction, focusKey);
+  return sorted.filter(e => e.node.checkVisibility({ visibilityProperty: true }));
 };
 
 SpatialNavigation.addFocusable = (toAdd) =>
@@ -109,7 +148,9 @@ SpatialNavigation.addFocusable = (toAdd) =>
     preferredChildFocusKey?: string;
     node: HTMLElement;
     focusKey: string;
+    focusableDefault?: boolean;
   } = (SpatialNavigation as any).focusableComponents[toAdd.focusKey];
+
   if (component.node?.hasAttribute("save-child-focus"))
   {
     const storageKey = `${component.focusKey}-last-child-focus`;
@@ -180,3 +221,19 @@ SpatialNavigation.saveLastFocusedChildKey = (component, focusKey) =>
 {
   component.lastFocusedChildKey = focusKey;
 };
+
+export function useFocusableDynamic<P> (conf?: UseFocusableConfig<P>): UseFocusableResult
+{
+  const [focusable, setFocusable] = useState(conf?.focusable);
+  const result = useFocusable({ ...conf, focusable: focusable && conf?.focusable });
+  useEffect(() =>
+  {
+    const observer = new MutationObserver(() =>
+    {
+      setFocusable(result.ref.current.checkVisibility({ visibilityProperty: true }));
+    });
+    observer.observe(result.ref.current, { subtree: true, attributes: true });
+    return () => observer.disconnect();
+  }, [result.ref.current]);
+  return result;
+}

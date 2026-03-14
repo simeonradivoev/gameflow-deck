@@ -6,8 +6,7 @@ import { SaveSource } from "../scripts/spatialNavigation";
 import { rommApi } from "../scripts/clientApi";
 import { HardDrive } from "lucide-react";
 import { JSX } from "react";
-import { GameCardFocusHandler } from "./GameCard";
-import { gameQuery } from "../scripts/queries";
+import { GameCardFocusHandler } from "./CardElement";
 import { useLocalSetting } from "../scripts/utils";
 
 export interface GameListParams
@@ -16,7 +15,7 @@ export interface GameListParams
     filters?: GameListFilterType,
     grid?: boolean,
     setBackground?: (url: string) => void;
-    onGameSelect?: (id: FrontEndId) => void;
+    onGameSelect?: (id: FrontEndId, source: string | null, sourceId: string | null) => void;
     onFocus?: GameCardFocusHandler;
     className?: string;
 }
@@ -33,7 +32,7 @@ export function GameList (data: GameListParams)
     const queryClient = useQueryClient();
     const blur = useLocalSetting('backgroundBlur');
 
-    const handleFocus = (id: FrontEndId, source: string | null, sourceId: number | null) =>
+    const handleFocus = (id: FrontEndId, source: string | null, sourceId: string | null) =>
     {
         const game = games.data?.games.find((g) => g.id === id);
         if (game)
@@ -52,7 +51,7 @@ export function GameList (data: GameListParams)
         }
     };
 
-    function handleDefaultSelect (id: FrontEndId, source: string | null, sourceId: number | null)
+    function handleDefaultSelect (id: FrontEndId, source: string | null, sourceId: string | null)
     {
         SaveSource('details');
         navigator({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source }, viewTransition: { types: ['zoom-in'] } });
@@ -73,11 +72,11 @@ export function GameList (data: GameListParams)
                             const badges: JSX.Element[] = [];
                             if (g.id.source === 'local')
                             {
-                                badges.push(<HardDrive className="sm:size-4 md:size-8 m-1" />);
+                                badges.push(<HardDrive className="sm:size-4 md:size-8 md:p-1 m-1" />);
                             }
                             const previewUrl = new URL(`${RPC_URL(__HOST__)}${g.path_cover}`);
                             previewUrl.searchParams.delete('ts');
-                            previewUrl.searchParams.set('width', "640");
+                            previewUrl.searchParams.set('width', "16");
                             const platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
                             platformUrl.searchParams.set('width', "64");
 
@@ -93,7 +92,7 @@ export function GameList (data: GameListParams)
                                 ),
                                 previewUrl: previewUrl.href,
                                 badges: badges,
-                                onSelect: () => data.onGameSelect ? data.onGameSelect(g.id) : handleDefaultSelect(g.id, g.source, g.source_id),
+                                onSelect: () => data.onGameSelect ? data.onGameSelect(g.id, g.source, g.source_id) : handleDefaultSelect(g.id, g.source, g.source_id),
                                 onFocus: () => handleFocus(g.id, g.source, g.source_id)
                             } satisfies GameMetaExtra;
                         },

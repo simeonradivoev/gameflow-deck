@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { GameCardSkeleton } from './GameCard';
+import { GameCardSkeleton } from './CardElement';
 
 export default function LoadingCardList (data: { placeholderCount: number, grid?: boolean; })
 {

@@ -1,0 +1,84 @@
+
+import { twMerge } from "tailwind-merge";
+import { FrontEndEmulator, RPC_URL } from "@/shared/constants";
+import { Button } from "../options/Button";
+import useActiveControl from "@/mainview/scripts/gamepads";
+import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
+import { ChevronRight, EllipsisVertical, HardDrive } from "lucide-react";
+import { FOCUS_KEYS } from "@/mainview/scripts/types";
+
+export function StoreEmulatorCard (data: {
+    id: string;
+    emulator: FrontEndEmulator;
+    onSelect?: (id: string, focusKey: string) => void;
+    onFocus?: (data: { id: string; node: HTMLElement; details: Record<string, any>; }) => void;
+    className?: string;
+})
+{
+    const handleSelect = () => data.onSelect?.(data.emulator.name, focusKey);
+
+    const { ref, focusKey } = useFocusable({
+        focusKey: FOCUS_KEYS.EMULATOR_CARD(data.id),
+        onEnterPress: handleSelect,
+        onFocus: (_l, _p, details) =>
+        {
+            data.onFocus?.({ id: data.emulator.name, node: ref.current as HTMLElement, details });
+        }
+    });
+
+    useShortcuts(focusKey, () => [{ button: GamePadButtonCode.A, label: "Details", action: handleSelect }], [handleSelect]);
+    const { isMouse, isTouch } = useActiveControl();
+
+    return (
+        <div
+            ref={ref}
+            role="button"
+            tabIndex={0}
+            data-installed={data.emulator.exists ? true : undefined}
+            onClick={isTouch ? handleSelect : undefined}
+            className={twMerge("relative focusable focusable-info bg-base-100 rounded-4xl transition-shadow focused:not-control-mouse:animate-scale-small shadow-lg border border-base-content/10 active:ring-4 active:ring-base-content active:transition-none", data.className)}
+        >
+            <div className="flex flex-col justify-between p-4 gap-2 h-full">
+                <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                        <div className="flex items-start">
+                            <div
+                                data-installed={data.emulator.exists}
+                                className={`size-14 p-2 rounded-full bg-info flex items-center justify-center text-xl shadow-lg data-[installed=true]:bg-success`}
+                            >
+                                <img draggable={false} src={data.emulator.logo}></img>
+                            </div>
+                        </div>
+                        <div>
+                            <p data-installed={data.emulator.exists} className="font-bold text-base-content text-xl leading-snug data-[installed=true]:text-success">{data.emulator.name}</p>
+                            <ul className="flex flex-wrap gap-1">
+                                {data.emulator.systems.map(({ id, name, icon }) =>
+                                {
+                                    return <div key={id} className="flex gap-1 items-center text-base-content/35 mt-0.5">
+                                        {!!icon && <img draggable={false} className="size-6 p-1 bg-base-200 rounded-full" src={`${RPC_URL(__HOST__)}${icon}`} />}
+                                        <p className="text-nowrap text-ellipsis overflow-hidden">{name}</p>
+                                    </div>;
+                                })}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-0.5 mt-1 h-10 items-center">
+                    {data.emulator.exists && <div className="tooltip" data-tip="Installed">
+                        <div className="flex items-center justify-center rounded-full p-1 size-8 bg-success text-success-content"><HardDrive /></div>
+                    </div>}
+                    {<div className="tooltip" data-tip="Game Count">
+                        <div className="flex items-center justify-center rounded-full font-semibold size-9 p-2 bg-base-200 text-base-content/40">{data.emulator.gameCount}</div>
+                    </div>}
+                    {isMouse && <>
+                        <Button onAction={handleSelect} style="base" className="grow text-base-content/40" id={`${data.emulator.name}-details`} >Details<ChevronRight /></Button>
+                        <Button className="bg-transparent border-none shadow-none w-6 p-0" id={`${data.emulator.name}-options`} ><EllipsisVertical /></Button>
+                    </>}
+
+                </div>
+            </div>
+        </div>
+    );
+}

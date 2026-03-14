@@ -15,6 +15,7 @@ import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spat
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import FilePicker from '@/mainview/components/FilePicker';
 import { dirname } from 'pathe';
+import { autoEmulatorsQuery } from '@/mainview/scripts/queries';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -75,7 +76,7 @@ function NewEmulatorPath (data: { addOverride: (emulator: string) => void; isAdd
   };
 
 
-  return <OptionSpace label={"Custom Emulator Path"}>
+  return <OptionSpace id={'custom-emulator-path-option'} label={"Custom Emulator Path"}>
     <Button disabled={data.isAddingOverride} id='emulator' type='button' onAction={() => setNewEmulatorTypeOpen(true)} >
       Emulator
       <ChevronDown />
@@ -155,7 +156,7 @@ function EmulatorPath (data: { id: string; })
   };
 
   return (
-    <OptionSpace label={
+    <OptionSpace id={`${data.id}-space`} label={
       focus => <>
         <p className='font-semibold'>{data.id}</p>
         <small className='opacity-40'>{emulators[data.id]}</small>
@@ -211,6 +212,7 @@ function EmulatorBadge (data: {
   path?: string,
   exists: boolean,
   emulator: string;
+  isCritical: boolean;
   pathCover?: string;
   addOverride: (emulator: string) => void;
 })
@@ -229,16 +231,16 @@ function EmulatorBadge (data: {
 
   return <div className={classNames("tooltip tooltip-primary", { "tooltip-open": focused })} data-tip={`${emulators[data.emulator]}`}>
     <div ref={ref} className={
-      twMerge('flex flex-col rounded-3xl bg-base-300 w-64 h-16 justify-center items-center p-4 overflow-hidden',
+      twMerge('flex flex-col rounded-3xl bg-base-300 justify-center items-center p-4 overflow-hidden h-full',
         classNames({
           "bg-base-200": !data.path,
-          "border-dashed border-base-content/40 border-2": !data.path && !focused,
+          "border-dashed border-base-content/40 border-2": !data.path && data.isCritical && !focused,
           "border-dashed border-accent border-4": focused
 
         }))
     }>
       <p className='flex gap-2 font-semibold'>
-        {data.path ? data.exists ? <Check /> : <TriangleAlert className='text-error' /> : <SearchAlert className='text-warning' />}
+        {data.path ? data.exists ? <Check /> : <TriangleAlert className='text-error' /> : <SearchAlert className={data.isCritical ? 'text-warning' : 'text-base-content/40'} />}
         {!!data.pathCover && <img className='size-6 drop-shadow drop-shadow-black/20' src={`${RPC_URL(__HOST__)}${data.pathCover}`}></img>}
         {data.emulator}
       </p>
@@ -249,11 +251,11 @@ function EmulatorBadge (data: {
 
 function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) => void; })
 {
-  const { data: autoEmulators } = useQuery({ queryKey: ['auto-emulators'], queryFn: async () => settingsApi.api.settings.emulators.automatic.get() });
-  const { ref, focusKey } = useFocusable({ focusKey: `emulator-badges`, focusable: !!autoEmulators?.data && autoEmulators.data.length > 0 });
-  return <div ref={ref} className='flex flex-wrap gap-2 justify-center-safe'>
+  const { data: autoEmulators } = useQuery(autoEmulatorsQuery);
+  const { ref, focusKey } = useFocusable({ focusKey: `emulator-badges`, focusable: !!autoEmulators && autoEmulators.length > 0 });
+  return <div ref={ref} className='grid grid-cols-[repeat(auto-fit,14rem)] auto-rows-[4rem] gap-2 justify-center-safe'>
     <FocusContext value={focusKey}>
-      {autoEmulators?.data?.map(e => <EmulatorBadge key={e.emulator} addOverride={data.addOverride} pathCover={e.path_cover ?? undefined} path={e.path} exists={e.exists} emulator={e.emulator} />)}
+      {autoEmulators?.map(e => <EmulatorBadge key={e.emulator} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.path_cover ?? undefined} path={e.path?.path} exists={e.exists} emulator={e.emulator} />)}
     </FocusContext>
   </div>;
 }

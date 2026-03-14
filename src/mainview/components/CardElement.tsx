@@ -32,11 +32,10 @@ export interface GameCardParams
   className?: string;
   onFocus?: GameCardFocusHandler;
   onBlur?: (id: string) => void;
-  onAction?: () => void;
   clickFocuses?: boolean;
 }
 
-export default function GameCard (data: GameCardParams)
+export default function CardElement (data: GameCardParams & InteractParams)
 {
   const { ref, focused, focusSelf } = useFocusable({
     focusKey: data.focusKey,
@@ -57,40 +56,35 @@ export default function GameCard (data: GameCardParams)
         scrollSnapAlign: "center"
       }}
       onFocus={focusSelf}
-      onDoubleClick={data.onAction}
+      onDoubleClick={e => data.onAction?.(e.nativeEvent)}
       onClick={() =>
       {
         focusSelf();
         data.onAction?.();
       }}
       className={twMerge(
-        `game-card bg-base-300 game-card-height flex flex-col justify-end z-5 ring-primary`,
-        'max-h-(--game-card-height) min-w-(--game-card-width) w-(--game-card-width)',
-        "overflow-hidden transition-all duration-200 drop-shadow-lg cursor-pointer",
-        classNames({
-          "focused animate-wiggle ring-7 bg-base-content text-base-300 drop-shadow-xl drop-shadow-black/30 scale-102 z-10": focused && !isPointer,
-          "group hover:focused hover:animate-wiggle sm:hover:ring-4 md:hover:ring-7 hover:bg-base-content hover:text-base-300 hover:drop-shadow-xl hover:drop-shadow-black/30 hover:scale-102 hover:z-10": isMouse,
-          "h-(--game-card-height)": typeof data.preview === "string"
-        }),
+        "relative game-card bg-base-300 flex flex-col z-5 overflow-hidden transition-all duration-200 not-mobile:drop-shadow-lg cursor-pointer focusable focusable-primary focusable-hover select-none focused focused:not-control-mouse:animate-wiggle focused:not-control-mouse:bg-base-content focused:not-control-mouse:text-base-300 focused:not-control-mouse:drop-shadow-xl focused:not-control-mouse:drop-shadow-black/30 focused:not-control-mouse:scale-102 focused:not-control-mouse:z-10 group control-mouse:hover:bg-base-200 h-full [--tw-border-style:inset] border-2 border-base-content/5 backdrop-opacity-0 active:bg-base-content! active:text-base-100 active:transition-none",
         data.className
       )}
     >
-      <div className={twMerge(
-        "overflow-hidden bg-base-400 h-full rounded-t-xl rounded-b-md transition-all",
+      <div id="preview" className={twMerge(
+        "overflow-hidden bg-base-400 rounded-t-xl rounded-b-md transition-all",
         focused ? "sm:mt-1 sm:mx-1" : "sm:mt-1 sm:mx-1",
         focused ? "md:mt-2 md:mx-2" : "md:mt-2 md:mx-2",
+        classNames({ "h-full": typeof data.preview === "string" })
       )}>
         {typeof data.preview === "string" ? (
-          <img className={classNames("object-cover w-full h-full", { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
+          <img draggable={false} className={classNames("object-cover w-full h-full", { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
         ) : (
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
-        )}</div>
+        )}
+      </div>
 
-      <div className="h-0 flex pr-2 justify-end items-center sm:gap-1 md:gap-2">
+      <div className="h-0 flex pr-2 justify-end items-center sm:gap-1 md:gap-2 z-2">
         {data.badges?.map((b, i) =>
           <div key={i}
             className={
-              twMerge("bg-base-100 text-base-content drop-shadow-lg overflow-hidden rounded-full p-1 sm:last:mr-1 md:last:mr-4 transition-colors",
+              twMerge("bg-base-100 text-base-content not-mobile:not-in-focused:drop-shadow-lg sm:border-3 md:border-6 border-base-300 in-focused:border-base-content overflow-hidden rounded-full sm:last:mr-1 md:last:mr-4 transition-colors",
                 classNames({
                   "bg-primary text-primary-content": focused && !isPointer,
                   "group-hover:bg-primary group-hover:text-primary-content": isPointer
@@ -100,7 +94,7 @@ export default function GameCard (data: GameCardParams)
           </div>)
         }
       </div>
-      <div className="flex flex-col sm:p-2 md:p-4">
+      <div className="flex flex-col sm:p-2 grow md:p-4 justify-center">
         <div className="md:text-xl sm:text-sm font-bold text-nowrap text-ellipsis overflow-hidden">
           {data.title}
         </div>

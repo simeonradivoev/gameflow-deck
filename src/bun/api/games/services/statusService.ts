@@ -1,13 +1,16 @@
-import { GameInstallProgress, GameStatusType, } from "@shared/constants";
+import { GameInstallProgress, GameStatusType, RPC_URL, } from "@shared/constants";
 import { activeGame, config, customEmulators, db, events, taskQueue } from "../../app";
 import { getValidLaunchCommands } from "./launchGameService";
-import * as schema from '../../schema/app';
+import * as schema from '@schema/app';
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "@/bun/utils";
 import { getLocalGameMatch } from "./utils";
 import { getRomApiRomsIdGet } from "@/clients/romm";
 import fs from 'node:fs/promises';
 import { ErrorLike } from "elysia/universal";
+import { getStoreGameFromId } from "../../store/services/gamesService";
+import { cores } from "../../emulatorjs/emulatorjs";
+import { host } from "@/bun/utils/host";
 
 class CommandSearchError extends Error
 {
@@ -18,7 +21,7 @@ class CommandSearchError extends Error
     }
 }
 
-export async function getLocalGame (source: string, id: number)
+export async function getLocalGame (source: string, id: string)
 {
     const localGames = await db.select({ id: schema.games.id, path_fs: schema.games.path_fs, platform_slug: schema.platforms.es_slug })
         .from(schema.games)
@@ -33,7 +36,7 @@ export async function getLocalGame (source: string, id: number)
     return undefined;
 }
 
-export async function getValidLaunchCommandsForGame (source: string, id: number)
+export async function getValidLaunchCommandsForGame (source: string, id: string)
 {
     const localGame = await getLocalGame(source, id);
     if (localGame)
@@ -42,18 +45,28 @@ export async function getValidLaunchCommandsForGame (source: string, id: number)
         {
             if (localGame.path_fs)
             {
+
                 try
                 {
                     const commands = await getValidLaunchCommands({ systemSlug: localGame.platform_slug, customEmulatorConfig: customEmulators, gamePath: localGame.path_fs });
+
+                    if (cores[localGame.platform_slug])
+                    {
+                        const gameUrl = `${RPC_URL(host)}/api/romm/rom/${source}/${id}`;
+                        commands.push({
+                            id: 'emulatorjs',
+                            label: "Emulator JS", command: `core=${cores[localGame.platform_slug]}&gameUrl=${encodeURIComponent(gameUrl)}`, valid: true, emulator: 'emulatorjs'
+                        });
+                    }
+
                     const validCommand = commands.find(c => c.valid);
                     if (validCommand)
                     {
-                        return { command: validCommand, gameId: localGame.id, source: source, sourceId: id };
-
+                        return { commands: commands.filter(c => c.valid), gameId: localGame.id, source: source, sourceId: id };
                     }
                     else
                     {
-                        return new CommandSearchError('missing-emulator', `Missing One Of Emulators: ${commands.filter(e => e.emulator && e.emulator !== "OS-SHELL").map(e => e.emulator).join(',')}`);
+                        return new CommandSearchError('missing-emulator', `Missing One Of Emulators: ${Array.from(new Set(commands.filter(e => e.emulator && e.emulator !== "OS-SHELL").map(e => e.emulator))).join(', ')}`);
                     }
                 } catch (error)
                 {
@@ -76,7 +89,7 @@ export async function getValidLaunchCommandsForGame (source: string, id: number)
     return undefined;
 }
 
-export default async function buildStatusResponse (source: string, id: number)
+export default async function buildStatusResponse (source: string, id: string)
 {
     let cleanup: (() => void) | undefined;
     let closed = false;
@@ -87,6 +100,7 @@ export default async function buildStatusResponse (source: string, id: number)
 
             function enqueue (data: GameInstallProgress, event?: 'error' | 'refresh' | 'ping')
             {
+                if (closed) return;
                 const evntString = event ? `event: ${event}\n` : '';
                 controller.enqueue(encoder.encode(`${evntString}data: ${JSON.stringify(data)}\n\n`));
             }
@@ -136,13 +150,14 @@ export default async function buildStatusResponse (source: string, id: number)
                         }
                         else
                         {
-                            enqueue({ status: 'installed', details: validCommand.command.label });
+                            enqueue({ status: 'installed', details: validCommand.commands[0].label, commands: validCommand.commands });
                         }
 
-                    } else if (source === 'romm')
+                    }
+                    else if (source === 'romm')
                     {
                         // TODO: Add Caching
-                        const remoteGame = await getRomApiRomsIdGet({ path: { id } });
+                        const remoteGame = await getRomApiRomsIdGet({ path: { id: Number(id) } });
                         const stats = await fs.statfs(config.get('downloadPath'));
                         if (remoteGame.data?.fs_size_bytes && remoteGame.data?.fs_size_bytes > stats.bsize * stats.bavail)
                         {
@@ -152,6 +167,20 @@ export default async function buildStatusResponse (source: string, id: number)
                             enqueue({ status: 'install', details: 'Install' });
                         }
 
+                    } else if (source === 'store')
+                    {
+                        const storeGame = await getStoreGameFromId(id);
+                        const fileResponse = await fetch(storeGame.file, { method: 'HEAD' });
+                        const size = Number(fileResponse.headers.get('content-length'));
+                        const stats = await fs.statfs(config.get('downloadPath'));
+
+                        if (size > stats.bsize * stats.bavail)
+                        {
+                            enqueue({ status: 'error', error: "Not Enough Free Space" });
+                        } else
+                        {
+                            enqueue({ status: 'install', details: 'Install' });
+                        }
                     }
                 }
             }
@@ -190,7 +219,7 @@ export default async function buildStatusResponse (source: string, id: number)
                 {
                     enqueue({
                         status: 'error',
-                        error: error
+                        error: getErrorMessage(error)
                     }, 'error');
                 }
             }));

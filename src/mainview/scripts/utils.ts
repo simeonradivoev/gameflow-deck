@@ -1,7 +1,12 @@
 import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
 import { doesFocusableExist, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
-import { RefObject, useEffect, useState } from "react";
+import { Ref, RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
+import { jobsApi } from "./clientApi";
+import { EdenWS } from "@elysiajs/eden/treaty";
+import { InputSchema } from "elysia/types";
+import { Treaty } from "@elysiajs/eden";
+import { JobsAPIType } from "@/bun/api/rpc";
 
 export function selfFocusSmart (shouldFocus: boolean, focusSelf: () => void)
 {
@@ -108,3 +113,204 @@ export function useAsyncGenerator<T> (
 
   return value;
 }
+
+export function scrollIntoNearestParent (el: HTMLElement, props?: { behavior?: ScrollBehavior; })
+{
+  const parent = el.parentElement;
+  if (!parent) return;
+
+  const parentRect = parent.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+
+  // CENTER horizontally
+  const left =
+    rect.left - parentRect.left +
+    parent.scrollLeft -
+    parent.clientWidth / 2 +
+    rect.width / 2;
+
+  parent.scrollTo({
+    left,
+    behavior: props?.behavior ?? "smooth"
+  });
+
+  // NEAREST vertically
+  if (rect.top < parentRect.top)
+  {
+    parent.scrollTop -= parentRect.top - rect.top;
+  } else if (rect.bottom > parentRect.bottom)
+  {
+    parent.scrollTop += rect.bottom - parentRect.bottom;
+  }
+}
+
+export function useDragScroll<T extends HTMLElement | null> (ref: RefObject<T>)
+{
+  useEffect(() =>
+  {
+    const el = ref.current;
+    if (!el) return;
+
+    let isDown = false;
+    let isDragging = false;
+
+    let startX = 0;
+    let startY = 0;
+
+    let startScrollLeft = 0;
+    let startScrollTop = 0;
+
+    const DRAG_THRESHOLD = 5;
+
+    const onMouseDown = (e: MouseEvent) =>
+    {
+      if (e.button !== 0) return;
+
+      isDown = true;
+      isDragging = false;
+
+      startX = e.pageX;
+      startY = e.pageY;
+
+      startScrollLeft = el.scrollLeft;
+      startScrollTop = el.scrollTop;
+
+      el.style.cursor = "grabbing";
+    };
+
+    const onMouseMove = (e: MouseEvent) =>
+    {
+      if (!isDown) return;
+
+      const dx = e.pageX - startX;
+      const dy = e.pageY - startY;
+
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)
+      {
+        isDragging = true;
+      }
+
+      el.scrollLeft = startScrollLeft - dx;
+      el.scrollTop = startScrollTop - dy;
+    };
+
+    const onMouseUp = () =>
+    {
+      isDown = false;
+      el.style.cursor = "";
+    };
+
+    const onClick = (e: MouseEvent) =>
+    {
+      if (isDragging)
+      {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    el.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    el.addEventListener("click", onClick, true); // capture phase
+
+    return () =>
+    {
+      el.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      el.removeEventListener("click", onClick, true);
+    };
+  }, [ref]);
+}
+
+export function scrollIntoViewHandler (params?: ScrollIntoViewOptions)
+{
+  return (focusKey: string, node: HTMLElement, details: any) => node.scrollIntoView({ ...params, behavior: details.instant ? 'instant' : 'smooth' });
+}
+
+export function useStickyDataAttr<T extends HTMLElement, T2 extends HTMLElement, T3 extends HTMLElement> (ref: RefObject<T | null>, sentinelRef: RefObject<T2 | null>, scrollRef: RefObject<T3 | null>)
+{
+  useEffect(() =>
+  {
+    const el = ref.current;
+    const sentinel = sentinelRef.current;
+    if (!el || !sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) =>
+      {
+        el.toggleAttribute("data-stuck", !entry.isIntersecting);
+      },
+      {
+        root: scrollRef.current ?? null,
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [scrollRef.current]);
+}
+
+type ExtractField<T, TYPE, K extends string> =
+  T extends { type: TYPE; } & Record<K, infer V> ? V : never;
+
+type JobResponse<JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> =
+  JobsAPIType['~Routes']['api']['jobs'][JOB]['subscribe']['response'][200];
+
+export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> (
+  id: JOB,
+  init?: {
+    onProgress?: (process: number) => void,
+    onEnded?: () => void;
+  }
+)
+{
+  type Response = JobResponse<JOB>;
+  type DataPayload = ExtractField<Response, 'data' | 'progress' | 'started', 'data'>;
+
+  const ref = useRef<ReturnType<typeof jobsApi.api.jobs[JOB]['subscribe']>>(null);
+  const [data, setData] = useState<DataPayload>();
+  const [status, setStatus] = useState<string>();
+  const [error, setError] = useState<unknown>();
+
+  useEffect(() =>
+  {
+    const sub = jobsApi.api.jobs[id].subscribe();
+    ref.current = sub as any;
+
+    sub.subscribe(({ data }) =>
+    {
+      switch (data.type)
+      {
+        case 'error':
+          setError(data.error);
+          setStatus(status);
+          setData(undefined);
+          break;
+        case 'ended':
+          init?.onEnded?.();
+        case 'completed':
+          setStatus(status);
+          setData(undefined);
+          break;
+        default:
+          setData(data.data as DataPayload);
+          setStatus(status);
+          init?.onProgress?.(data.progress);
+      }
+    });
+
+    return () =>
+    {
+      sub.close();
+      ref.current = null;
+    };
+  }, []);
+
+  return { data, status, error, wsRef: ref };
+}
+

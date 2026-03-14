@@ -32,6 +32,7 @@ export class TaskQueue
                 setTimeout(this.processQueue);
             });
             return promise;
+
         }
         return Promise.resolve();
     }
@@ -91,8 +92,10 @@ export class TaskQueue
 
 export interface EventsList
 {
+    started: [e: BaseEvent];
     progress: [e: ProgressEvent];
     abort: [e: AbortEvent];
+    /** Called when the job successfully completes */
     completed: [e: CompletedEvent];
     error: [e: ErrorEvent];
     ended: [e: BaseEvent];
@@ -101,7 +104,7 @@ export interface EventsList
 interface BaseEvent
 {
     id: string;
-    job: IJob;
+    job: IPublicJob;
 }
 
 interface ErrorEvent extends BaseEvent
@@ -128,6 +131,7 @@ interface CompletedEvent extends BaseEvent
 export interface IJob
 {
     start (context: JobContext): Promise<any>;
+    exposeData?(): any;
 }
 
 export type JobStatus = 'completed' | 'error' | 'running' | 'waiting' | 'aborted';
@@ -137,7 +141,7 @@ export interface IPublicJob
     progress: number;
     state?: string;
     status: JobStatus;
-    job: any;
+    job: IJob;
     abort: (reason?: any) => void;
 }
 
@@ -152,7 +156,7 @@ export class JobContext implements IPublicJob
     private error?: any;
     private events: EventEmitter<EventsList>;
     private abortController: AbortController;
-    private m_job: IJob;
+    private readonly m_job: IJob;
 
     constructor(id: string, events: EventEmitter<EventsList>, job: IJob)
     {
@@ -162,7 +166,7 @@ export class JobContext implements IPublicJob
         this.abortController.signal.addEventListener('abort', () =>
         {
             this.aborted = true;
-            this.events.emit('abort', { id: this.m_id, reason: this.abortController.signal.reason, job: this.m_job } satisfies AbortEvent);
+            this.events.emit('abort', { id: this.m_id, reason: this.abortController.signal.reason, job: this } satisfies AbortEvent);
         });
         this.events = events;
     }
@@ -171,19 +175,24 @@ export class JobContext implements IPublicJob
     {
         try
         {
+            this.events.emit('started', { id: this.m_id, job: this });
             await this.m_job.start(this);
             this.completed = true;
-            this.events.emit('completed', { id: this.m_id, job: this.m_job });
+            this.events.emit('completed', { id: this.m_id, job: this });
 
         } catch (error)
         {
-            console.error(error);
-            this.events.emit('error', { id: this.m_id, job: this.m_job, error });
+            if (error !== 'cancel')
+            {
+                console.error(error);
+            }
+
+            this.events.emit('error', { id: this.m_id, job: this, error });
             this.error = error;
         } finally
         {
             this.running = false;
-            this.events.emit('ended', { id: this.m_id, job: this.m_job });
+            this.events.emit('ended', { id: this.m_id, job: this });
         }
     }
 
@@ -211,7 +220,7 @@ export class JobContext implements IPublicJob
         this.m_progress = progress;
         if (state)
             this.m_state = state;
-        this.events.emit('progress', { id: this.m_id, progress, state: state ?? this.m_state, job: this.m_job });
+        this.events.emit('progress', { id: this.m_id, progress, state: state ?? this.m_state, job: this });
     }
 
     public abort (reason?: any)

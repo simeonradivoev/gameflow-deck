@@ -1,15 +1,8 @@
-import { FocusContext, FocusDetails, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { OptionContext } from "@/mainview/scripts/contexts";
+import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { createContext, JSX, useContext, useEffect, useMemo } from "react";
+import { JSX, useContext, useEffect, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
-
-export const OptionContext = createContext(
-    {} as {
-        focused: boolean;
-        focus: (focusDetails?: FocusDetails | undefined) => void;
-        eventTarget: EventTarget;
-    },
-);
 
 export function useOptionContext (params?: { onOptionEnterPress?: () => void; })
 {
@@ -81,11 +74,7 @@ export function OptionSpace (data: {
         <OptionContext value={{ focused, focus: focusSelf, eventTarget }}>
             <li
                 ref={ref}
-                className={twMerge("flex portrait:flex-col portrait:gap-2 portrait:p-4 md:flex-row sm:p-2 md:p-4 md:pl-8! rounded-3xl border-b border-base-content/5",
-                    classNames(
-                        {
-                            "bg-base-300": focused || hasFocusedChild,
-                        }),
+                className={twMerge("flex portrait:flex-col portrait:gap-2 portrait:p-4 md:flex-row sm:p-2 md:p-4 md:pl-8! rounded-3xl border-b border-base-content/5 focused:bg-base-300 focused-child:bg-base-300",
                     data.className,
                 )}
             >

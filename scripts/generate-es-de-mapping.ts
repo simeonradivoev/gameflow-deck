@@ -6,6 +6,8 @@ import { Database } from "bun:sqlite";
 import * as schema from '../src/bun/api/schema/emulators';
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import path from 'node:path';
+import { ensureDir } from 'fs-extra';
 
 /** get all latest supported romm platforms */
 const rommPlatforms = await getSupportedPlatformsEndpointApiPlatformsSupportedGet({ baseUrl: "https://demo.romm.app" });
@@ -41,10 +43,10 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
 
 await Promise.all(platforms.map(async ([platform, arch]) =>
 {
-    const systems = await Bun.file(`./vendors/es-de/systems/${mapSystem(platform, arch)}/es_systems.xml`).arrayBuffer();
-    const $s = cheerio.load(Buffer.from(systems));
-    const rules = await Bun.file(`./vendors/es-de/systems/${mapSystem(platform, arch)}/es_find_rules.xml`).arrayBuffer();
-    const $r = cheerio.load(Buffer.from(rules));
+    const systemsXml = await Bun.file(`./vendors/es-de/systems/${mapSystem(platform, arch)}/es_systems.xml`).arrayBuffer();
+    const $s = cheerio.load(Buffer.from(systemsXml));
+    const rulesXml = await Bun.file(`./vendors/es-de/systems/${mapSystem(platform, arch)}/es_find_rules.xml`).arrayBuffer();
+    const $r = cheerio.load(Buffer.from(rulesXml));
 
     const sqlitePath = `./vendors/es-de/emulators.${platform}.${arch}.sqlite`;
     const sqlite = new Database(sqlitePath, { create: true, readwrite: true });
@@ -52,7 +54,7 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
     migrate(db, { migrationsFolder: "./scripts/drizzle/es-de" });
 
     /** Save the ruleset for emulators */
-    await db.insert(schema.emulators).values($r('ruleList emulator').toArray().map(s =>
+    const emulators = $r('ruleList emulator').toArray().map(s =>
     {
         const $emulator = $r(s);
         const $systempath = $emulator.find('rule[type=systempath] entry');
@@ -71,13 +73,27 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
             winregistrypath: $winregistrypath.toArray().map(p => $r(p).text()),
         };
         return emulator;
-    }));
+    });
+
+    await db.insert(schema.emulators).values(emulators);
 
     /** Save the systems like ps2 or psp */
-    await Promise.all($s(`systemList system`).toArray().map(async s =>
+    const systems = await Promise.all($s(`systemList system`).toArray().map(async s =>
     {
         const name = $s(s).find("name").text();
         const fullname = $s(s).find("fullname").text();
+
+        const commands = $s(s).find("command").toArray().map(c =>
+        {
+            const command: typeof schema.commands.$inferInsert = {
+                label: $s(c).attr('label'),
+                command: $s(c).text(),
+                system: name
+            };
+
+            return command;
+        });
+
         const rommMapping = rommPlatforms.data?.find(p =>
             p.slug === (customMappings as any)[name] ||
             p.slug === name ||
@@ -87,54 +103,63 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
             p.display_name === fullname
         );
 
-        const system: typeof schema.systems.$inferInsert = {
+        const mappings: {
+            source: string;
+            sourceId: number | null;
+            sourceSlug: string | null;
+            system: string;
+        }[] = [];
+
+        if (rommMapping)
+        {
+            const sources: [string, keyof typeof rommMapping | null, keyof typeof rommMapping | null][] = [
+                ['ra', 'ra_id', null],
+                ['ss', 'ss_id', null],
+                ['hltb', null, 'hltb_slug'],
+                ['moby', 'moby_id', 'moby_slug'],
+                ['launchbox', 'launchbox_id', null],
+                ['sgdb', 'sgdb_id', null],
+                ['tgdb', 'tgdb_id', null],
+                ['hasheous', 'hasheous_id', null],
+                ['flashpoint', 'flashpoint_id', null],
+                ['romm', null, 'slug'],
+                ['igdb', 'igdb_id', 'igdb_slug']
+            ];
+
+            mappings.push(...sources.map(([source, sourceId, sourceSlug]) => ({
+                source,
+                sourceId: sourceId ? rommMapping[sourceId] as number : null,
+                sourceSlug: sourceSlug ? rommMapping[sourceSlug] as string : null,
+                system: name
+            }))
+                .filter(m => m.sourceId !== null || m.sourceSlug !== null));
+        }
+
+        const system = {
             name,
             fullname,
             path: $s(s).find("path").text(),
-            extension: $s(s).find("extension").text().replaceAll('.', '').split(' ')
+            extension: $s(s).find("extension").text().replaceAll('.', '').split(' '),
+            commands,
+            mappings
         };
+        return system;
+    }));
 
+    await Promise.all(systems.map(async system =>
+    {
         /** Store mappings to all other sources for easy reference */
-        db.transaction(async (tx) =>
+        await db.transaction(async (tx) =>
         {
             await tx.insert(schema.systems).values(system);
-            if (rommMapping)
+            if (system.mappings.length > 0)
             {
-                const sources: [string, keyof typeof rommMapping | null, keyof typeof rommMapping | null][] = [
-                    ['ra', 'ra_id', null],
-                    ['ss', 'ss_id', null],
-                    ['hltb', null, 'hltb_slug'],
-                    ['moby', 'moby_id', 'moby_slug'],
-                    ['launchbox', 'launchbox_id', null],
-                    ['sgdb', 'sgdb_id', null],
-                    ['tgdb', 'tgdb_id', null],
-                    ['hasheous', 'hasheous_id', null],
-                    ['flashpoint', 'flashpoint_id', null],
-                    ['romm', null, 'slug'],
-                    ['igdb', 'igdb_id', 'igdb_slug']
-                ];
-
                 await tx.insert(schema.systemMappings)
-                    .values(sources.map(([source, sourceId, sourceSlug]) => ({
-                        source,
-                        sourceId: sourceId ? rommMapping[sourceId] as number : null,
-                        sourceSlug: sourceSlug ? rommMapping[sourceSlug] as string : null,
-                        system: system.name
-                    } satisfies typeof schema.systemMappings.$inferInsert))
-                        .filter(m => m.sourceId !== null || m.sourceSlug !== null));
+                    .values(system.mappings);
             }
         });
 
-        await db.insert(schema.commands).values($s(s).find("command").toArray().map(c =>
-        {
-            const command: typeof schema.commands.$inferInsert = {
-                label: $s(c).attr('label'),
-                command: $s(c).text(),
-                system: system.name
-            };
-
-            return command;
-        }));
+        await db.insert(schema.commands).values(system.commands);
     }));
 }));
 

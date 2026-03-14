@@ -1,21 +1,21 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEventListener, useSessionStorage } from "usehooks-ts";
+import { createFileRoute } from "@tanstack/react-router";
 import { CollectionsDetail } from "../components/CollectionsDetail";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { DefaultRommStaleTime, RPC_URL } from "../../shared/constants";
-import { Suspense } from "react";
+import { useContext } from "react";
 import { rommApi } from "../scripts/clientApi";
+import { AnimatedBackgroundContext } from "../scripts/contexts";
 
 export const Route = createFileRoute("/platform/$source/$id")({
   component: RouteComponent
 });
 
-function PlatformTitle (data: { platformSlug?: string, platformName?: string; })
+function PlatformTitle (data: { pathCover: string | null, platformName?: string; })
 {
   return <div className="sm:landscape:hidden flex flex-col gap-2 pl-2 text-2xl font-semibold text-base-content justify-center drop-shadow">
 
     <div className="divider mb-6 mt-0">
-      {!!data.platformSlug && <img className="size-14 rounded-full p-2" src={`${RPC_URL(__HOST__)}/api/romm/assets/platforms/${data.platformSlug.toLocaleLowerCase()}.svg`} ></img>}
+      {!!data.pathCover && <img className="size-14 rounded-full p-2" src={`${RPC_URL(__HOST__)}${data.pathCover}`} ></img>}
       {data.platformName}
     </div>
   </div>;
@@ -33,16 +33,13 @@ function RouteComponent ()
     }, staleTime: DefaultRommStaleTime
   });
 
-  const [, setBackground] = useSessionStorage<string | undefined>(
-    "home-background",
-    undefined,
-  );
+  const animatedBgContext = useContext(AnimatedBackgroundContext);
 
   return (
     <div className="w-full h-full">
       {!!platform && <CollectionsDetail
-        title={<PlatformTitle platformSlug={platform.slug} platformName={platform.name} />}
-        setBackground={setBackground}
+        title={<PlatformTitle pathCover={platform.path_cover} platformName={platform.name} />}
+        setBackground={animatedBgContext.setBackground}
         filters={{ platform_id: Number(id), platform_slug: platform.slug, platform_source: source }}
       />}
     </div>
