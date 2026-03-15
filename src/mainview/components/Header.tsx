@@ -290,7 +290,7 @@ export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElement
         className="header-icon sm:size-10 md:size-16"
         id={b.id}
         external={b.external}
-        style={{ viewTransitionName: `header-button-${b.id}` }}
+        cssStyle={{ viewTransitionName: `header-button-${b.id}` }}
         onAction={b.action}
       >{b.icon}</RoundButton>)}
     </div>

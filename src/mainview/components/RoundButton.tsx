@@ -8,11 +8,11 @@ export function RoundButton (data: {
   className?: string;
   external?: boolean;
   style?: ButtonStyle;
+  cssStyle?: CSSProperties;
 } & InteractParams & FocusParams)
 {
-
   return (
-    <Button onFocus={data.onFocus} id={data.id} style={data.style} className={twMerge("rounded-full", data.external && "focusable focusable-primary focusable-hover", data.className)} onAction={data.onAction}>
+    <Button cssStyle={data.cssStyle} onFocus={data.onFocus} id={data.id} style={data.style} className={twMerge("rounded-full", data.external && "focusable focusable-primary focusable-hover", data.className)} onAction={data.onAction}>
       {data.children}
     </Button>
 

@@ -6,6 +6,7 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
+import { CSSProperties } from "react";
 
 export type ButtonStyle = 'base' | 'accent' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error';
 
@@ -29,6 +30,7 @@ export function Button (data: {
     style?: ButtonStyle,
     shortcutLabel?: string;
     focusClassName?: string;
+    cssStyle?: CSSProperties;
 } & InteractParams & FocusParams)
 {
     const { ref, focused, focusKey } = useFocusable({
@@ -47,6 +49,7 @@ export function Button (data: {
         ref={ref}
         onClick={e => data.onAction?.(e.nativeEvent)}
         disabled={data.disabled}
+        style={data.cssStyle}
         className={twMerge("flex items-center justify-center px-4 py-2 disabled:bg-base-200/40 disabled:text-base-content/40 cursor-pointer rounded-3xl md:text-lg not-control-mouse:focused:drop-shadow-lg border border-base-content/5 not-control-mouse:focused:bg-base-content not-control-mouse:focused:text-base-100 control-mouse:hover:bg-base-content control-mouse:hover:text-base-100 active:transition-none active:ring-offset-4",
             styles[data.style ?? 'base'],
             focused ? data.focusClassName : undefined,
