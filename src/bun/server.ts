@@ -12,25 +12,25 @@ export function RunBunServer ()
   console.log("Launching Server on port ", SERVER_PORT);
   return new Elysia()
     .use(cors())
+    .headers({
+      'cross-origin-embedder-policy': 'credentialless',
+      'cross-origin-opener-policy': 'same-origin',
+      'cross-origin-resource-policy': 'cross-origin'
+    })
     .get("/", ({ set }) =>
     {
-      set.headers['cross-origin-opener-policy'] = 'same-origin';
-      set.headers['cross-origin-embedder-policy'] = 'require-corp';
-      return file("./dist/index.html");
+      return Bun.file(appPath("./dist/index.html"));
     })
     .get('/emulatorjs', ({ set }) =>
     {
-      set.headers['cross-origin-opener-policy'] = 'same-origin';
-      set.headers['cross-origin-embedder-policy'] = 'require-corp';
-      set.headers['cross-origin-resource-policy'] = 'cross-origin';
-      return file('./dist/emulatorjs/index.html');
+      return Bun.file(appPath('./dist/emulatorjs/index.html'));
     })
     .use(staticPlugin({
       indexHTML: false,
-      assets: "dist",
+      assets: appPath("./dist"),
       prefix: "/",
       alwaysStatic: true
-    })).listen({ port: SERVER_PORT, hostname: host }, console.log);
+    })).listen({ port: SERVER_PORT, hostname: host, development: true }, console.log);
   /*return Bun.serve({
     port: SERVER_PORT,
     hostname: host,

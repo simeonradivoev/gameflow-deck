@@ -74,21 +74,24 @@ export default new Elysia()
         params: z.object({ id: z.coerce.number() }),
         query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() })
     })
-    .get('/image/:source/*', async ({ params: { source, "*": path }, query }) =>
+    .get('/image/:source/*', async ({ params: { source, "*": path }, query, set }) =>
     {
         if (source === 'romm')
         {
+            set.headers["cross-origin-resource-policy"] = 'cross-origin';
             const rommAdress = config.get('rommAddress');
             return processImage(`${rommAdress}/${path}`, query);
         }
         return status('Not Found');
     }, { query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional(), noBlur: z.coerce.boolean().optional() }) })
-    .get('/image', async ({ query }) =>
+    .get('/image', async ({ query, set }) =>
     {
+        set.headers["cross-origin-resource-policy"] = 'cross-origin';
         return processImage(query.url, query);
     }, { query: z.object({ url: z.url(), blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() }) })
     .get('/screenshot/:id', async ({ params: { id }, query, set }) =>
     {
+        set.headers["cross-origin-resource-policy"] = 'cross-origin';
         const screenshot = await db.query.screenshots.findFirst({ where: eq(schema.screenshots.id, id), columns: { content: true, type: true } });
         if (screenshot)
         {

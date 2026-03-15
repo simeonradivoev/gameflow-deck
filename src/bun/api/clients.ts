@@ -9,6 +9,8 @@ export default new Elysia({ prefix: "/api/romm" })
     .use([games, platforms, auth])
     .all("/*", async ({ request, params, set }) =>
     {
+        set.headers["cross-origin-resource-policy"] = 'cross-origin';
+
         if (!config.has('rommAddress') && !config.get('rommAddress'))
         {
             return new Response("Romm Address Not Found", { status: 404 });

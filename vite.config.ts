@@ -49,6 +49,7 @@ export default defineConfig(({ command }) =>
       minify: production,
       sourcemap: production ? false : 'inline',
       rollupOptions: {
+        preserveEntrySignatures: 'strict',
         input: {
           main: 'src/mainview/index.html',
           login: 'src/mainview/auth/qr/index.html',
@@ -58,6 +59,10 @@ export default defineConfig(({ command }) =>
           manualChunks: (id
           ) =>
           {
+            if (id.includes('@emulatorjs'))
+            {
+              return 'emulatorjs';
+            }
             if (id
               .includes
               ('node_modules'))

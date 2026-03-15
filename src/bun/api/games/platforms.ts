@@ -121,6 +121,8 @@ export default new Elysia()
         return status("Not Implemented");
     }, { params: z.object({ source: z.string(), id: z.coerce.number() }) }).get('/platform/local/:id/cover', async ({ params: { id }, set }) =>
     {
+        set.headers["cross-origin-resource-policy"] = 'cross-origin';
+
         const coverBlob = await db.query.platforms.findFirst({
             columns: {
                 cover: true, cover_type: true

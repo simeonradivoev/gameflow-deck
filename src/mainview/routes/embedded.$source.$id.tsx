@@ -118,9 +118,7 @@ function Frame (data: { ref: RefObject<HTMLIFrameElement | null>; })
         data.ref.current = r;
     }}
         allow='fullscreen; cross-origin-isolated'
-        className='absolute w-full h-full transition-[padding]' src={
-            __PUBLIC__ ? `${SERVER_URL(__HOST__)}/emulatorjs/?${params}` : `${EMULATORJS_URL(__HOST__)}/?${params}`
-        }></iframe>;
+        className='absolute w-full h-full transition-[padding]' src={`${SERVER_URL(__HOST__)}/emulatorjs/?${params}`}></iframe>;
 }
 
 function RouteComponent ()
@@ -147,12 +145,23 @@ function RouteComponent ()
         }
     });
 
-    useShortcuts(focusKey, () => [{
-        button: GamePadButtonCode.Steam, action: () =>
+    useShortcuts(focusKey, () => [
         {
-            setOverlayOpen(!overlayOpen);
+            button: GamePadButtonCode.Steam,
+            action: () =>
+            {
+                setOverlayOpen(!overlayOpen);
+            }
+        },
+        {
+            button: GamePadButtonCode.Select,
+            heldTime: 1000,
+            action: () =>
+            {
+                setOverlayOpen(!overlayOpen);
+            }
         }
-    }], [overlayOpen, setOverlayOpen]);
+    ], [overlayOpen, setOverlayOpen]);
 
     const setPaused = (paused: boolean) =>
     {
