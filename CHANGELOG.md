@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/simeonradivoev/gameflow-deck/compare/v1.2.0...v1.2.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* Added control for opening emulator js menu on steam deck controller ([f33c928](https://github.com/simeonradivoev/gameflow-deck/commit/f33c928633a06d1f99e1125a984059b9ade3a369))
+* Browser not getting closed on manual exit ([489124a](https://github.com/simeonradivoev/gameflow-deck/commit/489124a4a332a7606fb4b8b82f76929c7909a192))
+* Emulators not launching ([fe80b07](https://github.com/simeonradivoev/gameflow-deck/commit/fe80b074d2e5c6c0b9bd9a667f3378455fb5d97a))
+* Fixed cross platform errors and emulatorjs not opening on linux ([df20979](https://github.com/simeonradivoev/gameflow-deck/commit/df20979afa00bd578922a6a516b28845a4b5cab3))
+* minor UI issues ([8125c86](https://github.com/simeonradivoev/gameflow-deck/commit/8125c8695cc84358afdfb2657cc6a3638ae68d69))
+* Wrong webview library path for appimage building ([258ce63](https://github.com/simeonradivoev/gameflow-deck/commit/258ce63bc3cb24c6fb273fd98a1323ae7fde439d))
+
 ## [1.2.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.1.0...v1.2.0) (2026-03-14)
 
 
