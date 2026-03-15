@@ -172,17 +172,10 @@ export async function killBrowser (browser: Subprocess)
 {
     if (os.platform() === 'linux')
     {
-        // kill chrome by your unique identifier
-        await $`pkill -KILL -P ${browser.pid}`.quiet().nothrow();
+        // we have to force kill the demon spawn  for some reason, doesn't respond to SIGTERM
+        await $`pkill -SIGKILL -P ${browser.pid}`.nothrow();
     } else
     {
-        browser?.kill(15);
+        browser?.kill('SIGTERM');
     }
 }
-
-// --- Test Run ---
-// spawnBrowser({ 
-//   browser: "chrome", 
-//   args: ["--window-size=1024,640", "--force-device-scale-factor=1.25"],
-//   detached: true 
-// });

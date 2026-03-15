@@ -41,9 +41,20 @@ async function runWebview (events: EventEmitter, params: BrowserParams)
 
     return new Promise((resolve, reject) =>
     {
+
+        const handleExit = () =>
+        {
+            resolve(true);
+            console.log("Terminating Webview Worker");
+            webviewWorker.terminate();
+        };
+
         webviewWorker.addEventListener('error', e =>
         {
             console.error(e.message);
+            events.removeListener('exitapp', handleExit);
+            // error doesn't termiate the worker, make sure it's unalived
+            webviewWorker.terminate();
             reject(e.error);
         });
 
@@ -56,12 +67,7 @@ async function runWebview (events: EventEmitter, params: BrowserParams)
             }
         });
 
-        events.on('exitapp', () =>
-        {
-            resolve(true);
-            console.log("Terminating Webview Worker");
-            webviewWorker.terminate();
-        });
+        events.on('exitapp', handleExit);
     });
 }
 
@@ -94,6 +100,7 @@ async function runBrowser (events: EventEmitter, params: BrowserParams)
             {
                 events.on('exitapp', () =>
                 {
+                    console.log("Killing Browser");
                     killBrowser(browser);
                     resolve(true);
                 });
