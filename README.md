@@ -10,21 +10,24 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 ## Features
 
 ### Integrations
+
 - **[ROMM](https://github.com/rommapp/romm)** - download, sync and update roms and platforms.
 - **[Emulator JS](https://github.com/EmulatorJS/EmulatorJS)** - play your games with emulator js right within the app. Uses RetroArch cores.
 
 ### Store
+
 - **Emulators** - (WIP) Download and install emulators and automatically configure them
 - **Free Curated Games** - Download free curreted games and homebrew roms without ever leaving the app
 
 ### Others
+
 - **Cross Platform** - Can run on multiple platforms. Built with web technologies and bun backend.
 - **Steam Deck Support** - Extensively tested with the steam deck. It can use flatpak installed browsers.
 - **Lightweight** - It uses the existing system browser to launch the front end, so no need to include a whole web browser.
   - On Windows it first uses webview2 then your browser
   - On linux it uses WebKitGTK or a browser even from flatpak
   - Not tested on Mac yet
-- **Great for Controllers** -  The UI is inspired by the switch and works great with joysticks and dpads.
+- **Great for Controllers** - The UI is inspired by the switch and works great with joysticks and dpads.
 - **Automatic Downloads** - Downloads roms from ROMM automatically
 - **Automatic Emulator Discovery** - Using the configs of the excellent ES-DE to discover installed emulators and launch games.
   - Easy fallback configuration with built in file browser.
@@ -32,11 +35,12 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 
 ## Screenshots
 
-<img src=".github/screenshots/7s0842oAC9.png" width="25%"></img>
-<img src=".github/screenshots/FHMzJjGOs6.png" width="25%"></img>
-<img src=".github/screenshots/EWPHmIBEE5.png" width="25%"></img>
-<img src=".github/screenshots/J5BHVZBh7k.png" width="25%"></img>
-<img src=".github/screenshots/8jipsHiLST.png" width="25%"></img>
+<img src=".github/screenshots/Pkazk0RufB.png" width="25%"></img>
+<img src=".github/screenshots/3nhuKCK6E3.jpg" width="25%"></img>
+<img src=".github/screenshots/yObFD2LySH.jpg" width="25%"></img>
+<img src=".github/screenshots/GL7SkQbHIY.png" width="25%"></img>
+<img src=".github/screenshots/CpBLzTNM6N.png" width="25%"></img>
+<img src=".github/screenshots/xNj7scPEDQ.png" width="25%"></img>
 
 ## Goals
 

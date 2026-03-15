@@ -101,7 +101,7 @@ function RouteComponent ()
 
       </DownloadDirectoryOption>
       <OptionSpace label="Config Path" id='config'>
-        <div className='flex gap-2 items-center text-ellipsis text-nowrap overflow-hidden'>
+        <div className='flex gap-2 items-center text-ellipsis text-nowrap overflow-hidden break-after-all max-w-sm'>
           {drives?.configPath}
         </div>
         <Button id='open-config' type='button' onAction={() => systemApi.api.system.open.post({ url: drives?.configPath ?? '' })} ><FolderOpen /></Button>
