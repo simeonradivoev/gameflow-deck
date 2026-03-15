@@ -32,6 +32,7 @@ export interface Shortcut
 {
     label?: string;
     button: GamePadButtonCode;
+    heldTime?: number;
     action?: (e: GamepadButtonEvent) => void;
 }
 
@@ -55,7 +56,7 @@ import.meta.hot?.dispose(() => shortcutMap.clear());
 
 export function useShortcutContext ()
 {
-    const [array, setArray] = useState<Shortcut[] | undefined>();
+    const [array, setArray] = useState<({ key: string; } & Shortcut)[] | undefined>();
 
     useEffect(() =>
     {
@@ -65,7 +66,7 @@ export function useShortcutContext ()
             const focusKey = getCurrentFocusKey();
             const newArray = GetFocusedTree(focusKey)
                 .filter(f => shortcutMap.has(f))
-                .flatMap(f => shortcutMap.get(f)!)
+                .flatMap(f => shortcutMap.get(f)!.map(s => ({ key: f, ...s })))
                 .filter(s =>
                 {
                     const empty = !conflictSet.has(s.button);
@@ -79,6 +80,8 @@ export function useShortcutContext ()
         };
 
         const shortcuts = new Map(array?.reverse().map(s => [s.button, s]) ?? []);
+        const holdChecks = new Map<GamePadButtonCode, NodeJS.Timeout>();
+
         const handleGamepadButtonDown = (e: Event) =>
         {
             const event = e as GamepadButtonEvent;
@@ -90,7 +93,21 @@ export function useShortcutContext ()
 
             if (shortcuts.has(event.button))
             {
-                shortcuts.get(event.button)?.action?.(event);
+                const shortcut = shortcuts.get(event.button);
+                if (shortcut)
+                {
+                    if (shortcut.heldTime && shortcut.heldTime > 0)
+                    {
+                        holdChecks.set(event.button, setTimeout(() =>
+                        {
+                            shortcut.action?.(event);
+                        }, shortcut.heldTime));
+                    } else
+                    {
+                        shortcut.action?.(event);
+                    }
+
+                }
             }
             else if (event.button === GamePadButtonCode.A)
             {
@@ -119,6 +136,14 @@ export function useShortcutContext ()
             if (hadEnterDown && event.button === GamePadButtonCode.A)
             {
                 dispatchFocusedEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', charCode: 13, keyCode: 13, view: window, bubbles: true }));
+            }
+
+            if (shortcuts.has(event.button))
+            {
+                if (holdChecks.has(event.button))
+                {
+                    clearInterval(holdChecks.get(event.button));
+                }
             }
         };
 
@@ -157,6 +182,7 @@ export function useShortcutContext ()
             window.removeEventListener('gamepadbuttonup', handleGamepadButtonUp);
             window.removeEventListener('shortcutsChanged', handleShortcutRebuild);
             window.removeEventListener('keydown', handleKeyPress);
+            holdChecks.forEach(c => clearInterval(c));
         };
     }, [array]);
 
