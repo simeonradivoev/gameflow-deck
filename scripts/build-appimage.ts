@@ -23,6 +23,7 @@ const APPDIR = path.resolve(TMP_FOLDER, `${APP_ID}.AppDir`);
 console.log(`>>> Building AppImage for ${APP_NAME} (${APP_ID})...`);
 
 await ensureDir(path.join(APPDIR, `usr`, 'bin'));
+await ensureDir(path.join(APPDIR, `usr`, 'lib'));
 await ensureDir("build");
 
 // Copy app dir

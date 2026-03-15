@@ -27,8 +27,9 @@ if (process.platform === 'linux' && system.arch === 'arm64')
 if (process.platform === 'darwin')
     webviewLib = "libwebview-arm64.dylib";
 
+let webviewLibPath = '.';
 if (process.env.APPIMAGE === "true")
-    webviewLib = `./usr/lib/${webviewLib}`;
+    webviewLibPath = `./usr/lib`;
 
 await Bun.build({
     entrypoints: ["./src/bun/index.ts", `./src/bun/webview/${system.platform}.ts`],
@@ -38,7 +39,7 @@ await Bun.build({
     root: './src/bun',
     define: {
         "process.env.IS_BINARY": "true",
-        "process.env.WEBVIEW_PATH": `./${webviewLib}`,
+        "process.env.WEBVIEW_PATH": `${webviewLibPath}/${webviewLib}`,
     },
     minify: process.env.NODE_ENV !== 'development',
     sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : "linked",
