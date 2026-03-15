@@ -215,7 +215,7 @@ export async function getValidLaunchCommands (data: {
                 }
 
                 emulator = emulatorName;
-                return [[value, exec ? exec : undefined], ['%EMUDIR%', exec ? $.escape(path.dirname(exec.path)) : undefined]];
+                return [[value, exec ? exec.path : undefined], ['%EMUDIR%', exec ? $.escape(path.dirname(exec.path)) : undefined]];
             }
 
             const key = value[0].substring(1, value.length - 1);
