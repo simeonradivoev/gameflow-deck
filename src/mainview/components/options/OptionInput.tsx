@@ -28,7 +28,7 @@ export function OptionInput (data: {
             inputRef.current?.focus();
         }
     };
-    const { ref, focused } = useFocusable({
+    const { ref } = useFocusable({
         focusKey: data.name, onEnterPress: handlePress
     });
     const inputRef = useRef<HTMLInputElement>(null);

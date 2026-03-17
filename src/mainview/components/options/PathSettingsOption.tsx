@@ -1,14 +1,14 @@
-import { HTMLInputTypeAttribute, JSX, useCallback, useState } from "react";
+import { HTMLInputTypeAttribute, JSX, useEffect, useState } from "react";
 import { SettingsType } from "../../../shared/constants";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { OptionSpace } from "./OptionSpace";
 import { OptionInput } from "./OptionInput";
-import { settingsApi } from "../../scripts/clientApi";
 import { Button } from "./Button";
 import { FileSearchCorner, FolderSearch, Pen, Save } from "lucide-react";
 import { ContextDialog } from "../ContextDialog";
 import FilePicker from "../FilePicker";
 import { setFocus } from "@noriginmedia/norigin-spatial-navigation";
+import queries from "@/mainview/scripts/queries";
 
 type KeysWithValueAssignableTo<T, Value> = {
     [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
@@ -32,14 +32,8 @@ export function PathSettingsOption (data: PathSettingsOptionParams)
 {
     const [localValue, setLocalValue] = useState<string | undefined>();
     const [dirty, setDirty] = useState(false);
-    const setSettingMutation = useMutation({
-        mutationKey: ["setting", data.id],
-        mutationFn: async (value: any) =>
-        {
-            const response = await settingsApi.api.settings({ id: data.id! }).post({ value });
-            if (response.error) throw response.error;
-            return response.data;
-        },
+    const setMutation = useMutation({
+        ...queries.settings.setSettingMutation(data.id),
         onSuccess: (d, v, r, cx) =>
         {
             setDirty(r !== localValue);
@@ -51,7 +45,7 @@ export function PathSettingsOption (data: PathSettingsOptionParams)
         label={data.label}
         id={data.id}
         type={data.type}
-        save={setSettingMutation.mutate}
+        save={setMutation.mutate}
         localValue={localValue}
         allowNewFolderCreation={data.allowNewFolderCreation}
         setLocalValue={(v) =>
@@ -69,21 +63,16 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
 })
 {
     const [isBrowsing, setIsBrowsing] = useState(false);
-    const { data: defaultValue } = useQuery({
-        enabled: !!data.id,
-        queryKey: ["setting", data.id],
-        queryFn: async () =>
-        {
-            const { data: value, error } = await settingsApi.api.settings({ id: data.id! }).get();
-            if (error) throw error;
-            if (!data.isDirty)
-            {
-                data.setLocalValue(String(value.value));
-            }
-            return value.value;
-        },
-    });
+    const { data: defaultValue } = useQuery(queries.settings.getSettingQuery(data.id));
     const changed = defaultValue !== data.localValue;
+
+    useEffect(() =>
+    {
+        if (!data.isDirty)
+        {
+            data.setLocalValue(String(defaultValue));
+        }
+    }, [data.isDirty, defaultValue]);
 
     const handleSelectPath = (path: string) =>
     {

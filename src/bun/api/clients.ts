@@ -7,7 +7,7 @@ import auth from "./auth";
 
 export default new Elysia({ prefix: "/api/romm" })
     .use([games, platforms, auth])
-    .all("/*", async ({ request, params, set }) =>
+    .all("/*", async ({ request, set }) =>
     {
         set.headers["cross-origin-resource-policy"] = 'cross-origin';
 

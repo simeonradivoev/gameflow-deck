@@ -194,7 +194,8 @@ export const store = new Elysia({ prefix: '/api/store' })
                 source: execPath?.type,
                 location: execPath?.path
             },
-            screenshots: screenshots.map(s => `/api/store/screenshot/emulator/${id}/${s}`)
+            screenshots: screenshots.map(s => `/api/store/screenshot/emulator/${id}/${s}`),
+            gameCount: 0
         };
 
         return emulator;

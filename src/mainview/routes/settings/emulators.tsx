@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router';
 import { OptionSpace } from '../../components/options/OptionSpace';
 import { OptionInput } from '../../components/options/OptionInput';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { settingsApi } from '../../scripts/clientApi';
 import { useCallback, useState } from 'react';
 import { Button } from '../../components/options/Button';
 import { Check, ChevronDown, FolderSearch, SearchAlert, Trash, TriangleAlert } from 'lucide-react';
@@ -15,7 +14,7 @@ import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spat
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import FilePicker from '@/mainview/components/FilePicker';
 import { dirname } from 'pathe';
-import { autoEmulatorsQuery } from '@/mainview/scripts/queries';
+import queries from '@/mainview/scripts/queries';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -33,7 +32,7 @@ function EmulatorsPending ()
 
 function EmulatorListCat (data: { selected: string, set: (c: string) => void; })
 {
-  const { ref, focused, focusKey } = useFocusable({ focusKey: 'categories' });
+  const { ref, focusKey } = useFocusable({ focusKey: 'categories' });
   return <ul className='flex gap-1' ref={ref}>
     <FocusContext value={focusKey}>
       {[..."ABCDEFGHIJKLMNOPQRSTVWXYZ"].map(c =>
@@ -99,40 +98,13 @@ function EmulatorPath (data: { id: string; })
   const [isSearching, setIsSearching] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [localValue, setLocalValue] = useState<string | undefined>();
-  const { data: remoteValue } = useQuery({
-    enabled: !!data.id,
-    queryKey: ["emulator", data.id],
-    queryFn: async () =>
-    {
-      const { data: value, error } = await settingsApi.api.settings.emulators.custom({ id: data.id }).get();
-      if (error) throw error;
-      return value;
-    },
-  });
-  const setSettingMutation = useMutation({
-    mutationKey: ["emulator", data.id, 'set'],
-    mutationFn: async (value: string) => settingsApi.api.settings.emulators.custom({ id: data.id }).put({ value }),
-    onSuccess: (d, v, r, ctx) =>
-    {
-      ctx.client.invalidateQueries({ queryKey: ["emulator", data.id] });
-      ctx.client.invalidateQueries({ queryKey: ["auto-emulators"] });
-      setLocalValue(v);
-      setDirty(false);
-    }
-  });
-  const deleteMutation = useMutation({
-    mutationKey: ["emulator", data.id, 'delete'],
-    mutationFn: async () =>
-    {
-      const { error } = await settingsApi.api.settings.emulators.custom({ id: data.id }).delete();
-      if (error) throw error;
-    },
-    onSuccess: (d, v, r, ctx) =>
-    {
-      ctx.client.invalidateQueries({ queryKey: ['custom-emulators'] });
-      ctx.client.invalidateQueries({ queryKey: ["auto-emulators"] });
-    }
-  });
+  const { data: remoteValue } = useQuery(queries.settings.customEmulatorRemoveValueQuery(data.id));
+  const setSettingMutation = useMutation(queries.settings.setCustomEmulatorMutation(data.id, (v) =>
+  {
+    setLocalValue(v);
+    setDirty(false);
+  }));
+  const deleteMutation = useMutation(queries.settings.customEmulatorDeleteMutation(data.id));
 
   const handleSave = useCallback(() =>
   {
@@ -251,11 +223,11 @@ function EmulatorBadge (data: {
 
 function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) => void; })
 {
-  const { data: autoEmulators } = useQuery(autoEmulatorsQuery);
+  const { data: autoEmulators } = useQuery(queries.settings.autoEmulatorsQuery);
   const { ref, focusKey } = useFocusable({ focusKey: `emulator-badges`, focusable: !!autoEmulators && autoEmulators.length > 0 });
   return <div ref={ref} className='grid grid-cols-[repeat(auto-fit,14rem)] auto-rows-[4rem] gap-2 justify-center-safe'>
     <FocusContext value={focusKey}>
-      {autoEmulators?.map(e => <EmulatorBadge key={e.emulator} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.path_cover ?? undefined} path={e.path?.path} exists={e.exists} emulator={e.emulator} />)}
+      {autoEmulators?.map(e => <EmulatorBadge key={e.name} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.logo} path={e.path?.path} exists={e.exists} emulator={e.name} />)}
     </FocusContext>
   </div>;
 }
@@ -263,30 +235,14 @@ function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) 
 function RouteComponent ()
 {
   const { focus } = Route.useSearch();
-  const { ref, focusKey, focusSelf } = useFocusable({
+  const { ref, focusKey } = useFocusable({
     focusKey: "emulators-setting",
     preferredChildFocusKey: focus
   });
 
-  const { data: customEmulators } = useQuery({
-    queryKey: ['custom-emulators'], queryFn: async () =>
-    {
-      const { data, error } = await settingsApi.api.settings.emulators.custom.get();
-      if (error) throw error;
-      return data;
-    }
-  });
+  const { data: customEmulators } = useQuery(queries.settings.customEmulatorsQuery);
 
-  const addOverrideMutation = useMutation({
-    mutationKey: ['emulator', 'custom', 'add'],
-    mutationFn: async (id: string) =>
-    {
-      const { data, error } = await settingsApi.api.settings.emulators.custom({ id }).put({ value: '' });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (d, v, r, ctx) => ctx.client.invalidateQueries({ queryKey: ['custom-emulators'] })
-  });
+  const addOverrideMutation = useMutation(queries.settings.customEmulatorAddMutation);
 
   return <FocusContext value={focusKey}>
     <ul ref={ref} className="list rounded-box gap-2">

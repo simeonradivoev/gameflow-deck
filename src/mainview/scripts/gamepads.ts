@@ -6,9 +6,18 @@ import { mobileCheck } from "./utils";
 let loopStarted = false;
 let isTouching = false;
 type ActiveControlType = 'keyboard' | 'gamepad' | 'mouse' | 'touch' | undefined;
-let activeControls: ActiveControlType = mobileCheck() ? 'touch' : 'mouse';
+let activeControls: ActiveControlType = sessionStorage.getItem('active-controls') as any;
+if (!activeControls)
+{
+    if (mobileCheck())
+    {
+        activeControls = 'touch';
+    } else
+    {
+        activeControls = 'mouse';
+    }
+}
 let mouseUpdateTimeout: any | undefined = undefined;
-let touchStopTimeout: any | undefined = undefined;
 
 const handleLoop = () =>
 {
@@ -109,6 +118,13 @@ function focusControl (control: typeof activeControls)
     if (activeControls != control)
     {
         activeControls = control;
+        if (control)
+        {
+            sessionStorage.setItem('active-controls', control);
+        } else
+        {
+            sessionStorage.removeItem('active-controls');
+        }
         window.dispatchEvent(new CustomEvent('activecontrolschange', { detail: control }));
         if (control !== 'mouse')
         {

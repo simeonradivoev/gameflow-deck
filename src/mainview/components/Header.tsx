@@ -25,7 +25,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "@clients/romm/@tanstack/react-query.gen";
 import { RPC_URL } from "../../shared/constants";
 import { JSX, useEffect, useRef } from "react";
-import { SaveSource, useFocusableDynamic } from "../scripts/spatialNavigation";
+import { SaveSource } from "../scripts/spatialNavigation";
 import { systemApi } from "../scripts/clientApi";
 import { Router } from "..";
 
@@ -228,25 +228,12 @@ function BatteryStatus ()
 
 export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 {
-  const rommOnline = useQuery({
-    ...statsApiStatsGetOptions(),
-    refetchInterval: 30000,
-    retry: false,
-  });
   const user = useQuery({
     ...getCurrentUserApiUsersMeGetOptions(),
     refetchOnWindowFocus: false,
     retry: 1
   });
 
-  let indicator = "status-neutral";
-  if (user.isError)
-  {
-    indicator = "status-error";
-  } else if (!user.isPending && rommOnline.isSuccess)
-  {
-    indicator = "status-success";
-  }
   const accounts: HeaderAccount[] = [{
     id: 'romm', previewUrl: [
       `${RPC_URL(__HOST__)}/api/romm/assets/logos/romm_logo_xbox_one_square.svg`,

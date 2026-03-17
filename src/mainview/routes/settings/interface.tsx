@@ -9,7 +9,7 @@ export const Route = createFileRoute('/settings/interface')({
 function RouteComponent ()
 {
   const { focus } = Route.useSearch();
-  const { ref, focusKey, focusSelf } = useFocusable({
+  const { ref, focusKey } = useFocusable({
     focusKey: "interface-settings",
     preferredChildFocusKey: focus
   });

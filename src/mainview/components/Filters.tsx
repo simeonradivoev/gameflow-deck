@@ -11,14 +11,13 @@ function FilterCat (
     id: string;
     children?: any;
     active: boolean;
-    onFocus: () => void;
     hasFocusedPeer: boolean;
-  } & FilterOption,
+  } & FilterOption & FocusParams,
 )
 {
-  const { ref, focusSelf, focused } = useFocusable({
+  const { ref, focusSelf } = useFocusable({
     focusKey: data.id,
-    onFocus: data.onFocus,
+    onFocus: (l, p, details) => data.onFocus?.(data.id, ref.current, details),
     onEnterPress: data.onAction
   });
 

@@ -1,4 +1,4 @@
-import { JSX, Suspense, useContext, useState } from "react";
+import { JSX, Suspense, useContext, useEffect, useState } from "react";
 import
 {
   Gamepad2,
@@ -21,7 +21,6 @@ import
 {
   FocusContext,
   FocusDetails,
-  getCurrentFocusKey,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
@@ -38,7 +37,6 @@ import { ErrorBoundary, useErrorBoundary } from "react-error-boundary";
 import { twMerge } from "tailwind-merge";
 import Shortcuts from "../components/Shortcuts";
 import { PlatformsList } from "../components/PlatformsList";
-import { systemApi } from "../scripts/clientApi";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
 import z from "zod";
 import { Router } from "..";
@@ -47,6 +45,8 @@ import { zodValidator } from '@tanstack/zod-adapter';
 import { mobileCheck, useDragScroll } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import { FrontEndId } from "@/shared/constants";
+import Carousel from "../components/Carousel";
+import queries from "../scripts/queries";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -90,6 +90,16 @@ function HomeListError (data: { focused: boolean; })
   </div></div>;
 }
 
+function ShowAllGamesCard ()
+{
+  const handleNavigate = () =>
+  {
+    Router.navigate({ to: '/games', viewTransition: { types: ['zoom-in'] } });
+  };
+  const { ref } = useFocusable({ focusKey: 'all-games-btn', onEnterPress: handleNavigate });
+  return <div ref={ref} onClick={handleNavigate} className="flex focusable focusable-primary justify-center items-center bg-base-300/80 rounded-3xl font-semibold w-(--game-card-width) h-(--game-card-height) focusable-hover cursor-pointer">All Games</div>;
+}
+
 function HomeList (data: {
   selectedFilter: string;
 })
@@ -104,8 +114,8 @@ function HomeList (data: {
 
   const handleNodeFocus = (id: string, node: HTMLElement, details: FocusDetails) =>
   {
-    const isMounseEvent = details.nativeEvent instanceof MouseEvent;
-    if (!isMounseEvent)
+    const isMouseEvent = details.nativeEvent instanceof MouseEvent;
+    if (!isMouseEvent)
     {
       node?.scrollIntoView({ inline: 'center', block: 'center', behavior: initFocus ? 'smooth' : 'instant' });
     }
@@ -136,19 +146,29 @@ function HomeList (data: {
   {
     case 'consoles':
       activeList = <>
-        <PlatformsList onSelect={handlePlatformSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />
+        <PlatformsList saveChildFocus="session" onSelect={handlePlatformSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />
         <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
       </>;
       break;
     case 'collections':
       activeList = <>
-        <CollectionList onSelect={handleCollectionSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />
+        <CollectionList saveChildFocus="session" onSelect={handleCollectionSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />
         <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
       </>;
       break;
     default:
       activeList = <>
-        <GameList onGameSelect={handleGameSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="games-list" id="games-list" setBackground={bg.setBackground} />
+        <GameList
+          onGameSelect={handleGameSelect}
+          saveChildFocus="session"
+          onFocus={handleNodeFocus}
+          className="animate-slide-up"
+          key="games-list"
+          id="games-list"
+          setBackground={bg.setBackground}
+          filters={{ limit: 12 }}
+          finalElement={<ShowAllGamesCard />}
+        />
         <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
       </>;
       break;
@@ -182,7 +202,7 @@ function HomeList (data: {
 
   return (
     <FocusContext value={focusKey}>
-      <div ref={ref} className="flex h-full w-full landscape:overflow-x-scroll portrait:overflow-y-scroll overflow-hidden no-scrollbar justify-center-safe sm:py-2 md:py-6 md:pb-6 md:mb-1 not-mobile:sm:pb-4" style={{
+      <Carousel scrollRef={ref} rootClassName="h-full w-full" className="flex h-full w-full landscape:overflow-x-scroll portrait:overflow-y-scroll overflow-hidden no-scrollbar justify-center-safe sm:py-2 md:py-6 md:pb-6 md:mb-1 not-mobile:sm:pb-4" style={{
         mask: `linear-gradient(to right, rgba(0,0,0,0.8) 0%, black 10%, black 90%, rgba(0,0,0,0.8) 100%)`
       }}>
         <div className="landscape:flex landscape:px-16 portrait:min-h-fit portrait:h-fit portrait:pb-32 portrait:w-full landscape:h-full landscape:items-center">
@@ -193,17 +213,16 @@ function HomeList (data: {
             </Suspense>
           </ErrorBoundary>
         </div>
-      </div>
+      </Carousel>
     </FocusContext>
   );
 }
 
-function MainMenu (data: {})
+function MainMenu ()
 {
-  const { ref, focusKey, hasFocusedChild } = useFocusable({
+  const { ref, focusKey } = useFocusable({
     focusKey: `main-menu`,
     trackChildren: true,
-    onBlur: (layout, props, details) => { },
   });
   const navigate = useNavigate();
   return (
@@ -214,7 +233,7 @@ function MainMenu (data: {})
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon
-          action={() => navigate({ to: "/" })}
+          action={() => navigate({ to: "/games", viewTransition: { types: ['zoom-in'] } })}
           icon={<Gamepad2 />}
           label="Home"
           type="secondary"
@@ -248,7 +267,7 @@ function CircleIcon (data: {
   icon?: JSX.Element;
 })
 {
-  const { ref, focused, focusKey } = useFocusable({
+  const { ref, focusKey } = useFocusable({
     focusKey: `navigation-icon-${data.label}`,
     onEnterPress: data.action,
   });
@@ -275,15 +294,9 @@ export default function ConsoleHomeUI ()
 {
   const { filter } = Route.useSearch();
 
-  const closeMutation = useMutation({
-    mutationKey: ['close'], mutationFn: async () =>
-    {
-      const { error } = await systemApi.api.system.exit.post();
-      if (error) throw error;
-    }
-  });
+  const close = useMutation(queries.system.closeMutation);
 
-  const { ref, focusKey, focusSelf } = useFocusable({
+  const { ref, focusKey } = useFocusable({
     forceFocus: true,
     autoRestoreFocus: false,
     saveLastFocusedChild: false,
@@ -319,7 +332,7 @@ export default function ConsoleHomeUI ()
   const headerButtons = [];
   if (mobileCheck())
     headerButtons.push({ id: "fullscreen", icon: <Maximize />, action: handleFullscreen });
-  headerButtons.push({ id: "search", icon: <Search /> }, { id: "power-button", icon: <Power />, external: true, action: () => closeMutation.mutate() });
+  headerButtons.push({ id: "search", icon: <Search /> }, { id: "power-button", icon: <Power />, external: true, action: () => close.mutate() });
 
   return (
     <AnimatedBackground animated ref={ref} backgroundKey="home-background" className="grid grid-cols-3 sm:landscape:grid-rows-[3rem_minmax(var(--game-card-height-safe),1fr)_4rem] md:landscape:grid-rows-[5rem_4rem_minmax(var(--game-card-height-safe),1fr)_6rem_6rem] gap-1 portrait:grid-rows-[3rem_4rem_minmax(var(--game-card-height-safe),1fr)] max-h-screen overflow-clip">

@@ -49,6 +49,8 @@ export const GameListFilterSchema = z.object({
     source: z.string().optional(),
 });
 
+export const RommLoginDataSchema = z.object({ hostname: z.url(), username: z.string(), password: z.string() });
+
 export type GameListFilterType = z.infer<typeof GameListFilterSchema>;
 
 export const DirSchema = z.object({ name: z.string(), parentPath: z.string(), isDirectory: z.boolean() });

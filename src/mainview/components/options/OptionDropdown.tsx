@@ -1,6 +1,5 @@
-import { FocusEventHandler, HTMLInputAutoCompleteAttribute, HTMLInputTypeAttribute, JSX, useRef, useState } from "react";
+import { FocusEventHandler, HTMLInputAutoCompleteAttribute, HTMLInputTypeAttribute, JSX, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { useOptionContext } from "./OptionSpace";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { ContextDialog, ContextList, DialogEntry } from "../ContextDialog";
 import { ChevronDown } from "lucide-react";
@@ -25,15 +24,9 @@ export function OptionDropdown (data: {
         setOpen(true);
     };
     const handleClose = () => setOpen(false);
-    const { ref, focused, focusKey } = useFocusable({
+    const { ref } = useFocusable({
         focusKey: data.name, onEnterPress: handlePress
     });
-    const inputRef = useRef<HTMLInputElement>(null);
-    const option = useOptionContext({
-        onOptionEnterPress: handlePress,
-    });
-
-    const valueIndex = data.value ? data.values?.indexOf(data.value) : -1;
 
     return (
         <>

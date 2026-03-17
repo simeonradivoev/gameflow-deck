@@ -1,4 +1,4 @@
-import Elysia, { sse, status } from "elysia";
+import Elysia, { status } from "elysia";
 import { config, events, jar, taskQueue } from "./app";
 import z from "zod";
 import { client } from "@clients/romm/client.gen";

@@ -1,108 +1,11 @@
-import { keepPreviousData, mutationOptions, queryOptions } from "@tanstack/react-query";
-import { rommApi, settingsApi, storeApi, systemApi } from "./clientApi";
-import toast from "react-hot-toast";
-import { getErrorMessage } from "react-error-boundary";
+import system from "./queries/system";
+import settings from "./queries/settings";
+import romm from "./queries/romm";
+import store from "./queries/store";
 
-export const drivesQuery = queryOptions({
-    queryKey: ['drives'],
-    queryFn: async () =>
-    {
-        const { data, error } = await systemApi.api.system.drives.get();
-        if (error) throw error;
-        return data;
-    }
-});
-
-export const downloadDrivesQuery = queryOptions({
-    queryKey: ['drives', 'download'],
-    queryFn: async () =>
-    {
-        const { data, error } = await systemApi.api.system.drives.download.get();
-        if (error) throw error;
-        return data;
-    }
-});
-
-export const filesQuery = (currentPath: string | undefined, id: string) => queryOptions({
-    queryKey: ['files', currentPath ?? '', id],
-    queryFn: async () =>
-    {
-        const { data, error } = await systemApi.api.system.dirs.get({ query: { path: currentPath } });
-        if (error) throw error;
-        return data;
-    },
-    placeholderData: keepPreviousData
-});
-
-export const changeDownloadsMutation = mutationOptions({
-    mutationKey: ["setting", "downloads"],
-    mutationFn: async (value: any) =>
-    {
-        const response = await toast.promise(settingsApi.api.settings.path.download.put({ manualPath: value }).then(d =>
-        {
-            if (d.error) throw d.error;
-            return d.data;
-        }), {
-            success: e => `Download Moved to ${e}`,
-            loading: "Moving Download",
-            error: e => getErrorMessage(e) ?? "Error Moving Download"
-        });
-
-        return response;
-    }
-});
-
-export const gameQuery = (source: string, id: string) => queryOptions({
-    queryKey: ['game', source, id],
-    queryFn: async () =>
-    {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).get();
-        if (error) throw error;
-        return data;
-    },
-});
-
-export const autoEmulatorsQuery = queryOptions({
-    queryKey: ['auto-emulators'], queryFn: async () =>
-    {
-        const { data, error } = await settingsApi.api.settings.emulators.automatic.get();
-        if (error) throw error;
-        return data;
-    }
-});
-
-export const storeEmulatorsQuery = queryOptions({
-    queryKey: ['store-emulators'], queryFn: async () =>
-    {
-        const { data, error } = await storeApi.api.store.emulators.get();
-        if (error) throw error;
-        return data;
-    }
-});
-
-export const storeFeaturedGamesQuery = queryOptions({
-    queryKey: ['store-emulators', 'recommended'], queryFn: async () =>
-    {
-        const { data, error } = await storeApi.api.store.games.featured.get();
-        if (error) throw error;
-        return data;
-    }
-});
-
-export const storeEmulatorsRecommendedQuery = queryOptions({
-    queryKey: ['store-emulators', 'recommended'], queryFn: async () =>
-    {
-        const { data, error } = await storeApi.api.store.emulators.get({ query: { limit: 6, missing: true, orderBy: 'importance' } });
-        if (error) throw error;
-        return data;
-    }
-});
-
-export const storeEmulatorDetailsQuery = (id: string) => queryOptions({
-    queryKey: ['store-emulator', id], queryFn: async () =>
-    {
-        const { data, error } = await storeApi.api.store.details.emulator({ id }).get();
-        if (error) throw error;
-        return data;
-    }
-});
+export default {
+    system,
+    settings,
+    romm,
+    store
+};

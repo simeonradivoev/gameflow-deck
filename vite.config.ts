@@ -1,4 +1,4 @@
-import { defineConfig, Plugin } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
@@ -8,6 +8,7 @@ import staticAssetsPlugin from 'vite-static-assets-plugin';
 import os from 'node:os';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { host } from "./src/bun/utils/host";
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ command }) =>
 {
@@ -59,21 +60,22 @@ export default defineConfig(({ command }) =>
           manualChunks: (id
           ) =>
           {
-            if (id.includes('@emulatorjs'))
-            {
-              return 'emulatorjs';
-            }
-            if (id
-              .includes
-              ('node_modules'))
-            {
-              return 'vendor';
-            }
 
+            if (id.includes('@emulatorjs'))
+              return 'emulatorjs';
+            if (id.includes('clients/romm'))
+              return 'clients';
+            if (id.includes('node_modules/lucide-react'))
+              return 'lucide';
+            if (id.includes('node_modules/zod'))
+              return 'zod';
+            if (id.includes('node_modules/@tanstack'))
+              return 'tanstack';
+            console.log(id);
+            if (id.includes('node_modules'))
+              return 'vendor';
             if (id.endsWith('SvgIcon.tsx'))
-            {
               return 'icons';
-            }
 
             return null;
           },

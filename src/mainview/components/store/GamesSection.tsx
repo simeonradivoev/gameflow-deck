@@ -4,15 +4,16 @@ import
     useFocusable,
     FocusContext,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2, Star } from "lucide-react";
 import { useDragScroll } from "@/mainview/scripts/utils";
 import FocusDots from "../FocusDots";
 import { FrontEndGameType, FrontEndId } from "@/shared/constants";
 import FrontEndGameCard from "../FrontEndGameCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
+import Carousel from "../Carousel";
 
 export function GamesSection ({ games, onSelect, onFocus }: {
-    games: FrontEndGameType[];
+    games?: FrontEndGameType[];
     onSelect?: (id: FrontEndId, focusKey: string) => void;
 } & FocusParams)
 {
@@ -33,17 +34,17 @@ export function GamesSection ({ games, onSelect, onFocus }: {
                     <h2 className="font-bold uppercase tracking-widest text-accent grow">
                         Featured Games
                     </h2>
-                    <div className="badge badge-xl badge-accent badge-soft">Curated picks</div>
+                    <div className="flex gap-2 bg-accent text-accent-content rounded-full py-1 px-4 font-semibold opacity-80"><Star />Creator Picks</div>
                 </div>
-                <div ref={containerRef} className="grid grid-flow-col auto-cols-[18rem] overflow-y-hidden overflow-x-auto hide-scrollbar p-4 gap-4 justify-center-safe">
-                    {games.map((g, i) => <FrontEndGameCard
+                <Carousel controlsClassName="z-20" scrollRef={containerRef} className="flex *:w-[18rem] *:min-w-[18rem] *:h-[21rem] overflow-y-hidden overflow-x-auto hide-scrollbar p-4 gap-4 justify-center-safe">
+                    {games?.map((g, i) => <FrontEndGameCard
                         key={g.id.id}
                         game={g}
                         onAction={() => onSelect?.(g.id, FOCUS_KEYS.GAME_CARD(g.id.id))}
-                        index={i} />)}
-                </div>
+                        index={i} />) ?? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-38 w-full" />)}
+                </Carousel>
             </section>
-            <FocusDots elements={games.map(e => FOCUS_KEYS.GAME_CARD(e.id.id))} />
+            <FocusDots elements={games?.map(e => FOCUS_KEYS.GAME_CARD(e.id.id)) ?? []} />
         </FocusContext.Provider>
     );
 }

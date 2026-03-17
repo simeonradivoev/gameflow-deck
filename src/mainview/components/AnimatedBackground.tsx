@@ -1,9 +1,9 @@
 
-import classNames from 'classnames';
+
 import { CSSProperties, JSX, Ref, useEffect, useRef, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 import { useSessionStorage } from 'usehooks-ts';
-import { mobileCheck, useLocalSetting } from '../scripts/utils';
+import { useLocalSetting } from '../scripts/utils';
 import { AnimatedBackgroundContext } from '../scripts/contexts';
 
 export function AnimatedBackground (data: {
@@ -87,8 +87,6 @@ export function AnimatedBackground (data: {
 
 
     }, [finalBackgroundUrl]);
-
-    const isMobile = mobileCheck();
 
     function handleSetBackground (url: string)
     {

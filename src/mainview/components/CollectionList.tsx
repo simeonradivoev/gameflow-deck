@@ -1,11 +1,11 @@
-import { getCollectionsApiCollectionsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
-import { DefaultRommStaleTime, RPC_URL } from "@/shared/constants";
+import { RPC_URL } from "@/shared/constants";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CardList, GameMetaExtra } from "./CardList";
 import { SaveSource } from "../scripts/spatialNavigation";
 import { GameCardFocusHandler } from "./CardElement";
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
+import queries from "../scripts/queries";
 
 export default function CollectionList (data: {
     id: string,
@@ -13,14 +13,11 @@ export default function CollectionList (data: {
     className?: string;
     onFocus?: GameCardFocusHandler;
     onSelect?: (id: string) => void;
+    saveChildFocus?: 'session' | 'local';
 })
 {
     const navigate = useNavigate();
-    const { data: collections } = useSuspenseQuery({
-        ...getCollectionsApiCollectionsGetOptions(),
-        refetchOnWindowFocus: false,
-        staleTime: DefaultRommStaleTime
-    });
+    const { data: collections } = useSuspenseQuery(queries.romm.getCollectionsQuery());
 
     const handleDefaultSelect = (id: string) =>
     {
@@ -33,6 +30,7 @@ export default function CollectionList (data: {
             type="collection"
             id={data.id}
             className={data.className}
+            saveChildFocus={data.saveChildFocus}
             games={collections.sort((a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at))
                 .map((g) => ({
                     id: String(g.id),

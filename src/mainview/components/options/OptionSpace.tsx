@@ -41,7 +41,7 @@ export function OptionSpace (data: {
 })
 {
     const eventTarget = useMemo(() => new EventTarget(), []);
-    const { ref, focused, focusSelf, focusKey, hasFocusedChild } = useFocusable({
+    const { ref, focused, focusSelf, focusKey } = useFocusable({
         focusKey: data.id,
         focusable: data.focusable !== false,
         trackChildren: true,

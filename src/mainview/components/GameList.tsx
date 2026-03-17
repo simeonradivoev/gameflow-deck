@@ -1,13 +1,14 @@
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
-import { FrontEndId, GameListFilterType, RPC_URL } from "@shared/constants";
+import { FrontEndGameType, FrontEndId, GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
 import { SaveSource } from "../scripts/spatialNavigation";
-import { rommApi } from "../scripts/clientApi";
 import { HardDrive } from "lucide-react";
-import { JSX } from "react";
+import { JSX, useContext } from "react";
 import { GameCardFocusHandler } from "./CardElement";
 import { useLocalSetting } from "../scripts/utils";
+import { AnimatedBackgroundContext } from "../scripts/contexts";
+import queries from "../scripts/queries";
 
 export interface GameListParams
 {
@@ -18,19 +19,16 @@ export interface GameListParams
     onGameSelect?: (id: FrontEndId, source: string | null, sourceId: string | null) => void;
     onFocus?: GameCardFocusHandler;
     className?: string;
+    finalElement?: JSX.Element;
+    saveChildFocus?: "session" | "local";
 }
 
 export function GameList (data: GameListParams)
 {
-    const games = useSuspenseQuery({
-        queryKey: ['games', data.filters ?? 'all'],
-        queryFn: () => rommApi.api.romm.games.get({
-            query: data.filters
-        }).then(d => d.data)
-    });
+    const games = useSuspenseQuery(queries.romm.allGamesQuery(data.filters));
     const navigator = useNavigate();
-    const queryClient = useQueryClient();
     const blur = useLocalSetting('backgroundBlur');
+    const backgroundContext = useContext(AnimatedBackgroundContext);
 
     const handleFocus = (id: FrontEndId, source: string | null, sourceId: string | null) =>
     {
@@ -39,11 +37,11 @@ export function GameList (data: GameListParams)
         {
             try
             {
-                const screenshotUrl = new URL(`${RPC_URL(__HOST__)}${game.paths_screenshots[new Date().getMinutes() % game.paths_screenshots.length]}`);
+                const screenshotUrl = game.paths_screenshots && game.paths_screenshots.length > 0 ? new URL(`${RPC_URL(__HOST__)}${game.paths_screenshots[new Date().getMinutes() % game.paths_screenshots.length]}`) : undefined;
                 const coverUrl = new URL(`${RPC_URL(__HOST__)}${game.path_cover}`);
-                const previewUrl = blur ? coverUrl : screenshotUrl;
+                const previewUrl = blur ? coverUrl : (screenshotUrl ?? coverUrl);
                 previewUrl.searchParams.delete('ts');
-                data.setBackground?.(previewUrl.href);
+                data.setBackground?.(previewUrl.href) ?? backgroundContext.setBackground(previewUrl.href);
             } catch
             {
 
@@ -51,10 +49,10 @@ export function GameList (data: GameListParams)
         }
     };
 
-    function handleDefaultSelect (id: FrontEndId, source: string | null, sourceId: string | null)
+    function handleDefaultSelect (g: FrontEndGameType)
     {
-        SaveSource('details');
-        navigator({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source }, viewTransition: { types: ['zoom-in'] } });
+        SaveSource('details', { search: { focus: g.slug ?? `game-${g.id}` } });
+        navigator({ to: '/game/$source/$id', params: { id: String(g.source_id ?? g.id.id), source: g.source ?? g.id.source }, viewTransition: { types: ['zoom-in'] } });
     };
 
     return (
@@ -65,6 +63,8 @@ export function GameList (data: GameListParams)
                 grid={data.grid}
                 className={data.className}
                 onGameFocus={data.onFocus}
+                finalElement={data.finalElement}
+                saveChildFocus={data.saveChildFocus}
                 games={games.data?.games
                     .map(
                         (g) =>
@@ -92,7 +92,7 @@ export function GameList (data: GameListParams)
                                 ),
                                 previewUrl: previewUrl.href,
                                 badges: badges,
-                                onSelect: () => data.onGameSelect ? data.onGameSelect(g.id, g.source, g.source_id) : handleDefaultSelect(g.id, g.source, g.source_id),
+                                onSelect: () => data.onGameSelect ? data.onGameSelect(g.id, g.source, g.source_id) : handleDefaultSelect(g),
                                 onFocus: () => handleFocus(g.id, g.source, g.source_id)
                             } satisfies GameMetaExtra;
                         },

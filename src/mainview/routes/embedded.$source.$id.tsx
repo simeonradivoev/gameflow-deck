@@ -1,27 +1,26 @@
-import { EMULATORJS_URL, RPC_URL, SERVER_URL } from '@/shared/constants';
+import { RPC_URL, SERVER_URL } from '@/shared/constants';
 import { createFileRoute } from '@tanstack/react-router';
-import { gameQuery } from '../scripts/queries';
 import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { Router } from '..';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { Button, ButtonStyle } from '../components/options/Button';
-import { DoorOpen, Home, RefreshCw, Undo } from 'lucide-react';
+import { ButtonStyle } from '../components/options/Button';
+import { DoorOpen, RefreshCw, Undo } from 'lucide-react';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
 import Shortcuts from '../components/Shortcuts';
-import { useEventListener, useTimeout } from 'usehooks-ts';
-import { GetFocusedElement, useGlobalFocus } from '../scripts/spatialNavigation';
+import { useEventListener } from 'usehooks-ts';
 import useActiveControl from '../scripts/gamepads';
 import { twMerge } from 'tailwind-merge';
 import { HeaderAccounts, HeaderStatusBar } from '../components/Header';
 import { RoundButton } from '../components/RoundButton';
+import queries from '../scripts/queries';
 
 export const Route = createFileRoute('/embedded/$source/$id')({
     component: RouteComponent,
     loader: async (ctx) =>
     {
-        const data = await ctx.context.queryClient.fetchQuery(gameQuery(ctx.params.source, ctx.params.id));
+        const data = await ctx.context.queryClient.fetchQuery(queries.romm.gameQuery(ctx.params.source, ctx.params.id));
         return { data };
     },
     validateSearch: zodValidator(z.record(z.string(), z.string().optional().nullable()))

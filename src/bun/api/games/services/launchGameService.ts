@@ -181,7 +181,7 @@ export async function getValidLaunchCommands (data: {
             '%FILENAME%': $.escape(path.basename(validFiles[0]))
         };
 
-        cmd = cmd.replace(/\%INJECT\%=(?<inject>[\w\%.\/\\]+)/g, (subscring, injectFile: string) =>
+        cmd = cmd.replace(/\%INJECT\%=(?<inject>[\w\%.\/\\]+)/g, (_, injectFile: string) =>
         {
             try
             {

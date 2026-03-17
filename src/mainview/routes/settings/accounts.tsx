@@ -13,23 +13,17 @@ import
   useEffect,
   useRef,
 } from "react";
-import { RPC_URL } from "@shared/constants";
-import
-{
-  getCurrentUserApiUsersMeGetOptions,
-  statsApiStatsGetOptions,
-} from "@clients/romm/@tanstack/react-query.gen";
+import { RommLoginDataSchema, RPC_URL } from "@shared/constants";
 import toast from "react-hot-toast";
-import z from "zod";
 import { OptionSpace } from "../../components/options/OptionSpace";
 import { useSettingsForm, useSettingsFormContext } from "../../components/options/SettingsAppForm";
-import { rommApi, settingsApi } from "../../scripts/clientApi";
 import { Button } from "../../components/options/Button";
 import { ContextDialog } from "@/mainview/components/ContextDialog";
 import QRCode from "react-qr-code";
 import { useJobStatus } from "@/mainview/scripts/utils";
 import { useInterval } from "usehooks-ts";
 import { TwitchIcon } from "@/mainview/scripts/brandIcons";
+import queries from "@/mainview/scripts/queries";
 
 export const Route = createFileRoute("/settings/accounts")({
   component: RouteComponent,
@@ -56,44 +50,16 @@ function LoginQR (data: { id: string, isOpen: boolean, cancel: () => void, url: 
   </ContextDialog>;
 }
 
-function TwitchLogin (data: {})
+function TwitchLogin ()
 {
-
-  const loginStatus = useQuery({
-    queryKey: ['twitch', 'login', 'status'],
-    retry (failureCount, error)
-    {
-      if (error.status === 404)
-      {
-        return false;
-      }
-      return failureCount < 3;
-    },
-    queryFn: async () =>
-    {
-      const { data, error, status } = await rommApi.api.romm.login.twitch.get();
-      if (error) throw { ...error, status };
-      return data;
-    }
-  });
+  const loginStatus = useQuery(queries.settings.twitchLoginVerificationQuery);
 
   const loginMutation = useMutation({
-    mutationKey: ['twitch', 'login'],
-    mutationFn: (openInBrowser: boolean) =>
-    {
-      return rommApi.api.romm.login.twitch.post({ openInBrowser });
-    },
+    ...queries.settings.twitchLoginMutation,
     onSuccess: () => loginStatus.refetch()
   });
 
-  const logoutMutation = useMutation({
-    mutationKey: ['twitch', 'logout'],
-    mutationFn: () =>
-    {
-      return rommApi.api.romm.logout.twitch.post();
-    },
-    onSuccess: () => loginStatus.refetch()
-  });
+  const logoutMutation = useMutation({ ...queries.settings.twitchLogoutMutation, onSuccess: () => loginStatus.refetch() });
 
   const { data: loginData, wsRef } = useJobStatus('twitch-login-job', { onEnded: () => loginStatus.refetch() });
 
@@ -118,22 +84,13 @@ function TwitchLogin (data: {})
 
 function LoginControls (data: { hasPassword: boolean; })
 {
-  const user = useQuery({
-    ...getCurrentUserApiUsersMeGetOptions(),
-    queryKey: ['romm', 'auth', "login"],
-    refetchOnWindowFocus: false,
-    retry: 0
-  });
-
-  const loginMutation = useMutation({
-    mutationKey: ['login', 'qr', 'cancel'],
-    mutationFn: () => rommApi.api.romm.login.romm.post()
-  });
-  const { data: statusValue, error: loginError, wsRef } = useJobStatus('login-job');
+  const user = useQuery(queries.romm.rommUserQuery());
+  const loginMutation = useMutation(queries.romm.rommQrLoginMutation);
+  const { data: statusValue, wsRef } = useJobStatus('login-job');
   const context = useSettingsFormContext({});
   const isMutatingRomm = useIsMutating({ mutationKey: ["romm", "auth"] }) > 0;
   const logoutMutation = useMutation({
-    mutationKey: ["romm", "auth", "logout"], mutationFn: () => rommApi.api.romm.logout.post(),
+    ...queries.romm.rommLogoutMutation,
     onSuccess: async (d, v, r, c) =>
     {
       user.refetch();
@@ -171,8 +128,6 @@ function LoginControls (data: { hasPassword: boolean; })
   </div>;
 }
 
-const dataSchema = z.object({ hostname: z.url(), username: z.string(), password: z.string() });
-
 function RouteComponent ()
 {
   const { focus } = Route.useSearch();
@@ -181,9 +136,9 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
 
-  const { data: hasPassword } = useQuery({ queryKey: ['romm', 'auth', 'passLength'], queryFn: () => rommApi.api.romm.login.get().then(d => d.data?.hasPassword as boolean) });
-  const { data: hostname } = useQuery({ queryKey: ['romm', 'auth', 'hostname'], queryFn: () => settingsApi.api.settings({ id: 'rommAddress' }).get().then(d => d.data?.value as string) });
-  const { data: username } = useQuery({ queryKey: ['romm', 'auth', 'username'], queryFn: () => settingsApi.api.settings({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
+  const { data: hasPassword } = useQuery(queries.romm.rommHasPasswordQuery);
+  const { data: hostname } = useQuery(queries.romm.rommHostnameQuery);
+  const { data: username } = useQuery(queries.romm.rommUsernameQuery);
 
   const loginForm = useSettingsForm({
     defaultValues: {
@@ -201,15 +156,11 @@ function RouteComponent ()
       loginForm.reset();
     },
     validators: {
-      onChange: dataSchema
+      onChange: RommLoginDataSchema
     }
   });
 
-  const rommOnline = useQuery({
-    ...statsApiStatsGetOptions(),
-    refetchInterval: 30000,
-    retry: false,
-  });
+  const rommOnline = useQuery(queries.romm.rommGetOptionsQuery());
 
   useEffect(() =>
   {
@@ -219,22 +170,7 @@ function RouteComponent ()
     }
   }, [focus]);
 
-  const loginMutation = useMutation({
-    mutationKey: ["romm", "login"],
-    mutationFn: async (data: z.infer<typeof dataSchema>) =>
-    {
-      const { error } = await rommApi.api.romm.login.post({ username: data.username, password: data.password, host: data.hostname });
-      if (error) throw error;
-    },
-    onSuccess: (d, v, r, c) =>
-    {
-      c.client.invalidateQueries({ queryKey: ['romm', 'auth'] });
-    },
-    onError: (e) =>
-    {
-      console.error(e);
-    },
-  });
+  const loginMutation = useMutation(queries.romm.rommLoginMutation);
 
   let indicator = "";
   if (rommOnline.isError)

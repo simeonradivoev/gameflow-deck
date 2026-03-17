@@ -1,7 +1,7 @@
 import getFolderSize from "get-folder-size";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { config, db, emulatorsDb } from "../../app";
+import { config, emulatorsDb } from "../../app";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@schema/app";
 import { FrontEndGameType, FrontEndGameTypeDetailed, StoreGameType } from "@shared/constants";
@@ -103,15 +103,6 @@ export function convertLocalToFrontendDetailed (g: typeof schema.games.$inferSel
 
 export async function convertStoreToFrontend (system: string, id: string, storeGame: StoreGameType): Promise<FrontEndGameType>
 {
-    let size: number | null = null;
-    try
-    {
-        const fileResponse = await fetch(storeGame.file, { method: 'HEAD' });
-        size = Number(fileResponse.headers.get('content-length'));
-    } catch (error)
-    {
-        console.error(error);
-    }
     const rommSystem = await emulatorsDb.query.systemMappings.findFirst({
         where: and(eq(emulatorSchema.systemMappings.system, system), eq(emulatorSchema.systemMappings.source, 'romm'))
     });

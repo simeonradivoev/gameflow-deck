@@ -1,4 +1,4 @@
-import { expect, test, mock } from 'bun:test';
+import { expect, test } from 'bun:test';
 
 test("uses custom emulator", async () =>
 {

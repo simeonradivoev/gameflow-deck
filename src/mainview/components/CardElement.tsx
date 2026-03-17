@@ -39,11 +39,11 @@ export default function CardElement (data: GameCardParams & InteractParams)
 {
   const { ref, focused, focusSelf } = useFocusable({
     focusKey: data.focusKey,
-    onFocus: (l, p, detals) => data.onFocus?.(data.id, ref.current as any, detals),
+    onFocus: (l, p, details) => data.onFocus?.(data.id, ref.current as any, details),
     onEnterPress: () => data.onAction?.(),
     onBlur: () => data.onBlur?.(data.id)
   });
-  const { isMouse, isPointer } = useActiveControl();
+  const { isPointer } = useActiveControl();
 
   return (
     <li

@@ -27,11 +27,6 @@ interface SpawnBrowserOptions
     ipc?: (message: string) => void;
 }
 
-interface SpawnLastInfo
-{
-    PID: number;
-}
-
 /**
  * Spawns a browser process with proper handling for different installation types.
  * 

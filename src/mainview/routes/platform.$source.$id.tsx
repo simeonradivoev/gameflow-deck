@@ -1,10 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CollectionsDetail } from "../components/CollectionsDetail";
 import { useQuery } from "@tanstack/react-query";
-import { DefaultRommStaleTime, RPC_URL } from "../../shared/constants";
-import { useContext } from "react";
-import { rommApi } from "../scripts/clientApi";
-import { AnimatedBackgroundContext } from "../scripts/contexts";
+import { RPC_URL } from "../../shared/constants";
+import queries from "../scripts/queries";
 
 export const Route = createFileRoute("/platform/$source/$id")({
   component: RouteComponent
@@ -24,22 +22,12 @@ function PlatformTitle (data: { pathCover: string | null, platformName?: string;
 function RouteComponent ()
 {
   const { source, id } = Route.useParams();
-  const { data: platform } = useQuery({
-    queryKey: ['platform', source, id], queryFn: async () =>
-    {
-      const { data, error } = await rommApi.api.romm.platforms({ source })({ id }).get();
-      if (error) throw error;
-      return data;
-    }, staleTime: DefaultRommStaleTime
-  });
-
-  const animatedBgContext = useContext(AnimatedBackgroundContext);
+  const { data: platform } = useQuery(queries.romm.platformQuery(source, id));
 
   return (
     <div className="w-full h-full">
       {!!platform && <CollectionsDetail
         title={<PlatformTitle pathCover={platform.path_cover} platformName={platform.name} />}
-        setBackground={animatedBgContext.setBackground}
         filters={{ platform_id: Number(id), platform_slug: platform.slug, platform_source: source }}
       />}
     </div>

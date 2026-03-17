@@ -41,7 +41,6 @@ export async function BuildParams (data: BrowserParams)
 
         args.push(`--app=${SERVER_URL(host)}`);
         args.push(`--app-id=gameflow`);
-        args.push(`--force-app-mode`);
         args.push('--no-default-browser-check');
         args.push('--new-instance');
         args.push('--no-first-run');

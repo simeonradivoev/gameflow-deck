@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { PathSettingsOptionBase, PathSettingsOptionParams } from "./PathSettingsOption";
 import { useMutation } from "@tanstack/react-query";
-import { changeDownloadsMutation } from "@/mainview/scripts/queries";
+import queries from "@/mainview/scripts/queries";
 
 export default function DownloadDirectoryOption (data: PathSettingsOptionParams)
 {
     const [localValue, setLocalValue] = useState<string | undefined>();
     const [dirty, setDirty] = useState(false);
     const setSettingMutation = useMutation({
-        ...changeDownloadsMutation,
+        ...queries.settings.changeDownloadsMutation,
         onSuccess: (d, v, r, cx) =>
         {
             setDirty(r !== localValue);

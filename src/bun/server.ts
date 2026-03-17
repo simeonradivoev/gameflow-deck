@@ -1,9 +1,7 @@
 import { SERVER_PORT } from "@shared/constants";
-import path from 'node:path';
-import appInfo from '~/package.json';
 import { host } from "./utils/host";
 import { appPath } from "./utils";
-import Elysia, { file } from "elysia";
+import Elysia from "elysia";
 import cors from "@elysiajs/cors";
 import staticPlugin from "@elysiajs/static";
 
@@ -17,11 +15,11 @@ export function RunBunServer ()
       'cross-origin-opener-policy': 'same-origin',
       'cross-origin-resource-policy': 'cross-origin'
     })
-    .get("/", ({ set }) =>
+    .get("/", () =>
     {
       return Bun.file(appPath("./dist/index.html"));
     })
-    .get('/emulatorjs', ({ set }) =>
+    .get('/emulatorjs', () =>
     {
       return Bun.file(appPath('./dist/emulatorjs/index.html'));
     })

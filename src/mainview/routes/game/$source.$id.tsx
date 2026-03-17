@@ -1,6 +1,6 @@
 import { createFileRoute, ErrorComponentProps } from "@tanstack/react-router";
 import { CommandEntry, FrontEndGameTypeDetailed, GameInstallProgress, GameStatusType, RPC_URL } from "@shared/constants";
-import { twJoin, twMerge } from "tailwind-merge";
+import { twMerge } from "tailwind-merge";
 import { JSX, RefObject, useEffect, useRef, useState } from "react";
 import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
@@ -11,20 +11,20 @@ import { PopSource, SaveSource, useFocusEventListener } from "../../scripts/spat
 import { AnimatedBackground } from "../../components/AnimatedBackground";
 import { rommApi } from "../../scripts/clientApi";
 import toast from "react-hot-toast";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Router } from "../..";
 import { ContextDialog, ContextList, DialogEntry } from "../../components/ContextDialog";
 import Shortcuts from "../../components/Shortcuts";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
-import { gameQuery } from "@/mainview/scripts/queries";
+import queries from "@/mainview/scripts/queries";
 import Screenshots from "@/mainview/components/Screenshots";
-import { delay, useSticky, useStickyDataAttr } from "@/mainview/scripts/utils";
+import { useStickyDataAttr } from "@/mainview/scripts/utils";
 import useActiveControl from "@/mainview/scripts/gamepads";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>
   {
-    const data = await context.queryClient.fetchQuery(gameQuery(params.source, params.id));
+    const data = await context.queryClient.fetchQuery(queries.romm.gameQuery(params.source, params.id));
     return { data };
   },
   component: GameDetailsUI,
@@ -402,8 +402,7 @@ function ActionButtons (data: { game: FrontEndGameTypeDetailed; })
   const { ref, focusKey } = useFocusable({ focusKey: 'actions', onBlur: () => setHoverText(undefined) });
   const [open, setOpen] = useState(false);
   const deleteMutation = useMutation({
-    mutationKey: ['delete', data.game.id],
-    mutationFn: () => rommApi.api.romm.game({ source: data.game.id.source })({ id: data.game.id.id }).delete(),
+    ...queries.romm.deleteGameMutation,
     onSuccess: () =>
     {
       location.reload();
@@ -493,7 +492,7 @@ function ActionButton (data: {
   disabled?: boolean;
 })
 {
-  const { ref, focused } = useFocusable({ focusKey: data.id, onFocus: data.onFocus, onEnterPress: data.onAction, focusable: data.disabled !== true });
+  const { ref } = useFocusable({ focusKey: data.id, onFocus: data.onFocus, onEnterPress: data.onAction, focusable: data.disabled !== true });
   const styles = {
     primary: "bg-primary text-primary-content focused:bg-base-content focused:text-base-300 focusable focusable-primary",
     base: " text-base-content border-dashed border-base-content/20 border-2 focused:bg-base-content focused:text-base-300 focusable focusable-primary",

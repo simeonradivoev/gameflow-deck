@@ -5,7 +5,7 @@ import { LoginJob } from "./login-job";
 import TwitchLoginJob from "./twitch-login-job";
 import UpdateStoreJob from "./update-store";
 
-function registerJob<const Path extends string, TS, T extends { id: Path, dataSchema?: TS; }> (job: T, path: Path, dataSchema: TS)
+function registerJob<const Path extends string, TS, T extends { id: Path, dataSchema?: TS; }> (_job: T, path: Path, dataSchema: TS)
 {
     return new Elysia().ws(path, {
         body: z.discriminatedUnion('type', [
@@ -64,7 +64,7 @@ function registerJob<const Path extends string, TS, T extends { id: Path, dataSc
         {
             (ws.data as any).cleanup.forEach((d: Function) => d());
         },
-        message (ws, message)
+        message (_, message)
         {
             if (message.type === 'cancel')
             {

@@ -5,7 +5,7 @@ import
     useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
+import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { CSSProperties } from "react";
 
 export type ButtonStyle = 'base' | 'accent' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error';

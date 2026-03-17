@@ -3,7 +3,7 @@ import { GamepadButtonEvent } from "./gamepads";
 import { dispatchFocusedEvent, GetFocusedTree } from "./spatialNavigation";
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 
-const shortcutMap = new Map<string, Shortcut[]>();
+const shortcutMap = new Map<string, (() => Shortcut[])[]>();
 const conflictSet = new Set<number>();
 let hadEnterDown = false;
 
@@ -66,7 +66,8 @@ export function useShortcutContext ()
             const focusKey = getCurrentFocusKey();
             const newArray = GetFocusedTree(focusKey)
                 .filter(f => shortcutMap.has(f))
-                .flatMap(f => shortcutMap.get(f)!.map(s => ({ key: f, ...s })))
+                .flatMap(f => shortcutMap.get(f)!.map(s => ({ key: f, handler: s })))
+                .flatMap(kvp => kvp.handler().map(s => ({ key: kvp.key, ...s })))
                 .filter(s =>
                 {
                     const empty = !conflictSet.has(s.button);
@@ -193,12 +194,20 @@ export function useShortcuts (focusKey: string, build: () => Shortcut[], ...deps
 {
     useEffect(() =>
     {
-        shortcutMap.set(focusKey, build());
+        const array = shortcutMap.get(focusKey) ?? [];
+        array.push(build);
+        shortcutMap.set(focusKey, array);
         markDirtyThrottled();
 
         return () =>
         {
-            shortcutMap.delete(focusKey);
+            const array = shortcutMap.get(focusKey);
+            if (array)
+            {
+                const index = array.indexOf(build);
+                array?.splice(index, 1);
+            }
+
             markDirtyThrottled();
         };
     }, [...deps, focusKey]);

@@ -1,0 +1,17 @@
+{
+    "short_name": "GF",
+    "name": "Gameflow Deck",
+    "start_url": "/",
+    "display": "fullscreen",
+    "theme_color": "#605dff",
+    "background_color": "#1d232a",
+    "description": "Retro Game Launcher",
+    "icons": [
+        {
+            "src": "/256x256.png",
+            "sizes": "320x320",
+            "type": "image/png"
+        }
+    ],
+    "lang": "en"
+}

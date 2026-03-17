@@ -1,4 +1,5 @@
-import { systemApi } from '@/mainview/scripts/clientApi';
+
+import queries from '@/mainview/scripts/queries';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import prettyBytes from 'pretty-bytes';
@@ -9,7 +10,7 @@ export const Route = createFileRoute('/settings/about')({
 
 function RouteComponent ()
 {
-  const { data: systemInfo } = useQuery({ queryKey: ['system-info'], queryFn: () => systemApi.api.system.info.get() });
+  const { data: systemInfo } = useQuery(queries.system.systemInfoQuery);
   return <table className="table">
     <tbody>
       <tr>

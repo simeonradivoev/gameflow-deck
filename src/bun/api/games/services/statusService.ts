@@ -230,7 +230,7 @@ export default async function buildStatusResponse (source: string, id: string)
                 dispose.forEach(f => f());
             };
         },
-        cancel (reason)
+        cancel ()
         {
             cleanup?.();
             cleanup = undefined;

@@ -1,25 +1,25 @@
 import { AnimatedBackground } from './AnimatedBackground';
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { HeaderUI } from './Header';
 import { GameList } from './GameList';
 import { Search, Settings2 } from 'lucide-react';
-import { JSX, Suspense } from 'react';
+import { JSX, Suspense, useEffect } from 'react';
 import Shortcuts from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
-import { Router } from '..';
-import { PopNavigateSource, PopSource } from '../scripts/spatialNavigation';
+import { PopNavigateSource } from '../scripts/spatialNavigation';
 import { GameListFilterType } from '@/shared/constants';
 import { GameCardFocusHandler } from './CardElement';
 
 export interface CollectionsDetailParams
 {
     id?: string;
-    setBackground: (url: string) => void;
+    setBackground?: (url: string) => void;
     filters?: GameListFilterType;
     headerTitle?: JSX.Element;
     title?: JSX.Element;
     footer?: JSX.Element;
+    focus?: string;
 }
 
 export function CollectionsDetail (data: CollectionsDetailParams)
@@ -37,9 +37,20 @@ export function CollectionsDetail (data: CollectionsDetailParams)
     {
         if (!(details.nativeEvent instanceof MouseEvent))
         {
-            node.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            node.scrollIntoView({ block: 'center', behavior: details.instant ? 'instant' : 'smooth' });
         }
     };
+
+    useEffect(() =>
+    {
+        if (data.focus)
+            setFocus(data.focus, { instant: true });
+    }, [data.focus]);
+
+    useEffect(() =>
+    {
+        return () => setFocus('');
+    }, []);
 
     return (
         <FocusContext value={focusKey}>
@@ -53,7 +64,6 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                         <Suspense>
                             <GameList
                                 grid
-                                setBackground={data.setBackground}
                                 filters={data.filters}
                                 onFocus={handleScroll}
                                 id={`${focusKey}-list`}>

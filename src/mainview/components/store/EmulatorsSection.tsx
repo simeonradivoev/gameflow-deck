@@ -12,6 +12,7 @@ import { Router } from "@/mainview";
 import { StoreEmulatorCard } from "./StoreEmulatorCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import { FrontEndEmulator } from "@/shared/constants";
+import Carousel from "../Carousel";
 
 function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (details: { node: HTMLElement, instant: boolean; }) => void; })
 {
@@ -34,7 +35,7 @@ function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (detail
 
 export function EmulatorsSection (data: {
     id: string;
-    emulators: FrontEndEmulator[];
+    emulators?: FrontEndEmulator[];
     onSelect?: (id: string, focusKey: string) => void;
     header?: any;
 } & FocusParams)
@@ -60,17 +61,19 @@ export function EmulatorsSection (data: {
                         </h2>
                     </>}
                 </div>
-                <div ref={containerRef} className="flex *:min-w-[18rem] overflow-y-hidden overflow-x-scroll scrollbar-none py-2 px-4 gap-4 select-none">
+
+                <Carousel scrollRef={containerRef} className="flex *:min-w-[18rem] overflow-y-hidden overflow-x-scroll scrollbar-none py-2 px-4 gap-4 select-none">
                     {data.emulators?.map((em) => (
                         <StoreEmulatorCard id={`${data.id}-${em.name}`} key={em.name} emulator={em} onSelect={(id, focusKey) => data.onSelect?.(em.name, focusKey)} onFocus={({ node, details }) =>
                         {
                             scrollIntoNearestParent(node, { behavior: details.instant ? 'instant' : 'smooth' });
                         }} />
-                    ))}
+                    )) ?? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-38 w-full rounded-4xl" />)}
                     <SeeAllCard id={`${FOCUS_KEYS.EMULATOR_SECTION}-see-all`} onAction={() => Router.navigate({ to: '/store/tab/emulators' })} onFocus={({ node, instant }) => scrollIntoNearestParent(node, { behavior: instant ? 'instant' : 'smooth' })} />
-                </div>
+                </Carousel>
+
             </section>
-            {!!data.emulators && <FocusDots elements={data.emulators.map(e => FOCUS_KEYS.EMULATOR_CARD(e.name))} />}
+            <FocusDots elements={data.emulators?.map(e => FOCUS_KEYS.EMULATOR_CARD(e.name))} />
         </FocusContext.Provider>
     );
 }

@@ -2,7 +2,7 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { Block, createFileRoute } from '@tanstack/react-router';
 import DownloadDirectoryOption from '@/mainview/components/options/DownloadDirectoryOption';
 import { useIsMutating, useMutation, useQuery } from '@tanstack/react-query';
-import { changeDownloadsMutation, downloadDrivesQuery } from '@/mainview/scripts/queries';
+import queries from '@/mainview/scripts/queries';
 import { DownloadsDrive } from '@/shared/constants';
 import prettyBytes from 'pretty-bytes';
 import classNames from 'classnames';
@@ -24,11 +24,11 @@ function DriveComponent (data: { drive: DownloadsDrive; downloadsSize: number; r
     focusKey: data.drive.device,
     onFocus: () => (ref.current as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   });
-  const isMoving = useIsMutating(changeDownloadsMutation);
+  const isMoving = useIsMutating(queries.settings.changeDownloadsMutation);
   const usedWithoutDownlods = data.drive.used - (data.drive.isCurrentlyUsed ? data.downloadsSize : 0);
   const usedPercent = usedWithoutDownlods / data.drive.size;
   const usedPercentRaw = data.drive.used / data.drive.size;
-  const changeDownloads = useMutation({ ...changeDownloadsMutation, onSuccess: data.refetchDrives }); data.drive.unusableReason;
+  const changeDownloads = useMutation({ ...queries.settings.changeDownloadsMutation, onSuccess: data.refetchDrives }); data.drive.unusableReason;
   const shortcuts: Shortcut[] = [];
   const valid = !data.drive.unusableReason && isMoving <= 0;
   const handleAction = () => changeDownloads.mutate(data.drive.mountPoint);
@@ -74,16 +74,16 @@ function DriveComponent (data: { drive: DownloadsDrive; downloadsSize: number; r
 function RouteComponent ()
 {
   const { focus } = Route.useSearch();
-  const { ref, focusKey, focusSelf } = useFocusable({
+  const { ref, focusKey } = useFocusable({
     focusKey: "directories",
     preferredChildFocusKey: focus
   });
 
-  const isMoving = useIsMutating(changeDownloadsMutation);
-  const { data: drives, refetch } = useQuery({ ...downloadDrivesQuery, refetchInterval: isMoving > 0 ? 1000 : undefined });
+  const isMoving = useIsMutating(queries.settings.changeDownloadsMutation);
+  const { data: drives, refetch } = useQuery({ ...queries.system.downloadDrivesQuery, refetchInterval: isMoving > 0 ? 1000 : undefined });
 
   return <FocusContext value={focusKey}>
-    <Block shouldBlockFn={() => isMoving} withResolver={false} />
+    <Block shouldBlockFn={() => isMoving > 0} withResolver={false} />
     <ul ref={ref} className="list rounded-box gap-2">
       <div className="divider text-2xl mt-0 md:mt-4">
         <Download className='size-16' /> Downloads ({drives?.downloadsSize ? prettyBytes(drives?.downloadsSize) : <span className="loading loading-spinner loading-lg size-6"></span>})

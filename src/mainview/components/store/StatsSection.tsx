@@ -1,4 +1,5 @@
-import { storeApi } from "@/mainview/scripts/clientApi";
+
+import queries from "@/mainview/scripts/queries";
 import { useQuery } from "@tanstack/react-query";
 import { Joystick, LibraryBig, Save, TriangleAlert } from "lucide-react";
 
@@ -14,14 +15,7 @@ export function StatsSection ({
 }: StatsSectionProps)
 {
 
-    const { data: stats } = useQuery({
-        queryKey: ['store', 'stats'], queryFn: async () =>
-        {
-            const { data, error } = await storeApi.api.store.stats.get();
-            if (error) throw error;
-            return data;
-        }
-    });
+    const { data: stats } = useQuery(queries.store.storeGetStatsQuery);
 
     return (
         <section className="px-6 pt-3 pb-4">

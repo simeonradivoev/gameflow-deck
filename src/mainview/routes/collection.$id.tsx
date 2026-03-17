@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { CollectionsDetail } from '../components/CollectionsDetail';
-import { getCollectionApiCollectionsIdGetOptions, getRomsApiRomsGetOptions } from '@clients/romm/@tanstack/react-query.gen';
+import { getRomsApiRomsGetOptions } from '@clients/romm/@tanstack/react-query.gen';
 import { DefaultRommStaleTime } from '@shared/constants';
 import { useQuery } from '@tanstack/react-query';
 import { useContext } from 'react';
 import { AnimatedBackgroundContext } from '../scripts/contexts';
+import queries from '../scripts/queries';
 
 export const Route = createFileRoute('/collection/$id')({
   component: RouteComponent,
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/collection/$id')({
 function RouteComponent ()
 {
   const { id } = Route.useParams();
-  const { data: collection } = useQuery({ ...getCollectionApiCollectionsIdGetOptions({ path: { id: Number(id) } }) });
+  const { data: collection } = useQuery(queries.romm.getCollectionQuery(Number(id)));
   const animatedBgContext = useContext(AnimatedBackgroundContext);
 
   return (

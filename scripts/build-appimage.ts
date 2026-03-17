@@ -11,7 +11,7 @@ import { rmdir } from "node:fs";
 // ─────────────────────────────────────────────
 const APP_DIR = process.env.BUILD_DIR ?? `./build/${process.platform}`;
 const BINARY_NAME = pkg.bin;
-const ICON = "./src/mainview/assets/256x256.png";
+const ICON = "./src/mainview/public/256x256.png";
 const DESKTOP = "./flatpak/com.simeonradivoev.gameflow-deck.desktop";
 const TMP_FOLDER = ".";
 // ─────────────────────────────────────────────

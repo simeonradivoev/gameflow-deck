@@ -1,5 +1,5 @@
 
-import { storeEmulatorsQuery } from '@/mainview/scripts/queries';
+
 import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { Joystick } from 'lucide-react';
 import { useContext, useEffect } from 'react';
@@ -7,32 +7,12 @@ import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/no
 import { StoreEmulatorCard } from '@/mainview/components/store/StoreEmulatorCard';
 import { StoreContext } from '@/mainview/scripts/contexts';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
+import { useQuery } from '@tanstack/react-query';
+import queries from '@/mainview/scripts/queries';
 
 export const Route = createFileRoute('/store/tab/emulators')({
   component: RouteComponent,
-  pendingComponent: PendingComponent,
-  async loader ({ context })
-  {
-    const emulators = await context.queryClient.fetchQuery(storeEmulatorsQuery);
-    return { emulators };
-  },
 });
-
-function PendingComponent ()
-{
-  return <section className="px-6 py-4">
-    <div className="divider text-info">
-      <Joystick className='size-12' />
-      <h2 className="font-bold uppercase tracking-widest">
-        Emulators
-      </h2>
-    </div>
-    {/* Cards */}
-    <div className="grid grid-cols-[repeat(auto-fill,18rem)] auto-rows-[12rem] py-2 px-4 gap-4 justify-center-safe">
-      {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="skeleton h-36 rounded-2xl" />)}
-    </div>
-  </section>;
-}
 
 function RouteComponent ()
 {
@@ -42,7 +22,7 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
   const storeContext = useContext(StoreContext);
-  const { emulators } = Route.useLoaderData();
+  const { data: emulators } = useQuery(queries.store.storeEmulatorsQuery);
 
   useEffect(() =>
   {
@@ -64,7 +44,7 @@ function RouteComponent ()
         </div>
         {/* Cards */}
         <div className="grid grid-cols-[repeat(auto-fill,18rem)] auto-rows-[12rem] py-2 md:px-4 gap-4 justify-center-safe">
-          {emulators && emulators.map((data) => (
+          {emulators?.map((data) => (
             <StoreEmulatorCard
               id={data.name}
               key={data.name}
@@ -72,7 +52,7 @@ function RouteComponent ()
               onFocus={({ node, details }) => { node.scrollIntoView({ behavior: details.instant ? 'instant' : 'smooth', block: 'center' }); }}
               onSelect={(id, focus) => storeContext.showDetails('emulator', 'store', id, focus)}
             />
-          ))}
+          )) ?? Array.from({ length: 10 }).map((_, i) => <div key={i} className="skeleton rounded-3xl" />)}
         </div>
       </FocusContext>
     </section>

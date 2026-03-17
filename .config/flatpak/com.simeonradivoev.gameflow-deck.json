@@ -47,7 +47,7 @@
                 },
                 {
                     "type": "file",
-                    "path": "../src/mainview/assets/256x256.png"
+                    "path": "../src/mainview/public/256x256.png"
                 },
                 {
                     "type": "script",

@@ -55,7 +55,7 @@ function MenuItem (data: {
     const { to, search } = PopSource('settings');
     navigate({ to: data.return ? to ?? data.route : data.route, viewTransition: data.viewTransition, search: data.return ? search : undefined });
   };
-  const { ref, focusSelf, focused } = useFocusable({
+  const { ref, focusSelf } = useFocusable({
     focusKey: `menu-item-${data.route}`,
     forceFocus: !!acitve,
     onFocus: () =>

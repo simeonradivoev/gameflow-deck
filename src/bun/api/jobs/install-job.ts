@@ -165,7 +165,7 @@ export class InstallJob implements IJob
                 let bytesReceived = 0;
 
                 const progressStream = new Transform({
-                    transform (chunk, encoding, callback)
+                    transform (chunk, _, callback)
                     {
                         bytesReceived += chunk.length;
                         if (totalBytes > 0)

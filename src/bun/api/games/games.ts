@@ -401,7 +401,7 @@ export default new Elysia()
         const res = await fetch(`https://cdn.emulatorjs.org/latest/data/cores/${params['*']}`);
         return res;
     })
-    .get('/emulatorjs/data/*', async ({ params }) =>
+    .get('/emulatorjs/data/*', async () =>
     {
         return status("Not Found");
     });

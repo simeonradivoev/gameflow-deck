@@ -5,7 +5,6 @@ import
 {
   createHashHistory,
   createRouter,
-  Link,
   RouterProvider,
 } from "@tanstack/react-router";
 import { routeTree } from "./gen/routeTree.gen";
@@ -17,6 +16,12 @@ import { client as rommClient } from "../clients/romm/client.gen";
 import "./scripts/spatialNavigation";
 import NotFound from "./components/NotFound";
 import Error from "./components/Error";
+import serviceWorker from './scripts/serviceWorker?worker&url';
+
+if ('serviceWorker' in navigator)
+{
+  navigator.serviceWorker.register(serviceWorker);
+}
 
 const hashHistory = createHashHistory({});
 

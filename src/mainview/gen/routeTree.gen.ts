@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../routes/__root'
+import { Route as GamesRouteImport } from './../routes/games'
 import { Route as SettingsRouteRouteImport } from './../routes/settings/route'
 import { Route as IndexRouteImport } from './../routes/index'
 import { Route as SettingsInterfaceRouteImport } from './../routes/settings/interface'
@@ -27,6 +28,11 @@ import { Route as GameSourceIdRouteImport } from './../routes/game/$source.$id'
 import { Route as EmbeddedSourceIdRouteImport } from './../routes/embedded.$source.$id'
 import { Route as StoreDetailsEmulatorIdRouteImport } from './../routes/store/details.emulator.$id'
 
+const GamesRoute = GamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRouteRoute = SettingsRouteRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -116,6 +122,7 @@ const StoreDetailsEmulatorIdRoute = StoreDetailsEmulatorIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/games': typeof GamesRoute
   '/store/tab': typeof StoreTabRouteRouteWithChildren
   '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/games': typeof GamesRoute
   '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/games': typeof GamesRoute
   '/store/tab': typeof StoreTabRouteRouteWithChildren
   '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/games'
     | '/store/tab'
     | '/collection/$id'
     | '/settings/about'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/settings'
+    | '/games'
     | '/collection/$id'
     | '/settings/about'
     | '/settings/accounts'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/settings'
+    | '/games'
     | '/store/tab'
     | '/collection/$id'
     | '/settings/about'
@@ -232,6 +244,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
+  GamesRoute: typeof GamesRoute
   StoreTabRouteRoute: typeof StoreTabRouteRouteWithChildren
   CollectionIdRoute: typeof CollectionIdRoute
   EmbeddedSourceIdRoute: typeof EmbeddedSourceIdRoute
@@ -243,6 +256,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/games': {
+      id: '/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -404,6 +424,7 @@ const StoreTabRouteRouteWithChildren = StoreTabRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
+  GamesRoute: GamesRoute,
   StoreTabRouteRoute: StoreTabRouteRouteWithChildren,
   CollectionIdRoute: CollectionIdRoute,
   EmbeddedSourceIdRoute: EmbeddedSourceIdRoute,

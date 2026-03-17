@@ -1,12 +1,11 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { getRomApiRomsIdGetOptions, getRomsApiRomsGetOptions } from "../clients/romm/@tanstack/react-query.gen";
-import { GameListFilter } from "./components/GameList";
-import { DefaultRommStaleTime } from "../shared/constants";
+import { DefaultRommStaleTime, GameListFilterType } from "../shared/constants";
 
-export function gamesQueryOptions (filter?: GameListFilter)
+export function gamesQueryOptions (filter?: GameListFilterType)
 {
     return queryOptions({
-        ...getRomsApiRomsGetOptions({ query: { order_by: "updated_at", platform_ids: filter?.platformIds, collection_id: filter?.collectionId } }),
+        ...getRomsApiRomsGetOptions({ query: { order_by: "updated_at", platform_ids: filter?.platform_id ? [filter?.platform_id] : null, collection_id: filter?.collection_id } }),
         refetchOnWindowFocus: false,
         placeholderData: keepPreviousData,
         staleTime: DefaultRommStaleTime

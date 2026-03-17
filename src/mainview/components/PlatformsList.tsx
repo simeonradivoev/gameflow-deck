@@ -17,6 +17,7 @@ export function PlatformsList (data: {
     onFocus?: GameCardFocusHandler;
     grid?: boolean;
     onSelect?: (source: string, id: string) => void;
+    saveChildFocus?: "session" | "local";
 })
 {
     const isMobile = mobileCheck();
@@ -85,6 +86,7 @@ export function PlatformsList (data: {
     return (
         <CardList
             type="platform"
+            saveChildFocus={data.saveChildFocus}
             id={data.id}
             grid={data.grid}
             className={twMerge('*:aspect-8/10! md:py-12', data.className)}

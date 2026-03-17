@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry } from "./ContextDialog";
 import { systemApi } from "../scripts/clientApi";
 import { useContext, useRef, useState } from "react";
-import path from "pathe";
+import path, { dirname } from "pathe";
 import { Check, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { DirType } from "@/shared/constants";
@@ -12,7 +12,7 @@ import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts"
 import SvgIcon from "./SvgIcon";
 import { Button } from "./options/Button";
 import toast from "react-hot-toast";
-import { drivesQuery, filesQuery } from "../scripts/queries";
+import queries from "../scripts/queries";
 import { FilePickerContext } from "../scripts/contexts";
 import useActiveControl from "../scripts/gamepads";
 
@@ -113,12 +113,7 @@ function NewFolderOption (data: { id: string, dirname: string; })
     const { refetchFiles } = useContext(FilePickerContext);
     const [name, setName] = useState<string | undefined>();
     const createMutation = useMutation({
-        mutationKey: ['create', 'folder', data.id], mutationFn: async () =>
-        {
-            if (!name) return;
-            const { error } = await systemApi.api.system.dirs.put({ name, dirname: data.dirname });
-            if (error) throw error.value;
-        },
+        ...queries.system.createFolderMutation(data.id),
         onError: (e) => toast.error(e.message ?? 'Error Creating New Folder'),
         onSuccess: (d, v, r, cx) =>
         {
@@ -128,7 +123,7 @@ function NewFolderOption (data: { id: string, dirname: string; })
     });
     return <div className="flex gap-2 grow -ml-2">
         <NewFolderInput className="grow" id={`${data.id}-input`} setName={setName} name={name} />
-        <Button id={`${data.id}-create`} onAction={e => createMutation.mutate()} type="button" ><FolderPlus /></Button>
+        <Button id={`${data.id}-create`} onAction={e => createMutation.mutate({ name, dirname: data.dirname })} type="button" ><FolderPlus /></Button>
     </div>;
 }
 
@@ -233,8 +228,8 @@ export default function FilePicker (data: {
 {
     const [currentPath, setCurrentPath] = useState<string | undefined>(data.startingPath);
 
-    const { data: files, refetch: refetchFiles, isLoading: filesLoading } = useQuery(filesQuery(currentPath, data.id));
-    const { data: drives, isLoading: drivesLoading } = useQuery(drivesQuery);
+    const { data: files, refetch: refetchFiles, isLoading: filesLoading } = useQuery(queries.system.filesQuery(currentPath, data.id));
+    const { data: drives, isLoading: drivesLoading } = useQuery(queries.system.drivesQuery);
 
     const fullPath = files ? path.join(files.parentPath, files.name) : '';
     const activeDrive = drives?.filter(d => !!d.mountPoint).sort((a, b) => b.mountPoint!.length - a.mountPoint!.length).filter(d => fullPath.startsWith(d.mountPoint!))[0];

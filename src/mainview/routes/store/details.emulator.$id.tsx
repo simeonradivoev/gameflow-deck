@@ -12,7 +12,7 @@ import Shortcuts from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { PopSource } from "@/mainview/scripts/spatialNavigation";
 import { systemApi } from "@/mainview/scripts/clientApi";
-import { storeEmulatorDetailsQuery, storeEmulatorsRecommendedQuery } from "@/mainview/scripts/queries";
+import queries from "@/mainview/scripts/queries";
 import { Button } from "@/mainview/components/options/Button";
 import { ChevronDown, Download, Info, Settings } from "lucide-react";
 import { ContextDialog, ContextList, DialogEntry } from "@/mainview/components/ContextDialog";
@@ -27,7 +27,7 @@ export const Route = createFileRoute('/store/details/emulator/$id')({
     component: RouteComponent,
     async loader (ctx)
     {
-        const emulator = await ctx.context.queryClient.fetchQuery(storeEmulatorDetailsQuery(ctx.params.id));
+        const emulator = await ctx.context.queryClient.fetchQuery(queries.store.storeEmulatorDetailsQuery(ctx.params.id));
         return { emulator };
     }
 });
@@ -107,7 +107,7 @@ export function RouteComponent ()
     });
 
     const { emulator } = Route.useLoaderData();
-    const { data: recommended } = useQuery(storeEmulatorsRecommendedQuery);
+    const { data: recommended } = useQuery(queries.store.storeEmulatorsRecommendedQuery);
 
     useShortcuts(focusKey, () => [{
         label: "Return",
@@ -180,13 +180,7 @@ export function RouteComponent ()
                                 setFocus("title-area");
                                 Router.navigate({ to: '/store/details/emulator/$id', params: { id }, viewTransition: { types: ['zoom-in'] } });
                             }}
-                            emulators={recommended.map(em => ({
-                                name: em.name,
-                                id: em.name,
-                                installed: em.exists,
-                                logo: em.logo,
-                                systems: em.systems
-                            } satisfies ShopFrontEndEmulator))} />}
+                            emulators={recommended} />}
                     </div>
                 </div>
                 <div className='flex fixed bottom-4 left-4 right-4 justify-end z-10'>
