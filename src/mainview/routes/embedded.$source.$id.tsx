@@ -14,13 +14,13 @@ import useActiveControl from '../scripts/gamepads';
 import { twMerge } from 'tailwind-merge';
 import { HeaderAccounts, HeaderStatusBar } from '../components/Header';
 import { RoundButton } from '../components/RoundButton';
-import queries from '../scripts/queries';
+import { gameQuery } from '@queries/romm';
 
 export const Route = createFileRoute('/embedded/$source/$id')({
     component: RouteComponent,
     loader: async (ctx) =>
     {
-        const data = await ctx.context.queryClient.fetchQuery(queries.romm.gameQuery(ctx.params.source, ctx.params.id));
+        const data = await ctx.context.queryClient.fetchQuery(gameQuery(ctx.params.source, ctx.params.id));
         return { data };
     },
     validateSearch: zodValidator(z.record(z.string(), z.string().optional().nullable()))
@@ -133,7 +133,7 @@ function RouteComponent ()
 
     function HandleGoBack ()
     {
-        Router.navigate({ to: '/game/$source/$id', viewTransition: { types: ['zoom-out'] }, params: { source, id } });
+        Router.navigate({ to: '/game/$source/$id', params: { source, id }, replace: true });
     }
 
     useEventListener('message', e =>

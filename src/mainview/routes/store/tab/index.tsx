@@ -5,15 +5,16 @@ import { EmulatorsSection } from "../../../components/store/EmulatorsSection";
 import { GamesSection } from "../../../components/store/GamesSection";
 import { StatsSection } from "../../../components/store/StatsSection";
 import { FrontEndGameTypeDetailed, RPC_URL } from '@/shared/constants';
-import queries from '@/mainview/scripts/queries';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { scrollIntoViewHandler } from '@/mainview/scripts/utils';
 import { StoreContext } from '@/mainview/scripts/contexts';
 import { useInterval } from 'usehooks-ts';
 import { Button } from '@/mainview/components/options/Button';
-import { HardDrive, Search } from 'lucide-react';
+import { Gamepad2, HardDrive, Search, Star } from 'lucide-react';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { useQuery } from '@tanstack/react-query';
+import { autoEmulatorsQuery } from '@queries/settings';
+import { storeEmulatorsRecommendedQuery, storeFeaturedGamesQuery } from '@queries/store';
 
 export const Route = createFileRoute('/store/tab/')({
     component: RouteComponent
@@ -106,9 +107,9 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
 export function RouteComponent ()
 {
     const { focus } = useSearch({ from: '/store/tab' });
-    const { data: crucialEmulators, isSuccess } = useQuery({ ...queries.settings.autoEmulatorsQuery, select: (data) => data.filter(e => !e.exists && e.isCritical) });
-    const { data: featuredGames } = useQuery(queries.store.storeFeaturedGamesQuery);
-    const { data: recommendedEmulators } = useQuery(queries.store.storeEmulatorsRecommendedQuery);
+    const { data: crucialEmulators, isSuccess } = useQuery({ ...autoEmulatorsQuery, select: (data) => data.filter(e => !e.validSource && e.isCritical) });
+    const { data: featuredGames } = useQuery(storeFeaturedGamesQuery);
+    const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery);
 
     const { focusKey, ref, focusSelf } = useFocusable({ focusKey: 'main-area', preferredChildFocusKey: focus ?? "recommended-emulators" });
     const storeContext = useContext(StoreContext);
@@ -137,11 +138,22 @@ export function RouteComponent ()
                         emulators={recommendedEmulators} />
                 </div>
 
-                <GamesSection
-                    onSelect={(id, focus) => storeContext.showDetails('game', id.source, id.id, focus)}
-                    onFocus={scrollIntoViewHandler({ block: 'center' })}
-                    games={featuredGames}
-                />
+                <div className="px-6 py-3">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-5 rounded-full bg-accent shadow-sm shadow-error/40" />
+                        <Gamepad2 className="text-accent" />
+                        <h2 className="font-bold uppercase tracking-widest text-accent grow">
+                            Featured Games
+                        </h2>
+                        <div className="flex gap-2 bg-accent text-accent-content rounded-full py-1 px-4 font-semibold opacity-80"><Star />Creator Picks</div>
+                    </div>
+                    <GamesSection
+                        onSelect={(id, focus) => storeContext.showDetails('game', id.source, id.id, focus)}
+                        onFocus={scrollIntoViewHandler({ block: 'center' })}
+                        games={featuredGames}
+                    />
+                </div>
+
 
                 <StatsSection
                     romCount={1240}

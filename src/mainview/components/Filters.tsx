@@ -1,17 +1,19 @@
 import
 {
   FocusContext,
+  setFocus,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import SvgIcon from "./SvgIcon";
 import { twMerge } from "tailwind-merge";
+import { useEffect } from "react";
+import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 
 function FilterCat (
   data: {
     id: string;
     children?: any;
     active: boolean;
-    hasFocusedPeer: boolean;
   } & FilterOption & FocusParams,
 )
 {
@@ -26,9 +28,10 @@ function FilterCat (
       aria-selected={data.active}
       ref={ref}
       onClick={focusSelf}
-      className={"sm:text-sm sm:px-2 flex md:px-4 items-center justify-center rounded-full transition-all md:text-lg focusable focusable-primary hover:not-focused:not-aria-selected:bg-base-content/40 not-focused:cursor-pointer aria-selected:bg-base-content aria-selected:text-base-300 aria-selected:drop-shadow aria-selected:cursor-default active:bg-accent! active:text-accent-content! active:ring-offset-7 active:ring-offset-base-content select-none"}
+      className={"sm:text-sm sm:px-2 flex md:px-4 items-center justify-center rounded-full transition-all md:text-lg focusable focusable-primary hover:not-focused:not-aria-selected:bg-base-content/40 not-focused:cursor-pointer aria-selected:bg-base-content aria-selected:text-base-300 aria-selected:drop-shadow aria-selected:cursor-default active:bg-accent! active:text-accent-content! active:ring-offset-7 active:ring-offset-base-content select-none gap-1"}
     >
-      {data.children ?? data.label}
+      {data.icon ? <><div className="sm:portrait:px-2">{data.icon}</div><div className="sm:portrait:hidden md:inline">{data.children ?? data.label}</div></> : <div>{data.children ?? data.label}</div>}
+
     </li>
   );
 }
@@ -39,6 +42,8 @@ export function FilterUI (data: {
   setSelected: (id: string) => void;
   containerClassName?: string;
   className?: string;
+  rootFocusKey?: string;
+  showShortcuts?: boolean;
 })
 {
   const defaultFocus = Object.entries(data.options).filter(o => o[1].selected)[0]?.[0];
@@ -50,29 +55,72 @@ export function FilterUI (data: {
     trackChildren: true
   });
 
+  if (data.rootFocusKey)
+  {
+    useShortcuts(data.rootFocusKey, () => [
+      {
+        action: (e) =>
+        {
+          const filterKeys = Object.keys(data.options);
+          const filterIndex = Math.max(0, filterKeys.findIndex(f => data.options[f].selected));
+          const selectedFilterIndex = Math.min(filterIndex + 1, filterKeys.length - 1);
+          const newFilter = filterKeys[selectedFilterIndex];
+          if (!data.options[newFilter].selected)
+          {
+            data.setSelected(newFilter);
+          }
+        },
+        button: GamePadButtonCode.R1
+      },
+      {
+        action: (e) =>
+        {
+          const filterKeys = Object.keys(data.options);
+          const filterIndex = Math.max(0, filterKeys.findIndex(f => data.options[f as any].selected));
+          const selectedFilterIndex = Math.max(0, filterIndex - 1,);
+          const newFilter = filterKeys[selectedFilterIndex];
+          if (!data.options[newFilter].selected)
+            data.setSelected(newFilter);
+        },
+        button: GamePadButtonCode.L1
+      }], [data.options]);
+  }
+
+  useEffect(() =>
+  {
+    if (hasFocusedChild)
+    {
+      setFocus(`${data.id}-${defaultFocus}`);
+    }
+  }, [hasFocusedChild, defaultFocus, data.id]);
+
   return (
     <div
       ref={ref}
       className={data.containerClassName}
+      style={{ viewTransitionName: `filter-${data.id}` }}
     >
       <FocusContext.Provider value={focusKey}>
         <ul className={twMerge("flex flex-row bg-base-100 rounded-full p-1 drop-shadow-sm sm:portrait:h-12 sm:landscape:h-9 md:h-14!", data.className)}>
-          <li className=" flex px-4 items-center justify-center rounded-full">
+          {!!data.rootFocusKey && (data.showShortcuts ?? true) && <li className=" flex px-4 items-center justify-center rounded-full">
             <SvgIcon className="sm:size-5 md:size-8" icon="steamdeck_button_l1_outline" />
-          </li>
+          </li>}
           {Object.entries(data.options)?.map(([id, option]) => (
             <FilterCat
-              hasFocusedPeer={hasFocusedChild}
               id={`${data.id}-${id}`}
               key={id}
-              onFocus={() => data.setSelected(id)}
+              onFocus={() =>
+              {
+                if (!option.selected)
+                  data.setSelected(id);
+              }}
               active={option.selected}
               {...option}
             />
           ))}
-          <li className="flex px-4 items-center justify-center rounded-full">
+          {!!data.rootFocusKey && (data.showShortcuts ?? true) && <li className="flex px-4 items-center justify-center rounded-full">
             <SvgIcon className="sm:size-5 md:size-8" icon="steamdeck_button_r1_outline" />
-          </li>
+          </li>}
         </ul>
       </FocusContext.Provider>
     </div>

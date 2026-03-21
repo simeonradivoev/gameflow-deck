@@ -36,6 +36,13 @@
             <entry>come.nanodata.armsx2.debug/kr.co.iefriends.pcsx2.MainActivity</entry>
         </rule>
     </emulator>
+    <emulator name="AX360E">
+        <!-- Microsoft Xbox 360 emulator aX360e -->
+        <rule type="androidpackage">
+            <entry>aenu.ax360e/aenu.ax360e.EmulatorActivity</entry>
+            <entry>aenu.ax360e.free/aenu.ax360e.EmulatorActivity</entry>
+        </rule>
+    </emulator>
     <emulator name="AZAHAR">
         <!-- Nintendo 3DS emulator Azahar -->
         <rule type="androidpackage">
@@ -372,6 +379,12 @@
             <entry>com.PceEmu/com.imagine.BaseActivity</entry>
         </rule>
     </emulator>
+    <emulator name="PICO-8">
+        <!-- PICO-8 Fantasy Console (game engine) -->
+        <rule type="androidpackage">
+            <entry>io.wip.pico8/com.godot.game.GodotAppLauncher</entry>
+        </rule>
+    </emulator>
     <emulator name="PIZZA-BOY-GBA">
         <!-- Nintendo Game Boy Advance emulator Pizza Boy GBA -->
         <rule type="androidpackage">
@@ -462,6 +475,12 @@
             <entry>com.fms.speccy/com.fms.emulib.TVActivity</entry>
         </rule>
     </emulator>
+    <emulator name="SUPER3">
+        <!-- Sega Model 3 emulator SUPER3 -->
+        <rule type="androidpackage">
+            <entry>com.izzy2lost.super3/com.izzy2lost.super3.MainActivity</entry>
+        </rule>
+    </emulator>
     <emulator name="SWAN-EMU">
         <!-- Bandai WonderSwan emulator Swan.emu -->
         <rule type="androidpackage">
@@ -511,6 +530,12 @@
         <!-- Microsoft Windows emulator Winlator Cmod PRoot -->
         <rule type="androidpackage">
             <entry>com.cmodded.winlator/com.winlator.XServerDisplayActivity</entry>
+        </rule>
+    </emulator>
+    <emulator name="X1-BOX">
+        <!-- Microsoft Xbox emulator X1 BOX -->
+        <rule type="androidpackage">
+            <entry>com.izzy2lost.x1box/.LauncherActivity</entry>
         </rule>
     </emulator>
     <emulator name="YABASANSHIRO-2">

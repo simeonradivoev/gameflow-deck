@@ -24,10 +24,10 @@ import { RoundButton } from "./RoundButton";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "@clients/romm/@tanstack/react-query.gen";
 import { RPC_URL } from "../../shared/constants";
-import { JSX, useEffect, useRef } from "react";
-import { SaveSource } from "../scripts/spatialNavigation";
+import { JSX, Ref, RefObject, useEffect, useRef, useState } from "react";
 import { systemApi } from "../scripts/clientApi";
 import { Router } from "..";
+import { useStickyDataAttr } from "../scripts/utils";
 
 function HeaderAvatar (data: {
   id: string;
@@ -240,8 +240,7 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
     ],
     action: () =>
     {
-      SaveSource('settings');
-      Router.navigate({ to: '/settings/accounts', viewTransition: { types: ['zoom-in'] }, search: { focus: 'rommAddress' } });
+      Router.navigate({ to: '/settings/accounts', search: { focus: 'rommAddress' } });
     },
     status: user.data ? "status-success" : 'status-error',
     type: 'secondary'
@@ -284,15 +283,19 @@ export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElement
   </div>;
 }
 
-export function HeaderUI (data: {
+interface HeaderUIParams
+{
   buttons?: HeaderButton[];
   accounts?: HeaderAccount[];
   buttonElements?: JSX.Element[] | JSX.Element;
   title?: JSX.Element;
   preferredChildFocusKey?: string;
-})
+  focusable?: boolean;
+}
+
+export function HeaderUI (data: HeaderUIParams)
 {
-  const { ref, focusKey } = useFocusable({ focusKey: "header-elements", preferredChildFocusKey: data.preferredChildFocusKey });
+  const { ref, focusKey } = useFocusable({ focusKey: "header-elements", focusable: data.focusable, preferredChildFocusKey: data.preferredChildFocusKey });
   return (
     <FocusContext.Provider value={focusKey}>
       <header
@@ -306,4 +309,19 @@ export function HeaderUI (data: {
       </header>
     </FocusContext.Provider>
   );
+}
+
+export function StickyHeaderUI (data: { ref: RefObject<any>; } & HeaderUIParams)
+{
+  const [isStuck, setIsStuck] = useState(false);
+  const headerRef = useRef(null);
+  const sentinelRef = useRef(null);
+  useStickyDataAttr(headerRef, sentinelRef, data.ref, setIsStuck);
+
+  return <>
+    <div ref={sentinelRef} className="h-0" />
+    <div ref={headerRef} className='sticky not-mobile:data-stuck:backdrop-blur-xl transition-all top-0 px-2 p-2 not-data-stuck:bg-base-200 mobile:bg-base-300 z-15'>
+      <HeaderUI focusable={!isStuck} {...data} />
+    </div>
+  </>;
 }

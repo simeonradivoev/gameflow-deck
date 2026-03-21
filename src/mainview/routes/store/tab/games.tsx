@@ -6,7 +6,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import FrontEndGameCard from '@/mainview/components/FrontEndGameCard';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import LoadMoreButton from '@/mainview/components/LoadMoreButton';
-import queries from '@/mainview/scripts/queries';
+import { storeGamesInfiniteQuery } from '@queries/store';
 
 export const Route = createFileRoute('/store/tab/games')({
   component: RouteComponent
@@ -17,7 +17,7 @@ function RouteComponent ()
   const { focus } = useSearch({ from: '/store/tab' });
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "main-area", preferredChildFocusKey: focus });
 
-  const { data, fetchNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(queries.store.storeGamesInfiniteQuery);
+  const { data, fetchNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(storeGamesInfiniteQuery);
 
   useEffect(() =>
   {
@@ -52,7 +52,7 @@ function RouteComponent ()
             <div className="skeleton h-4 w-[40%]"></div>
           </div>)}
           <LoadMoreButton
-            lastId={data?.pages.at(-1)?.data.at(-1)?.id.id}
+            lastId={data?.pages.at(-1)?.data.at(-1)?.id}
             onFocus={handleFocus}
             isFetching={isFetchingNextPage || isFetching}
             onAction={() =>

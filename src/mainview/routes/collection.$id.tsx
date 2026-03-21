@@ -5,7 +5,7 @@ import { DefaultRommStaleTime } from '@shared/constants';
 import { useQuery } from '@tanstack/react-query';
 import { useContext } from 'react';
 import { AnimatedBackgroundContext } from '../scripts/contexts';
-import queries from '../scripts/queries';
+import { getCollectionQuery } from '@queries/romm';
 
 export const Route = createFileRoute('/collection/$id')({
   component: RouteComponent,
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/collection/$id')({
 function RouteComponent ()
 {
   const { id } = Route.useParams();
-  const { data: collection } = useQuery(queries.romm.getCollectionQuery(Number(id)));
+  const { data: collection } = useQuery(getCollectionQuery(Number(id)));
   const animatedBgContext = useContext(AnimatedBackgroundContext);
 
   return (

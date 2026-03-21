@@ -5,16 +5,18 @@ import { existsSync, readFileSync } from 'node:fs';
 import * as schema from '@schema/emulators';
 import * as appSchema from "@schema/app";
 import { eq } from 'drizzle-orm';
-import { activeGame, config, db, emulatorsDb, events, setActiveGame } from '../../app';
+import { activeGame, config, customEmulators, db, emulatorsDb, events, setActiveGame } from '../../app';
 import os from 'node:os';
 import { $ } from 'bun';
 import { spawn } from 'node:child_process';
 import { updateRomUserApiRomsIdPropsPut } from '@/clients/romm';
-import { CommandEntry } from '@/shared/constants';
+import { CommandEntry, EmulatorSourceType } from '@/shared/constants';
+import { cores } from '../../emulatorjs/emulatorjs';
 
 export const varRegex = /%([^%]+)%/g;
+export const assignRegex = /(%\w+%)=(\S+) /g;
 
-export async function launchCommand (validCommand: string, source: string, sourceId: string, id: number)
+export async function launchCommand (validCommand: { command: string, startDir?: string; }, source: string, sourceId: string, id: number)
 {
     if (activeGame && activeGame.process?.killed === false)
     {
@@ -31,8 +33,9 @@ export async function launchCommand (validCommand: string, source: string, sourc
 
     await new Promise((resolve, reject) =>
     {
-        const game = spawn(validCommand, {
-            shell: true
+        const game = spawn(validCommand.command, {
+            shell: true,
+            cwd: validCommand.startDir
         });
         game.stdout.on('data', data => console.log(data));
         game.on('close', (code) =>
@@ -99,6 +102,54 @@ export async function launchCommand (validCommand: string, source: string, sourc
     }*/
 }
 
+/**
+ * Get the emulators related to the given system
+ * @param systemSlug the ES-DE slug for the system
+ */
+export async function getEmulatorsForSystem (systemSlug: string)
+{
+    const system = await emulatorsDb.query.systems.findFirst({
+        with: { commands: true },
+        where: eq(schema.systems.name, systemSlug)
+    });
+
+    if (!system)
+    {
+        throw new Error(`Could not find system '${systemSlug}'`);
+    }
+
+    const emulators = new Set<string>();
+    await Promise.all(system.commands.map(async (command, index) =>
+    {
+        let cmd = command.command;
+
+        const matches = Array.from(cmd.matchAll(varRegex));
+        matches.forEach(([value]) =>
+        {
+            if (value.startsWith("%EMULATOR_"))
+            {
+                const emulatorName = value.substring("%EMULATOR_".length, value.length - 1);
+                emulators.add(emulatorName);
+                return;
+            }
+        });
+    }));
+
+
+
+    if (cores[systemSlug])
+    {
+        emulators.add('EMULATORJS');
+    }
+
+    return Array.from(emulators);
+}
+
+/**
+ * 
+ * @param data Uses es-de system slug
+ * @returns 
+ */
 export async function getValidLaunchCommands (data: {
     systemSlug: string;
     gamePath: string;
@@ -160,101 +211,151 @@ export async function getValidLaunchCommands (data: {
         }
     }
 
-    const formattedCommands = await Promise.all(system.commands.map(async (command, index) =>
+    function escapeWindowsArg (arg: string): string
     {
-        const label = command.label;
-        let cmd = command.command;
+        return `"${arg
+            .replace(/(\\*)"/g, '$1$1\\"')  // escape quotes
+            .replace(/(\\*)$/, '$1$1')      // escape trailing backslashes
+            }"`;
+    }
 
-        let emulator: string | undefined = undefined;
-        let rom = validFiles[0];
-
-        if (cmd.includes('%ESCAPESPECIALS%'))
-            rom = rom.replace(/[&()^=;,]/g, '');
-
-        const staticVars: Record<string, string> = {
-            '%ROM%': $.escape(rom),
-            '%ROMRAW%': validFiles[0],
-            '%ROMRAWWIN%': $.escape(validFiles[0].replace('/', '\\')),
-            '%ESPATH%': $.escape(path.dirname(Bun.main)),
-            '%ROMPATH%': $.escape(gamePath),
-            '%BASENAME%': $.escape(path.basename(validFiles[0], path.extname(validFiles[0]))),
-            '%FILENAME%': $.escape(path.basename(validFiles[0]))
-        };
-
-        cmd = cmd.replace(/\%INJECT\%=(?<inject>[\w\%.\/\\]+)/g, (_, injectFile: string) =>
+    const formattedCommands = await Promise.all(system.commands
+        .filter(c => !c.command.includes(`%ENABLESHORTCUTS%`))
+        .map(async (command, index) =>
         {
-            try
+            const label = command.label;
+            let cmd = command.command;
+
+            let emulator: string | undefined = undefined;
+            let rom = validFiles[0];
+
+            if (cmd.includes('%ESCAPESPECIALS%'))
+                rom = rom.replace(/[&()^=;,]/g, '');
+
+
+
+            const staticVars: Record<string, string> = {
+                '%ROM%': escapeWindowsArg(rom),
+                '%ROMRAW%': validFiles[0],
+                '%ROMRAWWIN%': escapeWindowsArg(validFiles[0].replaceAll('/', '\\')),
+                '%ESPATH%': escapeWindowsArg(path.dirname(Bun.main)),
+                '%ROMPATH%': escapeWindowsArg(gamePath),
+                '%BASENAME%': escapeWindowsArg(path.basename(validFiles[0], path.extname(validFiles[0]))),
+                '%FILENAME%': escapeWindowsArg(path.basename(validFiles[0])),
+                '%ESCAPESPECIALS%': "",
+                '%HIDEWINDOW%': ""
+            };
+
+            cmd = cmd.replace(/\%INJECT\%=(?<inject>[\w\%.\/\\]+)/g, (_, injectFile: string) =>
             {
-                const resolvedInjectFile = injectFile.replace(varRegex, (a) =>
+                try
                 {
-                    return staticVars[a] ?? a;
+                    const resolvedInjectFile = injectFile.replace(varRegex, (a) =>
+                    {
+                        return staticVars[a] ?? a;
+                    });
+                    if (existsSync(resolvedInjectFile))
+                    {
+                        const rawContents = readFileSync(resolvedInjectFile, { encoding: 'utf-8' });
+                        return rawContents.split('\n').map(v => v.replace('\r', '')).join(' ');
+                    }
+
+                    return '';
+                } catch (error)
+                {
+                    return '';
+                }
+            });
+
+            const matches = Array.from(cmd.matchAll(varRegex));
+            const varList = await Promise.all(matches.map(async ([value]) =>
+            {
+                if (value.startsWith("%EMULATOR_"))
+                {
+                    const emulatorName = value.substring("%EMULATOR_".length, value.length - 1);
+                    let execs = await findExecsByName(emulatorName);
+                    let validExec = execs.find(e => e.exists);
+
+                    emulator = emulatorName;
+                    return [[value, validExec ? validExec.path : undefined], ['%EMUDIR%', validExec ? escapeWindowsArg(path.dirname(validExec.path)) : undefined]];
+                }
+
+                const key = value[0].substring(1, value.length - 1);
+                return [[value, process.env[key]]];
+            }));
+
+            const vars = { ...Object.fromEntries(varList.flatMap(l => l)), ...staticVars };
+            let startDir: string | undefined = undefined;
+
+            if ('%STARTDIR%' in vars)
+            {
+                delete vars['%STARTDIR%'];
+
+                cmd = cmd.replace(assignRegex, (match, p1, p2) =>
+                {
+                    if (p1 === '%STARTDIR%')
+                    {
+                        startDir = varRegex.test(p2) ? staticVars[p2] : p2;
+                    }
+                    return "";
                 });
-                if (existsSync(resolvedInjectFile))
-                {
-                    const rawContents = readFileSync(resolvedInjectFile, { encoding: 'utf-8' });
-                    return rawContents.split('\n').map(v => v.replace('\r', '')).join(' ');
-                }
-
-                return '';
-            } catch (error)
-            {
-                return '';
-            }
-        });
-
-        const matches = Array.from(cmd.matchAll(varRegex));
-        const varList = await Promise.all(matches.map(async ([value]) =>
-        {
-            if (value.startsWith("%EMULATOR_"))
-            {
-                const emulatorName = value.substring("%EMULATOR_".length, value.length - 1);
-                let exec = await findExecByName(emulatorName);
-                if (data.customEmulatorConfig.has(emulatorName))
-                {
-                    exec = { path: data.customEmulatorConfig.get(emulatorName)!, type: 'custom' };
-                }
-
-                emulator = emulatorName;
-                return [[value, exec ? exec.path : undefined], ['%EMUDIR%', exec ? $.escape(path.dirname(exec.path)) : undefined]];
             }
 
-            const key = value[0].substring(1, value.length - 1);
-            return [[value, process.env[key]]];
+            // missing variable
+            const invalid = Object.entries(vars).find(c => c[1] === undefined);
+
+            const formattedCommand = cmd.replace(varRegex, (s) => vars[s] ?? '').trim();
+
+            return {
+                id: index,
+                label: label ?? undefined,
+                command: formattedCommand,
+                startDir,
+                valid: !invalid, emulator
+            } satisfies CommandEntry;
         }));
-
-        const vars = { ...Object.fromEntries(varList.flatMap(l => l)), ...staticVars };
-        vars['%ESCAPESPECIALS%'] = "";
-        vars['%HIDEWINDOW%'] = '';
-
-        // missing variable
-        const invalid = Object.entries(vars).find(c => c[1] === undefined);
-
-        const formattedCommand = cmd.replace(varRegex, (s) => vars[s] ?? '').trim();
-
-        return {
-            id: index,
-            label: label ?? undefined,
-            command: formattedCommand,
-            valid: !invalid, emulator
-        } satisfies CommandEntry;
-    }));
 
     return formattedCommands.filter(c => !!c);
 }
 
-export async function findExecByName (emulatorName: string)
+export async function findExecsByName (emulatorName: string)
 {
     const emulator = await emulatorsDb.query.emulators.findFirst({ where: eq(schema.emulators.name, emulatorName) });
     if (!emulator)
     {
         throw new Error(`Could not find emulator ${emulatorName}`);
     }
-    return findExec(emulator);
+    return findExecs(emulatorName, emulator);
 }
 
-export async function findExec (emulator: { winregistrypath: string[], systempath: string[], staticpath: string[]; })
+export function findStoreEmulatorExec (id: string, emulator?: { systempath: string[]; }): EmulatorSourceType | undefined
 {
-    if (os.platform() === 'win32')
+    const storeEmulatorFolder = path.join(config.get('downloadPath'), 'emulators', id);
+    const storeExecName = emulator?.systempath.find(name => existsSync(path.join(storeEmulatorFolder, name)));
+    if (storeExecName)
+    {
+        return { binPath: path.join(storeEmulatorFolder, storeExecName), rootPath: storeEmulatorFolder, exists: true, type: "store" };
+    }
+
+    return undefined;
+}
+
+export async function findExecs (id: string, emulator?: { winregistrypath: string[], systempath: string[], staticpath: string[]; })
+{
+    const execs: EmulatorSourceType[] = [];
+
+    if (customEmulators.has(id))
+    {
+        execs.push({ binPath: customEmulators.get(id), type: 'custom', exists: await fs.exists(customEmulators.get(id)) });
+    }
+
+    if (emulator && emulator.systempath.length > 0)
+    {
+        const storePath = findStoreEmulatorExec(id, emulator);
+        if (storePath) execs.push(storePath);
+    }
+
+    if (emulator && os.platform() === 'win32')
     {
         const regValues = emulator.winregistrypath;
         if (regValues.length > 0)
@@ -264,32 +365,32 @@ export async function findExec (emulator: { winregistrypath: string[], systempat
                 const registryValue = await readRegistryValue(node);
                 if (registryValue)
                 {
-                    return { path: registryValue, type: 'registry' };
+                    execs.push({ binPath: registryValue, type: 'registry', exists: true });
                 }
             }
 
         }
     }
 
-    const systempaths = emulator.systempath;
-    if (systempaths.length > 0)
+    if (emulator && emulator.systempath.length > 0)
     {
-        const systemPath = await resolveSystemPath(systempaths);
+        const systemPath = await resolveSystemPath(emulator.systempath);
         if (systemPath)
         {
-            return { path: systemPath, type: 'system' };
+            execs.push({ binPath: systemPath, type: 'system', exists: true });
         }
     }
 
-    const staticPaths = emulator.staticpath;
-    if (staticPaths.length > 0)
+    if (emulator && emulator.staticpath.length > 0)
     {
-        const staticPath = await resolveStaticPath(staticPaths);
+        const staticPath = await resolveStaticPath(emulator.staticpath);
         if (staticPath)
         {
-            return { path: staticPath, type: 'static' };
+            execs.push({ binPath: staticPath, type: 'static', exists: true });
         }
     }
+
+    return execs;
 }
 
 async function readRegistryValue (text: string)

@@ -3,6 +3,7 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const emulators = sqliteTable('emulators', {
     name: text().primaryKey().unique(),
+    fullname: text(),
     systempath: text({ mode: 'json' }).notNull().$type<string[]>().default(sql`(json_array())`),
     staticpath: text({ mode: 'json' }).notNull().$type<string[]>().default(sql`(json_array())`),
     corepath: text({ mode: 'json' }).notNull().$type<string[]>().default(sql`(json_array())`),

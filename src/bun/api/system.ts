@@ -11,7 +11,7 @@ import { DirSchema, DownloadsDrive } from "@/shared/constants";
 import { getDevices, getDevicesCurated } from "./drives";
 import getFolderSize from "get-folder-size";
 import si from 'systeminformation';
-import { getStoreFolder } from "./store/store";
+import { getStoreFolder } from "./store/services/gamesService";
 
 export const system = new Elysia({ prefix: '/api/system' })
     .post('/show_keyboard', async ({ body: { XPosition, YPosition, Width, Height } }) =>

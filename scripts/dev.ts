@@ -1,4 +1,3 @@
-// watcher.ts - run this instead of --watch
 import EventEmitter from "events";
 import browser from '../src/bun/browser';
 import { tmpdir } from "os";
@@ -13,9 +12,9 @@ let retries = 0;
 
 function spawnServer ()
 {
-    return Bun.spawn(["bun", "run", '--watch', "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
+    return Bun.spawn(["bun", '--watch', '--install=fallback', '--smol', "run", "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
         env: {
-            ...Bun.env,
+            ...process.env,
             HEADLESS: "true",
         },
         stdout: "inherit",
@@ -50,7 +49,7 @@ function spawnBrowser ()
     try
     {
 
-        return browser(events, Bun.env.FORCE_BROWSER === "true", { configPath: path.join(tmpdir(), 'gameflow') });
+        return browser(events, process.env.FORCE_BROWSER === "true", { configPath: path.join(tmpdir(), 'gameflow') });
     } catch (error)
     {
         console.error(error);

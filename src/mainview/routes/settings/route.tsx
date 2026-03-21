@@ -8,7 +8,6 @@ import
   Outlet,
   createFileRoute,
   useMatch,
-  useNavigate,
 } from "@tanstack/react-router";
 import { ViewTransitionOptions } from "@tanstack/router-core";
 import classNames from "classnames";
@@ -25,10 +24,10 @@ import { JSX, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
 import z from "zod";
 import { SettingsSchema } from "../../../shared/constants";
-import { PopSource } from "../../scripts/spatialNavigation";
 import { Router } from "../..";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Shortcuts from "@/mainview/components/Shortcuts";
+import { HandleGoBack } from "@/mainview/scripts/utils";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
@@ -48,21 +47,26 @@ function MenuItem (data: {
   label: string;
 })
 {
-  const navigate = useNavigate();
   const acitve = !!useMatch({ from: data.route as any, shouldThrow: false });;
   const handleNonFocusSelect = () =>
   {
-    const { to, search } = PopSource('settings');
-    navigate({ to: data.return ? to ?? data.route : data.route, viewTransition: data.viewTransition, search: data.return ? search : undefined });
+    if (data.return)
+    {
+      HandleGoBack();
+    } else if (!acitve)
+    {
+      Router.navigate({ to: data.route, viewTransition: { types: ['slide-up'] }, replace: true });
+    }
+
   };
   const { ref, focusSelf } = useFocusable({
     focusKey: `menu-item-${data.route}`,
     forceFocus: !!acitve,
     onFocus: () =>
     {
-      if (data.focusSelect)
+      if (data.focusSelect && !acitve)
       {
-        navigate({ to: data.route });
+        Router.navigate({ to: data.route, viewTransition: { types: ['slide-up'] }, replace: true });
       }
       (ref.current as HTMLElement).scrollIntoView({ inline: 'center' });
     },
@@ -104,12 +108,13 @@ function SettingsMenu (data: {})
   const { ref, focusKey } = useFocusable({
     focusable: true,
     focusKey: 'settings-menu',
-    preferredChildFocusKey: location.hash.replace("#", '')
+    preferredChildFocusKey: location.hash.replaceAll(/#|(\?.+)/g, '')
   });
 
   return <ul
     ref={ref}
     className="flex flex-col portrait:flex-row md:text-2xl landscape:flex-nowrap bg-base-200 sm:p-2 md:p-4 sm:portrait:gap-0 sm:landscape:gap-0 md:landscape:w-128 md:gap-2! rounded-4xl overflow-auto portrait:w-full"
+    style={{ viewTransitionName: 'settings-menu' }}
   >
     <FocusContext value={focusKey}>
       <MenuItem
@@ -147,23 +152,10 @@ function SettingsMenu (data: {})
         route={"/"}
         return
         label="Return"
-        viewTransition={{ types: ['zoom-out'] }}
         icon={<ArrowBigLeft />}
       />
     </FocusContext>
   </ul>;
-}
-
-function HandleGoBack ()
-{
-
-  const { to, search } = PopSource('settings');
-  if (to)
-  {
-    console.log("Found source ", to, " to go back to");
-  }
-  Router.navigate({ to: to ?? "/", viewTransition: { types: ['zoom-out'] }, search });
-
 }
 
 export function SettingsUI ()

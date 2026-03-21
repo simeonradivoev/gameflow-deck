@@ -1,12 +1,14 @@
 import getFolderSize from "get-folder-size";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { config, emulatorsDb } from "../../app";
+import { config, db, emulatorsDb } from "../../app";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@schema/app";
-import { FrontEndGameType, FrontEndGameTypeDetailed, StoreGameType } from "@shared/constants";
-import { DetailedRomSchema, SimpleRomSchema } from "@clients/romm";
+import { FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement, StoreGameType } from "@shared/constants";
+import { DetailedRomSchema, getCurrentUserApiUsersMeGet, getRomApiRomsIdGet, SimpleRomSchema } from "@clients/romm";
 import * as emulatorSchema from "@schema/emulators";
+import romm from "@/mainview/scripts/queries/romm";
+import { extractStoreGameSourceId, getStoreGame } from "../../store/services/gamesService";
 
 export async function calculateSize (installPath: string | null)
 {
@@ -127,7 +129,7 @@ export async function convertStoreToFrontend (system: string, id: string, storeG
         slug: null,
         name: storeGame.title,
         platform_id: null,
-        platform_slug: system,
+        platform_slug: rommSystem?.sourceSlug ?? system,
         paths_screenshots: storeGame.pictures.screenshots?.map((s: string) => `/api/romm/image?url=${encodeURIComponent(s)}`) ?? []
     };
 
@@ -157,21 +159,138 @@ export async function convertStoreToFrontendDetailed (system: string, id: string
     return detailed;
 }
 
-export function convertRomToFrontendDetailed (rom: DetailedRomSchema)
+export async function convertRomToFrontendDetailed (rom: DetailedRomSchema)
 {
     const detailed: FrontEndGameTypeDetailed = {
         ...convertRomToFrontend(rom),
         summary: rom.summary,
         fs_size_bytes: rom.fs_size_bytes,
         local: false,
-        missing: rom.missing_from_fs
+        missing: rom.missing_from_fs,
+        genres: rom.metadatum.genres,
+        companies: rom.metadatum.companies,
+        release_date: rom.metadatum.first_release_date ? new Date(rom.metadatum.first_release_date) : undefined
     };
+
+    const userData = await getCurrentUserApiUsersMeGet();
+    const gameAchievements = userData.data?.ra_progression?.results?.find(p => p.rom_ra_id == rom.ra_id);
+
     if (rom.merged_ra_metadata?.achievements)
     {
+        const earnedMap = new Map<string, { date: Date; date_hardcode?: Date; }>(gameAchievements?.earned_achievements.map(a => [a.id, { date: new Date(a.date), date_hardcore: a.date_hardcore ? new Date(a.date_hardcore) : undefined }]));
         detailed.achievements = {
-            unlocked: rom.merged_ra_metadata.achievements?.map(a => a.num_awarded).length,
+            unlocked: gameAchievements?.num_awarded ?? 0,
+            entires: rom.merged_ra_metadata.achievements.map(a =>
+            {
+                const earned = a.badge_id ? earnedMap.get(a.badge_id) : undefined;
+                const ach: FrontEndGameTypeDetailedAchievement = {
+                    id: a.badge_id ?? String(a.ra_id) ?? 'unknown',
+                    title: a.title ?? "Unknown",
+                    badge_url: (earned ? a.badge_url : a.badge_url_lock) ?? undefined,
+                    date: earned?.date,
+                    date_hardcode: earned?.date_hardcode,
+                    description: a.description ?? undefined,
+                    display_order: a.display_order ?? 0,
+                    type: a.type ?? undefined
+                };
+
+                return ach;
+            }).sort((a, b) => a.display_order - b.display_order),
             total: rom.merged_ra_metadata.achievements.length
         };
     }
     return detailed;
+}
+
+export async function getLocalGameDetailed (match: any)
+{
+    const localGame = await db.query.games.findFirst({
+        where: match,
+        with: {
+            screenshots: { columns: { id: true } },
+            platform: { columns: { name: true, slug: true } }
+        }
+    });
+
+    if (localGame)
+    {
+        const exists = await checkInstalled(localGame.path_fs);
+        const fileSize = await calculateSize(localGame.path_fs);
+        const game: FrontEndGameTypeDetailed = {
+            path_cover: `/api/romm/game/local/${localGame.id}/cover`,
+            updated_at: localGame.created_at,
+            id: { id: String(localGame.id), source: 'local' },
+            path_platform_cover: `/api/romm/platform/local/${localGame.platform_id}/cover`,
+            fs_size_bytes: fileSize ?? null,
+            paths_screenshots: localGame.screenshots.map(s => `/api/romm/screenshot/${s.id}`),
+            local: true,
+            missing: !exists,
+            platform_display_name: localGame.platform?.name,
+            summary: localGame.summary,
+            source: localGame.source,
+            source_id: localGame.source_id,
+            path_fs: localGame.path_fs,
+            last_played: localGame.last_played,
+            slug: localGame.slug,
+            name: localGame.name,
+            platform_id: localGame.platform_id,
+            platform_slug: localGame.platform.slug
+        };
+        return game;
+    }
+
+    return undefined;
+}
+
+export async function getSourceGameDetailed (source: string, id: string)
+{
+    if (source === 'local')
+    {
+        const localGame = await getLocalGameDetailed(eq(schema.games.id, Number(id)));
+        if (localGame) return localGame;
+        return undefined;
+    }
+    else
+    {
+        const localGame = await getLocalGameDetailed(getLocalGameMatch(id, source));
+        if (source === 'romm')
+        {
+            const rom = await getRomApiRomsIdGet({ path: { id: Number(id) } });
+            if (rom.data)
+            {
+                const romGame = await convertRomToFrontendDetailed(rom.data);
+                if (localGame)
+                {
+                    return {
+                        ...romGame,
+                        ...localGame,
+                    };
+                }
+                return romGame;
+            }
+            else if (localGame)
+            {
+                return localGame;
+            }
+
+            return undefined;
+        }
+        else if (source === 'store')
+        {
+            const gameId = extractStoreGameSourceId(id);
+            const storeGame = await getStoreGame(gameId.system, gameId.id);
+            if (!storeGame) return undefined;
+            const storeFrontendGame = await convertStoreToFrontendDetailed(gameId.system, gameId.id, storeGame);
+            if (localGame)
+            {
+                return { ...storeFrontendGame, ...localGame };
+            }
+            return storeFrontendGame;
+        } else if (localGame)
+        {
+            return localGame;
+        }
+
+        return undefined;
+    }
 }

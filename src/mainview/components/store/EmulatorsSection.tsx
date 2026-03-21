@@ -69,7 +69,7 @@ export function EmulatorsSection (data: {
                             scrollIntoNearestParent(node, { behavior: details.instant ? 'instant' : 'smooth' });
                         }} />
                     )) ?? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-38 w-full rounded-4xl" />)}
-                    <SeeAllCard id={`${FOCUS_KEYS.EMULATOR_SECTION}-see-all`} onAction={() => Router.navigate({ to: '/store/tab/emulators' })} onFocus={({ node, instant }) => scrollIntoNearestParent(node, { behavior: instant ? 'instant' : 'smooth' })} />
+                    <SeeAllCard id={`${FOCUS_KEYS.EMULATOR_SECTION}-see-all`} onAction={() => Router.navigate({ to: '/store/tab/emulators', viewTransition: { types: ['zoom-in'] } })} onFocus={({ node, instant }) => scrollIntoNearestParent(node, { behavior: instant ? 'instant' : 'smooth' })} />
                 </Carousel>
 
             </section>

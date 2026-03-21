@@ -10,6 +10,8 @@ import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/
 import { PopNavigateSource } from '../scripts/spatialNavigation';
 import { GameListFilterType } from '@/shared/constants';
 import { GameCardFocusHandler } from './CardElement';
+import { Router } from '..';
+import { HandleGoBack } from '../scripts/utils';
 
 export interface CollectionsDetailParams
 {
@@ -30,7 +32,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
         preferredChildFocusKey: `${focusKey}-list`,
     });
 
-    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => PopNavigateSource('game-list', '/') }]);
+    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
     const { shortcuts } = useShortcutContext();
 
     const handleScroll: GameCardFocusHandler = (id, node, details) =>

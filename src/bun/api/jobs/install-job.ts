@@ -6,12 +6,14 @@ import * as schema from "@schema/app";
 import * as emulatorSchema from "@schema/emulators";
 import path from 'node:path';
 import { getPlatformApiPlatformsIdGet, getRomApiRomsIdGet, PlatformSchema } from "@clients/romm";
-import { config, db, emulatorsDb, jar } from "../app";
-import unzip from 'unzip-stream';
-import { Readable, Transform } from "node:stream";
+import { config, db, emulatorsDb, events, jar } from "../app";
 import { extractStoreGameSourceId, getStoreGameFromId } from "../store/services/gamesService";
 import * as igdb from 'ts-igdb-client';
 import secrets from "../secrets";
+import { hashFile } from "@/bun/utils";
+import { Downloader } from "@/bun/utils/downloader";
+import { sleep } from "bun";
+import _7z from '7zip-min';
 
 interface JobConfig
 {
@@ -19,13 +21,16 @@ interface JobConfig
     dryDownload?: boolean;
 }
 
-export class InstallJob implements IJob
+export type InstallJobStates = 'download' | 'extract';
+
+export class InstallJob implements IJob<never, InstallJobStates>
 {
     public gameId: string;
     public source: string;
     public sourceId: string;
     public config?: JobConfig;
     static id = "install-job" as const;
+    public group = InstallJob.id;
 
     constructor(id: string, source: string, sourceId: string, config?: JobConfig)
     {
@@ -35,170 +40,130 @@ export class InstallJob implements IJob
         this.source = source;
     }
 
-    public async start (cx: JobContext)
+    public async start (cx: JobContext<InstallJob, never, InstallJobStates>)
     {
         cx.setProgress(0, 'download');
         fs.mkdir(config.get('downloadPath'), { recursive: true });
 
+        const downloadPath = config.get('downloadPath');
+
+        let files: {
+            url: URL,
+            file_path: string;
+            file_name: string;
+            size?: number;
+        }[] = [];
+        let cookie: string = '';
+        let screenshotUrls: string[];
+        let coverUrl: string;
+        let rommPlatform: PlatformSchema | undefined;
+        let slug: string | null;
+        let path_fs: string | undefined;
+        let summary: string | null;
+        let name: string | null;
+        let last_played: Date | null;
+        let igdb_id: number | null;
+        let ra_id: number | null;
+        let source_id: string;
+        let system_slug: string;
+        let extract_path: string;
+        let metadata: any | undefined;
+
+        switch (this.source)
+        {
+            case 'romm':
+
+                const rom = (await getRomApiRomsIdGet({ path: { id: Number(this.gameId) }, throwOnError: true })).data;
+                rommPlatform = (await getPlatformApiPlatformsIdGet({ path: { id: rom.platform_id }, throwOnError: true })).data;
+
+                const rommAddress = config.get('rommAddress');
+                coverUrl = `${rommAddress}${rom.path_cover_large}`;
+                screenshotUrls = rom.merged_screenshots.map(s => `${config.get('rommAddress')}${s}`);
+                last_played = rom.rom_user.last_played ? new Date(rom.rom_user.last_played) : null;
+                igdb_id = rom.igdb_id;
+                ra_id = rom.ra_id;
+                summary = rom.summary;
+                name = rom.name;
+                path_fs = path.join(rom.fs_path, rom.fs_name);
+                source_id = String(rom.id);
+                slug = rom.slug;
+                system_slug = rommPlatform.slug;
+                extract_path = '';
+                metadata = rom.metadatum;
+
+                const rommFiles = await Promise.all(rom.files.map(async f =>
+                {
+                    const localPath = path.join(config.get('downloadPath'), f.full_path);
+                    if (f.md5_hash && await fs.exists(localPath))
+                    {
+                        const existingHash = await hashFile(localPath, 'sha1');
+                        if (existingHash === f.md5_hash)
+                        {
+                            console.log("File Already Present: ", f.full_path);
+                            return undefined;
+                        }
+
+                        console.warn("File ", f.full_path, 'with hash', existingHash, 'has different hash than', f.sha1_hash);
+                    }
+
+                    return {
+                        url: new URL(`${config.get('rommAddress')}/api/romsfiles/${f.id}/content/${f.file_name}`),
+                        file_name: f.file_name,
+                        file_path: path.join(config.get('downloadPath'), f.file_path),
+                        size: f.file_size_bytes
+                    };
+                }));
+
+                files.push(...rommFiles.filter(f => f !== undefined));
+                cookie = await jar.getCookieString(config.get('rommAddress') ?? '');
+                break;
+            case 'store':
+                const game = await getStoreGameFromId(this.gameId);
+                const gameId = extractStoreGameSourceId(this.gameId);
+                coverUrl = game.pictures.titlescreens[0];
+                screenshotUrls = game.pictures.screenshots;
+                files.push({ url: new URL(game.file), file_path: `roms/${game.system}`, file_name: path.basename(decodeURI(game.file)) });
+                slug = this.gameId;
+                source_id = this.gameId;
+                name = game.title;
+                summary = game.description;
+                system_slug = gameId.system;
+                extract_path = path.join('roms', gameId.system);
+
+                break;
+            default:
+                throw new Error("Unsupported source");
+        }
+
         if (this.config?.dryRun !== true)
         {
-            const downloadPath = config.get('downloadPath');
-
-            let downloadUrl: URL;
-            let cookie: string = '';
-            let screenshotUrls: string[];
-            let coverUrl: string;
-            let rommPlatform: PlatformSchema | undefined;
-            let slug: string | null;
-            let path_fs: string | undefined;
-            let summary: string | null;
-            let name: string | null;
-            let last_played: Date | null;
-            let igdb_id: number | null;
-            let ra_id: number | null;
-            let source_id: string;
-            let system_slug: string;
-            let extract_path: string;
-
-            switch (this.source)
-            {
-                case 'romm':
-
-                    const rom = (await getRomApiRomsIdGet({ path: { id: Number(this.gameId) }, throwOnError: true })).data;
-                    rommPlatform = (await getPlatformApiPlatformsIdGet({ path: { id: rom.platform_id }, throwOnError: true })).data;
-
-                    const rommAddress = config.get('rommAddress');
-                    coverUrl = `${rommAddress}${rom.path_cover_large}`;
-                    screenshotUrls = rom.merged_screenshots.map(s => `${config.get('rommAddress')}${s}`);
-                    last_played = rom.rom_user.last_played ? new Date(rom.rom_user.last_played) : null;
-                    igdb_id = rom.igdb_id;
-                    ra_id = rom.ra_id;
-                    summary = rom.summary;
-                    name = rom.name;
-                    path_fs = path.join(rom.fs_path, rom.fs_name);
-                    source_id = String(rom.id);
-                    slug = rom.slug;
-                    system_slug = rommPlatform.slug;
-                    extract_path = '';
-
-                    downloadUrl = new URL(`${config.get('rommAddress')}/api/roms/download`);
-                    downloadUrl.searchParams.set('rom_ids', String(this.gameId));
-                    cookie = await jar.getCookieString(config.get('rommAddress') ?? '');
-                    break;
-                case 'store':
-                    const game = await getStoreGameFromId(this.gameId);
-                    const gameId = extractStoreGameSourceId(this.gameId);
-                    coverUrl = game.pictures.titlescreens[0];
-                    screenshotUrls = game.pictures.screenshots;
-                    downloadUrl = new URL(game.file);
-                    slug = this.gameId;
-                    source_id = this.gameId;
-                    name = game.title;
-                    summary = game.description;
-                    system_slug = gameId.system;
-                    extract_path = 'roms', gameId.system;
-
-                    break;
-                default:
-                    throw new Error("Unsupported source");
-            }
-
             if (this.config?.dryDownload !== true)
             {
-                /*
-                // download files for rom
-                const downloadUrl = new URL(`${config.get('rommAddress')}/api/roms/download`);
-                downloadUrl.searchParams.set('rom_ids', String(this.id));
-                const downloader = new DownloaderHelper(downloadUrl.href, downloadPath, {
-                    headers: {
-                        cookie: await jar.getCookieString(config.get('rommAddress') ?? '')
-                    },
-                    fileName: `${this.id}.zip`,
-                    // Romm doesn't support resume download
-                    override: true
-                });
-
-                cx.abortSignal.addEventListener('abort', downloader.stop);
-
-                downloader.on('progress.throttled', e =>
-                {
-                    cx.setProgress(e.progress, 'download');
-                });
-
-                downloader.on('error', (e) =>
-                {
-                    cx.abort(e);
-                });
-                const finishPromise = new Promise<string>(resolve =>
-                {
-                    downloader.on("end", ({ filePath }) => resolve(filePath));
-                });
-
-                await downloader.start().catch(err => console.error(err));
-                const zipFilePath = await finishPromise;
-
-                cx.setProgress(0, 'extract');
-
-                const zip = new StreamZip.async({ file: zipFilePath });
-                const totalCount = await zip.entriesCount;
-                let extractCount = 0;
-                zip.on('extract', async (entry, file) =>
-                {
-                    console.log(`Extracted ${entry.name} to ${file}`);
-                    cx.setProgress(extractCount / totalCount * 100, 'extract');
-                    extractCount++;
-                });
-                await zip.extract(null, downloadPath);
-                await zip.close();
-
-                await fs.rm(zipFilePath);*/
-
-                cx.setProgress(0, 'download');
-
-                const res = await fetch(downloadUrl, {
-                    headers: {
-                        cookie: cookie
-                    },
-                });
-
-                const totalBytes = Number(res.headers.get("content-length")) || 0;
-                let bytesReceived = 0;
-
-                const progressStream = new Transform({
-                    transform (chunk, _, callback)
+                const downloader = new Downloader(`game-${this.source}-${this.gameId}`,
+                    files,
+                    config.get('downloadPath'),
                     {
-                        bytesReceived += chunk.length;
-                        if (totalBytes > 0)
+                        signal: cx.abortSignal,
+                        onProgress (stats)
                         {
-                            const percent = (bytesReceived / totalBytes) * 100;
-                            cx.setProgress(percent, 'download');
-                        }
-                        this.push(chunk);
-                        callback();
-                    }
-                });
-
-                await new Promise((resolve, reject) =>
-                {
-                    const extract = unzip.Extract({ path: path.join(downloadPath, extract_path), });
-                    (extract as any).unzipStream.on('entry', (entry: any) =>
-                    {
-                        if (!path_fs)
-                            path_fs = path.join(extract_path, entry.path);
+                            cx.setProgress(stats.progress, 'download');
+                        },
                     });
-                    Readable.fromWeb(res.body as any).pipe(progressStream)
-                        .pipe(extract)
-                        .on('close', resolve)
-                        .on('error', reject);
-                });
+
+                const downloadedFiles = await downloader.start();
+                if (extract_path && downloadedFiles)
+                {
+                    for (const path of downloadedFiles)
+                    {
+                        await _7z.unpack(path, extract_path);
+                    }
+                }
             }
 
             if (this.config?.dryDownload === true)
             {
                 await mkdir(path.join(downloadPath, extract_path), { recursive: true });
             }
-
-
 
             const coverResponse = await fetch(coverUrl);
             const cover = Buffer.from(await coverResponse.arrayBuffer());
@@ -291,7 +256,8 @@ export class InstallJob implements IJob
                     summary: summary,
                     name,
                     cover,
-                    cover_type: coverResponse.headers.get('content-type')
+                    cover_type: coverResponse.headers.get('content-type'),
+                    metadata
                 };
 
                 const [{ id }] = await tx.insert(schema.games).values(game).returning({ id: schema.games.id });
@@ -327,7 +293,17 @@ export class InstallJob implements IJob
                 }
 
             });
+        } else
+        {
+            for (let i = 0; i < 10; i++)
+            {
+                cx.setProgress(i * 10, "download");
+                if (cx.abortSignal.aborted) return;
+                await sleep(1000);
+            }
         }
 
+
+        events.emit('notification', { message: `${name}: Installed`, type: 'success', duration: 8000 });
     }
 }

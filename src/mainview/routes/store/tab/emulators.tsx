@@ -8,7 +8,7 @@ import { StoreEmulatorCard } from '@/mainview/components/store/StoreEmulatorCard
 import { StoreContext } from '@/mainview/scripts/contexts';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { useQuery } from '@tanstack/react-query';
-import queries from '@/mainview/scripts/queries';
+import { storeEmulatorsQuery } from '@queries/store';
 
 export const Route = createFileRoute('/store/tab/emulators')({
   component: RouteComponent,
@@ -22,7 +22,7 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
   const storeContext = useContext(StoreContext);
-  const { data: emulators } = useQuery(queries.store.storeEmulatorsQuery);
+  const { data: emulators } = useQuery(storeEmulatorsQuery);
 
   useEffect(() =>
   {

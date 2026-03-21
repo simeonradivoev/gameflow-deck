@@ -11,6 +11,10 @@ import { ErrorLike } from "elysia/universal";
 import { getStoreGameFromId } from "../../store/services/gamesService";
 import { cores } from "../../emulatorjs/emulatorjs";
 import { host } from "@/bun/utils/host";
+import Elysia from "elysia";
+import z from "zod";
+import data from "@emulators";
+import { InstallJob, InstallJobStates } from "../../jobs/install-job";
 
 class CommandSearchError extends Error
 {
@@ -54,8 +58,11 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
                     {
                         const gameUrl = `${RPC_URL(host)}/api/romm/rom/${source}/${id}`;
                         commands.push({
-                            id: 'emulatorjs',
-                            label: "Emulator JS", command: `core=${cores[localGame.platform_slug]}&gameUrl=${encodeURIComponent(gameUrl)}`, valid: true, emulator: 'emulatorjs'
+                            id: 'EMULATORJS',
+                            label: "Emulator JS",
+                            command: `core=${cores[localGame.platform_slug]}&gameUrl=${encodeURIComponent(gameUrl)}`,
+                            valid: true,
+                            emulator: 'EMULATORJS'
                         });
                     }
 
@@ -89,97 +96,93 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
     return undefined;
 }
 
-export default async function buildStatusResponse (source: string, id: string)
+export default function buildStatusResponse ()
 {
-    let cleanup: (() => void) | undefined;
-    let closed = false;
-    return new Response(new ReadableStream({
-        async start (controller)
+    return new Elysia().ws('/status/:source/:id', {
+        response: z.discriminatedUnion('status', [
+            z.object({ status: z.literal('error'), error: z.unknown() }),
+            z.object({ status: z.literal('installed'), commands: z.array(z.any()), details: z.string().optional() }),
+            z.object({ status: z.literal(['refresh', 'queued']) }),
+            z.object({ status: z.literal('playing'), details: z.string() }),
+            z.object({ status: z.literal('install'), details: z.string() }),
+            z.object({ status: z.literal(['download', 'extract']), progress: z.number() }),
+        ]),
+        message (ws, data)
         {
-            const encoder = new TextEncoder();
-
-            function enqueue (data: GameInstallProgress, event?: 'error' | 'refresh' | 'ping')
+            if (data === 'cancel')
             {
-                if (closed) return;
-                const evntString = event ? `event: ${event}\n` : '';
-                controller.enqueue(encoder.encode(`${evntString}data: ${JSON.stringify(data)}\n\n`));
+                const activeTask = taskQueue.findJob(`install-rom-${ws.data.params.source}-${ws.data.params.id}`, InstallJob);
+                activeTask?.abort('cancel');
             }
-
-            await sendLatests();
-
-            // seems to help with issue of buffers not flushing, keeping the connection open forcefully
-            const keepAlive = setInterval(() =>
-            {
-                if (closed) return clearInterval(keepAlive);
-                try
-                {
-                    enqueue({}, 'ping');
-                } catch
-                {
-                    closed = true;
-                    clearInterval(keepAlive);
-                }
-            }, 15000);
-
-            const sourceId = `${source}-${id}`;
+        },
+        async open (ws)
+        {
+            sendLatests();
 
             async function sendLatests ()
             {
-                if (closed) return;
-                const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(id, source), columns: { id: true } });
-                const activeTask = taskQueue.findJob(`install-rom-${source}-${id}`);
+                if (ws.readyState > 1) return;
+                const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(ws.data.params.id, ws.data.params.source), columns: { id: true } });
+                const activeTask = taskQueue.findJob(`install-rom-${ws.data.params.source}-${ws.data.params.id}`, InstallJob);
                 if (activeTask)
                 {
-                    enqueue({
-                        progress: activeTask.progress,
-                        status: activeTask.state as any
-                    });
+                    if (activeTask.status === 'queued')
+                    {
+                        ws.send({ status: 'queued' });
+                    } else
+                    {
+                        ws.send({ status: activeTask.state as InstallJobStates, progress: activeTask.progress });
+                    }
 
                 } else if (activeGame && activeGame.gameId === localGame?.id)
                 {
-                    enqueue({ status: 'playing' as GameStatusType, details: 'Playing' });
+                    ws.send({ status: 'playing', details: 'Playing' });
                 }
                 else
                 {
-                    const validCommand = await getValidLaunchCommandsForGame(source, id);
+                    const validCommand = await getValidLaunchCommandsForGame(ws.data.params.source, ws.data.params.id);
                     if (validCommand)
                     {
                         if (validCommand instanceof Error)
                         {
-                            enqueue({ status: validCommand.name as GameStatusType, error: validCommand.message });
+                            ws.send({ status: 'error', error: validCommand.message });
                         }
                         else
                         {
-                            enqueue({ status: 'installed', details: validCommand.commands[0].label, commands: validCommand.commands });
+                            ws.send({
+                                status: 'installed',
+                                details: validCommand.commands[0].label,
+                                commands: validCommand.commands
+                            });
                         }
 
                     }
-                    else if (source === 'romm')
+                    else if (ws.data.params.source === 'romm')
                     {
                         // TODO: Add Caching
-                        const remoteGame = await getRomApiRomsIdGet({ path: { id: Number(id) } });
+                        const remoteGame = await getRomApiRomsIdGet({ path: { id: Number(ws.data.params.id) } });
                         const stats = await fs.statfs(config.get('downloadPath'));
                         if (remoteGame.data?.fs_size_bytes && remoteGame.data?.fs_size_bytes > stats.bsize * stats.bavail)
                         {
-                            enqueue({ status: 'error', error: "Not Enough Free Space" });
+                            ws.send({ status: 'error', error: "Not Enough Free Space" });
                         } else
                         {
-                            enqueue({ status: 'install', details: 'Install' });
+                            ws.send({ status: 'install', details: 'Install' });
                         }
 
-                    } else if (source === 'store')
+                    } else if (ws.data.params.source === 'store')
                     {
-                        const storeGame = await getStoreGameFromId(id);
+                        const storeGame = await getStoreGameFromId(ws.data.params.id);
                         const fileResponse = await fetch(storeGame.file, { method: 'HEAD' });
                         const size = Number(fileResponse.headers.get('content-length'));
                         const stats = await fs.statfs(config.get('downloadPath'));
 
                         if (size > stats.bsize * stats.bavail)
                         {
-                            enqueue({ status: 'error', error: "Not Enough Free Space" });
+                            ws.send({ status: 'error', error: "Not Enough Free Space" });
                         } else
                         {
-                            enqueue({ status: 'install', details: 'Install' });
+                            ws.send({ status: 'install', details: 'Install' });
                         }
                     }
                 }
@@ -190,50 +193,56 @@ export default async function buildStatusResponse (source: string, id: string)
             {
                 if (data.error)
                 {
-                    enqueue({
+                    ws.send({
                         status: 'error',
                         error: data.error
-                    }, 'error');
+                    });
                 }
                 await sendLatests();
             };
             events.on('activegameexit', handleActiveExit);
             dispose.push(() => events.off('activegameexit', handleActiveExit));
-            dispose.push(taskQueue.on('progress', ({ id, progress, state }) =>
+            dispose.push(taskQueue.on('progress', (data) =>
             {
-                if (id.endsWith(sourceId))
+                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
                 {
-                    enqueue({ progress, status: state as any });
+
+                    ws.send({ status: data.job.state as InstallJobStates, progress: data.progress });
                 }
             }));
-            dispose.push(taskQueue.on('completed', ({ id }) =>
+            dispose.push(taskQueue.on('queued', (data) =>
             {
-                if (id.endsWith(sourceId))
+                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
                 {
-                    enqueue({}, 'refresh');
+                    ws.send({ status: 'queued' });
                 }
             }));
-            dispose.push(taskQueue.on('error', ({ id, error }) =>
+            dispose.push(taskQueue.on('completed', (data) =>
             {
-                if (id.endsWith(sourceId))
+                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
                 {
-                    enqueue({
+                    ws.send({ status: 'refresh' });
+                }
+            }));
+            dispose.push(taskQueue.on('error', (data) =>
+            {
+                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
+                {
+                    ws.send({
                         status: 'error',
-                        error: getErrorMessage(error)
-                    }, 'error');
+                        error: getErrorMessage(data.error)
+                    });
                 }
             }));
 
-            cleanup = () =>
+            (ws.data as any).cleanup = () =>
             {
-                closed = true;
                 dispose.forEach(f => f());
             };
         },
-        cancel ()
+        close (ws, code, reason)
         {
-            cleanup?.();
-            cleanup = undefined;
+            (ws.data as any).cleanup?.();
         },
-    }));
+    });
 }

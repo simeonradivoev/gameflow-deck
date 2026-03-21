@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { DefaultRommStaleTime, RPC_URL } from "@shared/constants";
 import { CardList, GameMetaExtra } from "./CardList";
 import { rommApi } from "../scripts/clientApi";
-import { SaveSource } from "../scripts/spatialNavigation";
 import { JSX, useMemo } from "react";
 import { HardDrive } from "lucide-react";
 import { GameCardFocusHandler } from "./CardElement";
@@ -37,8 +36,7 @@ export function PlatformsList (data: {
 
     const handleDefaultSelect = (source: string, id: string) =>
     {
-        SaveSource('game-list');
-        navigate({ to: `/platform/${source}/${id}`, viewTransition: { types: ['zoom-in'] } });
+        navigate({ to: `/platform/${source}/${id}` });
     };
 
     const platformsMapped = useMemo(() => platforms.sort((a, b) => a.updated_at.getTime() - b.updated_at.getTime())

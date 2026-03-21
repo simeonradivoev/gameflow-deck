@@ -1,5 +1,5 @@
 import Elysia, { status } from "elysia";
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobBase, JobContext, JobContextFromClass } from "../task-queue";
 import { LOGIN_PORT, SERVER_URL } from "@/shared/constants";
 import { host, localIp } from "@/bun/utils/host";
 import cors from "@elysiajs/cors";
@@ -8,7 +8,7 @@ import { config } from "../app";
 import z from "zod";
 import { delay } from "@/shared/utils";
 
-export class LoginJob implements IJob
+export class LoginJob implements IJob<z.infer<typeof LoginJob.dataSchema>, "base">
 {
     endsAt: Date;
     startedAt: Date;
@@ -25,7 +25,7 @@ export class LoginJob implements IJob
 
     exposeData = (): z.infer<typeof LoginJob.dataSchema> => ({ endsAt: this.endsAt, startedAt: this.startedAt, url: this.url });
 
-    async start (context: JobContext): Promise<any>
+    async start (context: JobContext<LoginJob, z.infer<typeof LoginJob.dataSchema>, "base">): Promise<void>
     {
         const loginServer = new Elysia({ serve: { hostname: localIp, port: LOGIN_PORT } })
             .use(cors())

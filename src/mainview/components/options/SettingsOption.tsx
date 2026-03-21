@@ -3,7 +3,7 @@ import { SettingsType } from "../../../shared/constants";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { OptionSpace } from "./OptionSpace";
 import { OptionInput } from "./OptionInput";
-import queries from "@/mainview/scripts/queries";
+import { getSettingQuery, setSettingMutation } from "@queries/settings";
 
 type KeysWithValueAssignableTo<T, Value> = {
     [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
@@ -20,8 +20,8 @@ export function SettingsOption (data: {
 {
     const [dirty, setDirty] = useState(false);
     const [localValue, setLocalValue] = useState<string | undefined>();
-    useQuery(queries.settings.getSettingQuery(data.id));
-    const setMutation = useMutation(queries.settings.setSettingMutation(data.id));
+    useQuery(getSettingQuery(data.id));
+    const setMutation = useMutation(setSettingMutation(data.id));
 
     const handleSave = useCallback(() =>
     {

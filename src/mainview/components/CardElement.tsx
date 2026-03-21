@@ -33,6 +33,7 @@ export interface GameCardParams
   onFocus?: GameCardFocusHandler;
   onBlur?: (id: string) => void;
   clickFocuses?: boolean;
+  previewClassName?: string;
 }
 
 export default function CardElement (data: GameCardParams & InteractParams)
@@ -53,7 +54,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
       role="button"
       ref={ref}
       style={{
-        scrollSnapAlign: "center"
+        scrollSnapAlign: isPointer ? "center" : "none"
       }}
       onFocus={focusSelf}
       onDoubleClick={e => data.onAction?.(e.nativeEvent)}
@@ -74,7 +75,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
         classNames({ "h-full": typeof data.preview === "string" })
       )}>
         {typeof data.preview === "string" ? (
-          <img draggable={false} className={classNames("object-cover w-full h-full", { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
+          <img draggable={false} className={classNames("object-cover w-full h-full", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
         ) : (
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
         )}

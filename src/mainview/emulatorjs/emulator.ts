@@ -28,6 +28,7 @@ window.addEventListener('message', (e) =>
 
 });
 
+window.EJS_threads = true;
 window.EJS_player = "#game";
 window.EJS_lightgun = false;
 window.EJS_startOnLoaded = true;

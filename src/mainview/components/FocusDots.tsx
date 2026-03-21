@@ -42,7 +42,6 @@ export default function FocusDots (data: {
     scrollElement?: RefObject<HTMLElement | null>;
 })
 {
-
     const focusedKey = useGlobalFocus();
     let elements = useMemo(() =>
     {
@@ -62,7 +61,7 @@ export default function FocusDots (data: {
 
             return childrenArray.map((c, i) =>
             {
-                return <ScrollDot parent={data.scrollElement!} index={i} peers={childrenArray as HTMLElement[]} />;
+                return <ScrollDot key={i} parent={data.scrollElement!} index={i} peers={childrenArray as HTMLElement[]} />;
             });
         } else
         {

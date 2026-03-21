@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CollectionsDetail } from "../components/CollectionsDetail";
 import { useQuery } from "@tanstack/react-query";
 import { RPC_URL } from "../../shared/constants";
-import queries from "../scripts/queries";
+import { platformQuery } from "@queries/romm";
 
 export const Route = createFileRoute("/platform/$source/$id")({
   component: RouteComponent
@@ -22,7 +22,7 @@ function PlatformTitle (data: { pathCover: string | null, platformName?: string;
 function RouteComponent ()
 {
   const { source, id } = Route.useParams();
-  const { data: platform } = useQuery(queries.romm.platformQuery(source, id));
+  const { data: platform } = useQuery(platformQuery(source, id));
 
   return (
     <div className="w-full h-full">

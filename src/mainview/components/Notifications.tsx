@@ -1,6 +1,6 @@
 import { Notification, RPC_URL } from "@/shared/constants";
 import { useEffect } from "react";
-import toast from "react-hot-toast";
+import toast, { ToastOptions } from "react-hot-toast";
 
 export default function Notifications (data: {})
 {
@@ -10,15 +10,16 @@ export default function Notifications (data: {})
         es.addEventListener('notification', (e) =>
         {
             const notification = JSON.parse(e.data) as Notification;
+            const options: ToastOptions = { removeDelay: notification.duration };
             if (notification.type === 'error')
             {
-                toast.error(notification.message);
+                toast.error(notification.message, options);
             } else if (notification.type === 'success')
             {
-                toast.success(notification.message);
+                toast.success(notification.message, options);
             } else
             {
-                toast.custom(notification.message);
+                toast.custom(notification.message, options);
             }
         });
 

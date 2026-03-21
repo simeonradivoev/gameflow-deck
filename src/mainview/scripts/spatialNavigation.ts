@@ -9,8 +9,6 @@ import
   UseFocusableResult,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { RefObject, useEffect, useState } from "react";
-import { Router } from "..";
-import { RouteIds } from "@tanstack/react-router";
 
 init({
   shouldFocusDOMNode: false,
@@ -22,42 +20,9 @@ let updateFocusable = SpatialNavigation.updateFocusable.bind(SpatialNavigation);
 let sortSiblingsByPriority = SpatialNavigation.sortSiblingsByPriority.bind(SpatialNavigation);
 let removeFocusable = SpatialNavigation.removeFocusable.bind(SpatialNavigation);
 let setFocus = SpatialNavigation.setFocus.bind(SpatialNavigation);
+let setCurrentFocusedKey = SpatialNavigation.setCurrentFocusedKey.bind(SpatialNavigation);
 
 type SaveFocusType = "session" | "local";
-
-type HistorySourceType = "settings" | 'details' | 'launch' | 'game-list' | 'store-details';
-const historySourceMap = new Map<string, { to: string, search?: Record<string, any>; }>();
-
-export function SaveSource (id: HistorySourceType, init?: { url?: string, search?: Record<string, any>; })
-{
-  let finalUrl = init?.url ?? location.hash.replaceAll(/#|(\?.+)/g, '');
-  if (finalUrl)
-  {
-    historySourceMap.set(id, { to: finalUrl, search: init?.search });
-  }
-}
-
-export function HasSource (id: HistorySourceType)
-{
-  return historySourceMap.has(id);
-}
-
-export function PopSource (id: HistorySourceType)
-{
-  if (!historySourceMap.has(id))
-  {
-    return { to: undefined, search: undefined };
-  }
-  const source = historySourceMap.get(id);
-  historySourceMap.delete(id);
-  return source ?? { to: undefined, search: undefined };
-}
-
-export function PopNavigateSource (id: HistorySourceType, fallback: RouteIds<typeof Router.routeTree>)
-{
-  const { to, search } = PopSource(id);
-  Router.navigate({ to: to ?? fallback, viewTransition: { types: ['zoom-out'] }, search });
-}
 
 export function GetFocusedElement (focusKey: string)
 {
@@ -128,6 +93,11 @@ SpatialNavigation.setFocus = (newFocusKey, focusDetails) =>
   dispatchFocusedEvent(new CustomEvent<FocusDetails>('focuschanged', { bubbles: true, detail: focusDetails }));
 };
 
+SpatialNavigation.setCurrentFocusedKey = (newFocusKey, focusDetails) =>
+{
+  setCurrentFocusedKey(newFocusKey, focusDetails);
+  window.dispatchEvent(new CustomEvent<FocusDetails>('focuschanged', { bubbles: true, detail: focusDetails }));
+};
 
 SpatialNavigation.updateFocusable = (key, data) =>
 {

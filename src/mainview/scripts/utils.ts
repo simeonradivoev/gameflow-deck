@@ -1,9 +1,11 @@
 import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
-import { doesFocusableExist, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
+import { doesFocusableExist, FocusableComponentLayout, FocusDetails, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { jobsApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";
+import { Router } from "..";
+import data from "@emulators";
 
 export function selfFocusSmart (shouldFocus: boolean, focusSelf: () => void)
 {
@@ -224,10 +226,14 @@ export function useDragScroll<T extends HTMLElement | null> (ref: RefObject<T>)
 
 export function scrollIntoViewHandler (params?: ScrollIntoViewOptions)
 {
-  return (focusKey: string, node: HTMLElement, details: any) => node.scrollIntoView({ ...params, behavior: details.instant ? 'instant' : 'smooth' });
+  return (focusKey: string, node: HTMLElement, details: any) =>
+  {
+    if (details.nativeEvent instanceof PointerEvent) return;
+    node.scrollIntoView({ ...params, behavior: details.instant ? 'instant' : 'smooth' });
+  };
 }
 
-export function useStickyDataAttr<T extends HTMLElement, T2 extends HTMLElement, T3 extends HTMLElement> (ref: RefObject<T | null>, sentinelRef: RefObject<T2 | null>, scrollRef: RefObject<T3 | null>)
+export function useStickyDataAttr<T extends HTMLElement, T2 extends HTMLElement, T3 extends HTMLElement> (ref: RefObject<T | null>, sentinelRef: RefObject<T2 | null>, scrollRef: RefObject<T3 | null>, callback?: (stuck: boolean) => void)
 {
   useEffect(() =>
   {
@@ -239,6 +245,7 @@ export function useStickyDataAttr<T extends HTMLElement, T2 extends HTMLElement,
       ([entry]) =>
       {
         el.toggleAttribute("data-stuck", !entry.isIntersecting);
+        callback?.(!entry.isIntersecting);
       },
       {
         root: scrollRef.current ?? null,
@@ -249,7 +256,7 @@ export function useStickyDataAttr<T extends HTMLElement, T2 extends HTMLElement,
     observer.observe(sentinel);
 
     return () => observer.disconnect();
-  }, [scrollRef.current]);
+  }, [scrollRef.current, callback]);
 }
 
 type ExtractField<T, TYPE, K extends string> =
@@ -261,18 +268,19 @@ type JobResponse<JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> =
 export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> (
   id: JOB,
   init?: {
-    onProgress?: (process: number) => void,
-    onEnded?: () => void;
+    onProgress?: (process: number, data: ExtractField<JobResponse<JOB>, "data" | "started" | "progress", 'data'>) => void,
+    onEnded?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
+    onError?: (error: string) => void;
   }
 )
 {
   type Response = JobResponse<JOB>;
-  type DataPayload = ExtractField<Response, 'data' | 'progress' | 'started', 'data'>;
+  type DataPayload = ExtractField<Response, 'data' | 'progress' | 'started' | 'ended' | 'completed', 'data'>;
 
   const ref = useRef<ReturnType<typeof jobsApi.api.jobs[JOB]['subscribe']>>(null);
   const [data, setData] = useState<DataPayload>();
   const [status, setStatus] = useState<string>();
-  const [error, setError] = useState<unknown>();
+  const [error, setError] = useState<string>();
 
   useEffect(() =>
   {
@@ -287,9 +295,13 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
           setError(data.error);
           setStatus(status);
           setData(undefined);
+          init?.onError?.(data.error);
           break;
         case 'ended':
-          init?.onEnded?.();
+          setStatus(status);
+          setData(undefined);
+          init?.onEnded?.(data.data as any);
+          break;
         case 'completed':
           setStatus(status);
           setData(undefined);
@@ -297,7 +309,7 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
         default:
           setData(data.data as DataPayload);
           setStatus(status);
-          init?.onProgress?.(data.progress);
+          init?.onProgress?.(data.progress, data.data);
       }
     });
 
@@ -311,3 +323,13 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
   return { data, status, error, wsRef: ref };
 }
 
+export function HandleGoBack ()
+{
+  if (Router.history.canGoBack())
+  {
+    Router.history.back();
+  } else
+  {
+    Router.navigate({ to: '/', viewTransition: { types: ['zoom-out'] } });
+  }
+}

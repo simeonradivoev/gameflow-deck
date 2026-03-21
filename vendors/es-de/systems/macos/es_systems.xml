@@ -421,6 +421,7 @@
         <command label="Play! Disc (Standalone)">%EMULATOR_PLAY!% --fullscreen --disc %ROM%</command>
         <command label="RPCS3 Shortcut (Standalone)">%RUNINBACKGROUND% %ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
         <command label="RPCS3 Game Serial (Standalone)">%EMULATOR_RPCS3% --no-gui %RPCS3_GAMEID%:%INJECT%=%BASENAME%.ps3</command>
+        <command label="Dolphin (Standalone)">%EMULATOR_DOLPHIN% -b -e %ROM%</command>
         <command label="xemu (Standalone)">%EMULATOR_XEMU% -dvd_path %ROM%</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
         <platform>arcade</platform>
@@ -2005,7 +2006,7 @@
         <fullname>Namco-Sega-Nintendo Triforce</fullname>
         <path>%ROMPATH%/triforce</path>
         <extension>.ciso .CISO .dff .DFF .dol .DOL .elf .ELF .gcm .GCM .gcz .GCZ .iso .ISO .json .JSON .m3u .M3U .rvz .RVZ .tgc .TGC .wad .WAD .wbfs .WBFS .wia .WIA .7z .7Z .zip .ZIP</extension>
-        <command>PLACEHOLDER %ROM%</command>
+        <command label="Dolphin (Standalone)">%EMULATOR_DOLPHIN% -b -e %ROM%</command>
         <platform>arcade</platform>
         <theme>triforce</theme>
     </system>
@@ -2218,7 +2219,7 @@
         <name>xbox</name>
         <fullname>Microsoft Xbox</fullname>
         <path>%ROMPATH%/xbox</path>
-        <extension>.iso .ISO</extension>
+        <extension>.iso .ISO .xiso .XISO</extension>
         <command label="xemu (Standalone)">%EMULATOR_XEMU% -dvd_path %ROM%</command>
         <platform>xbox</platform>
         <theme>xbox</theme>

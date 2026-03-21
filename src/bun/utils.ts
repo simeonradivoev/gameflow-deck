@@ -1,5 +1,7 @@
 import { $ } from 'bun';
 import path from 'node:path';
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
 
 export function checkRunning (pid: number)
 {
@@ -67,5 +69,45 @@ export async function openExternal (target: string)
     if (process.platform === "darwin")
     {
         return $`open ${target}`.throws(true);
+    }
+}
+
+export function hashFile (path: string, algorithm: "sha1" | "md5"): Promise<string>
+{
+    return new Promise((resolve, reject) =>
+    {
+        const hash = createHash(algorithm);
+        const stream = createReadStream(path);
+
+        stream.on("data", (data) => hash.update(data));
+        stream.on("end", () => resolve(hash.digest("hex")));
+        stream.on("error", reject);
+    });
+}
+
+export class SeededRandom
+{
+    seed: number;
+
+    constructor(seed?: number)
+    {
+        this.seed = seed ?? new Date().getTime();
+    }
+
+    next ()
+    {
+        var x = Math.sin(this.seed++) * 10000;
+        return x - Math.floor(x);
+    }
+}
+
+export function shuffleInPlace (array: any[], startSeed?: number)
+{
+    const random = new SeededRandom(startSeed);
+
+    for (let i = array.length - 1; i > 0; i--)
+    {
+        const j = Math.floor(random.next() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
     }
 }

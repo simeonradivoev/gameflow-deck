@@ -2,7 +2,6 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { Block, createFileRoute } from '@tanstack/react-router';
 import DownloadDirectoryOption from '@/mainview/components/options/DownloadDirectoryOption';
 import { useIsMutating, useMutation, useQuery } from '@tanstack/react-query';
-import queries from '@/mainview/scripts/queries';
 import { DownloadsDrive } from '@/shared/constants';
 import prettyBytes from 'pretty-bytes';
 import classNames from 'classnames';
@@ -13,6 +12,7 @@ import { OptionSpace } from '@/mainview/components/options/OptionSpace';
 import { Button } from '@/mainview/components/options/Button';
 import { systemApi } from '@/mainview/scripts/clientApi';
 import useActiveControl from '@/mainview/scripts/gamepads';
+import { changeDownloadsMutation } from '@queries/settings';
 
 export const Route = createFileRoute('/settings/directories')({
   component: RouteComponent,
@@ -24,11 +24,11 @@ function DriveComponent (data: { drive: DownloadsDrive; downloadsSize: number; r
     focusKey: data.drive.device,
     onFocus: () => (ref.current as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   });
-  const isMoving = useIsMutating(queries.settings.changeDownloadsMutation);
+  const isMoving = useIsMutating(changeDownloadsMutation);
   const usedWithoutDownlods = data.drive.used - (data.drive.isCurrentlyUsed ? data.downloadsSize : 0);
   const usedPercent = usedWithoutDownlods / data.drive.size;
   const usedPercentRaw = data.drive.used / data.drive.size;
-  const changeDownloads = useMutation({ ...queries.settings.changeDownloadsMutation, onSuccess: data.refetchDrives }); data.drive.unusableReason;
+  const changeDownloads = useMutation({ ...changeDownloadsMutation, onSuccess: data.refetchDrives }); data.drive.unusableReason;
   const shortcuts: Shortcut[] = [];
   const valid = !data.drive.unusableReason && isMoving <= 0;
   const handleAction = () => changeDownloads.mutate(data.drive.mountPoint);

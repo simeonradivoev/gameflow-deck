@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AddCollectionApiCollectionsPostData, AddCollectionApiCollectionsPostErrors, AddCollectionApiCollectionsPostResponses, AddExclusionApiConfigExcludePostData, AddExclusionApiConfigExcludePostResponses, AddFirmwareApiFirmwarePostData, AddFirmwareApiFirmwarePostErrors, AddFirmwareApiFirmwarePostResponses, AddPlatformApiPlatformsPostData, AddPlatformApiPlatformsPostErrors, AddPlatformApiPlatformsPostResponses, AddPlatformBindingApiConfigSystemPlatformsPostData, AddPlatformBindingApiConfigSystemPlatformsPostResponses, AddPlatformVersionApiConfigSystemVersionsPostData, AddPlatformVersionApiConfigSystemVersionsPostResponses, AddRomApiRomsPostData, AddRomApiRomsPostErrors, AddRomApiRomsPostResponses, AddRomManualsApiRomsIdManualsPostData, AddRomManualsApiRomsIdManualsPostErrors, AddRomManualsApiRomsIdManualsPostResponses, AddSaveApiSavesPostData, AddSaveApiSavesPostErrors, AddSaveApiSavesPostResponses, AddScreenshotApiScreenshotsPostData, AddScreenshotApiScreenshotsPostErrors, AddScreenshotApiScreenshotsPostResponses, AddSmartCollectionApiCollectionsSmartPostData, AddSmartCollectionApiCollectionsSmartPostErrors, AddSmartCollectionApiCollectionsSmartPostResponses, AddStateApiStatesPostData, AddStateApiStatesPostErrors, AddStateApiStatesPostResponses, AddUserApiUsersPostData, AddUserApiUsersPostErrors, AddUserApiUsersPostResponses, AuthOpenidApiOauthOpenidGetData, AuthOpenidApiOauthOpenidGetResponses, CreateInviteLinkApiUsersInviteLinkPostData, CreateInviteLinkApiUsersInviteLinkPostErrors, CreateInviteLinkApiUsersInviteLinkPostResponses, CreateRomNoteApiRomsIdNotesPostData, CreateRomNoteApiRomsIdNotesPostErrors, CreateRomNoteApiRomsIdNotesPostResponses, CreateSetupPlatformsApiSetupPlatformsPostData, CreateSetupPlatformsApiSetupPlatformsPostErrors, CreateSetupPlatformsApiSetupPlatformsPostResponses, CreateUserFromInviteApiUsersRegisterPostData, CreateUserFromInviteApiUsersRegisterPostErrors, CreateUserFromInviteApiUsersRegisterPostResponses, DeleteCollectionApiCollectionsIdDeleteData, DeleteCollectionApiCollectionsIdDeleteErrors, DeleteCollectionApiCollectionsIdDeleteResponses, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteData, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteErrors, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteResponses, DeleteFirmwareApiFirmwareDeletePostData, DeleteFirmwareApiFirmwareDeletePostErrors, DeleteFirmwareApiFirmwareDeletePostResponses, DeletePlatformApiPlatformsIdDeleteData, DeletePlatformApiPlatformsIdDeleteErrors, DeletePlatformApiPlatformsIdDeleteResponses, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteData, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteErrors, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteResponses, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteData, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteErrors, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteResponses, DeleteRomManualsApiRomsIdManualsDeleteData, DeleteRomManualsApiRomsIdManualsDeleteErrors, DeleteRomManualsApiRomsIdManualsDeleteResponses, DeleteRomNoteApiRomsIdNotesNoteIdDeleteData, DeleteRomNoteApiRomsIdNotesNoteIdDeleteErrors, DeleteRomNoteApiRomsIdNotesNoteIdDeleteResponses, DeleteRomsApiRomsDeletePostData, DeleteRomsApiRomsDeletePostErrors, DeleteRomsApiRomsDeletePostResponses, DeleteSavesApiSavesDeletePostData, DeleteSavesApiSavesDeletePostErrors, DeleteSavesApiSavesDeletePostResponses, DeleteSmartCollectionApiCollectionsSmartIdDeleteData, DeleteSmartCollectionApiCollectionsSmartIdDeleteErrors, DeleteSmartCollectionApiCollectionsSmartIdDeleteResponses, DeleteStatesApiStatesDeletePostData, DeleteStatesApiStatesDeletePostErrors, DeleteStatesApiStatesDeletePostResponses, DeleteUserApiUsersIdDeleteData, DeleteUserApiUsersIdDeleteErrors, DeleteUserApiUsersIdDeleteResponses, DownloadRomsApiRomsDownloadGetData, DownloadRomsApiRomsDownloadGetErrors, DownloadRomsApiRomsDownloadGetResponses, ExportGamelistApiGamelistExportPostData, ExportGamelistApiGamelistExportPostErrors, ExportGamelistApiGamelistExportPostResponses, FpkgiFeedApiFeedsFpkgiPlatformSlugGetData, FpkgiFeedApiFeedsFpkgiPlatformSlugGetErrors, FpkgiFeedApiFeedsFpkgiPlatformSlugGetResponses, GetCollectionApiCollectionsIdGetData, GetCollectionApiCollectionsIdGetErrors, GetCollectionApiCollectionsIdGetResponses, GetCollectionsApiCollectionsGetData, GetCollectionsApiCollectionsGetErrors, GetCollectionsApiCollectionsGetResponses, GetConfigApiConfigGetData, GetConfigApiConfigGetResponses, GetCurrentUserApiUsersMeGetData, GetCurrentUserApiUsersMeGetResponses, GetFirmwareApiFirmwareIdGetData, GetFirmwareApiFirmwareIdGetErrors, GetFirmwareApiFirmwareIdGetResponses, GetFirmwareContentApiFirmwareIdContentFileNameGetData, GetFirmwareContentApiFirmwareIdContentFileNameGetErrors, GetFirmwareContentApiFirmwareIdContentFileNameGetResponses, GetPlatformApiPlatformsIdGetData, GetPlatformApiPlatformsIdGetErrors, GetPlatformApiPlatformsIdGetResponses, GetPlatformFirmwareApiFirmwareGetData, GetPlatformFirmwareApiFirmwareGetErrors, GetPlatformFirmwareApiFirmwareGetResponses, GetPlatformsApiPlatformsGetData, GetPlatformsApiPlatformsGetErrors, GetPlatformsApiPlatformsGetResponses, GetRawAssetApiRawAssetsPathGetData, GetRawAssetApiRawAssetsPathGetErrors, GetRawAssetApiRawAssetsPathGetResponses, GetRomApiRomsIdGetData, GetRomApiRomsIdGetErrors, GetRomApiRomsIdGetResponses, GetRomByHashApiRomsByHashGetData, GetRomByHashApiRomsByHashGetErrors, GetRomByHashApiRomsByHashGetResponses, GetRomByMetadataProviderApiRomsByMetadataProviderGetData, GetRomByMetadataProviderApiRomsByMetadataProviderGetErrors, GetRomByMetadataProviderApiRomsByMetadataProviderGetResponses, GetRomContentApiRomsIdContentFileNameGetData, GetRomContentApiRomsIdContentFileNameGetErrors, GetRomContentApiRomsIdContentFileNameGetResponses, GetRomfileApiRomsFilesIdGetData, GetRomfileApiRomsFilesIdGetErrors, GetRomfileApiRomsFilesIdGetResponses, GetRomfileContentApiRomsfilesIdContentFileNameGetData, GetRomfileContentApiRomsfilesIdContentFileNameGetErrors, GetRomfileContentApiRomsfilesIdContentFileNameGetResponses, GetRomFiltersApiRomsFiltersGetData, GetRomFiltersApiRomsFiltersGetResponses, GetRomNotesApiRomsIdNotesGetData, GetRomNotesApiRomsIdNotesGetErrors, GetRomNotesApiRomsIdNotesGetResponses, GetRomsApiRomsGetData, GetRomsApiRomsGetErrors, GetRomsApiRomsGetResponses, GetRoomsApiNetplayListGetData, GetRoomsApiNetplayListGetErrors, GetRoomsApiNetplayListGetResponses, GetSaveApiSavesIdGetData, GetSaveApiSavesIdGetErrors, GetSaveApiSavesIdGetResponses, GetSavesApiSavesGetData, GetSavesApiSavesGetErrors, GetSavesApiSavesGetResponses, GetSetupLibraryInfoApiSetupLibraryGetData, GetSetupLibraryInfoApiSetupLibraryGetResponses, GetSmartCollectionApiCollectionsSmartIdGetData, GetSmartCollectionApiCollectionsSmartIdGetErrors, GetSmartCollectionApiCollectionsSmartIdGetResponses, GetSmartCollectionsApiCollectionsSmartGetData, GetSmartCollectionsApiCollectionsSmartGetErrors, GetSmartCollectionsApiCollectionsSmartGetResponses, GetStateApiStatesIdGetData, GetStateApiStatesIdGetErrors, GetStateApiStatesIdGetResponses, GetStatesApiStatesGetData, GetStatesApiStatesGetErrors, GetStatesApiStatesGetResponses, GetSupportedPlatformsEndpointApiPlatformsSupportedGetData, GetSupportedPlatformsEndpointApiPlatformsSupportedGetResponses, GetTaskByIdApiTasksTaskIdGetData, GetTaskByIdApiTasksTaskIdGetErrors, GetTaskByIdApiTasksTaskIdGetResponses, GetTasksStatusApiTasksStatusGetData, GetTasksStatusApiTasksStatusGetResponses, GetUserApiUsersIdGetData, GetUserApiUsersIdGetErrors, GetUserApiUsersIdGetResponses, GetUsersApiUsersGetData, GetUsersApiUsersGetResponses, GetVirtualCollectionApiCollectionsVirtualIdGetData, GetVirtualCollectionApiCollectionsVirtualIdGetErrors, GetVirtualCollectionApiCollectionsVirtualIdGetResponses, GetVirtualCollectionsApiCollectionsVirtualGetData, GetVirtualCollectionsApiCollectionsVirtualGetErrors, GetVirtualCollectionsApiCollectionsVirtualGetResponses, HeadFirmwareContentApiFirmwareIdContentFileNameHeadData, HeadFirmwareContentApiFirmwareIdContentFileNameHeadErrors, HeadFirmwareContentApiFirmwareIdContentFileNameHeadResponses, HeadRawAssetApiRawAssetsPathHeadData, HeadRawAssetApiRawAssetsPathHeadErrors, HeadRawAssetApiRawAssetsPathHeadResponses, HeadRomContentApiRomsIdContentFileNameHeadData, HeadRomContentApiRomsIdContentFileNameHeadErrors, HeadRomContentApiRomsIdContentFileNameHeadResponses, HeartbeatApiHeartbeatGetData, HeartbeatApiHeartbeatGetResponses, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetData, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetErrors, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetResponses, ListTasksApiTasksGetData, ListTasksApiTasksGetResponses, LoginApiLoginPostData, LoginApiLoginPostResponses, LoginViaOpenidApiLoginOpenidGetData, LoginViaOpenidApiLoginOpenidGetResponses, LogoutApiLogoutPostData, LogoutApiLogoutPostResponses, MetadataHeartbeatApiHeartbeatMetadataSourceGetData, MetadataHeartbeatApiHeartbeatMetadataSourceGetErrors, MetadataHeartbeatApiHeartbeatMetadataSourceGetResponses, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetData, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetErrors, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetResponses, PkgiPspFeedApiFeedsPkgiPspContentTypeGetData, PkgiPspFeedApiFeedsPkgiPspContentTypeGetErrors, PkgiPspFeedApiFeedsPkgiPspContentTypeGetResponses, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetData, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetErrors, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetResponses, PlatformsWebrcadeFeedApiFeedsWebrcadeGetData, PlatformsWebrcadeFeedApiFeedsWebrcadeGetResponses, RefreshRetroAchievementsApiUsersIdRaRefreshPostData, RefreshRetroAchievementsApiUsersIdRaRefreshPostErrors, RefreshRetroAchievementsApiUsersIdRaRefreshPostResponses, RequestPasswordResetApiForgotPasswordPostData, RequestPasswordResetApiForgotPasswordPostErrors, RequestPasswordResetApiForgotPasswordPostResponses, ResetPasswordApiResetPasswordPostData, ResetPasswordApiResetPasswordPostErrors, ResetPasswordApiResetPasswordPostResponses, RunAllTasksApiTasksRunPostData, RunAllTasksApiTasksRunPostResponses, RunSingleTaskApiTasksRunTaskNamePostData, RunSingleTaskApiTasksRunTaskNamePostErrors, RunSingleTaskApiTasksRunTaskNamePostResponses, SearchCoverApiSearchCoverGetData, SearchCoverApiSearchCoverGetErrors, SearchCoverApiSearchCoverGetResponses, SearchRomApiSearchRomsGetData, SearchRomApiSearchRomsGetErrors, SearchRomApiSearchRomsGetResponses, StatsApiStatsGetData, StatsApiStatsGetResponses, TinfoilIndexFeedApiFeedsTinfoilGetData, TinfoilIndexFeedApiFeedsTinfoilGetErrors, TinfoilIndexFeedApiFeedsTinfoilGetResponses, TokenApiTokenPostData, TokenApiTokenPostErrors, TokenApiTokenPostResponses, UpdateCollectionApiCollectionsIdPutData, UpdateCollectionApiCollectionsIdPutErrors, UpdateCollectionApiCollectionsIdPutResponses, UpdatePlatformApiPlatformsIdPutData, UpdatePlatformApiPlatformsIdPutErrors, UpdatePlatformApiPlatformsIdPutResponses, UpdateRomApiRomsIdPutData, UpdateRomApiRomsIdPutErrors, UpdateRomApiRomsIdPutResponses, UpdateRomNoteApiRomsIdNotesNoteIdPutData, UpdateRomNoteApiRomsIdNotesNoteIdPutErrors, UpdateRomNoteApiRomsIdNotesNoteIdPutResponses, UpdateRomUserApiRomsIdPropsPutData, UpdateRomUserApiRomsIdPropsPutErrors, UpdateRomUserApiRomsIdPropsPutResponses, UpdateSaveApiSavesIdPutData, UpdateSaveApiSavesIdPutErrors, UpdateSaveApiSavesIdPutResponses, UpdateSmartCollectionApiCollectionsSmartIdPutData, UpdateSmartCollectionApiCollectionsSmartIdPutErrors, UpdateSmartCollectionApiCollectionsSmartIdPutResponses, UpdateStateApiStatesIdPutData, UpdateStateApiStatesIdPutErrors, UpdateStateApiStatesIdPutResponses, UpdateUserApiUsersIdPutData, UpdateUserApiUsersIdPutErrors, UpdateUserApiUsersIdPutResponses } from './types.gen';
+import type { AddCollectionApiCollectionsPostData, AddCollectionApiCollectionsPostErrors, AddCollectionApiCollectionsPostResponses, AddExclusionApiConfigExcludePostData, AddExclusionApiConfigExcludePostResponses, AddFirmwareApiFirmwarePostData, AddFirmwareApiFirmwarePostErrors, AddFirmwareApiFirmwarePostResponses, AddPlatformApiPlatformsPostData, AddPlatformApiPlatformsPostErrors, AddPlatformApiPlatformsPostResponses, AddPlatformBindingApiConfigSystemPlatformsPostData, AddPlatformBindingApiConfigSystemPlatformsPostResponses, AddPlatformVersionApiConfigSystemVersionsPostData, AddPlatformVersionApiConfigSystemVersionsPostResponses, AddRomApiRomsPostData, AddRomApiRomsPostErrors, AddRomApiRomsPostResponses, AddRomManualsApiRomsIdManualsPostData, AddRomManualsApiRomsIdManualsPostErrors, AddRomManualsApiRomsIdManualsPostResponses, AddSaveApiSavesPostData, AddSaveApiSavesPostErrors, AddSaveApiSavesPostResponses, AddScreenshotApiScreenshotsPostData, AddScreenshotApiScreenshotsPostErrors, AddScreenshotApiScreenshotsPostResponses, AddSmartCollectionApiCollectionsSmartPostData, AddSmartCollectionApiCollectionsSmartPostErrors, AddSmartCollectionApiCollectionsSmartPostResponses, AddStateApiStatesPostData, AddStateApiStatesPostErrors, AddStateApiStatesPostResponses, AddUserApiUsersPostData, AddUserApiUsersPostErrors, AddUserApiUsersPostResponses, AuthOpenidApiOauthOpenidGetData, AuthOpenidApiOauthOpenidGetResponses, ConfirmDownloadApiSavesIdDownloadedPostData, ConfirmDownloadApiSavesIdDownloadedPostErrors, ConfirmDownloadApiSavesIdDownloadedPostResponses, CreateInviteLinkApiUsersInviteLinkPostData, CreateInviteLinkApiUsersInviteLinkPostErrors, CreateInviteLinkApiUsersInviteLinkPostResponses, CreateRomNoteApiRomsIdNotesPostData, CreateRomNoteApiRomsIdNotesPostErrors, CreateRomNoteApiRomsIdNotesPostResponses, CreateSetupPlatformsApiSetupPlatformsPostData, CreateSetupPlatformsApiSetupPlatformsPostErrors, CreateSetupPlatformsApiSetupPlatformsPostResponses, CreateUserFromInviteApiUsersRegisterPostData, CreateUserFromInviteApiUsersRegisterPostErrors, CreateUserFromInviteApiUsersRegisterPostResponses, DeleteCollectionApiCollectionsIdDeleteData, DeleteCollectionApiCollectionsIdDeleteErrors, DeleteCollectionApiCollectionsIdDeleteResponses, DeleteDeviceApiDevicesDeviceIdDeleteData, DeleteDeviceApiDevicesDeviceIdDeleteErrors, DeleteDeviceApiDevicesDeviceIdDeleteResponses, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteData, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteErrors, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteResponses, DeleteFirmwareApiFirmwareDeletePostData, DeleteFirmwareApiFirmwareDeletePostErrors, DeleteFirmwareApiFirmwareDeletePostResponses, DeletePlatformApiPlatformsIdDeleteData, DeletePlatformApiPlatformsIdDeleteErrors, DeletePlatformApiPlatformsIdDeleteResponses, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteData, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteErrors, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteResponses, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteData, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteErrors, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteResponses, DeleteRomManualsApiRomsIdManualsDeleteData, DeleteRomManualsApiRomsIdManualsDeleteErrors, DeleteRomManualsApiRomsIdManualsDeleteResponses, DeleteRomNoteApiRomsIdNotesNoteIdDeleteData, DeleteRomNoteApiRomsIdNotesNoteIdDeleteErrors, DeleteRomNoteApiRomsIdNotesNoteIdDeleteResponses, DeleteRomsApiRomsDeletePostData, DeleteRomsApiRomsDeletePostErrors, DeleteRomsApiRomsDeletePostResponses, DeleteSavesApiSavesDeletePostData, DeleteSavesApiSavesDeletePostErrors, DeleteSavesApiSavesDeletePostResponses, DeleteSmartCollectionApiCollectionsSmartIdDeleteData, DeleteSmartCollectionApiCollectionsSmartIdDeleteErrors, DeleteSmartCollectionApiCollectionsSmartIdDeleteResponses, DeleteStatesApiStatesDeletePostData, DeleteStatesApiStatesDeletePostErrors, DeleteStatesApiStatesDeletePostResponses, DeleteUserApiUsersIdDeleteData, DeleteUserApiUsersIdDeleteErrors, DeleteUserApiUsersIdDeleteResponses, DownloadRomsApiRomsDownloadGetData, DownloadRomsApiRomsDownloadGetErrors, DownloadRomsApiRomsDownloadGetResponses, DownloadSaveApiSavesIdContentGetData, DownloadSaveApiSavesIdContentGetErrors, DownloadSaveApiSavesIdContentGetResponses, ExportGamelistApiGamelistExportPostData, ExportGamelistApiGamelistExportPostErrors, ExportGamelistApiGamelistExportPostResponses, FpkgiFeedApiFeedsFpkgiPlatformSlugGetData, FpkgiFeedApiFeedsFpkgiPlatformSlugGetErrors, FpkgiFeedApiFeedsFpkgiPlatformSlugGetResponses, GetCollectionApiCollectionsIdGetData, GetCollectionApiCollectionsIdGetErrors, GetCollectionApiCollectionsIdGetResponses, GetCollectionIdentifiersApiCollectionsIdentifiersGetData, GetCollectionIdentifiersApiCollectionsIdentifiersGetResponses, GetCollectionsApiCollectionsGetData, GetCollectionsApiCollectionsGetErrors, GetCollectionsApiCollectionsGetResponses, GetConfigApiConfigGetData, GetConfigApiConfigGetResponses, GetCurrentUserApiUsersMeGetData, GetCurrentUserApiUsersMeGetResponses, GetDeviceApiDevicesDeviceIdGetData, GetDeviceApiDevicesDeviceIdGetErrors, GetDeviceApiDevicesDeviceIdGetResponses, GetDevicesApiDevicesGetData, GetDevicesApiDevicesGetResponses, GetFirmwareApiFirmwareIdGetData, GetFirmwareApiFirmwareIdGetErrors, GetFirmwareApiFirmwareIdGetResponses, GetFirmwareContentApiFirmwareIdContentFileNameGetData, GetFirmwareContentApiFirmwareIdContentFileNameGetErrors, GetFirmwareContentApiFirmwareIdContentFileNameGetResponses, GetFirmwareIdentifiersApiFirmwareIdentifiersGetData, GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponses, GetPlatformApiPlatformsIdGetData, GetPlatformApiPlatformsIdGetErrors, GetPlatformApiPlatformsIdGetResponses, GetPlatformFirmwareApiFirmwareGetData, GetPlatformFirmwareApiFirmwareGetErrors, GetPlatformFirmwareApiFirmwareGetResponses, GetPlatformIdentifiersApiPlatformsIdentifiersGetData, GetPlatformIdentifiersApiPlatformsIdentifiersGetResponses, GetPlatformsApiPlatformsGetData, GetPlatformsApiPlatformsGetErrors, GetPlatformsApiPlatformsGetResponses, GetRawAssetApiRawAssetsPathGetData, GetRawAssetApiRawAssetsPathGetErrors, GetRawAssetApiRawAssetsPathGetResponses, GetRomApiRomsIdGetData, GetRomApiRomsIdGetErrors, GetRomApiRomsIdGetResponses, GetRomByHashApiRomsByHashGetData, GetRomByHashApiRomsByHashGetErrors, GetRomByHashApiRomsByHashGetResponses, GetRomByMetadataProviderApiRomsByMetadataProviderGetData, GetRomByMetadataProviderApiRomsByMetadataProviderGetErrors, GetRomByMetadataProviderApiRomsByMetadataProviderGetResponses, GetRomContentApiRomsIdContentFileNameGetData, GetRomContentApiRomsIdContentFileNameGetErrors, GetRomContentApiRomsIdContentFileNameGetResponses, GetRomfileApiRomsFilesIdGetData, GetRomfileApiRomsFilesIdGetErrors, GetRomfileApiRomsFilesIdGetResponses, GetRomfileContentApiRomsfilesIdContentFileNameGetData, GetRomfileContentApiRomsfilesIdContentFileNameGetErrors, GetRomfileContentApiRomsfilesIdContentFileNameGetResponses, GetRomFiltersApiRomsFiltersGetData, GetRomFiltersApiRomsFiltersGetResponses, GetRomIdentifiersApiRomsIdentifiersGetData, GetRomIdentifiersApiRomsIdentifiersGetResponses, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetData, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetErrors, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponses, GetRomNotesApiRomsIdNotesGetData, GetRomNotesApiRomsIdNotesGetErrors, GetRomNotesApiRomsIdNotesGetResponses, GetRomsApiRomsGetData, GetRomsApiRomsGetErrors, GetRomsApiRomsGetResponses, GetRoomsApiNetplayListGetData, GetRoomsApiNetplayListGetErrors, GetRoomsApiNetplayListGetResponses, GetSaveApiSavesIdGetData, GetSaveApiSavesIdGetErrors, GetSaveApiSavesIdGetResponses, GetSaveIdentifiersApiSavesIdentifiersGetData, GetSaveIdentifiersApiSavesIdentifiersGetResponses, GetSavesApiSavesGetData, GetSavesApiSavesGetErrors, GetSavesApiSavesGetResponses, GetSavesSummaryApiSavesSummaryGetData, GetSavesSummaryApiSavesSummaryGetErrors, GetSavesSummaryApiSavesSummaryGetResponses, GetSetupLibraryInfoApiSetupLibraryGetData, GetSetupLibraryInfoApiSetupLibraryGetResponses, GetSmartCollectionApiCollectionsSmartIdGetData, GetSmartCollectionApiCollectionsSmartIdGetErrors, GetSmartCollectionApiCollectionsSmartIdGetResponses, GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetData, GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponses, GetSmartCollectionsApiCollectionsSmartGetData, GetSmartCollectionsApiCollectionsSmartGetErrors, GetSmartCollectionsApiCollectionsSmartGetResponses, GetStateApiStatesIdGetData, GetStateApiStatesIdGetErrors, GetStateApiStatesIdGetResponses, GetStateIdentifiersApiStatesIdentifiersGetData, GetStateIdentifiersApiStatesIdentifiersGetResponses, GetStatesApiStatesGetData, GetStatesApiStatesGetErrors, GetStatesApiStatesGetResponses, GetSupportedPlatformsEndpointApiPlatformsSupportedGetData, GetSupportedPlatformsEndpointApiPlatformsSupportedGetResponses, GetTaskByIdApiTasksTaskIdGetData, GetTaskByIdApiTasksTaskIdGetErrors, GetTaskByIdApiTasksTaskIdGetResponses, GetTasksStatusApiTasksStatusGetData, GetTasksStatusApiTasksStatusGetResponses, GetUserApiUsersIdGetData, GetUserApiUsersIdGetErrors, GetUserApiUsersIdGetResponses, GetUserIdentifiersApiUsersIdentifiersGetData, GetUserIdentifiersApiUsersIdentifiersGetResponses, GetUsersApiUsersGetData, GetUsersApiUsersGetResponses, GetVirtualCollectionApiCollectionsVirtualIdGetData, GetVirtualCollectionApiCollectionsVirtualIdGetErrors, GetVirtualCollectionApiCollectionsVirtualIdGetResponses, GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetData, GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponses, GetVirtualCollectionsApiCollectionsVirtualGetData, GetVirtualCollectionsApiCollectionsVirtualGetErrors, GetVirtualCollectionsApiCollectionsVirtualGetResponses, HeadFirmwareContentApiFirmwareIdContentFileNameHeadData, HeadFirmwareContentApiFirmwareIdContentFileNameHeadErrors, HeadFirmwareContentApiFirmwareIdContentFileNameHeadResponses, HeadRawAssetApiRawAssetsPathHeadData, HeadRawAssetApiRawAssetsPathHeadErrors, HeadRawAssetApiRawAssetsPathHeadResponses, HeadRomContentApiRomsIdContentFileNameHeadData, HeadRomContentApiRomsIdContentFileNameHeadErrors, HeadRomContentApiRomsIdContentFileNameHeadResponses, HeartbeatApiHeartbeatGetData, HeartbeatApiHeartbeatGetResponses, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetData, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetErrors, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetResponses, ListTasksApiTasksGetData, ListTasksApiTasksGetResponses, LoginApiLoginPostData, LoginApiLoginPostResponses, LoginViaOpenidApiLoginOpenidGetData, LoginViaOpenidApiLoginOpenidGetResponses, LogoutApiLogoutPostData, LogoutApiLogoutPostResponses, MetadataHeartbeatApiHeartbeatMetadataSourceGetData, MetadataHeartbeatApiHeartbeatMetadataSourceGetErrors, MetadataHeartbeatApiHeartbeatMetadataSourceGetResponses, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetData, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetErrors, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetResponses, PkgiPspFeedApiFeedsPkgiPspContentTypeGetData, PkgiPspFeedApiFeedsPkgiPspContentTypeGetErrors, PkgiPspFeedApiFeedsPkgiPspContentTypeGetResponses, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetData, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetErrors, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetResponses, PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetData, PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetResponses, PkgjPspGamesFeedApiFeedsPkgjPspGamesGetData, PkgjPspGamesFeedApiFeedsPkgjPspGamesGetResponses, PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetData, PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetResponses, PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetData, PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetResponses, PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetData, PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetResponses, PlatformsWebrcadeFeedApiFeedsWebrcadeGetData, PlatformsWebrcadeFeedApiFeedsWebrcadeGetResponses, RefreshRetroAchievementsApiUsersIdRaRefreshPostData, RefreshRetroAchievementsApiUsersIdRaRefreshPostErrors, RefreshRetroAchievementsApiUsersIdRaRefreshPostResponses, RegisterDeviceApiDevicesPostData, RegisterDeviceApiDevicesPostErrors, RegisterDeviceApiDevicesPostResponses, RequestPasswordResetApiForgotPasswordPostData, RequestPasswordResetApiForgotPasswordPostErrors, RequestPasswordResetApiForgotPasswordPostResponses, ResetPasswordApiResetPasswordPostData, ResetPasswordApiResetPasswordPostErrors, ResetPasswordApiResetPasswordPostResponses, RunAllTasksApiTasksRunPostData, RunAllTasksApiTasksRunPostResponses, RunSingleTaskApiTasksRunTaskNamePostData, RunSingleTaskApiTasksRunTaskNamePostErrors, RunSingleTaskApiTasksRunTaskNamePostResponses, SearchCoverApiSearchCoverGetData, SearchCoverApiSearchCoverGetErrors, SearchCoverApiSearchCoverGetResponses, SearchRomApiSearchRomsGetData, SearchRomApiSearchRomsGetErrors, SearchRomApiSearchRomsGetResponses, StatsApiStatsGetData, StatsApiStatsGetResponses, TinfoilIndexFeedApiFeedsTinfoilGetData, TinfoilIndexFeedApiFeedsTinfoilGetErrors, TinfoilIndexFeedApiFeedsTinfoilGetResponses, TokenApiTokenPostData, TokenApiTokenPostErrors, TokenApiTokenPostResponses, TrackSaveApiSavesIdTrackPostData, TrackSaveApiSavesIdTrackPostErrors, TrackSaveApiSavesIdTrackPostResponses, UntrackSaveApiSavesIdUntrackPostData, UntrackSaveApiSavesIdUntrackPostErrors, UntrackSaveApiSavesIdUntrackPostResponses, UpdateCollectionApiCollectionsIdPutData, UpdateCollectionApiCollectionsIdPutErrors, UpdateCollectionApiCollectionsIdPutResponses, UpdateDeviceApiDevicesDeviceIdPutData, UpdateDeviceApiDevicesDeviceIdPutErrors, UpdateDeviceApiDevicesDeviceIdPutResponses, UpdatePlatformApiPlatformsIdPutData, UpdatePlatformApiPlatformsIdPutErrors, UpdatePlatformApiPlatformsIdPutResponses, UpdateRomApiRomsIdPutData, UpdateRomApiRomsIdPutErrors, UpdateRomApiRomsIdPutResponses, UpdateRomNoteApiRomsIdNotesNoteIdPutData, UpdateRomNoteApiRomsIdNotesNoteIdPutErrors, UpdateRomNoteApiRomsIdNotesNoteIdPutResponses, UpdateRomUserApiRomsIdPropsPutData, UpdateRomUserApiRomsIdPropsPutErrors, UpdateRomUserApiRomsIdPropsPutResponses, UpdateSaveApiSavesIdPutData, UpdateSaveApiSavesIdPutErrors, UpdateSaveApiSavesIdPutResponses, UpdateSmartCollectionApiCollectionsSmartIdPutData, UpdateSmartCollectionApiCollectionsSmartIdPutErrors, UpdateSmartCollectionApiCollectionsSmartIdPutResponses, UpdateStateApiStatesIdPutData, UpdateStateApiStatesIdPutErrors, UpdateStateApiStatesIdPutResponses, UpdateUserApiUsersIdPutData, UpdateUserApiUsersIdPutErrors, UpdateUserApiUsersIdPutResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -297,6 +297,23 @@ export const createUserFromInviteApiUsersRegisterPost = <ThrowOnError extends bo
 });
 
 /**
+ * Get User Identifiers
+ *
+ * Get all user identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: All user ids stored in the RomM's database
+ */
+export const getUserIdentifiersApiUsersIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetUserIdentifiersApiUsersIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetUserIdentifiersApiUsersIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/users/identifiers',
+    ...options
+});
+
+/**
  * Get Current User
  *
  * Get current user endpoint
@@ -390,6 +407,59 @@ export const refreshRetroAchievementsApiUsersIdRaRefreshPost = <ThrowOnError ext
 });
 
 /**
+ * Get Devices
+ */
+export const getDevicesApiDevicesGet = <ThrowOnError extends boolean = false>(options?: Options<GetDevicesApiDevicesGetData, ThrowOnError>) => (options?.client ?? client).get<GetDevicesApiDevicesGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/devices',
+    ...options
+});
+
+/**
+ * Register Device
+ */
+export const registerDeviceApiDevicesPost = <ThrowOnError extends boolean = false>(options: Options<RegisterDeviceApiDevicesPostData, ThrowOnError>) => (options.client ?? client).post<RegisterDeviceApiDevicesPostResponses, RegisterDeviceApiDevicesPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/devices',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Device
+ */
+export const deleteDeviceApiDevicesDeviceIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteDeviceApiDevicesDeviceIdDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeleteDeviceApiDevicesDeviceIdDeleteResponses, DeleteDeviceApiDevicesDeviceIdDeleteErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/devices/{device_id}',
+    ...options
+});
+
+/**
+ * Get Device
+ */
+export const getDeviceApiDevicesDeviceIdGet = <ThrowOnError extends boolean = false>(options: Options<GetDeviceApiDevicesDeviceIdGetData, ThrowOnError>) => (options.client ?? client).get<GetDeviceApiDevicesDeviceIdGetResponses, GetDeviceApiDevicesDeviceIdGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/devices/{device_id}',
+    ...options
+});
+
+/**
+ * Update Device
+ */
+export const updateDeviceApiDevicesDeviceIdPut = <ThrowOnError extends boolean = false>(options: Options<UpdateDeviceApiDevicesDeviceIdPutData, ThrowOnError>) => (options.client ?? client).put<UpdateDeviceApiDevicesDeviceIdPutResponses, UpdateDeviceApiDevicesDeviceIdPutErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/devices/{device_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Get Platforms
  *
  * Retrieve platforms.
@@ -413,6 +483,17 @@ export const addPlatformApiPlatformsPost = <ThrowOnError extends boolean = false
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Get Platform Identifiers
+ *
+ * Retrieve platform identifiers.
+ */
+export const getPlatformIdentifiersApiPlatformsIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetPlatformIdentifiersApiPlatformsIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetPlatformIdentifiersApiPlatformsIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/platforms/identifiers',
+    ...options
 });
 
 /**
@@ -482,6 +563,17 @@ export const getRomsApiRomsGet = <ThrowOnError extends boolean = false>(options?
 export const addRomApiRomsPost = <ThrowOnError extends boolean = false>(options: Options<AddRomApiRomsPostData, ThrowOnError>) => (options.client ?? client).post<AddRomApiRomsPostResponses, AddRomApiRomsPostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
     url: '/api/roms',
+    ...options
+});
+
+/**
+ * Get Rom Identifiers
+ *
+ * Retrieve rom identifiers.
+ */
+export const getRomIdentifiersApiRomsIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetRomIdentifiersApiRomsIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetRomIdentifiersApiRomsIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/roms/identifiers',
     ...options
 });
 
@@ -679,6 +771,17 @@ export const createRomNoteApiRomsIdNotesPost = <ThrowOnError extends boolean = f
 });
 
 /**
+ * Get Rom Note Identifiers
+ *
+ * Get all note identifiers for a ROM.
+ */
+export const getRomNoteIdentifiersApiRomsIdNotesIdentifiersGet = <ThrowOnError extends boolean = false>(options: Options<GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetData, ThrowOnError>) => (options.client ?? client).get<GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponses, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/roms/{id}/notes/identifiers',
+    ...options
+});
+
+/**
  * Delete Rom Note
  *
  * Delete a ROM note.
@@ -737,6 +840,8 @@ export const searchCoverApiSearchCoverGet = <ThrowOnError extends boolean = fals
 
 /**
  * Get Saves
+ *
+ * Retrieve saves for the current user.
  */
 export const getSavesApiSavesGet = <ThrowOnError extends boolean = false>(options?: Options<GetSavesApiSavesGetData, ThrowOnError>) => (options?.client ?? client).get<GetSavesApiSavesGetResponses, GetSavesApiSavesGetErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
@@ -746,6 +851,8 @@ export const getSavesApiSavesGet = <ThrowOnError extends boolean = false>(option
 
 /**
  * Add Save
+ *
+ * Upload a save file for a ROM.
  */
 export const addSaveApiSavesPost = <ThrowOnError extends boolean = false>(options: Options<AddSaveApiSavesPostData, ThrowOnError>) => (options.client ?? client).post<AddSaveApiSavesPostResponses, AddSaveApiSavesPostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
@@ -754,7 +861,31 @@ export const addSaveApiSavesPost = <ThrowOnError extends boolean = false>(option
 });
 
 /**
+ * Get Save Identifiers
+ *
+ * Retrieve save identifiers.
+ */
+export const getSaveIdentifiersApiSavesIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetSaveIdentifiersApiSavesIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetSaveIdentifiersApiSavesIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/saves/identifiers',
+    ...options
+});
+
+/**
+ * Get Saves Summary
+ *
+ * Retrieve saves summary grouped by slot.
+ */
+export const getSavesSummaryApiSavesSummaryGet = <ThrowOnError extends boolean = false>(options: Options<GetSavesSummaryApiSavesSummaryGetData, ThrowOnError>) => (options.client ?? client).get<GetSavesSummaryApiSavesSummaryGetResponses, GetSavesSummaryApiSavesSummaryGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/saves/summary',
+    ...options
+});
+
+/**
  * Get Save
+ *
+ * Retrieve a save by ID.
  */
 export const getSaveApiSavesIdGet = <ThrowOnError extends boolean = false>(options: Options<GetSaveApiSavesIdGetData, ThrowOnError>) => (options.client ?? client).get<GetSaveApiSavesIdGetResponses, GetSaveApiSavesIdGetErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
@@ -764,11 +895,39 @@ export const getSaveApiSavesIdGet = <ThrowOnError extends boolean = false>(optio
 
 /**
  * Update Save
+ *
+ * Update a save file.
  */
 export const updateSaveApiSavesIdPut = <ThrowOnError extends boolean = false>(options: Options<UpdateSaveApiSavesIdPutData, ThrowOnError>) => (options.client ?? client).put<UpdateSaveApiSavesIdPutResponses, UpdateSaveApiSavesIdPutErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
     url: '/api/saves/{id}',
     ...options
+});
+
+/**
+ * Download Save
+ *
+ * Download a save file.
+ */
+export const downloadSaveApiSavesIdContentGet = <ThrowOnError extends boolean = false>(options: Options<DownloadSaveApiSavesIdContentGetData, ThrowOnError>) => (options.client ?? client).get<DownloadSaveApiSavesIdContentGetResponses, DownloadSaveApiSavesIdContentGetErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/saves/{id}/content',
+    ...options
+});
+
+/**
+ * Confirm Download
+ *
+ * Confirm a save was downloaded successfully.
+ */
+export const confirmDownloadApiSavesIdDownloadedPost = <ThrowOnError extends boolean = false>(options: Options<ConfirmDownloadApiSavesIdDownloadedPostData, ThrowOnError>) => (options.client ?? client).post<ConfirmDownloadApiSavesIdDownloadedPostResponses, ConfirmDownloadApiSavesIdDownloadedPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/saves/{id}/downloaded',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -779,6 +938,36 @@ export const updateSaveApiSavesIdPut = <ThrowOnError extends boolean = false>(op
 export const deleteSavesApiSavesDeletePost = <ThrowOnError extends boolean = false>(options: Options<DeleteSavesApiSavesDeletePostData, ThrowOnError>) => (options.client ?? client).post<DeleteSavesApiSavesDeletePostResponses, DeleteSavesApiSavesDeletePostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
     url: '/api/saves/delete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Track Save
+ *
+ * Re-enable sync tracking for a save on a device.
+ */
+export const trackSaveApiSavesIdTrackPost = <ThrowOnError extends boolean = false>(options: Options<TrackSaveApiSavesIdTrackPostData, ThrowOnError>) => (options.client ?? client).post<TrackSaveApiSavesIdTrackPostResponses, TrackSaveApiSavesIdTrackPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/saves/{id}/track',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Untrack Save
+ *
+ * Disable sync tracking for a save on a device.
+ */
+export const untrackSaveApiSavesIdUntrackPost = <ThrowOnError extends boolean = false>(options: Options<UntrackSaveApiSavesIdUntrackPostData, ThrowOnError>) => (options.client ?? client).post<UntrackSaveApiSavesIdUntrackPostResponses, UntrackSaveApiSavesIdUntrackPostErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/saves/{id}/untrack',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -801,6 +990,23 @@ export const getStatesApiStatesGet = <ThrowOnError extends boolean = false>(opti
 export const addStateApiStatesPost = <ThrowOnError extends boolean = false>(options: Options<AddStateApiStatesPostData, ThrowOnError>) => (options.client ?? client).post<AddStateApiStatesPostResponses, AddStateApiStatesPostErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
     url: '/api/states',
+    ...options
+});
+
+/**
+ * Get State Identifiers
+ *
+ * Get state identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of state IDs
+ */
+export const getStateIdentifiersApiStatesIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetStateIdentifiersApiStatesIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetStateIdentifiersApiStatesIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/states/identifiers',
     ...options
 });
 
@@ -1051,6 +1257,51 @@ export const kekatsuDsFeedApiFeedsKekatsuPlatformSlugGet = <ThrowOnError extends
 });
 
 /**
+ * Pkgj Psp Games Feed
+ */
+export const pkgjPspGamesFeedApiFeedsPkgjPspGamesGet = <ThrowOnError extends boolean = false>(options?: Options<PkgjPspGamesFeedApiFeedsPkgjPspGamesGetData, ThrowOnError>) => (options?.client ?? client).get<PkgjPspGamesFeedApiFeedsPkgjPspGamesGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/feeds/pkgj/psp/games',
+    ...options
+});
+
+/**
+ * Pkgj Psp Dlcs Feed
+ */
+export const pkgjPspDlcsFeedApiFeedsPkgjPspDlcGet = <ThrowOnError extends boolean = false>(options?: Options<PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetData, ThrowOnError>) => (options?.client ?? client).get<PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/feeds/pkgj/psp/dlc',
+    ...options
+});
+
+/**
+ * Pkgj Psv Games Feed
+ */
+export const pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGet = <ThrowOnError extends boolean = false>(options?: Options<PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetData, ThrowOnError>) => (options?.client ?? client).get<PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/feeds/pkgj/psvita/games',
+    ...options
+});
+
+/**
+ * Pkgj Psv Dlcs Feed
+ */
+export const pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGet = <ThrowOnError extends boolean = false>(options?: Options<PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetData, ThrowOnError>) => (options?.client ?? client).get<PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/feeds/pkgj/psvita/dlc',
+    ...options
+});
+
+/**
+ * Pkgj Psx Games Feed
+ */
+export const pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGet = <ThrowOnError extends boolean = false>(options?: Options<PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetData, ThrowOnError>) => (options?.client ?? client).get<PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/feeds/pkgj/psx/games',
+    ...options
+});
+
+/**
  * Get Config
  *
  * Get config endpoint
@@ -1220,6 +1471,23 @@ export const addFirmwareApiFirmwarePost = <ThrowOnError extends boolean = false>
 });
 
 /**
+ * Get Firmware Identifiers
+ *
+ * Get firmware identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of firmware IDs
+ */
+export const getFirmwareIdentifiersApiFirmwareIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetFirmwareIdentifiersApiFirmwareIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/firmware/identifiers',
+    ...options
+});
+
+/**
  * Get Firmware
  *
  * Get firmware endpoint
@@ -1366,6 +1634,23 @@ export const addSmartCollectionApiCollectionsSmartPost = <ThrowOnError extends b
 });
 
 /**
+ * Get Collection Identifiers
+ *
+ * Get collections identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of collection IDs
+ */
+export const getCollectionIdentifiersApiCollectionsIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetCollectionIdentifiersApiCollectionsIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetCollectionIdentifiersApiCollectionsIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/collections/identifiers',
+    ...options
+});
+
+/**
  * Get Virtual Collections
  *
  * Get virtual collections endpoint
@@ -1379,6 +1664,40 @@ export const addSmartCollectionApiCollectionsSmartPost = <ThrowOnError extends b
 export const getVirtualCollectionsApiCollectionsVirtualGet = <ThrowOnError extends boolean = false>(options: Options<GetVirtualCollectionsApiCollectionsVirtualGetData, ThrowOnError>) => (options.client ?? client).get<GetVirtualCollectionsApiCollectionsVirtualGetResponses, GetVirtualCollectionsApiCollectionsVirtualGetErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
     url: '/api/collections/virtual',
+    ...options
+});
+
+/**
+ * Get Virtual Collection Identifiers
+ *
+ * Get virtual collections identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[str]: List of generated virtual collection IDs
+ */
+export const getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/collections/virtual/identifiers',
+    ...options
+});
+
+/**
+ * Get Smart Collection Identifiers
+ *
+ * Get smart collections identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of smart collection IDs
+ */
+export const getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGet = <ThrowOnError extends boolean = false>(options?: Options<GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetData, ThrowOnError>) => (options?.client ?? client).get<GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'basic', type: 'http' }],
+    url: '/api/collections/smart/identifiers',
     ...options
 });
 

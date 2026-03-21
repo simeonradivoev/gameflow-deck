@@ -8,9 +8,9 @@ import { createInterface } from 'readline';
 const api = RunAPIServer();
 let bunServer: { stop: () => void; } | undefined;
 
-if (!Bun.env.PUBLIC_ACCESS)
+if (!process.env.PUBLIC_ACCESS)
 {
-  bunServer = RunBunServer();
+  bunServer = await RunBunServer();
 }
 
 async function cleanup ()
@@ -24,7 +24,7 @@ async function cleanup ()
   process.exit(0);
 }
 
-if (Bun.env.HEADLESS)
+if (process.env.HEADLESS)
 {
   const rl = createInterface({ input: process.stdin });
 

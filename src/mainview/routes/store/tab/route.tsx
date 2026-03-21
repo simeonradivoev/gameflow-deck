@@ -4,9 +4,9 @@ import { HeaderUI } from '@/mainview/components/Header';
 import Shortcuts from '@/mainview/components/Shortcuts';
 import { StoreContext } from '@/mainview/scripts/contexts';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '@/mainview/scripts/shortcuts';
-import { SaveSource } from '@/mainview/scripts/spatialNavigation';
+import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { mobileCheck, useStickyDataAttr } from '@/mainview/scripts/utils';
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useMatchRoute } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
@@ -33,18 +33,40 @@ function TopArea (data: { filters: Record<string, FilterOption>; })
 {
   const { ref, focusKey } = useFocusable({
     focusKey: 'top-area',
-    preferredChildFocusKey: 'store-tabs',
+    preferredChildFocusKey: `store-tabs`,
     onFocus: () =>
     {
       (ref.current as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   });
 
+  useShortcuts("STORE_ROOT", () => [{
+    label: "Return",
+    action: () => Router.navigate({ to: '/', viewTransition: { types: ['zoom-out'] } }),
+    button: GamePadButtonCode.B
+  }], []);
+
+  const handleNavigate = (s: string) =>
+  {
+    Router.navigate({ to: `/store/tab/${s === 'home' ? '' : s}`, viewTransition: { types: ['slide-up'] }, replace: true });
+  };
+
   return <div ref={ref}>
     <FocusContext value={focusKey}>
       <div className='w-full'>
-        <FilterUI containerClassName='flex w-full justify-center' id="store-tabs" options={data.filters} setSelected={(s) => Router.navigate({ to: `/store/tab/${s === 'home' ? '' : s}` })} />
+        <FilterUI rootFocusKey='STORE_ROOT' containerClassName='flex w-full justify-center' id="store-tabs" options={data.filters}
+          setSelected={handleNavigate} />
       </div>
+    </FocusContext>
+  </div>;
+}
+
+function StoreOutlet ()
+{
+  const { ref, focusKey } = useFocusable({ focusKey: "STORE_OUTLET" });
+  return <div ref={ref}>
+    <FocusContext value={focusKey}>
+      <Outlet />
     </FocusContext>
   </div>;
 }
@@ -54,8 +76,8 @@ function RouteComponent ()
   // Root spatial nav container
   const { ref, focusKey, focusSelf } = useFocusable({
     focusKey: "STORE_ROOT",
-    trackChildren: true,
-    preferredChildFocusKey: 'top-area'
+    preferredChildFocusKey: 'top-area',
+    forceFocus: true
   });
   const headerRef = useRef(null);
   const sentinelRef = useRef(null);
@@ -64,34 +86,6 @@ function RouteComponent ()
     emulators: { label: "Emulators", selected: useIsSettings('emulators') },
     games: { label: "Games", selected: useIsSettings('games') }
   };
-
-  useShortcuts(focusKey, () => [{
-    label: "Return",
-    action: () => Router.navigate({ to: '/', viewTransition: { types: ['zoom-out'] } }),
-    button: GamePadButtonCode.B
-  },
-  {
-    action: () =>
-    {
-      const filterKeys = Object.keys(filters);
-      const filterIndex = Math.max(0, filterKeys.findIndex(f => filters[f].selected));
-      const selectedFilterIndex = Math.min(filterIndex + 1, filterKeys.length - 1);
-      const newFilter = filterKeys[selectedFilterIndex];
-      Router.navigate({ to: `/store/tab/${newFilter === 'home' ? '' : newFilter}` });
-    },
-    button: GamePadButtonCode.R1
-  },
-  {
-    action: () =>
-    {
-      const filterKeys = Object.keys(filters);
-      const filterIndex = Math.max(0, filterKeys.findIndex(f => filters[f as any].selected));
-      const selectedFilterIndex = Math.max(0, filterIndex - 1,);
-      const newFilter = filterKeys[selectedFilterIndex];
-      Router.navigate({ to: `/store/tab/${newFilter === 'home' ? '' : newFilter}` });
-    },
-    button: GamePadButtonCode.L1
-  }], [filters]);
 
   const { shortcuts } = useShortcutContext();
   const { focus } = Route.useSearch();
@@ -102,31 +96,24 @@ function RouteComponent ()
     {
       focusSelf();
     }
-
   }, []);
 
   const handleDetails = (type: string, source: string, id: string, focus: string) =>
   {
-
     if (type === 'emulator')
     {
-      SaveSource('store-details', { url: location.hash.replaceAll(/#|(\?.+)/g, ''), search: { focus } });
-      Router.navigate({ to: '/store/details/emulator/$id', params: { id }, viewTransition: { types: ['zoom-in'] } });
+      Router.navigate({ to: '/store/details/emulator/$id', params: { id } });
     }
     else if (type === 'game')
     {
-      console.log(source, id);
-      SaveSource('details', { url: location.hash.replaceAll(/#|(\?.+)/g, ''), search: { focus } });
-      Router.navigate({ to: '/game/$source/$id', params: { source: source, id: id }, viewTransition: { types: ['zoom-in'] } });
+      Router.navigate({ to: '/game/$source/$id', params: { source: source, id: id } });
     }
 
   };
 
-  const match = Route.useMatch();
   const goToSettings = () =>
   {
-    SaveSource('settings', { url: match.pathname, search: { focus: "settings" } });
-    Router.navigate({ to: '/settings', viewTransition: { types: ['zoom-in'] } });
+    Router.navigate({ to: '/settings' });
   };
 
   const isMobile = mobileCheck();
@@ -141,7 +128,7 @@ function RouteComponent ()
             <HeaderUI buttons={[{ icon: <Settings />, id: "settings", action: goToSettings, external: true }]} />
           </div>
           <TopArea filters={filters} />
-          <Outlet />
+          <StoreOutlet />
           <div className='flex fixed bottom-4 left-4 right-4 justify-end z-15'>
             <Shortcuts shortcuts={shortcuts} />
           </div>

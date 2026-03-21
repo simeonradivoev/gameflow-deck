@@ -1,61 +1,19 @@
 
-import Elysia from "elysia";
-import { config, customEmulators, db } from "../app";
+import Elysia, { status } from "elysia";
+import { config, db, taskQueue } from "../app";
 import path from "node:path";
 import fs from 'node:fs/promises';
-import { EmulatorPackageSchema, EmulatorPackageType, FrontEndEmulator, FrontEndEmulatorDetailed, StoreGameSchema } from "@/shared/constants";
-import { findExec } from "../games/services/launchGameService";
-import { emulatorsDb } from '../app';
-import { and, eq } from "drizzle-orm";
-import * as emulatorSchema from '@schema/emulators';
+import { FrontEndEmulatorDetailed, FrontEndEmulatorDetailedDownload, StoreGameSchema } from "@/shared/constants";
+import { findExecsByName } from "../games/services/launchGameService";
 import * as appSchema from '@schema/app';
 import z from "zod";
 import { convertLocalToFrontendDetailed, convertStoreToFrontendDetailed, getLocalGameMatch } from "../games/services/utils";
 import { getPlatformsApiPlatformsGet } from "@/clients/romm";
-import { CACHE_KEYS, getOrCached } from "../cache";
-
-export function getStoreFolder ()
-{
-    const downlodDir = config.get('downloadPath');
-    return path.join(downlodDir, "store");
-}
-
-async function getAllStoreEmulatorPackages ()
-{
-    const downlodDir = config.get('downloadPath');
-    const emulatorsBucket = path.join(downlodDir, "store", "buckets", "emulators");
-    const emulators = await fs.readdir(emulatorsBucket);
-    const emulatorsRawData = await Promise.all(emulators.map(e => fs.readFile(path.join(emulatorsBucket, e), 'utf-8')));
-
-    const emulatesParsed = emulatorsRawData.map(d => EmulatorPackageSchema.safeParse(JSON.parse(d))).filter(e =>
-    {
-        if (e.error)
-        {
-            console.error(e.error);
-        }
-        return e.data;
-    }).map(e => e.data!);
-
-    return emulatesParsed;
-}
-
-async function buildSystems (emulator: EmulatorPackageType)
-{
-    const systems = await Promise.all(emulator.systems.map(async system =>
-    {
-        const rommSystem = await emulatorsDb.query.systemMappings.findFirst({
-            where: and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.system, system))
-        });
-
-        const esSystem = await emulatorsDb.query.systems.findFirst({ where: eq(emulatorSchema.emulators.name, system), columns: { fullname: true } });
-
-        let icon: string = `/api/romm/image/romm/assets/platforms/${rommSystem?.sourceSlug ?? system}.svg`;
-
-        return { id: system, name: esSystem?.fullname ?? system, icon: icon };
-    }));
-
-    return systems;
-}
+import { CACHE_KEYS, getOrCached, getOrCachedGithubRelease } from "../cache";
+import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage } from "./services/gamesService";
+import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
+import { Glob } from "bun";
+import { convertStoreEmulatorToFrontend } from "./services/emulatorsService";
 
 export const store = new Elysia({ prefix: '/api/store' })
     .get('/emulators', async ({ query }) =>
@@ -70,27 +28,10 @@ export const store = new Elysia({ prefix: '/api/store' })
             .filter(e => e.os.includes(process.platform as any))
             .map(async (emulator) =>
             {
-                let execPath: { path: string; type: string; } | undefined;
-                const esEmulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, emulator.name) });
-
-                if (esEmulator)
-                {
-                    if (customEmulators.has(emulator?.name))
-                    {
-                        execPath = { path: customEmulators.get(emulator.name), type: 'custom' };
-                    } else
-                    {
-                        execPath = await findExec(esEmulator);
-                    }
-                }
-
-                const exists = !!execPath && await fs.exists(execPath.path);
-                const systems = await buildSystems(emulator);
-
+                const systems = await buildStoreFrontendEmulatorSystems(emulator);
                 const gameCounts = await Promise.all(systems.map(async (s) =>
                 {
-                    const rommMapping = await emulatorsDb.query.systemMappings.findFirst({ where: and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.system, s.id)) });
-                    const romPlatform = rommPlatforms?.find(p => p.slug === (rommMapping?.sourceSlug ?? s.id));
+                    const romPlatform = rommPlatforms?.find(p => p.slug === (s.romm_slug ?? s.id));
                     if (romPlatform)
                     {
                         return romPlatform.rom_count;
@@ -101,13 +42,12 @@ export const store = new Elysia({ prefix: '/api/store' })
                 }));
 
                 const gameCount = gameCounts.reduce((a, c) => a + c);
-
-                return { ...emulator, exists, systems, gameCount } satisfies FrontEndEmulator;
+                return convertStoreEmulatorToFrontend(emulator, gameCount, systems);
             }));
 
         if (query.missing)
         {
-            frontEndEmulators = frontEndEmulators.filter(e => !e.exists);
+            frontEndEmulators = frontEndEmulators.filter(e => !e.validSource);
         }
 
         if (query.orderBy === 'importance')
@@ -161,42 +101,65 @@ export const store = new Elysia({ prefix: '/api/store' })
         return Bun.file(path.join(downlodDir, "store", "media", "screenshots", id, name));
     },
         { params: z.object({ id: z.string(), name: z.string() }) })
-    .get('/details/emulator/:id', async ({ params: { id } }) =>
+    .get('/emulator/:id', async ({ params: { id } }) =>
     {
         const downlodDir = config.get('downloadPath');
-        const emulatorPath = path.join(downlodDir, "store", "buckets", "emulators", `${id}.json`);
+        const emulatorPackage = await getStoreEmulatorPackage(id);
+        if (!emulatorPackage) return status("Not Found");
+
+        const systems = await buildStoreFrontendEmulatorSystems(emulatorPackage);
+
+        const execPaths = await findExecsByName(emulatorPackage.name);
+
         const emulatorScreenshotsPath = path.join(downlodDir, "store", "media", "screenshots", id);
-        const emulatorPackage = await EmulatorPackageSchema.parseAsync(JSON.parse(await fs.readFile(emulatorPath, 'utf-8')));
-
-        const systems = await buildSystems(emulatorPackage);
-        let execPath: { path: string; type: string; } | undefined;
-        const esEmulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, emulatorPackage.name) });
-
-        if (esEmulator)
-        {
-            if (customEmulators.has(emulatorPackage?.name))
-            {
-                execPath = { path: customEmulators.get(emulatorPackage.name), type: 'custom' };
-            } else
-            {
-                execPath = await findExec(esEmulator);
-            }
-        }
-
-
         const screenshots = await fs.exists(emulatorScreenshotsPath) ? await fs.readdir(emulatorScreenshotsPath) : [];
-        const exists = !!execPath && await fs.exists(execPath.path);
+        const validExec = execPaths.find(p => p.exists);
         const emulator: FrontEndEmulatorDetailed = {
-            ...emulatorPackage,
+            name: emulatorPackage.name,
+            description: emulatorPackage.description,
             systems,
-            exists,
-            status: {
-                source: execPath?.type,
-                location: execPath?.path
-            },
+            validSource: validExec,
             screenshots: screenshots.map(s => `/api/store/screenshot/emulator/${id}/${s}`),
-            gameCount: 0
+            gameCount: 0,
+            homepage: emulatorPackage.homepage,
+            downloads: await Promise.all(emulatorPackage.downloads?.[`${process.platform}:${process.arch}`].map(async d =>
+            {
+                if (d.type === 'github' && d.path)
+                {
+                    const release = await getOrCachedGithubRelease(d.path);
+                    const glob = new Glob(d.pattern);
+                    const download: FrontEndEmulatorDetailedDownload = {
+                        name: d.type,
+                        type: release.assets.find(a => glob.match(a.name))?.content_type
+                    };
+                    return download;
+                };
+
+                return { name: d.type, type: "Unknown" };
+            }) ?? []),
+            logo: emulatorPackage.logo,
+            sources: execPaths
         };
 
         return emulator;
-    }, { params: z.object({ id: z.string() }) });
+    }, { params: z.object({ id: z.string() }) })
+    .post('/install/emulator/:id/:source', async ({ params: { source, id } }) =>
+    {
+        if (taskQueue.hasActiveOfType(EmulatorDownloadJob))
+        {
+            return status("Conflict", "Installation already running");
+        }
+        const job = new EmulatorDownloadJob(id, source);
+        return taskQueue.enqueue(EmulatorDownloadJob.id, job);
+    })
+    .delete('/emulator/:id', async ({ params: { id } }) =>
+    {
+
+        const storeEmulatorFolder = path.join(config.get('downloadPath'), 'emulators', id);
+        if (await fs.exists(storeEmulatorFolder))
+        {
+            fs.rm(storeEmulatorFolder, { recursive: true });
+            return status("OK");
+        }
+        return status("Not Found");
+    });

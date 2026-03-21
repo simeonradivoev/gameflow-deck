@@ -5,8 +5,18 @@ import { Button } from "../options/Button";
 import useActiveControl from "@/mainview/scripts/gamepads";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
-import { ChevronRight, EllipsisVertical, HardDrive } from "lucide-react";
+import { ChevronRight, EllipsisVertical, FileQuestion, IceCream2, Package, Store } from "lucide-react";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
+import { FlatpackIcon } from "@/mainview/scripts/brandIcons";
+import { JSX } from "react";
+
+export const emulatorStatusIcons: Record<string, JSX.Element> = {
+    store: <Store />,
+    custom: <FileQuestion />,
+    flatpak: FlatpackIcon,
+    winget: <Package />,
+    scoop: <IceCream2 />
+};
 
 export function StoreEmulatorCard (data: {
     id: string;
@@ -35,7 +45,7 @@ export function StoreEmulatorCard (data: {
             ref={ref}
             role="button"
             tabIndex={0}
-            data-installed={data.emulator.exists ? true : undefined}
+            data-installed={!!data.emulator.validSource}
             onClick={isTouch ? handleSelect : undefined}
             className={twMerge("relative focusable focusable-info bg-base-100 rounded-4xl transition-shadow focused:not-control-mouse:animate-scale-small shadow-lg border border-base-content/10 active:ring-4 active:ring-base-content active:transition-none", data.className)}
         >
@@ -44,14 +54,14 @@ export function StoreEmulatorCard (data: {
                     <div className="flex gap-2">
                         <div className="flex items-start">
                             <div
-                                data-installed={data.emulator.exists}
+                                data-installed={!!data.emulator.validSource}
                                 className={`size-14 p-2 rounded-full bg-info flex items-center justify-center text-xl shadow-lg data-[installed=true]:bg-success`}
                             >
                                 <img draggable={false} src={data.emulator.logo}></img>
                             </div>
                         </div>
                         <div>
-                            <p data-installed={data.emulator.exists} className="font-bold text-base-content text-xl leading-snug data-[installed=true]:text-success">{data.emulator.name}</p>
+                            <p data-installed={!!data.emulator.validSource} className="font-bold text-base-content text-xl leading-snug data-[installed=true]:text-success">{data.emulator.name}</p>
                             <ul className="flex flex-wrap gap-1">
                                 {data.emulator.systems.map(({ id, name, icon }) =>
                                 {
@@ -66,10 +76,12 @@ export function StoreEmulatorCard (data: {
                 </div>
 
                 <div className="flex gap-0.5 mt-1 h-10 items-center">
-                    {data.emulator.exists && <div className="tooltip" data-tip="Installed">
-                        <div className="flex items-center justify-center rounded-full p-1 size-8 bg-success text-success-content"><HardDrive /></div>
+                    {!!data.emulator.validSource && <div className="tooltip" data-tip={data.emulator.validSource.type}>
+                        <div className="flex items-center justify-center rounded-full p-1 size-8 bg-success text-success-content">
+                            {emulatorStatusIcons[data.emulator.validSource?.type ?? '']}
+                        </div>
                     </div>}
-                    {<div className="tooltip" data-tip="Game Count">
+                    {data.emulator.gameCount > 0 && <div className="tooltip" data-tip="Game Count">
                         <div className="flex items-center justify-center rounded-full font-semibold size-9 p-2 bg-base-200 text-base-content/40">{data.emulator.gameCount}</div>
                     </div>}
                     {isMouse && <>

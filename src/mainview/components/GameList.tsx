@@ -2,13 +2,12 @@ import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
 import { FrontEndGameType, FrontEndId, GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
-import { SaveSource } from "../scripts/spatialNavigation";
-import { HardDrive } from "lucide-react";
+import { FileQuestion, HardDrive, Store } from "lucide-react";
 import { JSX, useContext } from "react";
 import { GameCardFocusHandler } from "./CardElement";
 import { useLocalSetting } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
-import queries from "../scripts/queries";
+import { allGamesQuery } from "@queries/romm";
 
 export interface GameListParams
 {
@@ -25,7 +24,7 @@ export interface GameListParams
 
 export function GameList (data: GameListParams)
 {
-    const games = useSuspenseQuery(queries.romm.allGamesQuery(data.filters));
+    const games = useSuspenseQuery(allGamesQuery(data.filters));
     const navigator = useNavigate();
     const blur = useLocalSetting('backgroundBlur');
     const backgroundContext = useContext(AnimatedBackgroundContext);
@@ -51,8 +50,7 @@ export function GameList (data: GameListParams)
 
     function handleDefaultSelect (g: FrontEndGameType)
     {
-        SaveSource('details', { search: { focus: g.slug ?? `game-${g.id}` } });
-        navigator({ to: '/game/$source/$id', params: { id: String(g.source_id ?? g.id.id), source: g.source ?? g.id.source }, viewTransition: { types: ['zoom-in'] } });
+        navigator({ to: '/game/$source/$id', params: { id: String(g.source_id ?? g.id.id), source: g.source ?? g.id.source } });
     };
 
     return (
@@ -74,6 +72,7 @@ export function GameList (data: GameListParams)
                             {
                                 badges.push(<HardDrive className="sm:size-4 md:size-8 md:p-1 m-1" />);
                             }
+
                             const previewUrl = new URL(`${RPC_URL(__HOST__)}${g.path_cover}`);
                             previewUrl.searchParams.delete('ts');
                             previewUrl.searchParams.set('width', "16");

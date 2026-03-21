@@ -1,12 +1,13 @@
 
 import * as appSchema from '@schema/app';
-import { findExecByName } from "../games/services/launchGameService";
 import * as emulatorSchema from "@schema/emulators";
 import { eq, inArray } from 'drizzle-orm';
 import { customEmulators, db, emulatorsDb } from '../app';
 import fs from 'node:fs/promises';
 import { cores } from '../emulatorjs/emulatorjs';
-import { FrontEndEmulator } from '@/shared/constants';
+import { FrontEndEmulator, SERVER_URL } from '@/shared/constants';
+import { findExecsByName } from '../games/services/launchGameService';
+import { host } from '@/bun/utils/host';
 
 /** 
  * Get emulators based on local games. Only the ones we probably need. 
@@ -53,14 +54,8 @@ export async function getRelevantEmulators ()
     const groupedEmulators = Map.groupBy(emulators, ({ emulator }) => emulator);
     const finalEmulators = await Promise.all(Array.from(groupedEmulators.entries()).map(async ([emulator, system_slug]) =>
     {
-        let execPath: { path: string; type: string, } | undefined;
-        if (customEmulators.has(emulator))
-        {
-            execPath = { path: customEmulators.get(emulator), type: 'custom' };
-        } else
-        {
-            execPath = await findExecByName(emulator);
-        }
+        const execPaths = await findExecsByName(emulator);
+        const validExecPath = execPaths.find(e => e.exists);
 
         let platform: number | null | undefined = null;
         const validSystemSlug = system_slug.find(s => s.system);
@@ -68,45 +63,31 @@ export async function getRelevantEmulators ()
         {
             platform = platformLookup.get(validSystemSlug.system)?.platform_id;
         }
-
-        // check if automatic or custom path found existing binary.
-        // This might not be the actual emulator but I don't care.
-        const exists = !!execPath && await fs.exists(execPath.path);
         const systems = Array.from(new Set(system_slug.filter(s => s.system).map(s => s.system!)));
-        if (exists)
+        if (validExecPath)
         {
             systems.forEach(s => platformViability.set(s, true));
         }
 
-        const em: FrontEndEmulator & { isCritical: boolean; path?: { path: string, type: string; }; } = {
+        const em: FrontEndEmulator & { isCritical: boolean; } = {
             name: emulator,
-            exists: exists,
             logo: platform ? `/api/romm/platform/local/${platform}/cover` : '',
             systems: systems.map(s => platformLookup.get(s)).filter(s => !!s).map(e => ({ icon: `/api/romm/image/romm/assets/platforms/${e.es_slug}.svg`, name: e.platform_name ?? 'Unknown', id: e.es_slug ?? '' })),
             gameCount: 0,
-            description: '',
-            homepage: '',
-            type: 'emulator',
-            os: [process.platform as any],
             isCritical: false,
-            path: execPath,
+            validSource: validExecPath
         };
 
         return em;
     }));
 
     finalEmulators.push({
-        name: 'emulatorjs',
-        exists: true,
-        path: { path: 'localhost', type: 'js' },
+        name: 'EMULATORJS',
+        validSource: { binPath: `${SERVER_URL(host)}`, type: 'js', exists: true },
         logo: `/api/romm/image?url=${encodeURIComponent('https://emulatorjs.org/logo/EmulatorJS.png')}`,
         systems: [],
         gameCount: 0,
-        type: 'emulator',
-        description: '',
-        homepage: '',
-        os: [process.platform as any],
-        isCritical: false
+        isCritical: false,
     });
 
     return finalEmulators.map(e =>

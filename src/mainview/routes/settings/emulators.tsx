@@ -14,7 +14,7 @@ import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spat
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import FilePicker from '@/mainview/components/FilePicker';
 import { dirname } from 'pathe';
-import queries from '@/mainview/scripts/queries';
+import { autoEmulatorsQuery, customEmulatorAddMutation, customEmulatorDeleteMutation, customEmulatorRemoveValueQuery, customEmulatorsQuery, setCustomEmulatorMutation } from '@queries/settings';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -98,13 +98,13 @@ function EmulatorPath (data: { id: string; })
   const [isSearching, setIsSearching] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [localValue, setLocalValue] = useState<string | undefined>();
-  const { data: remoteValue } = useQuery(queries.settings.customEmulatorRemoveValueQuery(data.id));
-  const setSettingMutation = useMutation(queries.settings.setCustomEmulatorMutation(data.id, (v) =>
+  const { data: remoteValue } = useQuery(customEmulatorRemoveValueQuery(data.id));
+  const setSettingMutation = useMutation(setCustomEmulatorMutation(data.id, (v) =>
   {
     setLocalValue(v);
     setDirty(false);
   }));
-  const deleteMutation = useMutation(queries.settings.customEmulatorDeleteMutation(data.id));
+  const deleteMutation = useMutation(customEmulatorDeleteMutation(data.id));
 
   const handleSave = useCallback(() =>
   {
@@ -223,11 +223,11 @@ function EmulatorBadge (data: {
 
 function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) => void; })
 {
-  const { data: autoEmulators } = useQuery(queries.settings.autoEmulatorsQuery);
+  const { data: autoEmulators } = useQuery(autoEmulatorsQuery);
   const { ref, focusKey } = useFocusable({ focusKey: `emulator-badges`, focusable: !!autoEmulators && autoEmulators.length > 0 });
   return <div ref={ref} className='grid grid-cols-[repeat(auto-fit,14rem)] auto-rows-[4rem] gap-2 justify-center-safe'>
     <FocusContext value={focusKey}>
-      {autoEmulators?.map(e => <EmulatorBadge key={e.name} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.logo} path={e.path?.path} exists={e.exists} emulator={e.name} />)}
+      {autoEmulators?.map(e => <EmulatorBadge key={e.name} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.logo} path={e.validSource?.binPath} exists={!!e.validSource} emulator={e.name} />)}
     </FocusContext>
   </div>;
 }
@@ -240,9 +240,9 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
 
-  const { data: customEmulators } = useQuery(queries.settings.customEmulatorsQuery);
+  const { data: customEmulators } = useQuery(customEmulatorsQuery);
 
-  const addOverrideMutation = useMutation(queries.settings.customEmulatorAddMutation);
+  const addOverrideMutation = useMutation(customEmulatorAddMutation);
 
   return <FocusContext value={focusKey}>
     <ul ref={ref} className="list rounded-box gap-2">

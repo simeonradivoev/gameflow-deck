@@ -1,6 +1,6 @@
-import { FocusContext, FocusDetails, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { FocusContext, FocusDetails, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { JSX, useContext, useEffect } from "react";
+import { JSX, useContext, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { X } from "lucide-react";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts";
@@ -67,21 +67,61 @@ export interface DialogEntry
     shortcuts?: Shortcut[];
 }
 
+export function useContextDialog (id: string, data: { content?: JSX.Element; className?: string; preferredChildFocusKey?: string; onClose?: () => void; })
+{
+    const [open, setOpen] = useState(false);
+    const [sourceFocusKey, setSourceFocusKey] = useState<string | undefined>(undefined);
+    const dialog = <ContextDialog id={id} open={open} close={() =>
+    {
+        setOpen(false);
+        data.onClose?.();
+    }} className={data.className} sourceFocusKey={sourceFocusKey} preferredChildFocusKey={data.preferredChildFocusKey}>
+        {data.content}
+    </ContextDialog>;
+    return {
+        dialog,
+        open,
+        setOpen: (value: boolean, sourceFocusKey?: string) =>
+        {
+            if (value === open) return;
+            if (value)
+            {
+                setOpen(true);
+                setSourceFocusKey(sourceFocusKey);
+            } else
+            {
+                setOpen(false);
+                if (sourceFocusKey)
+                {
+                    setFocus(sourceFocusKey);
+                }
+            }
+
+        }
+    };
+}
+
 export function ContextDialog (data: {
     id: string,
     children: any | any[],
     open: boolean,
-    close: () => void;
+    close: (open: boolean) => void;
     className?: string;
     preferredChildFocusKey?: string;
+    sourceFocusKey?: string;
 })
 {
     const { ref, focusKey, focusSelf } = useFocusable({
         focusable: data.open,
         focusKey: `${data.id}-context-dialog`,
         isFocusBoundary: true,
+        saveLastFocusedChild: !data.preferredChildFocusKey,
         preferredChildFocusKey: data.preferredChildFocusKey
     });
+    const handleClose = () =>
+    {
+        data.close(false);
+    };
     useEffect(() =>
     {
         if (data.open)
@@ -93,22 +133,16 @@ export function ContextDialog (data: {
     useShortcuts(focusKey, () => data.open ? [{
         label: "Close",
         button: GamePadButtonCode.B,
-        action: () =>  
-        {
-            data.close();
-        }
+        action: handleClose
     }] : [], [data.open]);
 
     return <dialog ref={ref} open={data.open} closedby="any" className={
         twMerge("fixed modal cursor-pointer bg-base-300/80 backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
             classNames({ "opacity-0": !data.open }))
     }
-        onClick={() =>
-        {
-            if (data.open) data.close();
-        }}>
+        onClick={handleClose}>
         <FocusContext value={focusKey}>
-            <ContextDialogContext value={{ id: data.id, close: data.close }} >
+            <ContextDialogContext value={{ id: data.id, close: handleClose }} >
                 <div
                     className={twMerge(
                         "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] cursor-auto",

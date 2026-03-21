@@ -2244,7 +2244,7 @@
         <name>xbox</name>
         <fullname>Microsoft Xbox</fullname>
         <path>%ROMPATH%/xbox</path>
-        <extension>.iso .ISO</extension>
+        <extension>.iso .ISO .xiso .XISO</extension>
         <command label="xemu (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_XEMU% -dvd_path %ROM%</command>
         <platform>xbox</platform>
         <theme>xbox</theme>

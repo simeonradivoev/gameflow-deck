@@ -73,6 +73,16 @@ export type BodyAddUserApiUsersPost = {
 };
 
 /**
+ * Body_confirm_download_api_saves__id__downloaded_post
+ */
+export type BodyConfirmDownloadApiSavesIdDownloadedPost = {
+    /**
+     * Device Id
+     */
+    device_id: string;
+};
+
+/**
  * Body_create_user_from_invite_api_users_register_post
  */
 export type BodyCreateUserFromInviteApiUsersRegisterPost = {
@@ -222,6 +232,26 @@ export type BodyTokenApiTokenPost = {
      * Refresh Token
      */
     refresh_token?: string | null;
+};
+
+/**
+ * Body_track_save_api_saves__id__track_post
+ */
+export type BodyTrackSaveApiSavesIdTrackPost = {
+    /**
+     * Device Id
+     */
+    device_id: string;
+};
+
+/**
+ * Body_untrack_save_api_saves__id__untrack_post
+ */
+export type BodyUntrackSaveApiSavesIdUntrackPost = {
+    /**
+     * Device Id
+     */
+    device_id: string;
 };
 
 /**
@@ -446,9 +476,9 @@ export type CollectionSchema = {
      */
     user_id: number;
     /**
-     * User  Username
+     * Owner Username
      */
-    user__username: string;
+    owner_username: string;
 };
 
 /**
@@ -848,6 +878,10 @@ export type DetailedRomSchema = {
      */
     sha1_hash: string | null;
     /**
+     * Ra Hash
+     */
+    ra_hash: string | null;
+    /**
      * Has Simple Single File
      */
     has_simple_single_file: boolean;
@@ -913,6 +947,193 @@ export type DetailedRomSchema = {
      * All User Notes
      */
     all_user_notes: Array<UserNoteSchema>;
+};
+
+/**
+ * DeviceCreatePayload
+ */
+export type DeviceCreatePayload = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Platform
+     */
+    platform?: string | null;
+    /**
+     * Client
+     */
+    client?: string | null;
+    /**
+     * Client Version
+     */
+    client_version?: string | null;
+    /**
+     * Ip Address
+     */
+    ip_address?: string | null;
+    /**
+     * Mac Address
+     */
+    mac_address?: string | null;
+    /**
+     * Hostname
+     */
+    hostname?: string | null;
+    /**
+     * Allow Existing
+     */
+    allow_existing?: boolean;
+    /**
+     * Allow Duplicate
+     */
+    allow_duplicate?: boolean;
+    /**
+     * Reset Syncs
+     */
+    reset_syncs?: boolean;
+};
+
+/**
+ * DeviceCreateResponse
+ */
+export type DeviceCreateResponse = {
+    /**
+     * Device Id
+     */
+    device_id: string;
+    /**
+     * Name
+     */
+    name: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * DeviceSchema
+ */
+export type DeviceSchema = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * User Id
+     */
+    user_id: number;
+    /**
+     * Name
+     */
+    name: string | null;
+    /**
+     * Platform
+     */
+    platform: string | null;
+    /**
+     * Client
+     */
+    client: string | null;
+    /**
+     * Client Version
+     */
+    client_version: string | null;
+    /**
+     * Ip Address
+     */
+    ip_address: string | null;
+    /**
+     * Mac Address
+     */
+    mac_address: string | null;
+    /**
+     * Hostname
+     */
+    hostname: string | null;
+    sync_mode: SyncMode;
+    /**
+     * Sync Enabled
+     */
+    sync_enabled: boolean;
+    /**
+     * Last Seen
+     */
+    last_seen: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * DeviceSyncSchema
+ */
+export type DeviceSyncSchema = {
+    /**
+     * Device Id
+     */
+    device_id: string;
+    /**
+     * Device Name
+     */
+    device_name: string | null;
+    /**
+     * Last Synced At
+     */
+    last_synced_at: string;
+    /**
+     * Is Untracked
+     */
+    is_untracked: boolean;
+    /**
+     * Is Current
+     */
+    is_current: boolean;
+};
+
+/**
+ * DeviceUpdatePayload
+ */
+export type DeviceUpdatePayload = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Platform
+     */
+    platform?: string | null;
+    /**
+     * Client
+     */
+    client?: string | null;
+    /**
+     * Client Version
+     */
+    client_version?: string | null;
+    /**
+     * Ip Address
+     */
+    ip_address?: string | null;
+    /**
+     * Mac Address
+     */
+    mac_address?: string | null;
+    /**
+     * Hostname
+     */
+    hostname?: string | null;
+    /**
+     * Sync Enabled
+     */
+    sync_enabled?: boolean | null;
 };
 
 /**
@@ -1424,6 +1645,10 @@ export type OidcDict = {
      */
     ENABLED: boolean;
     /**
+     * Autologin
+     */
+    AUTOLOGIN: boolean;
+    /**
      * Provider
      */
     PROVIDER: string;
@@ -1731,6 +1956,10 @@ export type RomFileSchema = {
      * Sha1 Hash
      */
     sha1_hash: string | null;
+    /**
+     * Ra Hash
+     */
+    ra_hash: string | null;
     category: RomFileCategory | null;
 };
 
@@ -2465,10 +2694,6 @@ export type RomUserSchema = {
      */
     completion: number;
     status: RomUserStatus | null;
-    /**
-     * User  Username
-     */
-    user__username: string;
 };
 
 /**
@@ -2584,7 +2809,33 @@ export type SaveSchema = {
      * Emulator
      */
     emulator: string | null;
+    /**
+     * Slot
+     */
+    slot?: string | null;
+    /**
+     * Content Hash
+     */
+    content_hash?: string | null;
     screenshot: ScreenshotSchema | null;
+    /**
+     * Device Syncs
+     */
+    device_syncs?: Array<DeviceSyncSchema>;
+};
+
+/**
+ * SaveSummarySchema
+ */
+export type SaveSummarySchema = {
+    /**
+     * Total Count
+     */
+    total_count: number;
+    /**
+     * Slots
+     */
+    slots: Array<SlotSummarySchema>;
 };
 
 /**
@@ -3051,6 +3302,10 @@ export type SimpleRomSchema = {
      */
     sha1_hash: string | null;
     /**
+     * Ra Hash
+     */
+    ra_hash: string | null;
+    /**
      * Has Simple Single File
      */
     has_simple_single_file: boolean;
@@ -3096,6 +3351,21 @@ export type SimpleRomSchema = {
      */
     merged_screenshots: Array<string>;
     merged_ra_metadata: RomRaMetadata | null;
+};
+
+/**
+ * SlotSummarySchema
+ */
+export type SlotSummarySchema = {
+    /**
+     * Slot
+     */
+    slot: string | null;
+    /**
+     * Count
+     */
+    count: number;
+    latest: SaveSchema;
 };
 
 /**
@@ -3177,9 +3447,9 @@ export type SmartCollectionSchema = {
      */
     user_id: number;
     /**
-     * User  Username
+     * Owner Username
      */
-    user__username: string;
+    owner_username: string;
 };
 
 /**
@@ -3278,6 +3548,11 @@ export type StatsReturn = {
      */
     TOTAL_FILESIZE_BYTES: number;
 };
+
+/**
+ * SyncMode
+ */
+export type SyncMode = 'api' | 'file_transfer' | 'push_pull';
 
 /**
  * SystemDict
@@ -4123,6 +4398,10 @@ export type DetailedRomSchemaWritable = {
      */
     sha1_hash: string | null;
     /**
+     * Ra Hash
+     */
+    ra_hash: string | null;
+    /**
      * Has Simple Single File
      */
     has_simple_single_file: boolean;
@@ -4544,6 +4823,10 @@ export type SimpleRomSchemaWritable = {
      */
     sha1_hash: string | null;
     /**
+     * Ra Hash
+     */
+    ra_hash: string | null;
+    /**
      * Has Simple Single File
      */
     has_simple_single_file: boolean;
@@ -4911,6 +5194,24 @@ export type CreateUserFromInviteApiUsersRegisterPostResponses = {
 
 export type CreateUserFromInviteApiUsersRegisterPostResponse = CreateUserFromInviteApiUsersRegisterPostResponses[keyof CreateUserFromInviteApiUsersRegisterPostResponses];
 
+export type GetUserIdentifiersApiUsersIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/users/identifiers';
+};
+
+export type GetUserIdentifiersApiUsersIdentifiersGetResponses = {
+    /**
+     * Response Get User Identifiers Api Users Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetUserIdentifiersApiUsersIdentifiersGetResponse = GetUserIdentifiersApiUsersIdentifiersGetResponses[keyof GetUserIdentifiersApiUsersIdentifiersGetResponses];
+
 export type GetCurrentUserApiUsersMeGetData = {
     body?: never;
     path?: never;
@@ -5061,6 +5362,139 @@ export type RefreshRetroAchievementsApiUsersIdRaRefreshPostResponses = {
     200: unknown;
 };
 
+export type GetDevicesApiDevicesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/devices';
+};
+
+export type GetDevicesApiDevicesGetResponses = {
+    /**
+     * Response Get Devices Api Devices Get
+     *
+     * Successful Response
+     */
+    200: Array<DeviceSchema>;
+};
+
+export type GetDevicesApiDevicesGetResponse = GetDevicesApiDevicesGetResponses[keyof GetDevicesApiDevicesGetResponses];
+
+export type RegisterDeviceApiDevicesPostData = {
+    body: DeviceCreatePayload;
+    path?: never;
+    query?: never;
+    url: '/api/devices';
+};
+
+export type RegisterDeviceApiDevicesPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RegisterDeviceApiDevicesPostError = RegisterDeviceApiDevicesPostErrors[keyof RegisterDeviceApiDevicesPostErrors];
+
+export type RegisterDeviceApiDevicesPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeviceCreateResponse;
+};
+
+export type RegisterDeviceApiDevicesPostResponse = RegisterDeviceApiDevicesPostResponses[keyof RegisterDeviceApiDevicesPostResponses];
+
+export type DeleteDeviceApiDevicesDeviceIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Device Id
+         */
+        device_id: string;
+    };
+    query?: never;
+    url: '/api/devices/{device_id}';
+};
+
+export type DeleteDeviceApiDevicesDeviceIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteDeviceApiDevicesDeviceIdDeleteError = DeleteDeviceApiDevicesDeviceIdDeleteErrors[keyof DeleteDeviceApiDevicesDeviceIdDeleteErrors];
+
+export type DeleteDeviceApiDevicesDeviceIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDeviceApiDevicesDeviceIdDeleteResponse = DeleteDeviceApiDevicesDeviceIdDeleteResponses[keyof DeleteDeviceApiDevicesDeviceIdDeleteResponses];
+
+export type GetDeviceApiDevicesDeviceIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Device Id
+         */
+        device_id: string;
+    };
+    query?: never;
+    url: '/api/devices/{device_id}';
+};
+
+export type GetDeviceApiDevicesDeviceIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDeviceApiDevicesDeviceIdGetError = GetDeviceApiDevicesDeviceIdGetErrors[keyof GetDeviceApiDevicesDeviceIdGetErrors];
+
+export type GetDeviceApiDevicesDeviceIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeviceSchema;
+};
+
+export type GetDeviceApiDevicesDeviceIdGetResponse = GetDeviceApiDevicesDeviceIdGetResponses[keyof GetDeviceApiDevicesDeviceIdGetResponses];
+
+export type UpdateDeviceApiDevicesDeviceIdPutData = {
+    body: DeviceUpdatePayload;
+    path: {
+        /**
+         * Device Id
+         */
+        device_id: string;
+    };
+    query?: never;
+    url: '/api/devices/{device_id}';
+};
+
+export type UpdateDeviceApiDevicesDeviceIdPutErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateDeviceApiDevicesDeviceIdPutError = UpdateDeviceApiDevicesDeviceIdPutErrors[keyof UpdateDeviceApiDevicesDeviceIdPutErrors];
+
+export type UpdateDeviceApiDevicesDeviceIdPutResponses = {
+    /**
+     * Successful Response
+     */
+    200: DeviceSchema;
+};
+
+export type UpdateDeviceApiDevicesDeviceIdPutResponse = UpdateDeviceApiDevicesDeviceIdPutResponses[keyof UpdateDeviceApiDevicesDeviceIdPutResponses];
+
 export type GetPlatformsApiPlatformsGetData = {
     body?: never;
     path?: never;
@@ -5119,6 +5553,24 @@ export type AddPlatformApiPlatformsPostResponses = {
 };
 
 export type AddPlatformApiPlatformsPostResponse = AddPlatformApiPlatformsPostResponses[keyof AddPlatformApiPlatformsPostResponses];
+
+export type GetPlatformIdentifiersApiPlatformsIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/platforms/identifiers';
+};
+
+export type GetPlatformIdentifiersApiPlatformsIdentifiersGetResponses = {
+    /**
+     * Response Get Platform Identifiers Api Platforms Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetPlatformIdentifiersApiPlatformsIdentifiersGetResponse = GetPlatformIdentifiersApiPlatformsIdentifiersGetResponses[keyof GetPlatformIdentifiersApiPlatformsIdentifiersGetResponses];
 
 export type GetSupportedPlatformsEndpointApiPlatformsSupportedGetData = {
     body?: never;
@@ -5545,6 +5997,24 @@ export type AddRomApiRomsPostResponses = {
     201: unknown;
 };
 
+export type GetRomIdentifiersApiRomsIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/roms/identifiers';
+};
+
+export type GetRomIdentifiersApiRomsIdentifiersGetResponses = {
+    /**
+     * Response Get Rom Identifiers Api Roms Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetRomIdentifiersApiRomsIdentifiersGetResponse = GetRomIdentifiersApiRomsIdentifiersGetResponses[keyof GetRomIdentifiersApiRomsIdentifiersGetResponses];
+
 export type DownloadRomsApiRomsDownloadGetData = {
     body?: never;
     path?: never;
@@ -5691,6 +6161,12 @@ export type GetRomByHashApiRomsByHashGetData = {
          * SHA1 hash value
          */
         sha1_hash?: string | null;
+        /**
+         * Ra Hash
+         *
+         * RetroAchievements hash value
+         */
+        ra_hash?: string | null;
     };
     url: '/api/roms/by-hash';
 };
@@ -6231,6 +6707,44 @@ export type CreateRomNoteApiRomsIdNotesPostResponses = {
 
 export type CreateRomNoteApiRomsIdNotesPostResponse = CreateRomNoteApiRomsIdNotesPostResponses[keyof CreateRomNoteApiRomsIdNotesPostResponses];
 
+export type GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         *
+         * Rom internal id.
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/api/roms/{id}/notes/identifiers';
+};
+
+export type GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetErrors = {
+    /**
+     * Not Found
+     */
+    404: unknown;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetError = GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetErrors[keyof GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetErrors];
+
+export type GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponses = {
+    /**
+     * Response Get Rom Note Identifiers Api Roms  Id  Notes Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponse = GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponses[keyof GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponses];
+
 export type DeleteRomNoteApiRomsIdNotesNoteIdDeleteData = {
     body?: never;
     path: {
@@ -6408,6 +6922,14 @@ export type GetSavesApiSavesGetData = {
          * Platform Id
          */
         platform_id?: number | null;
+        /**
+         * Device Id
+         */
+        device_id?: string | null;
+        /**
+         * Slot
+         */
+        slot?: string | null;
     };
     url: '/api/saves';
 };
@@ -6444,6 +6966,26 @@ export type AddSaveApiSavesPostData = {
          * Emulator
          */
         emulator?: string | null;
+        /**
+         * Slot
+         */
+        slot?: string | null;
+        /**
+         * Device Id
+         */
+        device_id?: string | null;
+        /**
+         * Overwrite
+         */
+        overwrite?: boolean;
+        /**
+         * Autocleanup
+         */
+        autocleanup?: boolean;
+        /**
+         * Autocleanup Limit
+         */
+        autocleanup_limit?: number;
     };
     url: '/api/saves';
 };
@@ -6466,6 +7008,54 @@ export type AddSaveApiSavesPostResponses = {
 
 export type AddSaveApiSavesPostResponse = AddSaveApiSavesPostResponses[keyof AddSaveApiSavesPostResponses];
 
+export type GetSaveIdentifiersApiSavesIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/saves/identifiers';
+};
+
+export type GetSaveIdentifiersApiSavesIdentifiersGetResponses = {
+    /**
+     * Response Get Save Identifiers Api Saves Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetSaveIdentifiersApiSavesIdentifiersGetResponse = GetSaveIdentifiersApiSavesIdentifiersGetResponses[keyof GetSaveIdentifiersApiSavesIdentifiersGetResponses];
+
+export type GetSavesSummaryApiSavesSummaryGetData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Rom Id
+         */
+        rom_id: number;
+    };
+    url: '/api/saves/summary';
+};
+
+export type GetSavesSummaryApiSavesSummaryGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetSavesSummaryApiSavesSummaryGetError = GetSavesSummaryApiSavesSummaryGetErrors[keyof GetSavesSummaryApiSavesSummaryGetErrors];
+
+export type GetSavesSummaryApiSavesSummaryGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: SaveSummarySchema;
+};
+
+export type GetSavesSummaryApiSavesSummaryGetResponse = GetSavesSummaryApiSavesSummaryGetResponses[keyof GetSavesSummaryApiSavesSummaryGetResponses];
+
 export type GetSaveApiSavesIdGetData = {
     body?: never;
     path: {
@@ -6474,7 +7064,12 @@ export type GetSaveApiSavesIdGetData = {
          */
         id: number;
     };
-    query?: never;
+    query?: {
+        /**
+         * Device Id
+         */
+        device_id?: string | null;
+    };
     url: '/api/saves/{id}';
 };
 
@@ -6526,6 +7121,73 @@ export type UpdateSaveApiSavesIdPutResponses = {
 
 export type UpdateSaveApiSavesIdPutResponse = UpdateSaveApiSavesIdPutResponses[keyof UpdateSaveApiSavesIdPutResponses];
 
+export type DownloadSaveApiSavesIdContentGetData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: {
+        /**
+         * Device Id
+         */
+        device_id?: string | null;
+        /**
+         * Optimistic
+         */
+        optimistic?: boolean;
+    };
+    url: '/api/saves/{id}/content';
+};
+
+export type DownloadSaveApiSavesIdContentGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DownloadSaveApiSavesIdContentGetError = DownloadSaveApiSavesIdContentGetErrors[keyof DownloadSaveApiSavesIdContentGetErrors];
+
+export type DownloadSaveApiSavesIdContentGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ConfirmDownloadApiSavesIdDownloadedPostData = {
+    body: BodyConfirmDownloadApiSavesIdDownloadedPost;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/api/saves/{id}/downloaded';
+};
+
+export type ConfirmDownloadApiSavesIdDownloadedPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ConfirmDownloadApiSavesIdDownloadedPostError = ConfirmDownloadApiSavesIdDownloadedPostErrors[keyof ConfirmDownloadApiSavesIdDownloadedPostErrors];
+
+export type ConfirmDownloadApiSavesIdDownloadedPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SaveSchema;
+};
+
+export type ConfirmDownloadApiSavesIdDownloadedPostResponse = ConfirmDownloadApiSavesIdDownloadedPostResponses[keyof ConfirmDownloadApiSavesIdDownloadedPostResponses];
+
 export type DeleteSavesApiSavesDeletePostData = {
     body: BodyDeleteSavesApiSavesDeletePost;
     path?: never;
@@ -6560,6 +7222,66 @@ export type DeleteSavesApiSavesDeletePostResponses = {
 };
 
 export type DeleteSavesApiSavesDeletePostResponse = DeleteSavesApiSavesDeletePostResponses[keyof DeleteSavesApiSavesDeletePostResponses];
+
+export type TrackSaveApiSavesIdTrackPostData = {
+    body: BodyTrackSaveApiSavesIdTrackPost;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/api/saves/{id}/track';
+};
+
+export type TrackSaveApiSavesIdTrackPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TrackSaveApiSavesIdTrackPostError = TrackSaveApiSavesIdTrackPostErrors[keyof TrackSaveApiSavesIdTrackPostErrors];
+
+export type TrackSaveApiSavesIdTrackPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SaveSchema;
+};
+
+export type TrackSaveApiSavesIdTrackPostResponse = TrackSaveApiSavesIdTrackPostResponses[keyof TrackSaveApiSavesIdTrackPostResponses];
+
+export type UntrackSaveApiSavesIdUntrackPostData = {
+    body: BodyUntrackSaveApiSavesIdUntrackPost;
+    path: {
+        /**
+         * Id
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/api/saves/{id}/untrack';
+};
+
+export type UntrackSaveApiSavesIdUntrackPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UntrackSaveApiSavesIdUntrackPostError = UntrackSaveApiSavesIdUntrackPostErrors[keyof UntrackSaveApiSavesIdUntrackPostErrors];
+
+export type UntrackSaveApiSavesIdUntrackPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: SaveSchema;
+};
+
+export type UntrackSaveApiSavesIdUntrackPostResponse = UntrackSaveApiSavesIdUntrackPostResponses[keyof UntrackSaveApiSavesIdUntrackPostResponses];
 
 export type GetStatesApiStatesGetData = {
     body?: never;
@@ -6630,6 +7352,24 @@ export type AddStateApiStatesPostResponses = {
 };
 
 export type AddStateApiStatesPostResponse = AddStateApiStatesPostResponses[keyof AddStateApiStatesPostResponses];
+
+export type GetStateIdentifiersApiStatesIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/states/identifiers';
+};
+
+export type GetStateIdentifiersApiStatesIdentifiersGetResponses = {
+    /**
+     * Response Get State Identifiers Api States Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetStateIdentifiersApiStatesIdentifiersGetResponse = GetStateIdentifiersApiStatesIdentifiersGetResponses[keyof GetStateIdentifiersApiStatesIdentifiersGetResponses];
 
 export type GetStateApiStatesIdGetData = {
     body?: never;
@@ -7036,6 +7776,76 @@ export type KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetResponses = {
     200: unknown;
 };
 
+export type PkgjPspGamesFeedApiFeedsPkgjPspGamesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/feeds/pkgj/psp/games';
+};
+
+export type PkgjPspGamesFeedApiFeedsPkgjPspGamesGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/feeds/pkgj/psp/dlc';
+};
+
+export type PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/feeds/pkgj/psvita/games';
+};
+
+export type PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/feeds/pkgj/psvita/dlc';
+};
+
+export type PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/feeds/pkgj/psx/games';
+};
+
+export type PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type GetConfigApiConfigGetData = {
     body?: never;
     path?: never;
@@ -7346,6 +8156,24 @@ export type AddFirmwareApiFirmwarePostResponses = {
 
 export type AddFirmwareApiFirmwarePostResponse = AddFirmwareApiFirmwarePostResponses[keyof AddFirmwareApiFirmwarePostResponses];
 
+export type GetFirmwareIdentifiersApiFirmwareIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/firmware/identifiers';
+};
+
+export type GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponses = {
+    /**
+     * Response Get Firmware Identifiers Api Firmware Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponse = GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponses[keyof GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponses];
+
 export type GetFirmwareApiFirmwareIdGetData = {
     body?: never;
     path: {
@@ -7597,6 +8425,24 @@ export type AddSmartCollectionApiCollectionsSmartPostResponses = {
 
 export type AddSmartCollectionApiCollectionsSmartPostResponse = AddSmartCollectionApiCollectionsSmartPostResponses[keyof AddSmartCollectionApiCollectionsSmartPostResponses];
 
+export type GetCollectionIdentifiersApiCollectionsIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/collections/identifiers';
+};
+
+export type GetCollectionIdentifiersApiCollectionsIdentifiersGetResponses = {
+    /**
+     * Response Get Collection Identifiers Api Collections Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetCollectionIdentifiersApiCollectionsIdentifiersGetResponse = GetCollectionIdentifiersApiCollectionsIdentifiersGetResponses[keyof GetCollectionIdentifiersApiCollectionsIdentifiersGetResponses];
+
 export type GetVirtualCollectionsApiCollectionsVirtualGetData = {
     body?: never;
     path?: never;
@@ -7632,6 +8478,42 @@ export type GetVirtualCollectionsApiCollectionsVirtualGetResponses = {
 };
 
 export type GetVirtualCollectionsApiCollectionsVirtualGetResponse = GetVirtualCollectionsApiCollectionsVirtualGetResponses[keyof GetVirtualCollectionsApiCollectionsVirtualGetResponses];
+
+export type GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/collections/virtual/identifiers';
+};
+
+export type GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponses = {
+    /**
+     * Response Get Virtual Collection Identifiers Api Collections Virtual Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponse = GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponses[keyof GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponses];
+
+export type GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/collections/smart/identifiers';
+};
+
+export type GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponses = {
+    /**
+     * Response Get Smart Collection Identifiers Api Collections Smart Identifiers Get
+     *
+     * Successful Response
+     */
+    200: Array<number>;
+};
+
+export type GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponse = GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponses[keyof GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponses];
 
 export type DeleteCollectionApiCollectionsIdDeleteData = {
     body?: never;

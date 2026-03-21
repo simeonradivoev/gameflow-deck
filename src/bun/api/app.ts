@@ -22,6 +22,7 @@ import { appPath, getErrorMessage } from "../utils";
 import { DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
 import { ensureDir } from "fs-extra";
 import UpdateStoreJob from "./jobs/update-store";
+import { getStoreFolder } from "./store/services/gamesService";
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,
@@ -47,6 +48,8 @@ export const customEmulators = new Conf<Record<string, string>>({
 console.log("Config Path Located At: ", config.path);
 console.log("Custom Emulator Paths Located At: ", customEmulators.path);
 console.log("App Directory is ", process.env.APPDIR);
+console.log("Store Directory is ", getStoreFolder());
+
 const fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path), 'cookies.json'));
 console.log("Cookie Jar Path Located At: ", fileCookieStore.filePath);
 export const jar = new CookieJar(fileCookieStore);

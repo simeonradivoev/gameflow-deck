@@ -1,12 +1,14 @@
 import { ensureDir } from "fs-extra";
 import { IJob, JobContext } from "../task-queue";
-import { getStoreFolder } from "../store/store";
+import { getStoreFolder } from "../store/services/gamesService";
+import z from "zod";
 
-export default class UpdateStoreJob implements IJob
+export default class UpdateStoreJob implements IJob<never, never>
 {
     static id = "update-store" as const;
     static origin = "https://github.com/simeonradivoev/gameflow-store.git";
     static branch = "master";
+    static dataSchema = z.never();
 
     async gitCommand (commands: string[], dir: string)
     {
@@ -40,8 +42,10 @@ export default class UpdateStoreJob implements IJob
         return (await this.gitCommand(["status", "--porcelain"], dir)).length > 0;
     }
 
-    async start (context: JobContext)
+    async start (context: JobContext<UpdateStoreJob, never, never>)
     {
+        if (process.env.CUSTOM_STORE_PATH) return;
+
         const storeFolder = getStoreFolder();
         await ensureDir(storeFolder);
         context.setProgress(10);

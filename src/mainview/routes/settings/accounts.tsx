@@ -23,7 +23,8 @@ import QRCode from "react-qr-code";
 import { useJobStatus } from "@/mainview/scripts/utils";
 import { useInterval } from "usehooks-ts";
 import { TwitchIcon } from "@/mainview/scripts/brandIcons";
-import queries from "@/mainview/scripts/queries";
+import { twitchLoginMutation, twitchLoginVerificationQuery, twitchLogoutMutation } from "@queries/settings";
+import { rommGetOptionsQuery, rommHasPasswordQuery, rommHostnameQuery, rommLoginMutation, rommLogoutMutation, rommQrLoginMutation, rommUsernameQuery, rommUserQuery } from "@queries/romm";
 
 export const Route = createFileRoute("/settings/accounts")({
   component: RouteComponent,
@@ -52,14 +53,14 @@ function LoginQR (data: { id: string, isOpen: boolean, cancel: () => void, url: 
 
 function TwitchLogin ()
 {
-  const loginStatus = useQuery(queries.settings.twitchLoginVerificationQuery);
+  const loginStatus = useQuery(twitchLoginVerificationQuery);
 
   const loginMutation = useMutation({
-    ...queries.settings.twitchLoginMutation,
+    ...twitchLoginMutation,
     onSuccess: () => loginStatus.refetch()
   });
 
-  const logoutMutation = useMutation({ ...queries.settings.twitchLogoutMutation, onSuccess: () => loginStatus.refetch() });
+  const logoutMutation = useMutation({ ...twitchLogoutMutation, onSuccess: () => loginStatus.refetch() });
 
   const { data: loginData, wsRef } = useJobStatus('twitch-login-job', { onEnded: () => loginStatus.refetch() });
 
@@ -84,13 +85,13 @@ function TwitchLogin ()
 
 function LoginControls (data: { hasPassword: boolean; })
 {
-  const user = useQuery(queries.romm.rommUserQuery());
-  const loginMutation = useMutation(queries.romm.rommQrLoginMutation);
+  const user = useQuery(rommUserQuery());
+  const loginMutation = useMutation(rommQrLoginMutation);
   const { data: statusValue, wsRef } = useJobStatus('login-job');
   const context = useSettingsFormContext({});
   const isMutatingRomm = useIsMutating({ mutationKey: ["romm", "auth"] }) > 0;
   const logoutMutation = useMutation({
-    ...queries.romm.rommLogoutMutation,
+    ...rommLogoutMutation,
     onSuccess: async (d, v, r, c) =>
     {
       user.refetch();
@@ -136,9 +137,9 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
 
-  const { data: hasPassword } = useQuery(queries.romm.rommHasPasswordQuery);
-  const { data: hostname } = useQuery(queries.romm.rommHostnameQuery);
-  const { data: username } = useQuery(queries.romm.rommUsernameQuery);
+  const { data: hasPassword } = useQuery(rommHasPasswordQuery);
+  const { data: hostname } = useQuery(rommHostnameQuery);
+  const { data: username } = useQuery(rommUsernameQuery);
 
   const loginForm = useSettingsForm({
     defaultValues: {
@@ -160,7 +161,7 @@ function RouteComponent ()
     }
   });
 
-  const rommOnline = useQuery(queries.romm.rommGetOptionsQuery());
+  const rommOnline = useQuery(rommGetOptionsQuery());
 
   useEffect(() =>
   {
@@ -170,7 +171,7 @@ function RouteComponent ()
     }
   }, [focus]);
 
-  const loginMutation = useMutation(queries.romm.rommLoginMutation);
+  const loginMutation = useMutation(rommLoginMutation);
 
   let indicator = "";
   if (rommOnline.isError)

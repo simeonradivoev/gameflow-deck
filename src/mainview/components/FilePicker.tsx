@@ -12,9 +12,9 @@ import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts"
 import SvgIcon from "./SvgIcon";
 import { Button } from "./options/Button";
 import toast from "react-hot-toast";
-import queries from "../scripts/queries";
 import { FilePickerContext } from "../scripts/contexts";
 import useActiveControl from "../scripts/gamepads";
+import { createFolderMutation, drivesQuery, filesQuery } from "@queries/system";
 
 function List (data: {
     id: string,
@@ -113,7 +113,7 @@ function NewFolderOption (data: { id: string, dirname: string; })
     const { refetchFiles } = useContext(FilePickerContext);
     const [name, setName] = useState<string | undefined>();
     const createMutation = useMutation({
-        ...queries.system.createFolderMutation(data.id),
+        ...createFolderMutation(data.id),
         onError: (e) => toast.error(e.message ?? 'Error Creating New Folder'),
         onSuccess: (d, v, r, cx) =>
         {
@@ -228,8 +228,8 @@ export default function FilePicker (data: {
 {
     const [currentPath, setCurrentPath] = useState<string | undefined>(data.startingPath);
 
-    const { data: files, refetch: refetchFiles, isLoading: filesLoading } = useQuery(queries.system.filesQuery(currentPath, data.id));
-    const { data: drives, isLoading: drivesLoading } = useQuery(queries.system.drivesQuery);
+    const { data: files, refetch: refetchFiles, isLoading: filesLoading } = useQuery(filesQuery(currentPath, data.id));
+    const { data: drives, isLoading: drivesLoading } = useQuery(drivesQuery);
 
     const fullPath = files ? path.join(files.parentPath, files.name) : '';
     const activeDrive = drives?.filter(d => !!d.mountPoint).sort((a, b) => b.mountPoint!.length - a.mountPoint!.length).filter(d => fullPath.startsWith(d.mountPoint!))[0];

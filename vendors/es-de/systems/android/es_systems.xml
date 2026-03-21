@@ -387,6 +387,7 @@
         <command label="Flycast">%EMULATOR_RETROARCH% %EXTRA_CONFIGFILE%=%EXTERNALDATA%/Android/data/%ANDROIDPACKAGE%/files/retroarch.cfg %EXTRA_LIBRETRO%=%INTERNALDATA%/%ANDROIDPACKAGE%/cores/flycast_libretro_android.so %EXTRA_ROM%=%ROM%</command>
         <command label="Flycast (Standalone)">%EMULATOR_FLYCAST% %ACTION%=android.intent.action.VIEW %DATA%=%ROMSAF%</command>
         <command label="Play! (Standalone)">%EMULATOR_PLAY!% %ACTION%=android.intent.action.VIEW %DATA%=%ROMSAF%</command>
+        <command label="Dolphin (Standalone)">%EMULATOR_DOLPHIN% %ACTION%=android.intent.action.MAIN %CATEGORY%=android.intent.category.LEANBACK_LAUNCHER %EXTRA_AutoStartFile%=%ROMSAF%</command>
         <platform>arcade</platform>
         <theme>consolearcade</theme>
     </system>
@@ -1060,6 +1061,7 @@
         <fullname>Sega Model 3</fullname>
         <path>%ROMPATH%/model3</path>
         <extension>.7z .7Z .zip .ZIP</extension>
+        <command label="SUPER3 (Standalone)">%EMULATOR_SUPER3% %ACTION%=android.intent.action.VIEW %DATA%=%ROMSAF%</command>
         <command label="MAME - Current">%EMULATOR_RETROARCH% %EXTRA_CONFIGFILE%=%EXTERNALDATA%/Android/data/%ANDROIDPACKAGE%/files/retroarch.cfg %EXTRA_LIBRETRO%=%INTERNALDATA%/%ANDROIDPACKAGE%/cores/mamearcade_libretro_android.so %EXTRA_ROM%=%ROM%</command>
         <command label="MAME4droid Current (Standalone)">%EMULATOR_MAME4DROID-CURRENT% %ACTION%=android.intent.action.VIEW %EXTRA_cli_params%="-rompath '%GAMEDIRRAW%;%ROMPATHRAW%/model3'" %DATA%=%ROMPROVIDER%</command>
         <platform>arcade</platform>
@@ -1426,6 +1428,7 @@
         <fullname>PICO-8 Fantasy Console</fullname>
         <path>%ROMPATH%/pico8</path>
         <extension>.p8 .P8 .png .PNG</extension>
+        <command label="PICO-8 (Standalone)">%EMULATOR_PICO-8% %DATA%=%ROMSAF%</command>
         <command label="Fake-08">%EMULATOR_RETROARCH% %EXTRA_CONFIGFILE%=%EXTERNALDATA%/Android/data/%ANDROIDPACKAGE%/files/retroarch.cfg %EXTRA_LIBRETRO%=%INTERNALDATA%/%ANDROIDPACKAGE%/cores/fake08_libretro_android.so %EXTRA_ROM%=%ROM%</command>
         <command label="Retro8">%EMULATOR_RETROARCH% %EXTRA_CONFIGFILE%=%EXTERNALDATA%/Android/data/%ANDROIDPACKAGE%/files/retroarch.cfg %EXTRA_LIBRETRO%=%INTERNALDATA%/%ANDROIDPACKAGE%/cores/retro8_libretro_android.so %EXTRA_ROM%=%ROM%</command>
         <command label="Infinity (Standalone)">%EMULATOR_INFINITY% %ACTION%=android.intent.action.VIEW %DATA%=%ROMPROVIDER%</command>
@@ -1764,7 +1767,7 @@
         <name>steam</name>
         <fullname>Valve Steam</fullname>
         <path>%ROMPATH%/steam</path>
-        <extension>.steam</extension>
+        <extension>.pcgame .steam</extension>
         <command label="GameNative (Standalone)">%EMULATOR_GAMENATIVE% %ACTION%=app.gamenative.LAUNCH_GAME %EXTRAINTEGER_app_id%=%INJECT%=%ROM%</command>
         <command label="GameHub Lite (Standalone)">%EMULATOR_GAMEHUB-LITE% %ACTION%=gamehub.lite.LAUNCH_GAME %EXTRABOOL_autoStartGame%=true %EXTRA_steamAppId%=%INJECT%=%ROM% %EXTRA_localGameId%=%INJECT%=%ROM%</command>
         <command label="GameHub Lite Local (Standalone)">%EMULATOR_GAMEHUB-LITE% %ACTION%=gamehub.lite.LAUNCH_GAME %EXTRABOOL_autoStartGame%=true %EXTRA_localGameId%=%INJECT%=%ROM%</command>
@@ -1914,8 +1917,8 @@
         <name>triforce</name>
         <fullname>Namco-Sega-Nintendo Triforce</fullname>
         <path>%ROMPATH%/triforce</path>
-        <extension>.7z .7Z .zip .ZIP</extension>
-        <command>PLACEHOLDER %ROM%</command>
+        <extension>.ciso .CISO .dff .DFF .dol .DOL .elf .ELF .gcm .GCM .gcz .GCZ .iso .ISO .json .JSON .m3u .M3U .rvz .RVZ .tgc .TGC .wad .WAD .wbfs .WBFS .wia .WIA .7z .7Z .zip .ZIP</extension>
+        <command label="Dolphin (Standalone)">%EMULATOR_DOLPHIN% %ACTION%=android.intent.action.MAIN %CATEGORY%=android.intent.category.LEANBACK_LAUNCHER %EXTRA_AutoStartFile%=%ROMSAF%</command>
         <platform>arcade</platform>
         <theme>triforce</theme>
     </system>
@@ -2048,7 +2051,7 @@
         <name>windows</name>
         <fullname>Microsoft Windows</fullname>
         <path>%ROMPATH%/windows</path>
-        <extension>.desktop .steam</extension>
+        <extension>.desktop .epic .gog .pcgame .steam</extension>
         <command label="Winlator Cmod (Standalone)">%EMULATOR_WINLATOR-CMOD% %ACTIVITY_CLEAR_TASK% %ACTIVITY_CLEAR_TOP% %EXTRA_shortcut_path%=%ROM%</command>
         <command label="Winlator Cmod Glibc (Standalone)">%EMULATOR_WINLATOR-GLIBC% %ACTIVITY_CLEAR_TASK% %ACTIVITY_CLEAR_TOP% %EXTRA_shortcut_path%=%ROM%</command>
         <command label="Winlator Cmod PRoot (Standalone)">%EMULATOR_WINLATOR-PROOT% %ACTIVITY_CLEAR_TASK% %ACTIVITY_CLEAR_TOP% %EXTRA_shortcut_path%=%ROM%</command>
@@ -2121,8 +2124,8 @@
         <name>xbox</name>
         <fullname>Microsoft Xbox</fullname>
         <path>%ROMPATH%/xbox</path>
-        <extension>.7z .7Z .zip .ZIP</extension>
-        <command>PLACEHOLDER %ROM%</command>
+        <extension>.iso .ISO .xiso .XISO</extension>
+        <command label="X1 BOX (Standalone)">%EMULATOR_X1-BOX% %ACTION%=android.intent.action.VIEW %DATA%=%ROMSAF%</command>
         <platform>xbox</platform>
         <theme>xbox</theme>
     </system>
@@ -2130,8 +2133,8 @@
         <name>xbox360</name>
         <fullname>Microsoft Xbox 360</fullname>
         <path>%ROMPATH%/xbox360</path>
-        <extension>.7z .7Z .zip .ZIP</extension>
-        <command>PLACEHOLDER %ROM%</command>
+        <extension>. .iso .ISO .xex .XEX .zar .ZAR</extension>
+        <command label="aX360e (Standalone)">%EMULATOR_AX360E% %ACTION%=aenu.intent.action.AX360E %EXTRA_game_uri%=%ROMSAF%</command>
         <platform>xbox360</platform>
         <theme>xbox360</theme>
     </system>

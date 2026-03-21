@@ -1,8 +1,9 @@
 import { setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { FOCUS_KEYS } from "../scripts/types";
 import { useIntersectionObserver } from "usehooks-ts";
+import { FrontEndId } from "@/shared/constants";
 
-export default function LoadMoreButton (data: { isFetching: boolean; lastId?: string; } & FocusParams & InteractParams)
+export default function LoadMoreButton (data: { isFetching: boolean; lastId?: FrontEndId; } & FocusParams & InteractParams)
 {
     const handleAction = (e?: Event) =>
     {

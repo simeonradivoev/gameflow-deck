@@ -1,5 +1,6 @@
 
-import queries from "@/mainview/scripts/queries";
+
+import { storeGetStatsQuery } from "@queries/store";
 import { useQuery } from "@tanstack/react-query";
 import { Joystick, LibraryBig, Save, TriangleAlert } from "lucide-react";
 
@@ -15,7 +16,7 @@ export function StatsSection ({
 }: StatsSectionProps)
 {
 
-    const { data: stats } = useQuery(queries.store.storeGetStatsQuery);
+    const { data: stats } = useQuery(storeGetStatsQuery);
 
     return (
         <section className="px-6 pt-3 pb-4">

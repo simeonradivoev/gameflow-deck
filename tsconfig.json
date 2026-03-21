@@ -34,6 +34,9 @@
       "@schema/*": [
         "./src/bun/api/schema/*"
       ],
+      "@queries/*": [
+        "./src/mainview/scripts/queries/*"
+      ]
     }
   },
   "include": [

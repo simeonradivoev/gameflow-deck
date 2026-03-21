@@ -1,12 +1,13 @@
 import { RPC_URL } from "@/shared/constants";
 import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import FocusDots from "./FocusDots";
 import { scrollIntoNearestParent, useDragScroll } from "../scripts/utils";
 import { Fullscreen } from "lucide-react";
 import Carousel from "./Carousel";
 import { ContextDialog } from "./ContextDialog";
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
+import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
+import { twMerge } from "tailwind-merge";
 
 function Screenshot (data: { path: string; index: number; setFocused?: (index: number) => void; } & InteractParams)
 {
@@ -26,7 +27,43 @@ function Screenshot (data: { path: string; index: number; setFocused?: (index: n
     </div>;
 }
 
-export default function Screenshots (data: { screenshots: string[]; } & FocusParams)
+function Preview (data: { id: string; screenshots?: string[]; preview: number; setPreview: Dispatch<SetStateAction<number | undefined>>; })
+{
+    const { ref, focusKey } = useFocusable({ focusKey: data.id });
+
+    useShortcuts(focusKey, () => [
+        {
+            button: GamePadButtonCode.Left,
+            label: "Left",
+            action: () =>
+            {
+                if (data.preview === undefined || !data.screenshots) return;
+                data.setPreview(p =>
+                {
+                    if (!data.screenshots) return p;
+                    return (data.screenshots.length + (p ?? 0) - 1) % data.screenshots.length;
+                });
+            }
+        },
+        {
+            button: GamePadButtonCode.Right,
+            label: "Right",
+            action: () =>
+            {
+                if (data.preview === undefined || !data.screenshots) return;
+                data.setPreview(p =>
+                {
+                    if (!data.screenshots) return p;
+                    return (p ?? 0 + 1) % data.screenshots.length;
+                });
+            }
+        }
+    ], [data.preview, focusKey, data.screenshots?.length ?? 0]);
+
+    return <img ref={ref} draggable={false} className="object-cover w-full h-full rounded-2xl" src={`${RPC_URL(__HOST__)}${data.screenshots?.[data.preview]}`} loading="lazy" />;
+}
+
+export default function Screenshots (data: { screenshots?: string[]; className?: string; } & FocusParams)
 {
     const [preview, setPreview] = useState<number | undefined>(undefined);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -41,9 +78,10 @@ export default function Screenshots (data: { screenshots: string[]; } & FocusPar
 
     useEffect(() =>
     {
-        if ((focused || hasFocusedChild) && scrollRef.current)
+        if ((focused || hasFocusedChild) && scrollRef.current && data.screenshots)
         {
             const closest = findClosestElementToCenter(scrollRef.current);
+            if (!closest) return;
             const closestIndex = Array.from(scrollRef.current.children).indexOf(closest);
             setFocus(`screenshot-${closestIndex}`);
         }
@@ -54,6 +92,7 @@ export default function Screenshots (data: { screenshots: string[]; } & FocusPar
         const center = element.scrollLeft + element.clientWidth / 2;
 
         const children = Array.from(element.children) as HTMLElement[];
+        if (children.length <= 0) return undefined;
 
         // find child closest to center
         return children.reduce((closest, child) =>
@@ -78,7 +117,7 @@ export default function Screenshots (data: { screenshots: string[]; } & FocusPar
     const handleScroll = (dir: number, element: HTMLDivElement) =>
     {
         const current = findClosestElementToCenter(element);
-
+        if (!current) return;
         const next = (dir > 0 ? current.nextElementSibling : current.previousElementSibling) as HTMLElement | null;
         if (!next) return;
 
@@ -89,42 +128,21 @@ export default function Screenshots (data: { screenshots: string[]; } & FocusPar
         });
     };
 
-    useShortcuts(`screenshots-context-dialog`, () => [
-        {
-            button: GamePadButtonCode.Left,
-            label: "Left",
-            action: () =>
-            {
-                if (preview === undefined) return;
-                setPreview((data.screenshots.length + preview - 1) % data.screenshots.length);
-            }
-        },
-        {
-            button: GamePadButtonCode.Right,
-            label: "Right",
-            action: () =>
-            {
-                if (preview === undefined) return;
-                setPreview((preview + 1) % data.screenshots.length);
-            }
-        }
-    ], [preview, focusKey]);
-
     useDragScroll(scrollRef);
 
-    return <div ref={ref} className="flex flex-col w-full z-0 min-h-0">
+    return <div ref={ref} className={twMerge("flex flex-col w-full z-0 min-h-0", data.className)}>
         <FocusContext value={focusKey}>
             <Carousel scrollHandler={handleScroll} scrollRef={scrollRef} rootClassName="h-full" className="flex gap-6 px-16 py-2 overflow-x-scroll no-scrollbar justify-center-safe h-full" >
-                {data.screenshots.map((s, i) => <Screenshot key={s} index={i} path={s} onAction={() => setPreview(i)} />)}
+                {data.screenshots?.map((s, i) => <Screenshot key={s} index={i} path={s} onAction={() => setPreview(i)} />) ?? <div className="skeleton w-32 h-32"></div>}
             </Carousel>
             <FocusDots scrollElement={scrollRef} />
         </FocusContext>
         {preview !== undefined && <ContextDialog id="screenshots" close={() =>
         {
-            setFocus(`screenshot-${preview}`);
+            setFocus(`screenshot-${preview}`, { instant: true });
             setPreview(undefined);
         }} open={true}>
-            <img draggable={false} className="object-cover w-full h-full rounded-2xl" src={`${RPC_URL(__HOST__)}${data.screenshots[preview]}`} loading="lazy" />
+            <Preview id="screenshot-preview" screenshots={data.screenshots} preview={preview} setPreview={setPreview} />
         </ContextDialog>}
     </div>;
 }

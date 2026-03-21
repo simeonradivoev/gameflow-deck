@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { addCollectionApiCollectionsPost, addExclusionApiConfigExcludePost, addFirmwareApiFirmwarePost, addPlatformApiPlatformsPost, addPlatformBindingApiConfigSystemPlatformsPost, addPlatformVersionApiConfigSystemVersionsPost, addRomApiRomsPost, addRomManualsApiRomsIdManualsPost, addSaveApiSavesPost, addScreenshotApiScreenshotsPost, addSmartCollectionApiCollectionsSmartPost, addStateApiStatesPost, addUserApiUsersPost, authOpenidApiOauthOpenidGet, createInviteLinkApiUsersInviteLinkPost, createRomNoteApiRomsIdNotesPost, createSetupPlatformsApiSetupPlatformsPost, createUserFromInviteApiUsersRegisterPost, deleteCollectionApiCollectionsIdDelete, deleteExclusionApiConfigExcludeExclusionTypeExclusionValueDelete, deleteFirmwareApiFirmwareDeletePost, deletePlatformApiPlatformsIdDelete, deletePlatformBindingApiConfigSystemPlatformsFsSlugDelete, deletePlatformVersionApiConfigSystemVersionsFsSlugDelete, deleteRomManualsApiRomsIdManualsDelete, deleteRomNoteApiRomsIdNotesNoteIdDelete, deleteRomsApiRomsDeletePost, deleteSavesApiSavesDeletePost, deleteSmartCollectionApiCollectionsSmartIdDelete, deleteStatesApiStatesDeletePost, deleteUserApiUsersIdDelete, downloadRomsApiRomsDownloadGet, exportGamelistApiGamelistExportPost, fpkgiFeedApiFeedsFpkgiPlatformSlugGet, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getConfigApiConfigGet, getCurrentUserApiUsersMeGet, getFirmwareApiFirmwareIdGet, getFirmwareContentApiFirmwareIdContentFileNameGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRawAssetApiRawAssetsPathGet, getRomApiRomsIdGet, getRomByHashApiRomsByHashGet, getRomByMetadataProviderApiRomsByMetadataProviderGet, getRomContentApiRomsIdContentFileNameGet, getRomfileApiRomsFilesIdGet, getRomfileContentApiRomsfilesIdContentFileNameGet, getRomFiltersApiRomsFiltersGet, getRomNotesApiRomsIdNotesGet, getRomsApiRomsGet, getRoomsApiNetplayListGet, getSaveApiSavesIdGet, getSavesApiSavesGet, getSetupLibraryInfoApiSetupLibraryGet, getSmartCollectionApiCollectionsSmartIdGet, getSmartCollectionsApiCollectionsSmartGet, getStateApiStatesIdGet, getStatesApiStatesGet, getSupportedPlatformsEndpointApiPlatformsSupportedGet, getTaskByIdApiTasksTaskIdGet, getTasksStatusApiTasksStatusGet, getUserApiUsersIdGet, getUsersApiUsersGet, getVirtualCollectionApiCollectionsVirtualIdGet, getVirtualCollectionsApiCollectionsVirtualGet, heartbeatApiHeartbeatGet, kekatsuDsFeedApiFeedsKekatsuPlatformSlugGet, listTasksApiTasksGet, loginApiLoginPost, loginViaOpenidApiLoginOpenidGet, logoutApiLogoutPost, metadataHeartbeatApiHeartbeatMetadataSourceGet, type Options, pkgiPs3FeedApiFeedsPkgiPs3ContentTypeGet, pkgiPspFeedApiFeedsPkgiPspContentTypeGet, pkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGet, platformsWebrcadeFeedApiFeedsWebrcadeGet, refreshRetroAchievementsApiUsersIdRaRefreshPost, requestPasswordResetApiForgotPasswordPost, resetPasswordApiResetPasswordPost, runAllTasksApiTasksRunPost, runSingleTaskApiTasksRunTaskNamePost, searchCoverApiSearchCoverGet, searchRomApiSearchRomsGet, statsApiStatsGet, tinfoilIndexFeedApiFeedsTinfoilGet, tokenApiTokenPost, updateCollectionApiCollectionsIdPut, updatePlatformApiPlatformsIdPut, updateRomApiRomsIdPut, updateRomNoteApiRomsIdNotesNoteIdPut, updateRomUserApiRomsIdPropsPut, updateSaveApiSavesIdPut, updateSmartCollectionApiCollectionsSmartIdPut, updateStateApiStatesIdPut, updateUserApiUsersIdPut } from '../sdk.gen';
-import type { AddCollectionApiCollectionsPostData, AddCollectionApiCollectionsPostError, AddCollectionApiCollectionsPostResponse, AddExclusionApiConfigExcludePostData, AddFirmwareApiFirmwarePostData, AddFirmwareApiFirmwarePostError, AddFirmwareApiFirmwarePostResponse, AddPlatformApiPlatformsPostData, AddPlatformApiPlatformsPostError, AddPlatformApiPlatformsPostResponse, AddPlatformBindingApiConfigSystemPlatformsPostData, AddPlatformVersionApiConfigSystemVersionsPostData, AddRomApiRomsPostData, AddRomApiRomsPostError, AddRomManualsApiRomsIdManualsPostData, AddRomManualsApiRomsIdManualsPostError, AddSaveApiSavesPostData, AddSaveApiSavesPostError, AddSaveApiSavesPostResponse, AddScreenshotApiScreenshotsPostData, AddScreenshotApiScreenshotsPostError, AddScreenshotApiScreenshotsPostResponse, AddSmartCollectionApiCollectionsSmartPostData, AddSmartCollectionApiCollectionsSmartPostError, AddSmartCollectionApiCollectionsSmartPostResponse, AddStateApiStatesPostData, AddStateApiStatesPostError, AddStateApiStatesPostResponse, AddUserApiUsersPostData, AddUserApiUsersPostError, AddUserApiUsersPostResponse, AuthOpenidApiOauthOpenidGetData, CreateInviteLinkApiUsersInviteLinkPostData, CreateInviteLinkApiUsersInviteLinkPostError, CreateInviteLinkApiUsersInviteLinkPostResponse, CreateRomNoteApiRomsIdNotesPostData, CreateRomNoteApiRomsIdNotesPostError, CreateRomNoteApiRomsIdNotesPostResponse, CreateSetupPlatformsApiSetupPlatformsPostData, CreateSetupPlatformsApiSetupPlatformsPostError, CreateUserFromInviteApiUsersRegisterPostData, CreateUserFromInviteApiUsersRegisterPostError, CreateUserFromInviteApiUsersRegisterPostResponse, DeleteCollectionApiCollectionsIdDeleteData, DeleteCollectionApiCollectionsIdDeleteError, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteData, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteError, DeleteFirmwareApiFirmwareDeletePostData, DeleteFirmwareApiFirmwareDeletePostError, DeleteFirmwareApiFirmwareDeletePostResponse, DeletePlatformApiPlatformsIdDeleteData, DeletePlatformApiPlatformsIdDeleteError, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteData, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteError, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteData, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteError, DeleteRomManualsApiRomsIdManualsDeleteData, DeleteRomManualsApiRomsIdManualsDeleteError, DeleteRomNoteApiRomsIdNotesNoteIdDeleteData, DeleteRomNoteApiRomsIdNotesNoteIdDeleteError, DeleteRomNoteApiRomsIdNotesNoteIdDeleteResponse, DeleteRomsApiRomsDeletePostData, DeleteRomsApiRomsDeletePostError, DeleteRomsApiRomsDeletePostResponse, DeleteSavesApiSavesDeletePostData, DeleteSavesApiSavesDeletePostError, DeleteSavesApiSavesDeletePostResponse, DeleteSmartCollectionApiCollectionsSmartIdDeleteData, DeleteSmartCollectionApiCollectionsSmartIdDeleteError, DeleteStatesApiStatesDeletePostData, DeleteStatesApiStatesDeletePostError, DeleteStatesApiStatesDeletePostResponse, DeleteUserApiUsersIdDeleteData, DeleteUserApiUsersIdDeleteError, DownloadRomsApiRomsDownloadGetData, DownloadRomsApiRomsDownloadGetError, ExportGamelistApiGamelistExportPostData, ExportGamelistApiGamelistExportPostError, FpkgiFeedApiFeedsFpkgiPlatformSlugGetData, FpkgiFeedApiFeedsFpkgiPlatformSlugGetError, GetCollectionApiCollectionsIdGetData, GetCollectionApiCollectionsIdGetError, GetCollectionApiCollectionsIdGetResponse, GetCollectionsApiCollectionsGetData, GetCollectionsApiCollectionsGetError, GetCollectionsApiCollectionsGetResponse, GetConfigApiConfigGetData, GetConfigApiConfigGetResponse, GetCurrentUserApiUsersMeGetData, GetCurrentUserApiUsersMeGetResponse, GetFirmwareApiFirmwareIdGetData, GetFirmwareApiFirmwareIdGetError, GetFirmwareApiFirmwareIdGetResponse, GetFirmwareContentApiFirmwareIdContentFileNameGetData, GetFirmwareContentApiFirmwareIdContentFileNameGetError, GetPlatformApiPlatformsIdGetData, GetPlatformApiPlatformsIdGetError, GetPlatformApiPlatformsIdGetResponse, GetPlatformFirmwareApiFirmwareGetData, GetPlatformFirmwareApiFirmwareGetError, GetPlatformFirmwareApiFirmwareGetResponse, GetPlatformsApiPlatformsGetData, GetPlatformsApiPlatformsGetError, GetPlatformsApiPlatformsGetResponse, GetRawAssetApiRawAssetsPathGetData, GetRawAssetApiRawAssetsPathGetError, GetRomApiRomsIdGetData, GetRomApiRomsIdGetError, GetRomApiRomsIdGetResponse, GetRomByHashApiRomsByHashGetData, GetRomByHashApiRomsByHashGetError, GetRomByHashApiRomsByHashGetResponse, GetRomByMetadataProviderApiRomsByMetadataProviderGetData, GetRomByMetadataProviderApiRomsByMetadataProviderGetError, GetRomByMetadataProviderApiRomsByMetadataProviderGetResponse, GetRomContentApiRomsIdContentFileNameGetData, GetRomContentApiRomsIdContentFileNameGetError, GetRomfileApiRomsFilesIdGetData, GetRomfileApiRomsFilesIdGetError, GetRomfileApiRomsFilesIdGetResponse, GetRomfileContentApiRomsfilesIdContentFileNameGetData, GetRomfileContentApiRomsfilesIdContentFileNameGetError, GetRomFiltersApiRomsFiltersGetData, GetRomFiltersApiRomsFiltersGetResponse, GetRomNotesApiRomsIdNotesGetData, GetRomNotesApiRomsIdNotesGetError, GetRomNotesApiRomsIdNotesGetResponse, GetRomsApiRomsGetData, GetRomsApiRomsGetError, GetRomsApiRomsGetResponse, GetRoomsApiNetplayListGetData, GetRoomsApiNetplayListGetError, GetRoomsApiNetplayListGetResponse, GetSaveApiSavesIdGetData, GetSaveApiSavesIdGetError, GetSaveApiSavesIdGetResponse, GetSavesApiSavesGetData, GetSavesApiSavesGetError, GetSavesApiSavesGetResponse, GetSetupLibraryInfoApiSetupLibraryGetData, GetSmartCollectionApiCollectionsSmartIdGetData, GetSmartCollectionApiCollectionsSmartIdGetError, GetSmartCollectionApiCollectionsSmartIdGetResponse, GetSmartCollectionsApiCollectionsSmartGetData, GetSmartCollectionsApiCollectionsSmartGetError, GetSmartCollectionsApiCollectionsSmartGetResponse, GetStateApiStatesIdGetData, GetStateApiStatesIdGetError, GetStateApiStatesIdGetResponse, GetStatesApiStatesGetData, GetStatesApiStatesGetError, GetStatesApiStatesGetResponse, GetSupportedPlatformsEndpointApiPlatformsSupportedGetData, GetSupportedPlatformsEndpointApiPlatformsSupportedGetResponse, GetTaskByIdApiTasksTaskIdGetData, GetTaskByIdApiTasksTaskIdGetError, GetTaskByIdApiTasksTaskIdGetResponse, GetTasksStatusApiTasksStatusGetData, GetTasksStatusApiTasksStatusGetResponse, GetUserApiUsersIdGetData, GetUserApiUsersIdGetError, GetUserApiUsersIdGetResponse, GetUsersApiUsersGetData, GetUsersApiUsersGetResponse, GetVirtualCollectionApiCollectionsVirtualIdGetData, GetVirtualCollectionApiCollectionsVirtualIdGetError, GetVirtualCollectionApiCollectionsVirtualIdGetResponse, GetVirtualCollectionsApiCollectionsVirtualGetData, GetVirtualCollectionsApiCollectionsVirtualGetError, GetVirtualCollectionsApiCollectionsVirtualGetResponse, HeartbeatApiHeartbeatGetData, HeartbeatApiHeartbeatGetResponse, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetData, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetError, ListTasksApiTasksGetData, ListTasksApiTasksGetResponse, LoginApiLoginPostData, LoginViaOpenidApiLoginOpenidGetData, LogoutApiLogoutPostData, MetadataHeartbeatApiHeartbeatMetadataSourceGetData, MetadataHeartbeatApiHeartbeatMetadataSourceGetError, MetadataHeartbeatApiHeartbeatMetadataSourceGetResponse, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetData, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetError, PkgiPspFeedApiFeedsPkgiPspContentTypeGetData, PkgiPspFeedApiFeedsPkgiPspContentTypeGetError, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetData, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetError, PlatformsWebrcadeFeedApiFeedsWebrcadeGetData, PlatformsWebrcadeFeedApiFeedsWebrcadeGetResponse, RefreshRetroAchievementsApiUsersIdRaRefreshPostData, RefreshRetroAchievementsApiUsersIdRaRefreshPostError, RequestPasswordResetApiForgotPasswordPostData, RequestPasswordResetApiForgotPasswordPostError, ResetPasswordApiResetPasswordPostData, ResetPasswordApiResetPasswordPostError, RunAllTasksApiTasksRunPostData, RunAllTasksApiTasksRunPostResponse, RunSingleTaskApiTasksRunTaskNamePostData, RunSingleTaskApiTasksRunTaskNamePostError, RunSingleTaskApiTasksRunTaskNamePostResponse, SearchCoverApiSearchCoverGetData, SearchCoverApiSearchCoverGetError, SearchCoverApiSearchCoverGetResponse, SearchRomApiSearchRomsGetData, SearchRomApiSearchRomsGetError, SearchRomApiSearchRomsGetResponse, StatsApiStatsGetData, StatsApiStatsGetResponse, TinfoilIndexFeedApiFeedsTinfoilGetData, TinfoilIndexFeedApiFeedsTinfoilGetError, TinfoilIndexFeedApiFeedsTinfoilGetResponse, TokenApiTokenPostData, TokenApiTokenPostError, TokenApiTokenPostResponse, UpdateCollectionApiCollectionsIdPutData, UpdateCollectionApiCollectionsIdPutError, UpdateCollectionApiCollectionsIdPutResponse, UpdatePlatformApiPlatformsIdPutData, UpdatePlatformApiPlatformsIdPutError, UpdatePlatformApiPlatformsIdPutResponse, UpdateRomApiRomsIdPutData, UpdateRomApiRomsIdPutError, UpdateRomApiRomsIdPutResponse, UpdateRomNoteApiRomsIdNotesNoteIdPutData, UpdateRomNoteApiRomsIdNotesNoteIdPutError, UpdateRomNoteApiRomsIdNotesNoteIdPutResponse, UpdateRomUserApiRomsIdPropsPutData, UpdateRomUserApiRomsIdPropsPutError, UpdateRomUserApiRomsIdPropsPutResponse, UpdateSaveApiSavesIdPutData, UpdateSaveApiSavesIdPutError, UpdateSaveApiSavesIdPutResponse, UpdateSmartCollectionApiCollectionsSmartIdPutData, UpdateSmartCollectionApiCollectionsSmartIdPutError, UpdateSmartCollectionApiCollectionsSmartIdPutResponse, UpdateStateApiStatesIdPutData, UpdateStateApiStatesIdPutError, UpdateStateApiStatesIdPutResponse, UpdateUserApiUsersIdPutData, UpdateUserApiUsersIdPutError, UpdateUserApiUsersIdPutResponse } from '../types.gen';
+import { addCollectionApiCollectionsPost, addExclusionApiConfigExcludePost, addFirmwareApiFirmwarePost, addPlatformApiPlatformsPost, addPlatformBindingApiConfigSystemPlatformsPost, addPlatformVersionApiConfigSystemVersionsPost, addRomApiRomsPost, addRomManualsApiRomsIdManualsPost, addSaveApiSavesPost, addScreenshotApiScreenshotsPost, addSmartCollectionApiCollectionsSmartPost, addStateApiStatesPost, addUserApiUsersPost, authOpenidApiOauthOpenidGet, confirmDownloadApiSavesIdDownloadedPost, createInviteLinkApiUsersInviteLinkPost, createRomNoteApiRomsIdNotesPost, createSetupPlatformsApiSetupPlatformsPost, createUserFromInviteApiUsersRegisterPost, deleteCollectionApiCollectionsIdDelete, deleteDeviceApiDevicesDeviceIdDelete, deleteExclusionApiConfigExcludeExclusionTypeExclusionValueDelete, deleteFirmwareApiFirmwareDeletePost, deletePlatformApiPlatformsIdDelete, deletePlatformBindingApiConfigSystemPlatformsFsSlugDelete, deletePlatformVersionApiConfigSystemVersionsFsSlugDelete, deleteRomManualsApiRomsIdManualsDelete, deleteRomNoteApiRomsIdNotesNoteIdDelete, deleteRomsApiRomsDeletePost, deleteSavesApiSavesDeletePost, deleteSmartCollectionApiCollectionsSmartIdDelete, deleteStatesApiStatesDeletePost, deleteUserApiUsersIdDelete, downloadRomsApiRomsDownloadGet, downloadSaveApiSavesIdContentGet, exportGamelistApiGamelistExportPost, fpkgiFeedApiFeedsFpkgiPlatformSlugGet, getCollectionApiCollectionsIdGet, getCollectionIdentifiersApiCollectionsIdentifiersGet, getCollectionsApiCollectionsGet, getConfigApiConfigGet, getCurrentUserApiUsersMeGet, getDeviceApiDevicesDeviceIdGet, getDevicesApiDevicesGet, getFirmwareApiFirmwareIdGet, getFirmwareContentApiFirmwareIdContentFileNameGet, getFirmwareIdentifiersApiFirmwareIdentifiersGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformIdentifiersApiPlatformsIdentifiersGet, getPlatformsApiPlatformsGet, getRawAssetApiRawAssetsPathGet, getRomApiRomsIdGet, getRomByHashApiRomsByHashGet, getRomByMetadataProviderApiRomsByMetadataProviderGet, getRomContentApiRomsIdContentFileNameGet, getRomfileApiRomsFilesIdGet, getRomfileContentApiRomsfilesIdContentFileNameGet, getRomFiltersApiRomsFiltersGet, getRomIdentifiersApiRomsIdentifiersGet, getRomNoteIdentifiersApiRomsIdNotesIdentifiersGet, getRomNotesApiRomsIdNotesGet, getRomsApiRomsGet, getRoomsApiNetplayListGet, getSaveApiSavesIdGet, getSaveIdentifiersApiSavesIdentifiersGet, getSavesApiSavesGet, getSavesSummaryApiSavesSummaryGet, getSetupLibraryInfoApiSetupLibraryGet, getSmartCollectionApiCollectionsSmartIdGet, getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGet, getSmartCollectionsApiCollectionsSmartGet, getStateApiStatesIdGet, getStateIdentifiersApiStatesIdentifiersGet, getStatesApiStatesGet, getSupportedPlatformsEndpointApiPlatformsSupportedGet, getTaskByIdApiTasksTaskIdGet, getTasksStatusApiTasksStatusGet, getUserApiUsersIdGet, getUserIdentifiersApiUsersIdentifiersGet, getUsersApiUsersGet, getVirtualCollectionApiCollectionsVirtualIdGet, getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGet, getVirtualCollectionsApiCollectionsVirtualGet, heartbeatApiHeartbeatGet, kekatsuDsFeedApiFeedsKekatsuPlatformSlugGet, listTasksApiTasksGet, loginApiLoginPost, loginViaOpenidApiLoginOpenidGet, logoutApiLogoutPost, metadataHeartbeatApiHeartbeatMetadataSourceGet, type Options, pkgiPs3FeedApiFeedsPkgiPs3ContentTypeGet, pkgiPspFeedApiFeedsPkgiPspContentTypeGet, pkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGet, pkgjPspDlcsFeedApiFeedsPkgjPspDlcGet, pkgjPspGamesFeedApiFeedsPkgjPspGamesGet, pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGet, pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGet, pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGet, platformsWebrcadeFeedApiFeedsWebrcadeGet, refreshRetroAchievementsApiUsersIdRaRefreshPost, registerDeviceApiDevicesPost, requestPasswordResetApiForgotPasswordPost, resetPasswordApiResetPasswordPost, runAllTasksApiTasksRunPost, runSingleTaskApiTasksRunTaskNamePost, searchCoverApiSearchCoverGet, searchRomApiSearchRomsGet, statsApiStatsGet, tinfoilIndexFeedApiFeedsTinfoilGet, tokenApiTokenPost, trackSaveApiSavesIdTrackPost, untrackSaveApiSavesIdUntrackPost, updateCollectionApiCollectionsIdPut, updateDeviceApiDevicesDeviceIdPut, updatePlatformApiPlatformsIdPut, updateRomApiRomsIdPut, updateRomNoteApiRomsIdNotesNoteIdPut, updateRomUserApiRomsIdPropsPut, updateSaveApiSavesIdPut, updateSmartCollectionApiCollectionsSmartIdPut, updateStateApiStatesIdPut, updateUserApiUsersIdPut } from '../sdk.gen';
+import type { AddCollectionApiCollectionsPostData, AddCollectionApiCollectionsPostError, AddCollectionApiCollectionsPostResponse, AddExclusionApiConfigExcludePostData, AddFirmwareApiFirmwarePostData, AddFirmwareApiFirmwarePostError, AddFirmwareApiFirmwarePostResponse, AddPlatformApiPlatformsPostData, AddPlatformApiPlatformsPostError, AddPlatformApiPlatformsPostResponse, AddPlatformBindingApiConfigSystemPlatformsPostData, AddPlatformVersionApiConfigSystemVersionsPostData, AddRomApiRomsPostData, AddRomApiRomsPostError, AddRomManualsApiRomsIdManualsPostData, AddRomManualsApiRomsIdManualsPostError, AddSaveApiSavesPostData, AddSaveApiSavesPostError, AddSaveApiSavesPostResponse, AddScreenshotApiScreenshotsPostData, AddScreenshotApiScreenshotsPostError, AddScreenshotApiScreenshotsPostResponse, AddSmartCollectionApiCollectionsSmartPostData, AddSmartCollectionApiCollectionsSmartPostError, AddSmartCollectionApiCollectionsSmartPostResponse, AddStateApiStatesPostData, AddStateApiStatesPostError, AddStateApiStatesPostResponse, AddUserApiUsersPostData, AddUserApiUsersPostError, AddUserApiUsersPostResponse, AuthOpenidApiOauthOpenidGetData, ConfirmDownloadApiSavesIdDownloadedPostData, ConfirmDownloadApiSavesIdDownloadedPostError, ConfirmDownloadApiSavesIdDownloadedPostResponse, CreateInviteLinkApiUsersInviteLinkPostData, CreateInviteLinkApiUsersInviteLinkPostError, CreateInviteLinkApiUsersInviteLinkPostResponse, CreateRomNoteApiRomsIdNotesPostData, CreateRomNoteApiRomsIdNotesPostError, CreateRomNoteApiRomsIdNotesPostResponse, CreateSetupPlatformsApiSetupPlatformsPostData, CreateSetupPlatformsApiSetupPlatformsPostError, CreateUserFromInviteApiUsersRegisterPostData, CreateUserFromInviteApiUsersRegisterPostError, CreateUserFromInviteApiUsersRegisterPostResponse, DeleteCollectionApiCollectionsIdDeleteData, DeleteCollectionApiCollectionsIdDeleteError, DeleteDeviceApiDevicesDeviceIdDeleteData, DeleteDeviceApiDevicesDeviceIdDeleteError, DeleteDeviceApiDevicesDeviceIdDeleteResponse, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteData, DeleteExclusionApiConfigExcludeExclusionTypeExclusionValueDeleteError, DeleteFirmwareApiFirmwareDeletePostData, DeleteFirmwareApiFirmwareDeletePostError, DeleteFirmwareApiFirmwareDeletePostResponse, DeletePlatformApiPlatformsIdDeleteData, DeletePlatformApiPlatformsIdDeleteError, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteData, DeletePlatformBindingApiConfigSystemPlatformsFsSlugDeleteError, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteData, DeletePlatformVersionApiConfigSystemVersionsFsSlugDeleteError, DeleteRomManualsApiRomsIdManualsDeleteData, DeleteRomManualsApiRomsIdManualsDeleteError, DeleteRomNoteApiRomsIdNotesNoteIdDeleteData, DeleteRomNoteApiRomsIdNotesNoteIdDeleteError, DeleteRomNoteApiRomsIdNotesNoteIdDeleteResponse, DeleteRomsApiRomsDeletePostData, DeleteRomsApiRomsDeletePostError, DeleteRomsApiRomsDeletePostResponse, DeleteSavesApiSavesDeletePostData, DeleteSavesApiSavesDeletePostError, DeleteSavesApiSavesDeletePostResponse, DeleteSmartCollectionApiCollectionsSmartIdDeleteData, DeleteSmartCollectionApiCollectionsSmartIdDeleteError, DeleteStatesApiStatesDeletePostData, DeleteStatesApiStatesDeletePostError, DeleteStatesApiStatesDeletePostResponse, DeleteUserApiUsersIdDeleteData, DeleteUserApiUsersIdDeleteError, DownloadRomsApiRomsDownloadGetData, DownloadRomsApiRomsDownloadGetError, DownloadSaveApiSavesIdContentGetData, DownloadSaveApiSavesIdContentGetError, ExportGamelistApiGamelistExportPostData, ExportGamelistApiGamelistExportPostError, FpkgiFeedApiFeedsFpkgiPlatformSlugGetData, FpkgiFeedApiFeedsFpkgiPlatformSlugGetError, GetCollectionApiCollectionsIdGetData, GetCollectionApiCollectionsIdGetError, GetCollectionApiCollectionsIdGetResponse, GetCollectionIdentifiersApiCollectionsIdentifiersGetData, GetCollectionIdentifiersApiCollectionsIdentifiersGetResponse, GetCollectionsApiCollectionsGetData, GetCollectionsApiCollectionsGetError, GetCollectionsApiCollectionsGetResponse, GetConfigApiConfigGetData, GetConfigApiConfigGetResponse, GetCurrentUserApiUsersMeGetData, GetCurrentUserApiUsersMeGetResponse, GetDeviceApiDevicesDeviceIdGetData, GetDeviceApiDevicesDeviceIdGetError, GetDeviceApiDevicesDeviceIdGetResponse, GetDevicesApiDevicesGetData, GetDevicesApiDevicesGetResponse, GetFirmwareApiFirmwareIdGetData, GetFirmwareApiFirmwareIdGetError, GetFirmwareApiFirmwareIdGetResponse, GetFirmwareContentApiFirmwareIdContentFileNameGetData, GetFirmwareContentApiFirmwareIdContentFileNameGetError, GetFirmwareIdentifiersApiFirmwareIdentifiersGetData, GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponse, GetPlatformApiPlatformsIdGetData, GetPlatformApiPlatformsIdGetError, GetPlatformApiPlatformsIdGetResponse, GetPlatformFirmwareApiFirmwareGetData, GetPlatformFirmwareApiFirmwareGetError, GetPlatformFirmwareApiFirmwareGetResponse, GetPlatformIdentifiersApiPlatformsIdentifiersGetData, GetPlatformIdentifiersApiPlatformsIdentifiersGetResponse, GetPlatformsApiPlatformsGetData, GetPlatformsApiPlatformsGetError, GetPlatformsApiPlatformsGetResponse, GetRawAssetApiRawAssetsPathGetData, GetRawAssetApiRawAssetsPathGetError, GetRomApiRomsIdGetData, GetRomApiRomsIdGetError, GetRomApiRomsIdGetResponse, GetRomByHashApiRomsByHashGetData, GetRomByHashApiRomsByHashGetError, GetRomByHashApiRomsByHashGetResponse, GetRomByMetadataProviderApiRomsByMetadataProviderGetData, GetRomByMetadataProviderApiRomsByMetadataProviderGetError, GetRomByMetadataProviderApiRomsByMetadataProviderGetResponse, GetRomContentApiRomsIdContentFileNameGetData, GetRomContentApiRomsIdContentFileNameGetError, GetRomfileApiRomsFilesIdGetData, GetRomfileApiRomsFilesIdGetError, GetRomfileApiRomsFilesIdGetResponse, GetRomfileContentApiRomsfilesIdContentFileNameGetData, GetRomfileContentApiRomsfilesIdContentFileNameGetError, GetRomFiltersApiRomsFiltersGetData, GetRomFiltersApiRomsFiltersGetResponse, GetRomIdentifiersApiRomsIdentifiersGetData, GetRomIdentifiersApiRomsIdentifiersGetResponse, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetData, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetError, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponse, GetRomNotesApiRomsIdNotesGetData, GetRomNotesApiRomsIdNotesGetError, GetRomNotesApiRomsIdNotesGetResponse, GetRomsApiRomsGetData, GetRomsApiRomsGetError, GetRomsApiRomsGetResponse, GetRoomsApiNetplayListGetData, GetRoomsApiNetplayListGetError, GetRoomsApiNetplayListGetResponse, GetSaveApiSavesIdGetData, GetSaveApiSavesIdGetError, GetSaveApiSavesIdGetResponse, GetSaveIdentifiersApiSavesIdentifiersGetData, GetSaveIdentifiersApiSavesIdentifiersGetResponse, GetSavesApiSavesGetData, GetSavesApiSavesGetError, GetSavesApiSavesGetResponse, GetSavesSummaryApiSavesSummaryGetData, GetSavesSummaryApiSavesSummaryGetError, GetSavesSummaryApiSavesSummaryGetResponse, GetSetupLibraryInfoApiSetupLibraryGetData, GetSmartCollectionApiCollectionsSmartIdGetData, GetSmartCollectionApiCollectionsSmartIdGetError, GetSmartCollectionApiCollectionsSmartIdGetResponse, GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetData, GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponse, GetSmartCollectionsApiCollectionsSmartGetData, GetSmartCollectionsApiCollectionsSmartGetError, GetSmartCollectionsApiCollectionsSmartGetResponse, GetStateApiStatesIdGetData, GetStateApiStatesIdGetError, GetStateApiStatesIdGetResponse, GetStateIdentifiersApiStatesIdentifiersGetData, GetStateIdentifiersApiStatesIdentifiersGetResponse, GetStatesApiStatesGetData, GetStatesApiStatesGetError, GetStatesApiStatesGetResponse, GetSupportedPlatformsEndpointApiPlatformsSupportedGetData, GetSupportedPlatformsEndpointApiPlatformsSupportedGetResponse, GetTaskByIdApiTasksTaskIdGetData, GetTaskByIdApiTasksTaskIdGetError, GetTaskByIdApiTasksTaskIdGetResponse, GetTasksStatusApiTasksStatusGetData, GetTasksStatusApiTasksStatusGetResponse, GetUserApiUsersIdGetData, GetUserApiUsersIdGetError, GetUserApiUsersIdGetResponse, GetUserIdentifiersApiUsersIdentifiersGetData, GetUserIdentifiersApiUsersIdentifiersGetResponse, GetUsersApiUsersGetData, GetUsersApiUsersGetResponse, GetVirtualCollectionApiCollectionsVirtualIdGetData, GetVirtualCollectionApiCollectionsVirtualIdGetError, GetVirtualCollectionApiCollectionsVirtualIdGetResponse, GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetData, GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponse, GetVirtualCollectionsApiCollectionsVirtualGetData, GetVirtualCollectionsApiCollectionsVirtualGetError, GetVirtualCollectionsApiCollectionsVirtualGetResponse, HeartbeatApiHeartbeatGetData, HeartbeatApiHeartbeatGetResponse, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetData, KekatsuDsFeedApiFeedsKekatsuPlatformSlugGetError, ListTasksApiTasksGetData, ListTasksApiTasksGetResponse, LoginApiLoginPostData, LoginViaOpenidApiLoginOpenidGetData, LogoutApiLogoutPostData, MetadataHeartbeatApiHeartbeatMetadataSourceGetData, MetadataHeartbeatApiHeartbeatMetadataSourceGetError, MetadataHeartbeatApiHeartbeatMetadataSourceGetResponse, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetData, PkgiPs3FeedApiFeedsPkgiPs3ContentTypeGetError, PkgiPspFeedApiFeedsPkgiPspContentTypeGetData, PkgiPspFeedApiFeedsPkgiPspContentTypeGetError, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetData, PkgiPsvitaFeedApiFeedsPkgiPsvitaContentTypeGetError, PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetData, PkgjPspGamesFeedApiFeedsPkgjPspGamesGetData, PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetData, PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetData, PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetData, PlatformsWebrcadeFeedApiFeedsWebrcadeGetData, PlatformsWebrcadeFeedApiFeedsWebrcadeGetResponse, RefreshRetroAchievementsApiUsersIdRaRefreshPostData, RefreshRetroAchievementsApiUsersIdRaRefreshPostError, RegisterDeviceApiDevicesPostData, RegisterDeviceApiDevicesPostError, RegisterDeviceApiDevicesPostResponse, RequestPasswordResetApiForgotPasswordPostData, RequestPasswordResetApiForgotPasswordPostError, ResetPasswordApiResetPasswordPostData, ResetPasswordApiResetPasswordPostError, RunAllTasksApiTasksRunPostData, RunAllTasksApiTasksRunPostResponse, RunSingleTaskApiTasksRunTaskNamePostData, RunSingleTaskApiTasksRunTaskNamePostError, RunSingleTaskApiTasksRunTaskNamePostResponse, SearchCoverApiSearchCoverGetData, SearchCoverApiSearchCoverGetError, SearchCoverApiSearchCoverGetResponse, SearchRomApiSearchRomsGetData, SearchRomApiSearchRomsGetError, SearchRomApiSearchRomsGetResponse, StatsApiStatsGetData, StatsApiStatsGetResponse, TinfoilIndexFeedApiFeedsTinfoilGetData, TinfoilIndexFeedApiFeedsTinfoilGetError, TinfoilIndexFeedApiFeedsTinfoilGetResponse, TokenApiTokenPostData, TokenApiTokenPostError, TokenApiTokenPostResponse, TrackSaveApiSavesIdTrackPostData, TrackSaveApiSavesIdTrackPostError, TrackSaveApiSavesIdTrackPostResponse, UntrackSaveApiSavesIdUntrackPostData, UntrackSaveApiSavesIdUntrackPostError, UntrackSaveApiSavesIdUntrackPostResponse, UpdateCollectionApiCollectionsIdPutData, UpdateCollectionApiCollectionsIdPutError, UpdateCollectionApiCollectionsIdPutResponse, UpdateDeviceApiDevicesDeviceIdPutData, UpdateDeviceApiDevicesDeviceIdPutError, UpdateDeviceApiDevicesDeviceIdPutResponse, UpdatePlatformApiPlatformsIdPutData, UpdatePlatformApiPlatformsIdPutError, UpdatePlatformApiPlatformsIdPutResponse, UpdateRomApiRomsIdPutData, UpdateRomApiRomsIdPutError, UpdateRomApiRomsIdPutResponse, UpdateRomNoteApiRomsIdNotesNoteIdPutData, UpdateRomNoteApiRomsIdNotesNoteIdPutError, UpdateRomNoteApiRomsIdNotesNoteIdPutResponse, UpdateRomUserApiRomsIdPropsPutData, UpdateRomUserApiRomsIdPropsPutError, UpdateRomUserApiRomsIdPropsPutResponse, UpdateSaveApiSavesIdPutData, UpdateSaveApiSavesIdPutError, UpdateSaveApiSavesIdPutResponse, UpdateSmartCollectionApiCollectionsSmartIdPutData, UpdateSmartCollectionApiCollectionsSmartIdPutError, UpdateSmartCollectionApiCollectionsSmartIdPutResponse, UpdateStateApiStatesIdPutData, UpdateStateApiStatesIdPutError, UpdateStateApiStatesIdPutResponse, UpdateUserApiUsersIdPutData, UpdateUserApiUsersIdPutError, UpdateUserApiUsersIdPutResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -442,6 +442,32 @@ export const createUserFromInviteApiUsersRegisterPostMutation = (options?: Parti
     return mutationOptions;
 };
 
+export const getUserIdentifiersApiUsersIdentifiersGetQueryKey = (options?: Options<GetUserIdentifiersApiUsersIdentifiersGetData>) => createQueryKey('getUserIdentifiersApiUsersIdentifiersGet', options);
+
+/**
+ * Get User Identifiers
+ *
+ * Get all user identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: All user ids stored in the RomM's database
+ */
+export const getUserIdentifiersApiUsersIdentifiersGetOptions = (options?: Options<GetUserIdentifiersApiUsersIdentifiersGetData>) => queryOptions<GetUserIdentifiersApiUsersIdentifiersGetResponse, DefaultError, GetUserIdentifiersApiUsersIdentifiersGetResponse, ReturnType<typeof getUserIdentifiersApiUsersIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getUserIdentifiersApiUsersIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getUserIdentifiersApiUsersIdentifiersGetQueryKey(options)
+});
+
 export const getCurrentUserApiUsersMeGetQueryKey = (options?: Options<GetCurrentUserApiUsersMeGetData>) => createQueryKey('getCurrentUserApiUsersMeGet', options);
 
 /**
@@ -568,6 +594,93 @@ export const refreshRetroAchievementsApiUsersIdRaRefreshPostMutation = (options?
     return mutationOptions;
 };
 
+export const getDevicesApiDevicesGetQueryKey = (options?: Options<GetDevicesApiDevicesGetData>) => createQueryKey('getDevicesApiDevicesGet', options);
+
+/**
+ * Get Devices
+ */
+export const getDevicesApiDevicesGetOptions = (options?: Options<GetDevicesApiDevicesGetData>) => queryOptions<GetDevicesApiDevicesGetResponse, DefaultError, GetDevicesApiDevicesGetResponse, ReturnType<typeof getDevicesApiDevicesGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getDevicesApiDevicesGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getDevicesApiDevicesGetQueryKey(options)
+});
+
+/**
+ * Register Device
+ */
+export const registerDeviceApiDevicesPostMutation = (options?: Partial<Options<RegisterDeviceApiDevicesPostData>>): UseMutationOptions<RegisterDeviceApiDevicesPostResponse, RegisterDeviceApiDevicesPostError, Options<RegisterDeviceApiDevicesPostData>> => {
+    const mutationOptions: UseMutationOptions<RegisterDeviceApiDevicesPostResponse, RegisterDeviceApiDevicesPostError, Options<RegisterDeviceApiDevicesPostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await registerDeviceApiDevicesPost({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete Device
+ */
+export const deleteDeviceApiDevicesDeviceIdDeleteMutation = (options?: Partial<Options<DeleteDeviceApiDevicesDeviceIdDeleteData>>): UseMutationOptions<DeleteDeviceApiDevicesDeviceIdDeleteResponse, DeleteDeviceApiDevicesDeviceIdDeleteError, Options<DeleteDeviceApiDevicesDeviceIdDeleteData>> => {
+    const mutationOptions: UseMutationOptions<DeleteDeviceApiDevicesDeviceIdDeleteResponse, DeleteDeviceApiDevicesDeviceIdDeleteError, Options<DeleteDeviceApiDevicesDeviceIdDeleteData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteDeviceApiDevicesDeviceIdDelete({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getDeviceApiDevicesDeviceIdGetQueryKey = (options: Options<GetDeviceApiDevicesDeviceIdGetData>) => createQueryKey('getDeviceApiDevicesDeviceIdGet', options);
+
+/**
+ * Get Device
+ */
+export const getDeviceApiDevicesDeviceIdGetOptions = (options: Options<GetDeviceApiDevicesDeviceIdGetData>) => queryOptions<GetDeviceApiDevicesDeviceIdGetResponse, GetDeviceApiDevicesDeviceIdGetError, GetDeviceApiDevicesDeviceIdGetResponse, ReturnType<typeof getDeviceApiDevicesDeviceIdGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getDeviceApiDevicesDeviceIdGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getDeviceApiDevicesDeviceIdGetQueryKey(options)
+});
+
+/**
+ * Update Device
+ */
+export const updateDeviceApiDevicesDeviceIdPutMutation = (options?: Partial<Options<UpdateDeviceApiDevicesDeviceIdPutData>>): UseMutationOptions<UpdateDeviceApiDevicesDeviceIdPutResponse, UpdateDeviceApiDevicesDeviceIdPutError, Options<UpdateDeviceApiDevicesDeviceIdPutData>> => {
+    const mutationOptions: UseMutationOptions<UpdateDeviceApiDevicesDeviceIdPutResponse, UpdateDeviceApiDevicesDeviceIdPutError, Options<UpdateDeviceApiDevicesDeviceIdPutData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateDeviceApiDevicesDeviceIdPut({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const getPlatformsApiPlatformsGetQueryKey = (options?: Options<GetPlatformsApiPlatformsGetData>) => createQueryKey('getPlatformsApiPlatformsGet', options);
 
 /**
@@ -606,6 +719,26 @@ export const addPlatformApiPlatformsPostMutation = (options?: Partial<Options<Ad
     };
     return mutationOptions;
 };
+
+export const getPlatformIdentifiersApiPlatformsIdentifiersGetQueryKey = (options?: Options<GetPlatformIdentifiersApiPlatformsIdentifiersGetData>) => createQueryKey('getPlatformIdentifiersApiPlatformsIdentifiersGet', options);
+
+/**
+ * Get Platform Identifiers
+ *
+ * Retrieve platform identifiers.
+ */
+export const getPlatformIdentifiersApiPlatformsIdentifiersGetOptions = (options?: Options<GetPlatformIdentifiersApiPlatformsIdentifiersGetData>) => queryOptions<GetPlatformIdentifiersApiPlatformsIdentifiersGetResponse, DefaultError, GetPlatformIdentifiersApiPlatformsIdentifiersGetResponse, ReturnType<typeof getPlatformIdentifiersApiPlatformsIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getPlatformIdentifiersApiPlatformsIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPlatformIdentifiersApiPlatformsIdentifiersGetQueryKey(options)
+});
 
 export const getSupportedPlatformsEndpointApiPlatformsSupportedGetQueryKey = (options?: Options<GetSupportedPlatformsEndpointApiPlatformsSupportedGetData>) => createQueryKey('getSupportedPlatformsEndpointApiPlatformsSupportedGet', options);
 
@@ -781,6 +914,26 @@ export const addRomApiRomsPostMutation = (options?: Partial<Options<AddRomApiRom
     };
     return mutationOptions;
 };
+
+export const getRomIdentifiersApiRomsIdentifiersGetQueryKey = (options?: Options<GetRomIdentifiersApiRomsIdentifiersGetData>) => createQueryKey('getRomIdentifiersApiRomsIdentifiersGet', options);
+
+/**
+ * Get Rom Identifiers
+ *
+ * Retrieve rom identifiers.
+ */
+export const getRomIdentifiersApiRomsIdentifiersGetOptions = (options?: Options<GetRomIdentifiersApiRomsIdentifiersGetData>) => queryOptions<GetRomIdentifiersApiRomsIdentifiersGetResponse, DefaultError, GetRomIdentifiersApiRomsIdentifiersGetResponse, ReturnType<typeof getRomIdentifiersApiRomsIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRomIdentifiersApiRomsIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRomIdentifiersApiRomsIdentifiersGetQueryKey(options)
+});
 
 export const downloadRomsApiRomsDownloadGetQueryKey = (options: Options<DownloadRomsApiRomsDownloadGetData>) => createQueryKey('downloadRomsApiRomsDownloadGet', options);
 
@@ -1076,6 +1229,26 @@ export const createRomNoteApiRomsIdNotesPostMutation = (options?: Partial<Option
     return mutationOptions;
 };
 
+export const getRomNoteIdentifiersApiRomsIdNotesIdentifiersGetQueryKey = (options: Options<GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetData>) => createQueryKey('getRomNoteIdentifiersApiRomsIdNotesIdentifiersGet', options);
+
+/**
+ * Get Rom Note Identifiers
+ *
+ * Get all note identifiers for a ROM.
+ */
+export const getRomNoteIdentifiersApiRomsIdNotesIdentifiersGetOptions = (options: Options<GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetData>) => queryOptions<GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponse, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetError, GetRomNoteIdentifiersApiRomsIdNotesIdentifiersGetResponse, ReturnType<typeof getRomNoteIdentifiersApiRomsIdNotesIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRomNoteIdentifiersApiRomsIdNotesIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRomNoteIdentifiersApiRomsIdNotesIdentifiersGetQueryKey(options)
+});
+
 /**
  * Delete Rom Note
  *
@@ -1167,6 +1340,8 @@ export const getSavesApiSavesGetQueryKey = (options?: Options<GetSavesApiSavesGe
 
 /**
  * Get Saves
+ *
+ * Retrieve saves for the current user.
  */
 export const getSavesApiSavesGetOptions = (options?: Options<GetSavesApiSavesGetData>) => queryOptions<GetSavesApiSavesGetResponse, GetSavesApiSavesGetError, GetSavesApiSavesGetResponse, ReturnType<typeof getSavesApiSavesGetQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -1183,6 +1358,8 @@ export const getSavesApiSavesGetOptions = (options?: Options<GetSavesApiSavesGet
 
 /**
  * Add Save
+ *
+ * Upload a save file for a ROM.
  */
 export const addSaveApiSavesPostMutation = (options?: Partial<Options<AddSaveApiSavesPostData>>): UseMutationOptions<AddSaveApiSavesPostResponse, AddSaveApiSavesPostError, Options<AddSaveApiSavesPostData>> => {
     const mutationOptions: UseMutationOptions<AddSaveApiSavesPostResponse, AddSaveApiSavesPostError, Options<AddSaveApiSavesPostData>> = {
@@ -1198,10 +1375,52 @@ export const addSaveApiSavesPostMutation = (options?: Partial<Options<AddSaveApi
     return mutationOptions;
 };
 
+export const getSaveIdentifiersApiSavesIdentifiersGetQueryKey = (options?: Options<GetSaveIdentifiersApiSavesIdentifiersGetData>) => createQueryKey('getSaveIdentifiersApiSavesIdentifiersGet', options);
+
+/**
+ * Get Save Identifiers
+ *
+ * Retrieve save identifiers.
+ */
+export const getSaveIdentifiersApiSavesIdentifiersGetOptions = (options?: Options<GetSaveIdentifiersApiSavesIdentifiersGetData>) => queryOptions<GetSaveIdentifiersApiSavesIdentifiersGetResponse, DefaultError, GetSaveIdentifiersApiSavesIdentifiersGetResponse, ReturnType<typeof getSaveIdentifiersApiSavesIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSaveIdentifiersApiSavesIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSaveIdentifiersApiSavesIdentifiersGetQueryKey(options)
+});
+
+export const getSavesSummaryApiSavesSummaryGetQueryKey = (options: Options<GetSavesSummaryApiSavesSummaryGetData>) => createQueryKey('getSavesSummaryApiSavesSummaryGet', options);
+
+/**
+ * Get Saves Summary
+ *
+ * Retrieve saves summary grouped by slot.
+ */
+export const getSavesSummaryApiSavesSummaryGetOptions = (options: Options<GetSavesSummaryApiSavesSummaryGetData>) => queryOptions<GetSavesSummaryApiSavesSummaryGetResponse, GetSavesSummaryApiSavesSummaryGetError, GetSavesSummaryApiSavesSummaryGetResponse, ReturnType<typeof getSavesSummaryApiSavesSummaryGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSavesSummaryApiSavesSummaryGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSavesSummaryApiSavesSummaryGetQueryKey(options)
+});
+
 export const getSaveApiSavesIdGetQueryKey = (options: Options<GetSaveApiSavesIdGetData>) => createQueryKey('getSaveApiSavesIdGet', options);
 
 /**
  * Get Save
+ *
+ * Retrieve a save by ID.
  */
 export const getSaveApiSavesIdGetOptions = (options: Options<GetSaveApiSavesIdGetData>) => queryOptions<GetSaveApiSavesIdGetResponse, GetSaveApiSavesIdGetError, GetSaveApiSavesIdGetResponse, ReturnType<typeof getSaveApiSavesIdGetQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -1218,11 +1437,52 @@ export const getSaveApiSavesIdGetOptions = (options: Options<GetSaveApiSavesIdGe
 
 /**
  * Update Save
+ *
+ * Update a save file.
  */
 export const updateSaveApiSavesIdPutMutation = (options?: Partial<Options<UpdateSaveApiSavesIdPutData>>): UseMutationOptions<UpdateSaveApiSavesIdPutResponse, UpdateSaveApiSavesIdPutError, Options<UpdateSaveApiSavesIdPutData>> => {
     const mutationOptions: UseMutationOptions<UpdateSaveApiSavesIdPutResponse, UpdateSaveApiSavesIdPutError, Options<UpdateSaveApiSavesIdPutData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await updateSaveApiSavesIdPut({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const downloadSaveApiSavesIdContentGetQueryKey = (options: Options<DownloadSaveApiSavesIdContentGetData>) => createQueryKey('downloadSaveApiSavesIdContentGet', options);
+
+/**
+ * Download Save
+ *
+ * Download a save file.
+ */
+export const downloadSaveApiSavesIdContentGetOptions = (options: Options<DownloadSaveApiSavesIdContentGetData>) => queryOptions<unknown, DownloadSaveApiSavesIdContentGetError, unknown, ReturnType<typeof downloadSaveApiSavesIdContentGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await downloadSaveApiSavesIdContentGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: downloadSaveApiSavesIdContentGetQueryKey(options)
+});
+
+/**
+ * Confirm Download
+ *
+ * Confirm a save was downloaded successfully.
+ */
+export const confirmDownloadApiSavesIdDownloadedPostMutation = (options?: Partial<Options<ConfirmDownloadApiSavesIdDownloadedPostData>>): UseMutationOptions<ConfirmDownloadApiSavesIdDownloadedPostResponse, ConfirmDownloadApiSavesIdDownloadedPostError, Options<ConfirmDownloadApiSavesIdDownloadedPostData>> => {
+    const mutationOptions: UseMutationOptions<ConfirmDownloadApiSavesIdDownloadedPostResponse, ConfirmDownloadApiSavesIdDownloadedPostError, Options<ConfirmDownloadApiSavesIdDownloadedPostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await confirmDownloadApiSavesIdDownloadedPost({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1242,6 +1502,44 @@ export const deleteSavesApiSavesDeletePostMutation = (options?: Partial<Options<
     const mutationOptions: UseMutationOptions<DeleteSavesApiSavesDeletePostResponse, DeleteSavesApiSavesDeletePostError, Options<DeleteSavesApiSavesDeletePostData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await deleteSavesApiSavesDeletePost({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Track Save
+ *
+ * Re-enable sync tracking for a save on a device.
+ */
+export const trackSaveApiSavesIdTrackPostMutation = (options?: Partial<Options<TrackSaveApiSavesIdTrackPostData>>): UseMutationOptions<TrackSaveApiSavesIdTrackPostResponse, TrackSaveApiSavesIdTrackPostError, Options<TrackSaveApiSavesIdTrackPostData>> => {
+    const mutationOptions: UseMutationOptions<TrackSaveApiSavesIdTrackPostResponse, TrackSaveApiSavesIdTrackPostError, Options<TrackSaveApiSavesIdTrackPostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await trackSaveApiSavesIdTrackPost({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Untrack Save
+ *
+ * Disable sync tracking for a save on a device.
+ */
+export const untrackSaveApiSavesIdUntrackPostMutation = (options?: Partial<Options<UntrackSaveApiSavesIdUntrackPostData>>): UseMutationOptions<UntrackSaveApiSavesIdUntrackPostResponse, UntrackSaveApiSavesIdUntrackPostError, Options<UntrackSaveApiSavesIdUntrackPostData>> => {
+    const mutationOptions: UseMutationOptions<UntrackSaveApiSavesIdUntrackPostResponse, UntrackSaveApiSavesIdUntrackPostError, Options<UntrackSaveApiSavesIdUntrackPostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await untrackSaveApiSavesIdUntrackPost({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -1286,6 +1584,32 @@ export const addStateApiStatesPostMutation = (options?: Partial<Options<AddState
     };
     return mutationOptions;
 };
+
+export const getStateIdentifiersApiStatesIdentifiersGetQueryKey = (options?: Options<GetStateIdentifiersApiStatesIdentifiersGetData>) => createQueryKey('getStateIdentifiersApiStatesIdentifiersGet', options);
+
+/**
+ * Get State Identifiers
+ *
+ * Get state identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of state IDs
+ */
+export const getStateIdentifiersApiStatesIdentifiersGetOptions = (options?: Options<GetStateIdentifiersApiStatesIdentifiersGetData>) => queryOptions<GetStateIdentifiersApiStatesIdentifiersGetResponse, DefaultError, GetStateIdentifiersApiStatesIdentifiersGetResponse, ReturnType<typeof getStateIdentifiersApiStatesIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getStateIdentifiersApiStatesIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getStateIdentifiersApiStatesIdentifiersGetQueryKey(options)
+});
 
 export const getStateApiStatesIdGetQueryKey = (options: Options<GetStateApiStatesIdGetData>) => createQueryKey('getStateApiStatesIdGet', options);
 
@@ -1660,6 +1984,96 @@ export const kekatsuDsFeedApiFeedsKekatsuPlatformSlugGetOptions = (options: Opti
     queryKey: kekatsuDsFeedApiFeedsKekatsuPlatformSlugGetQueryKey(options)
 });
 
+export const pkgjPspGamesFeedApiFeedsPkgjPspGamesGetQueryKey = (options?: Options<PkgjPspGamesFeedApiFeedsPkgjPspGamesGetData>) => createQueryKey('pkgjPspGamesFeedApiFeedsPkgjPspGamesGet', options);
+
+/**
+ * Pkgj Psp Games Feed
+ */
+export const pkgjPspGamesFeedApiFeedsPkgjPspGamesGetOptions = (options?: Options<PkgjPspGamesFeedApiFeedsPkgjPspGamesGetData>) => queryOptions<unknown, DefaultError, unknown, ReturnType<typeof pkgjPspGamesFeedApiFeedsPkgjPspGamesGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await pkgjPspGamesFeedApiFeedsPkgjPspGamesGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: pkgjPspGamesFeedApiFeedsPkgjPspGamesGetQueryKey(options)
+});
+
+export const pkgjPspDlcsFeedApiFeedsPkgjPspDlcGetQueryKey = (options?: Options<PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetData>) => createQueryKey('pkgjPspDlcsFeedApiFeedsPkgjPspDlcGet', options);
+
+/**
+ * Pkgj Psp Dlcs Feed
+ */
+export const pkgjPspDlcsFeedApiFeedsPkgjPspDlcGetOptions = (options?: Options<PkgjPspDlcsFeedApiFeedsPkgjPspDlcGetData>) => queryOptions<unknown, DefaultError, unknown, ReturnType<typeof pkgjPspDlcsFeedApiFeedsPkgjPspDlcGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await pkgjPspDlcsFeedApiFeedsPkgjPspDlcGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: pkgjPspDlcsFeedApiFeedsPkgjPspDlcGetQueryKey(options)
+});
+
+export const pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetQueryKey = (options?: Options<PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetData>) => createQueryKey('pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGet', options);
+
+/**
+ * Pkgj Psv Games Feed
+ */
+export const pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetOptions = (options?: Options<PkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetData>) => queryOptions<unknown, DefaultError, unknown, ReturnType<typeof pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: pkgjPsvGamesFeedApiFeedsPkgjPsvitaGamesGetQueryKey(options)
+});
+
+export const pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetQueryKey = (options?: Options<PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetData>) => createQueryKey('pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGet', options);
+
+/**
+ * Pkgj Psv Dlcs Feed
+ */
+export const pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetOptions = (options?: Options<PkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetData>) => queryOptions<unknown, DefaultError, unknown, ReturnType<typeof pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: pkgjPsvDlcsFeedApiFeedsPkgjPsvitaDlcGetQueryKey(options)
+});
+
+export const pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetQueryKey = (options?: Options<PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetData>) => createQueryKey('pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGet', options);
+
+/**
+ * Pkgj Psx Games Feed
+ */
+export const pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetOptions = (options?: Options<PkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetData>) => queryOptions<unknown, DefaultError, unknown, ReturnType<typeof pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: pkgjPsxGamesFeedApiFeedsPkgjPsxGamesGetQueryKey(options)
+});
+
 export const getConfigApiConfigGetQueryKey = (options?: Options<GetConfigApiConfigGetData>) => createQueryKey('getConfigApiConfigGet', options);
 
 /**
@@ -1923,6 +2337,32 @@ export const addFirmwareApiFirmwarePostMutation = (options?: Partial<Options<Add
     return mutationOptions;
 };
 
+export const getFirmwareIdentifiersApiFirmwareIdentifiersGetQueryKey = (options?: Options<GetFirmwareIdentifiersApiFirmwareIdentifiersGetData>) => createQueryKey('getFirmwareIdentifiersApiFirmwareIdentifiersGet', options);
+
+/**
+ * Get Firmware Identifiers
+ *
+ * Get firmware identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of firmware IDs
+ */
+export const getFirmwareIdentifiersApiFirmwareIdentifiersGetOptions = (options?: Options<GetFirmwareIdentifiersApiFirmwareIdentifiersGetData>) => queryOptions<GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponse, DefaultError, GetFirmwareIdentifiersApiFirmwareIdentifiersGetResponse, ReturnType<typeof getFirmwareIdentifiersApiFirmwareIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getFirmwareIdentifiersApiFirmwareIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getFirmwareIdentifiersApiFirmwareIdentifiersGetQueryKey(options)
+});
+
 export const getFirmwareApiFirmwareIdGetQueryKey = (options: Options<GetFirmwareApiFirmwareIdGetData>) => createQueryKey('getFirmwareApiFirmwareIdGet', options);
 
 /**
@@ -2101,6 +2541,32 @@ export const addSmartCollectionApiCollectionsSmartPostMutation = (options?: Part
     return mutationOptions;
 };
 
+export const getCollectionIdentifiersApiCollectionsIdentifiersGetQueryKey = (options?: Options<GetCollectionIdentifiersApiCollectionsIdentifiersGetData>) => createQueryKey('getCollectionIdentifiersApiCollectionsIdentifiersGet', options);
+
+/**
+ * Get Collection Identifiers
+ *
+ * Get collections identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of collection IDs
+ */
+export const getCollectionIdentifiersApiCollectionsIdentifiersGetOptions = (options?: Options<GetCollectionIdentifiersApiCollectionsIdentifiersGetData>) => queryOptions<GetCollectionIdentifiersApiCollectionsIdentifiersGetResponse, DefaultError, GetCollectionIdentifiersApiCollectionsIdentifiersGetResponse, ReturnType<typeof getCollectionIdentifiersApiCollectionsIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getCollectionIdentifiersApiCollectionsIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getCollectionIdentifiersApiCollectionsIdentifiersGetQueryKey(options)
+});
+
 export const getVirtualCollectionsApiCollectionsVirtualGetQueryKey = (options: Options<GetVirtualCollectionsApiCollectionsVirtualGetData>) => createQueryKey('getVirtualCollectionsApiCollectionsVirtualGet', options);
 
 /**
@@ -2125,6 +2591,58 @@ export const getVirtualCollectionsApiCollectionsVirtualGetOptions = (options: Op
         return data;
     },
     queryKey: getVirtualCollectionsApiCollectionsVirtualGetQueryKey(options)
+});
+
+export const getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetQueryKey = (options?: Options<GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetData>) => createQueryKey('getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGet', options);
+
+/**
+ * Get Virtual Collection Identifiers
+ *
+ * Get virtual collections identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[str]: List of generated virtual collection IDs
+ */
+export const getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetOptions = (options?: Options<GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetData>) => queryOptions<GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponse, DefaultError, GetVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetResponse, ReturnType<typeof getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getVirtualCollectionIdentifiersApiCollectionsVirtualIdentifiersGetQueryKey(options)
+});
+
+export const getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetQueryKey = (options?: Options<GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetData>) => createQueryKey('getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGet', options);
+
+/**
+ * Get Smart Collection Identifiers
+ *
+ * Get smart collections identifiers endpoint
+ *
+ * Args:
+ * request (Request): Fastapi Request object
+ *
+ * Returns:
+ * list[int]: List of smart collection IDs
+ */
+export const getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetOptions = (options?: Options<GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetData>) => queryOptions<GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponse, DefaultError, GetSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetResponse, ReturnType<typeof getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSmartCollectionIdentifiersApiCollectionsSmartIdentifiersGetQueryKey(options)
 });
 
 /**

@@ -437,6 +437,7 @@
         <command label="Play! Disc (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_PLAY!% --fullscreen --disc %ROM%</command>
         <command label="RPCS3 Shortcut (Standalone)">%HIDEWINDOW% %ESCAPESPECIALS% %EMULATOR_OS-SHELL% /C %ROM%</command>
         <command label="RPCS3 Game Serial (Standalone)">%EMULATOR_RPCS3% --no-gui %RPCS3_GAMEID%:%INJECT%=%BASENAME%.ps3</command>
+        <command label="Dolphin (Standalone)">%EMULATOR_DOLPHIN% -b -e %ROM%</command>
         <command label="Triforce (Standalone)">%EMULATOR_TRIFORCE% -b -e %ROM%</command>
         <command label="xemu (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_XEMU% -dvd_path %ROM%</command>
         <command label="Cxbx-Reloaded (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_CXBX-RELOADED% %ROM%</command>
@@ -1642,7 +1643,7 @@
         <name>ps3</name>
         <fullname>Sony PlayStation 3</fullname>
         <path>%ROMPATH%\ps3</path>
-        <extension>.lnk .LNK .ps3 .PS3 .ps3dir .PS3DIR</extension>
+        <extension>.lnk .LNK .ps3 .PS3 .ps3dir .PS3DIR .iso .ISO</extension>
         <command label="RPCS3 Shortcut (Standalone)">%HIDEWINDOW% %ESCAPESPECIALS% %EMULATOR_OS-SHELL% /C %ROM%</command>
         <command label="RPCS3 Game Serial (Standalone)">%EMULATOR_RPCS3% --no-gui %RPCS3_GAMEID%:%INJECT%=%BASENAME%.ps3</command>
         <command label="RPCS3 Directory (Standalone)">%EMULATOR_RPCS3% --no-gui %ROM%</command>
@@ -2132,6 +2133,7 @@
         <fullname>Namco-Sega-Nintendo Triforce</fullname>
         <path>%ROMPATH%\triforce</path>
         <extension>.ciso .CISO .dff .DFF .dol .DOL .elf .ELF .gcm .GCM .gcz .GCZ .iso .ISO .json .JSON .m3u .M3U .rvz .RVZ .tgc .TGC .wad .WAD .wbfs .WBFS .wia .WIA .7z .7Z .zip .ZIP</extension>
+        <command label="Dolphin (Standalone)">%EMULATOR_DOLPHIN% -b -e %ROM%</command>
         <command label="Triforce (Standalone)">%EMULATOR_TRIFORCE% -b -e %ROM%</command>
         <platform>arcade</platform>
         <theme>triforce</theme>
@@ -2353,7 +2355,7 @@
         <name>xbox</name>
         <fullname>Microsoft Xbox</fullname>
         <path>%ROMPATH%\xbox</path>
-        <extension>.iso .ISO .xbe .XBE</extension>
+        <extension>.iso .ISO .xbe .XBE .xiso .XISO</extension>
         <command label="xemu (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_XEMU% -dvd_path %ROM%</command>
         <command label="Cxbx-Reloaded (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_CXBX-RELOADED% %ROM%</command>
         <platform>xbox</platform>

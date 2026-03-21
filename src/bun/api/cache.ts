@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { cache } from "./app";
 import cacheSchema from "@schema/cache";
+import { GithubReleaseSchema } from "@/shared/constants";
 
 export const CACHE_KEYS = {
     ROM_PLATFORMS: 'rom-platforms',
@@ -31,4 +32,14 @@ export async function getOrCached<T> (key: string, getter: () => Promise<T>, opt
         .run();
 
     return data;
+}
+
+export async function getOrCachedGithubRelease (path: string)
+{
+    return getOrCached(`github-release-${path}`, async () =>
+    {
+        const response = await fetch(`https://api.github.com/repos/${path}/releases/latest`, { method: "GET" });
+        if (!response.ok) throw new Error(response.statusText);
+        return GithubReleaseSchema.parseAsync(await response.json());
+    });
 }

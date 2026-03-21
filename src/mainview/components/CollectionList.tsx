@@ -2,10 +2,8 @@ import { RPC_URL } from "@/shared/constants";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CardList, GameMetaExtra } from "./CardList";
-import { SaveSource } from "../scripts/spatialNavigation";
 import { GameCardFocusHandler } from "./CardElement";
-import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
-import queries from "../scripts/queries";
+import { getCollectionsQuery } from "@queries/romm";
 
 export default function CollectionList (data: {
     id: string,
@@ -17,12 +15,11 @@ export default function CollectionList (data: {
 })
 {
     const navigate = useNavigate();
-    const { data: collections } = useSuspenseQuery(queries.romm.getCollectionsQuery());
+    const { data: collections } = useSuspenseQuery(getCollectionsQuery());
 
     const handleDefaultSelect = (id: string) =>
     {
-        SaveSource('game-list', { search: { focus: getCurrentFocusKey() } });
-        navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
+        navigate({ to: `/collection/${id}` });
     };
 
     return (
@@ -36,7 +33,7 @@ export default function CollectionList (data: {
                     id: String(g.id),
                     title: g.name,
                     focusKey: `collection-${g.id}`,
-                    subtitle: g.user__username,
+                    subtitle: g.owner_username,
                     previewUrl: `${RPC_URL(__HOST__)}/api/romm/${g.path_covers_large[0]}`,
                     badges: [
                         <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">

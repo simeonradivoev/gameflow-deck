@@ -16,7 +16,9 @@ interface TwitchDevice
     verification_uri: string;
 }
 
-export default class TwitchLoginJob implements IJob
+type States = "Retrieving Device" | "Waiting For Authentication";
+
+export default class TwitchLoginJob implements IJob<z.infer<typeof TwitchLoginJob.dataSchema>, States>
 {
     twitchScopes = "analytics:read:extensions analytics:read:games user:read:email";
     device?: TwitchDevice;
@@ -38,7 +40,7 @@ export default class TwitchLoginJob implements IJob
         user_code: this.device.user_code
     }) : undefined;
 
-    async start (context: JobContext): Promise<any>
+    async start (context: JobContext<TwitchLoginJob, z.infer<typeof TwitchLoginJob.dataSchema>, States>): Promise<any>
     {
         context.setProgress(0, "Retrieving Device");
         let res = await fetch("https://id.twitch.tv/oauth2/device", {

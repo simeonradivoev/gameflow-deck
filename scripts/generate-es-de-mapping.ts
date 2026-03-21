@@ -6,8 +6,6 @@ import { Database } from "bun:sqlite";
 import * as schema from '../src/bun/api/schema/emulators';
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import path from 'node:path';
-import { ensureDir } from 'fs-extra';
 
 /** get all latest supported romm platforms */
 const rommPlatforms = await getSupportedPlatformsEndpointApiPlatformsSupportedGet({ baseUrl: "https://demo.romm.app" });
@@ -57,6 +55,7 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
     const emulators = $r('ruleList emulator').toArray().map(s =>
     {
         const $emulator = $r(s);
+        const comment = $emulator.contents().toArray().find((node) => node.type === 'comment');
         const $systempath = $emulator.find('rule[type=systempath] entry');
         const $staticpath = $emulator.find('rule[type=staticpath] entry');
         const $corepath = $emulator.find('rule[type=corepath] entry');
@@ -66,12 +65,14 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
         const emulatorName = $emulator.attr('name');
         const emulator: typeof schema.emulators.$inferInsert = {
             name: emulatorName!,
+            fullname: comment?.data.trim(),
             systempath: $systempath.toArray().map(p => $r(p).text()),
             staticpath: $staticpath.toArray().map(p => $r(p).text()),
             corepath: $corepath.toArray().map(p => $r(p).text()),
             androidpackage: $androidpackage.toArray().map(p => $r(p).text()),
             winregistrypath: $winregistrypath.toArray().map(p => $r(p).text()),
         };
+
         return emulator;
     });
 
@@ -143,6 +144,7 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
             commands,
             mappings
         };
+
         return system;
     }));
 

@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import Shortcuts from '../components/Shortcuts';
-import queries from '../scripts/queries';
+import { gameQuery } from '@queries/romm';
 
 export const Route = createFileRoute('/launcher/$source/$id')({
   component: RouteComponent,
@@ -18,12 +18,12 @@ function RouteComponent ()
 {
   function HandleGoBack ()
   {
-    Router.navigate({ to: '/game/$source/$id', viewTransition: { types: ['zoom-out'] }, params: { source, id } });
+    Router.navigate({ to: '/game/$source/$id', viewTransition: { types: ['zoom-out'] }, params: { source, id }, replace: true });
   }
 
   const { source, id } = Route.useParams();
   const { ref, focusKey } = useFocusable({ focusKey: `launching-${source}-${id}` });
-  const { data } = useQuery(queries.romm.gameQuery(source, id));
+  const { data } = useQuery(gameQuery(source, id));
 
   useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
   const { shortcuts } = useShortcutContext();

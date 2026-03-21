@@ -32,4 +32,5 @@ interface FilterOption extends FocusParams, InteractParams
 {
   label: string;
   selected: boolean;
+  icon?: any;
 }

@@ -6,7 +6,7 @@ export type ActiveGame = {
     process?: ChildProcess;
     gameId: number;
     name: string;
-    command: string;
+    command: { command: string, startDir?: string; };
 };
 
 interface ObjectConstructor

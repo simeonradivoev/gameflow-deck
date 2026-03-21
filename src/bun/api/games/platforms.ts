@@ -1,7 +1,7 @@
 import Elysia, { status } from "elysia";
 import { getPlatformApiPlatformsIdGet, getPlatformsApiPlatformsGet, getRomsApiRomsGet } from "@clients/romm";
 import z from "zod";
-import { count, eq, getTableColumns } from "drizzle-orm";
+import { and, count, eq, getTableColumns, not } from "drizzle-orm";
 import { db } from "../app";
 import { FrontEndPlatformType } from "@shared/constants";
 import * as schema from "@schema/app";
@@ -25,17 +25,35 @@ export default new Elysia()
         {
             const frontEndPlatforms = await Promise.all(rommPlatforms.map(async p =>
             {
-                const game = await getRomsApiRomsGet({ query: { platform_ids: [p.id] } });
+                const screenshots: string[] = [];
+                const rommGames = await getRomsApiRomsGet({ query: { platform_ids: [p.id], limit: 3 } }).then(d => d.data);
+                if (rommGames)
+                {
+                    const rommScreenshots = rommGames.items.find(i => i.merged_screenshots.length > 0)?.merged_screenshots.map(s => `/api/romm/image/romm/${s}`);
+                    if (rommScreenshots)
+                        screenshots.push(...rommScreenshots);
+                }
+
+                if (screenshots.length <= 0)
+                {
+                    const localScreenshots = await db.select({ id: schema.screenshots.id }).from(schema.games).leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id)).where(eq(schema.platforms.slug, p.slug)).leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id)).limit(1);
+
+                    if (localScreenshots)
+                        screenshots.push(...localScreenshots.map(s => `/api/romm/screenshot/${s.id}`));
+                }
+
+                const localGames = await db.select({ id: schema.games.id, source: schema.games.source, souceId: schema.games.source_id }).from(schema.games).leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id)).where(and(eq(schema.platforms.slug, p.slug), not(eq(schema.games.source, 'romm')))).groupBy(schema.games.id);
+
                 const platform: FrontEndPlatformType = {
                     slug: p.slug,
                     name: p.display_name,
                     family_name: p.family_name,
                     path_cover: `/api/romm/image/romm/assets/platforms/${p.slug}.svg`,
-                    game_count: p.rom_count,
+                    game_count: p.rom_count + localGames.length,
                     updated_at: new Date(p.updated_at),
                     id: { source: 'romm', id: String(p.id) },
                     hasLocal: localPlatformSet.has(p.slug),
-                    paths_screenshots: game.data?.items[0]?.merged_screenshots.map(s => `/api/romm/image/romm/${s}`) ?? []
+                    paths_screenshots: screenshots
                 };
 
                 return platform;

@@ -1,4 +1,5 @@
 
+
 import { FocusDetails } from '@noriginmedia/norigin-spatial-navigation';
 import { JSX } from 'react';
 import * as z from 'zod';
@@ -128,27 +129,73 @@ export const EmulatorPackageSchema = z.object({
     type: z.enum(['emulator']),
     os: z.array(z.enum(['darwin', 'linux', 'win32', 'android'])),
     keywords: z.array(z.string()).optional(),
-    downloads: z.record(z.string(), z.object({ type: z.string(), url: z.url() })).optional(),
+    downloads: z.record(z.string(), z.array(z.object({
+        type: z.string(),
+        url: z.url().optional(),
+        pattern: z.string(),
+        path: z.string().optional()
+    }))).optional(),
     systems: z.array(z.string())
+});
+
+export const GithubReleaseSchema = z.object({
+    assets: z.array(z.object({
+        name: z.string(),
+        browser_download_url: z.url(),
+        content_type: z.string().optional()
+    }))
 });
 
 export type EmulatorPackageType = z.infer<typeof EmulatorPackageSchema>;
 export type StoreGameType = z.infer<typeof StoreGameSchema>;
-
-export interface FrontEndEmulator extends Omit<EmulatorPackageType, 'systems'>
+export interface EmulatorSourceType
 {
+    binPath: string;
+    rootPath?: string;
+    type: string;
+    exists: boolean;
+}
+
+export interface FrontEndEmulator
+{
+    name: string;
+    logo: string;
     systems: { id: string, name: string, icon: string; }[];
     gameCount: number;
-    exists: boolean;
+    validSource?: EmulatorSourceType;
+}
+
+export interface FrontEndEmulatorDetailedDownload
+{
+    name: string;
+    type: string | undefined;
 }
 
 export interface FrontEndEmulatorDetailed extends FrontEndEmulator
 {
+    homepage: string;
+    description: string;
+    downloads: FrontEndEmulatorDetailedDownload[];
+    keywords?: string[];
     screenshots: string[];
-    status: {
-        source?: string;
-        location?: string;
-    };
+    sources: EmulatorSourceType[];
+}
+
+export interface FrontEndGameTypeDetailedAchievement
+{
+    id: string;
+    title: string;
+    description?: string;
+    date?: Date;
+    date_hardcode?: Date;
+    badge_url?: string;
+    display_order: number;
+    type?: string;
+}
+
+export interface FrontEndGameTypeDetailedEmulator extends FrontEndEmulator
+{
+
 }
 
 export interface FrontEndGameTypeDetailed extends FrontEndGameType
@@ -157,9 +204,14 @@ export interface FrontEndGameTypeDetailed extends FrontEndGameType
     fs_size_bytes: number | null;
     missing: boolean;
     local: boolean;
+    genres?: string[];
+    companies?: string[];
+    release_date?: Date;
+    emulators?: FrontEndGameTypeDetailedEmulator[],
     achievements?: {
         unlocked: number;
         total: number;
+        entires: FrontEndGameTypeDetailedAchievement[];
     };
 };
 
@@ -195,6 +247,7 @@ export interface Notification
     title?: string;
     message: string;
     type: 'success' | 'error' | 'info';
+    duration?: number;
 }
 
 export interface CommandEntry
@@ -202,9 +255,14 @@ export interface CommandEntry
     id: string | number;
     label?: string;
     command: string;
+    startDir?: string;
     valid: boolean;
     emulator?: string;
 }
+
+
+
+export type JobStatus = 'completed' | 'error' | 'running' | 'queued' | 'aborted';
 
 export type SettingsType = z.infer<typeof SettingsSchema>;
 export type LocalSettingsType = z.infer<typeof LocalSettingsSchema>;
@@ -229,4 +287,4 @@ export const GameflowPluginSchema = z.object({
     launchGame: z.function({ input: [GameLaunchSchema] })
 });
 export interface GameflowPlugin extends z.infer<typeof GameflowPluginSchema> { }
-export type GameStatusType = 'installed' | 'missing-emulator' | 'error' | 'install' | 'download' | 'extract' | 'playing';
+export type GameStatusType = 'installed' | 'missing-emulator' | 'error' | 'install' | 'download' | 'extract' | 'playing' | 'queued';

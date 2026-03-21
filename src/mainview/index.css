@@ -393,6 +393,17 @@ body {
         width: 100%;
     }
 
+    html:active-view-transition-type(slide-up) {
+
+        &::view-transition-old(root) {
+            animation: fade-out 300ms ease-in forwards;
+        }
+
+        &::view-transition-new(root) {
+            animation: slide-up 300ms ease-in-out forwards;
+        }
+    }
+
     html:active-view-transition-type(zoom-in) {
 
         &::view-transition-old(root) {
@@ -446,6 +457,18 @@ body {
         to {
             scale: 105%;
             opacity: 0;
+        }
+    }
+
+    @keyframes slide-up {
+        from {
+            transform: translateY(10vh);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
         }
     }
 

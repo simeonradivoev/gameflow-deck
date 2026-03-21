@@ -1,5 +1,22 @@
-import { GithubManifestSchema, StoreGameSchema } from "@/shared/constants";
+import { EmulatorPackageSchema, EmulatorPackageType, GithubManifestSchema, StoreGameSchema } from "@/shared/constants";
 import { CACHE_KEYS, getOrCached } from "../../cache";
+import { and, eq } from "drizzle-orm";
+import { config, emulatorsDb } from '../../app';
+import path from "node:path";
+import fs from 'node:fs/promises';
+import * as emulatorSchema from '@schema/emulators';
+import { shuffleInPlace } from "@/bun/utils";
+
+export async function getShuffledStoreGames ()
+{
+    return getOrCached('shuffled-store-games', async () =>
+    {
+        const gamesManifest = await getStoreGameManifest();
+        const allStoreGames = gamesManifest.filter(g => g.type === 'blob');
+        shuffleInPlace(allStoreGames, Math.round(new Date().getTime() / 1000 / 60 / 60));
+        return allStoreGames;
+    }, { expireMs: 1000 / 60 / 60 });
+}
 
 export async function getStoreGameManifest ()
 {
@@ -56,4 +73,55 @@ export async function getStoreGameFromPath (path: string)
         .then(e => e.json())
         .then(g => StoreGameSchema.parseAsync(g)));
     return game;
+}
+
+export function getStoreFolder ()
+{
+    if (process.env.CUSTOM_STORE_PATH) return process.env.CUSTOM_STORE_PATH;
+    const downlodDir = config.get('downloadPath');
+    return path.join(downlodDir, "store");
+}
+
+export async function getStoreEmulatorPackage (id: string)
+{
+    const emulatorPath = path.join(getStoreFolder(), "buckets", "emulators", `${id}.json`);
+    if (await fs.exists(emulatorPath))
+        return EmulatorPackageSchema.parseAsync(JSON.parse(await fs.readFile(emulatorPath, 'utf-8')));
+    return undefined;
+}
+
+export async function getAllStoreEmulatorPackages ()
+{
+    const emulatorsBucket = path.join(getStoreFolder(), "buckets", "emulators");
+    const emulators = await fs.readdir(emulatorsBucket);
+    const emulatorsRawData = await Promise.all(emulators.map(e => fs.readFile(path.join(emulatorsBucket, e), 'utf-8')));
+
+    const emulatesParsed = emulatorsRawData.map(d => EmulatorPackageSchema.safeParse(JSON.parse(d))).filter(e =>
+    {
+        if (e.error)
+        {
+            console.error(e.error);
+        }
+        return e.data;
+    }).map(e => e.data!);
+
+    return emulatesParsed;
+}
+
+export async function buildStoreFrontendEmulatorSystems (emulator: EmulatorPackageType)
+{
+    const systems = await Promise.all(emulator.systems.map(async system =>
+    {
+        const rommSystem = await emulatorsDb.query.systemMappings.findFirst({
+            where: and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.system, system))
+        });
+
+        const esSystem = await emulatorsDb.query.systems.findFirst({ where: eq(emulatorSchema.emulators.name, system), columns: { fullname: true } });
+
+        let icon: string = `/api/romm/image/romm/assets/platforms/${rommSystem?.sourceSlug ?? system}.svg`;
+
+        return { id: system, romm_slug: rommSystem?.sourceSlug, name: esSystem?.fullname ?? system, icon: icon };
+    }));
+
+    return systems;
 }

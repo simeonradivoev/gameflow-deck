@@ -32,3 +32,7 @@ export const FilePickerContext = createContext<{
     drives: Drive[],
     activeDrive: Drive | undefined;
 }>({} as any);
+
+export const GameDetailsContext = createContext<{
+    update: () => void;
+}>({} as any);

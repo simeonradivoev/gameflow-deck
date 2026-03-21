@@ -8,7 +8,6 @@ import staticAssetsPlugin from 'vite-static-assets-plugin';
 import os from 'node:os';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { host } from "./src/bun/utils/host";
-import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ command }) =>
 {
@@ -29,7 +28,7 @@ export default defineConfig(({ command }) =>
         target: 'react',
         routesDirectory: "./routes/",
         generatedRouteTree: "./gen/routeTree.gen.ts",
-        autoCodeSplitting: command === 'build',
+        autoCodeSplitting: true,
         routeFileIgnorePrefix: "-",
         quoteStyle: "single"
       }),
@@ -71,7 +70,6 @@ export default defineConfig(({ command }) =>
               return 'zod';
             if (id.includes('node_modules/@tanstack'))
               return 'tanstack';
-            console.log(id);
             if (id.includes('node_modules'))
               return 'vendor';
             if (id.endsWith('SvgIcon.tsx'))

@@ -8,7 +8,7 @@ import { FileSearchCorner, FolderSearch, Pen, Save } from "lucide-react";
 import { ContextDialog } from "../ContextDialog";
 import FilePicker from "../FilePicker";
 import { setFocus } from "@noriginmedia/norigin-spatial-navigation";
-import queries from "@/mainview/scripts/queries";
+import { getSettingQuery, setSettingMutation } from "@queries/settings";
 
 type KeysWithValueAssignableTo<T, Value> = {
     [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
@@ -33,7 +33,7 @@ export function PathSettingsOption (data: PathSettingsOptionParams)
     const [localValue, setLocalValue] = useState<string | undefined>();
     const [dirty, setDirty] = useState(false);
     const setMutation = useMutation({
-        ...queries.settings.setSettingMutation(data.id),
+        ...setSettingMutation(data.id),
         onSuccess: (d, v, r, cx) =>
         {
             setDirty(r !== localValue);
@@ -63,7 +63,7 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
 })
 {
     const [isBrowsing, setIsBrowsing] = useState(false);
-    const { data: defaultValue } = useQuery(queries.settings.getSettingQuery(data.id));
+    const { data: defaultValue } = useQuery(getSettingQuery(data.id));
     const changed = defaultValue !== data.localValue;
 
     useEffect(() =>

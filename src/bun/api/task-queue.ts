@@ -1,40 +1,44 @@
 
+import { JobStatus } from '@/shared/constants';
 import EventEmitter from 'node:events';
+import z, { ZodTypeAny } from 'zod';
 
 export class TaskQueue
 {
-    private activeQueue: { context: JobContext, promise?: Promise<void>; }[] = [];
-    private queue?: { context: JobContext, promise?: Promise<void>; }[] = [];
+    private activeQueue: { context: JobContext<any, string, any>, promise?: Promise<void>; }[] = [];
+    private queue?: { context: JobContext<any, string, any>, promise?: Promise<void>; }[] = [];
     private events?: EventEmitter<EventsList> = new EventEmitter<EventsList>();
 
-    public enqueue (id: string, job: IJob): Promise<void>
+    public enqueue<TData, TState extends string, T extends IJob<TData, TState>> (id: string, job: T)
     {
         this.disposeSafeguard();
         if (!this.queue || !this.events) throw new Error("Queue disposed");
         const context = new JobContext(id, this.events, job);
         this.queue.push({ context });
+        this.events?.emit('queued', { id: context.id, job: context });
         return this.processQueue();
     }
 
-    private processQueue (): Promise<void>
+    private processQueue ()
     {
         if (!this.queue) return Promise.resolve();
-        const top = this.queue.pop();
-        if (top)
+
+        const next = this.queue.filter(j => !j.context.job.group || !this.activeQueue.some(a => a.context.job.group === j.context.job.group)).map((job, i) => ({ i, job }));
+
+        next.reverse().forEach(({ i }) => this.queue!.splice(i, 1));
+
+        next.forEach(job =>
         {
-            const promise = top.context.start();
-            top.promise = promise;
-            const index = this.queue.length;
-            this.activeQueue.push(top);
+            const promise = job.job.context.start();
+            job.job.promise = promise;
+            this.activeQueue.push(job.job);
             promise.finally(() =>
             {
+                const index = this.activeQueue.indexOf(job.job);
                 this.activeQueue.splice(index, 1);
-                setTimeout(this.processQueue);
+                setTimeout(() => this.processQueue(), 0);
             });
-            return promise;
-
-        }
-        return Promise.resolve();
+        });
     }
 
     private disposeSafeguard ()
@@ -65,10 +69,15 @@ export class TaskQueue
         return job?.promise ?? Promise.resolve();
     }
 
-    public findJob (id: string): IPublicJob | undefined
+
+    public findJob<const TData, const TState extends string, const T extends IJob<TData, TState>> (id: string, type: new (...args: any[]) => T): IPublicJob<TData, TState, T> | undefined
     {
         const job = this.queue?.find(j => j.context.id === id) ?? this.activeQueue?.find(j => j.context.id === id);
-        return job?.context;
+        if (job?.context.job instanceof type)
+        {
+            return job?.context;
+        }
+        return undefined;
     }
 
     public on<E extends keyof EventsList> (event: E, listener: E extends keyof EventsList ? EventsList[E] extends unknown[] ? (...args: EventsList[E]) => void : never : never): () => void
@@ -99,12 +108,13 @@ export interface EventsList
     completed: [e: CompletedEvent];
     error: [e: ErrorEvent];
     ended: [e: BaseEvent];
+    queued: [e: BaseEvent];
 }
 
 interface BaseEvent
 {
     id: string;
-    job: IPublicJob;
+    job: IPublicJob<any, string, any>;
 }
 
 interface ErrorEvent extends BaseEvent
@@ -128,37 +138,50 @@ interface CompletedEvent extends BaseEvent
 
 }
 
-export interface IJob
+export interface IJob<TData, TState extends string>
 {
-    start (context: JobContext): Promise<any>;
-    exposeData?(): any;
+    group?: string;
+    start (context: JobContext<IJob<TData, TState>, TData, TState>): Promise<any>;
+    exposeData?(): TData;
 }
 
-export type JobStatus = 'completed' | 'error' | 'running' | 'waiting' | 'aborted';
-
-export interface IPublicJob
+export interface IPublicJob<TData, TState extends string, T extends IJob<TData, TState>>
 {
     progress: number;
     state?: string;
     status: JobStatus;
-    job: IJob;
+    job: T;
     abort: (reason?: any) => void;
 }
 
-export class JobContext implements IPublicJob
+type JobClass = new (...args: any[]) => IJob<any, any>;
+type JobClassWithStatics = JobClass & {
+    id: string;
+    dataSchema?: any;
+};
+export type JobContextFromClass<C extends JobClassWithStatics> =
+    JobContext<
+        InstanceType<C>,
+        C extends { dataSchema: ZodTypeAny; }
+        ? z.infer<C['dataSchema']>
+        : never,
+        C['id']
+    >;
+
+export class JobContext<T extends IJob<TData, TState>, TData, TState extends string> implements IPublicJob<TData, TState, T>
 {
     private m_id: string;
     private m_progress: number = 0;
-    private m_state?: string;
+    private m_state?: TState;
     private running: boolean = false;
     private aborted: boolean = false;
     private completed: boolean = false;
     private error?: any;
     private events: EventEmitter<EventsList>;
     private abortController: AbortController;
-    private readonly m_job: IJob;
+    private readonly m_job: T;
 
-    constructor(id: string, events: EventEmitter<EventsList>, job: IJob)
+    constructor(id: string, events: EventEmitter<EventsList>, job: T)
     {
         this.m_id = id;
         this.m_job = job;
@@ -202,7 +225,7 @@ export class JobContext implements IPublicJob
         if (this.error) return 'error';
         if (this.aborted) return 'aborted';
         if (this.running) return 'running';
-        return 'waiting';
+        return 'queued';
     }
 
     public get id () { return this.m_id; }
@@ -215,7 +238,11 @@ export class JobContext implements IPublicJob
 
     public get state () { return this.m_state; }
 
-    public setProgress (progress: number, state?: string)
+    /**
+     * @param progress The 0 to 100 progress
+     * @param state what type of progress is this. Is it really progress. I humanity even advancing.
+     */
+    public setProgress (progress: number, state?: TState)
     {
         this.m_progress = progress;
         if (state)

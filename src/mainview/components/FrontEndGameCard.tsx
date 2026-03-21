@@ -1,18 +1,15 @@
 import { FrontEndGameType, FrontEndId, RPC_URL } from "@/shared/constants";
 import CardElement from "./CardElement";
-import { SaveSource } from "../scripts/spatialNavigation";
 import { Router } from "..";
-import { HardDrive } from "lucide-react";
+import { FileQuestion, HardDrive, Store } from "lucide-react";
 import { JSX } from "react";
 import { FOCUS_KEYS } from "../scripts/types";
 
-export default function FrontEndGameCard (data: { index: number, game: FrontEndGameType; } & FocusParams & InteractParams)
+export default function FrontEndGameCard (data: { index: number, game: FrontEndGameType; showSource?: boolean; } & FocusParams & InteractParams)
 {
     function handleDefaultSelect (id: FrontEndId, source: string | null, sourceId: string | null)
     {
-        SaveSource('details', { search: { focus: FOCUS_KEYS.GAME_CARD(data.game.id.id) } });
-        console.log({ id: String(sourceId ?? id.id), source: source ?? id.source });
-        Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source }, viewTransition: { types: ['zoom-in'] } });
+        Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
     };
 
     const platformUrl = new URL(`${RPC_URL(__HOST__)}${data.game.path_platform_cover}`);
@@ -27,7 +24,26 @@ export default function FrontEndGameCard (data: { index: number, game: FrontEndG
     previewUrl.searchParams.set('width', "640");
 
     const badges: JSX.Element[] = [];
-    if (data.game.id.source === 'local')
+
+    if (data.showSource)
+    {
+        switch (data.game.id.source)
+        {
+            case "local":
+                badges.push(<HardDrive className="sm:size-4 md:size-8 m-1" />);
+                break;
+            case "romm":
+                badges.push(<img className="sm:size-4 md:size-8 m-1 rounded-full" src={`${RPC_URL(__HOST__)}/api/romm/assets/logos/romm_logo_xbox_one_square.svg`} />);
+                break;
+            case "store":
+                badges.push(<Store className="sm:size-4 md:size-8 m-1" />);
+                break;
+            default:
+                badges.push(<FileQuestion className="sm:size-4 md:size-8 m-1" />);
+                break;
+        }
+
+    } else if (data.game.id.source === 'local')
     {
         badges.push(<HardDrive className="sm:size-4 md:size-8 m-1" />);
     }
@@ -39,7 +55,9 @@ export default function FrontEndGameCard (data: { index: number, game: FrontEndG
         preview={previewUrl.href}
         title={data.game.name ?? ""}
         subtitle={subtitle}
-        focusKey={FOCUS_KEYS.GAME_CARD(data.game.id.id)}
+        focusKey={FOCUS_KEYS.GAME_CARD(data.game.id)}
+        className={data.game.id.source === 'local' ? 'ring-offset-info/40 ring-offset-2' : ""}
+        previewClassName={data.game.id.source === 'local' ? "not-in-focused:opacity-40" : ""}
         index={data.index}
         id={`game-${data.game.id.source}-${data.game.id.id}`}
     />;

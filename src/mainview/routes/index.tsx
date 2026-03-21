@@ -29,7 +29,6 @@ import { HeaderAccounts, HeaderStatusBar } from "../components/Header";
 import { FilterUI } from "../components/Filters";
 import { AnimatedBackground } from "../components/AnimatedBackground";
 import { GameList } from "../components/GameList";
-import { SaveSource } from "../scripts/spatialNavigation";
 import LoadingCardList from "../components/LoadingCardList";
 import { AutoFocus } from "../components/AutoFocus";
 import SaveScroll from "../components/SaveScroll";
@@ -46,7 +45,7 @@ import { mobileCheck, useDragScroll } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import { FrontEndId } from "@/shared/constants";
 import Carousel from "../components/Carousel";
-import queries from "../scripts/queries";
+import { closeMutation } from "@queries/system";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -125,20 +124,17 @@ function HomeList (data: {
 
   function handleGameSelect (id: FrontEndId, source: string | null, sourceId: string | null)
   {
-    SaveSource('details', { search: { filter: data.selectedFilter } });
-    Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source }, viewTransition: { types: ['zoom-in'] } });
+    Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
   };
 
   const handleCollectionSelect = (id: string) =>
   {
-    SaveSource('game-list', { search: { filter: data.selectedFilter } });
-    Router.navigate({ to: `/collection/${id}`, viewTransition: { types: ['zoom-in'] } });
+    Router.navigate({ to: `/collection/${id}` });
   };
 
   const handlePlatformSelect = (source: string, id: string) =>
   {
-    SaveSource('game-list', { search: { filter: data.selectedFilter } });
-    Router.navigate({ to: `/platform/${source}/${id}`, viewTransition: { types: ['zoom-in'] } });
+    Router.navigate({ to: `/platform/${source}/${id}` });
   };
 
   let activeList: JSX.Element;
@@ -224,7 +220,6 @@ function MainMenu ()
     focusKey: `main-menu`,
     trackChildren: true,
   });
-  const navigate = useNavigate();
   return (
     <ul
       ref={ref}
@@ -233,13 +228,13 @@ function MainMenu ()
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon
-          action={() => navigate({ to: "/games", viewTransition: { types: ['zoom-in'] } })}
+          action={() => Router.navigate({ to: "/games" })}
           icon={<Gamepad2 />}
           label="Home"
           type="secondary"
         />
         <CircleIcon icon={<MessageSquare />} label="News" />
-        <CircleIcon type="info" icon={<Store />} action={() => navigate({ to: "/store/tab", viewTransition: { types: ['zoom-in'] } })} label="Shop" />
+        <CircleIcon type="info" icon={<Store />} action={() => Router.navigate({ to: "/store/tab" })} label="Shop" />
         <CircleIcon icon={<Image />} label="Album" />
         <CircleIcon
           icon={<Gamepad2 />}
@@ -248,8 +243,7 @@ function MainMenu ()
         <CircleIcon
           action={() =>
           {
-            SaveSource('settings');
-            navigate({ to: "/settings/accounts", viewTransition: { types: ['zoom-in'] } });
+            Router.navigate({ to: '/settings/accounts' });
           }}
           icon={<Settings />}
           label="Settings"
@@ -294,7 +288,7 @@ export default function ConsoleHomeUI ()
 {
   const { filter } = Route.useSearch();
 
-  const close = useMutation(queries.system.closeMutation);
+  const close = useMutation(closeMutation);
 
   const { ref, focusKey } = useFocusable({
     forceFocus: true,
@@ -304,29 +298,7 @@ export default function ConsoleHomeUI ()
     preferredChildFocusKey: `home-list`,
   });
 
-  const setFilter = (filter: string) => Router.navigate({ to: '/', search: { filter } });
-
-  useShortcuts(focusKey, () => [
-    {
-      action: () =>
-      {
-        const filterKeys = Object.keys(filters);
-        const filterIndex = Math.max(0, filterKeys.indexOf(filter));
-        const selectedFilterIndex = Math.min(filterIndex + 1, filterKeys.length - 1);
-        Router.navigate({ to: '/', search: { filter: filterKeys[selectedFilterIndex] } });
-      },
-      button: GamePadButtonCode.R1
-    },
-    {
-      action: () =>
-      {
-        const filterKeys = Object.keys(filters);
-        const filterIndex = Math.max(0, filterKeys.indexOf(filter));
-        const selectedFilterIndex = Math.max(0, filterIndex - 1,);
-        Router.navigate({ to: '/', search: { filter: filterKeys[selectedFilterIndex] } });
-      },
-      button: GamePadButtonCode.L1
-    }], [filter]);
+  const setFilter = (filter: string) => Router.navigate({ to: '/', search: { filter }, viewTransition: false, replace: true });
 
   const { shortcuts } = useShortcutContext();
   const headerButtons = [];
@@ -342,6 +314,7 @@ export default function ConsoleHomeUI ()
         </div>
         <div className=" sm:portrait:col-span-3 sm:px-2 sm:pt-2 md:row-start-2 md:col-start-1 sm:landscape:col-span-1 md:landscape:col-span-3 flex items-center  md:ml-0 gap-2">
           <FilterUI
+            rootFocusKey={focusKey}
             id="home"
             containerClassName="flex w-full sm:landscape:justify-start sm:portrait:justify-center md:justify-center!"
             options={Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, { ...value, selected: key === filter }]))}
