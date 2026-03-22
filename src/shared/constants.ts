@@ -14,6 +14,7 @@ export const RPC_PORT = 8787;
 export const RPC_URL = (host: string) => `http://${host}:${RPC_PORT}`;
 export const EMULATORJS_URL = (host: string) => `http://${host}:${EMULATORJS_PORT}`;
 export const SOCKETS_URL = (host: string) => `ws://${host}:${RPC_PORT}`;
+export const STORE_VERSION = "^0";
 
 export const DefaultRommStaleTime = 60 * 1000; // A minute
 export interface GameMeta

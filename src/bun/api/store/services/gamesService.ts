@@ -75,11 +75,16 @@ export async function getStoreGameFromPath (path: string)
     return game;
 }
 
+export function getStoreRootFolder ()
+{
+    const downlodDir = config.get('downloadPath');
+    return path.join(downlodDir, "store");
+}
+
 export function getStoreFolder ()
 {
     if (process.env.CUSTOM_STORE_PATH) return process.env.CUSTOM_STORE_PATH;
-    const downlodDir = config.get('downloadPath');
-    return path.join(downlodDir, "store");
+    return path.join(getStoreRootFolder(), "node_modules", process.env.STORE_PACKAGE_NAME ?? "@simeonradivoev/gameflow-store");
 }
 
 export async function getStoreEmulatorPackage (id: string)

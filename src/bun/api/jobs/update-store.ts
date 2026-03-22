@@ -1,80 +1,40 @@
 import { ensureDir } from "fs-extra";
 import { IJob, JobContext } from "../task-queue";
-import { getStoreFolder } from "../store/services/gamesService";
-import z from "zod";
+import { getStoreRootFolder } from "../store/services/gamesService";
+import { STORE_VERSION } from "@/shared/constants";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 export default class UpdateStoreJob implements IJob<never, never>
 {
     static id = "update-store" as const;
-    static origin = "https://github.com/simeonradivoev/gameflow-store.git";
-    static branch = "master";
-    static dataSchema = z.never();
+    packageName: string;
+    registry: URL;
+    storeVersion: string;
 
-    async gitCommand (commands: string[], dir: string)
+    constructor()
     {
-        const proc = Bun.spawn(['git', ...commands], {
-            cwd: dir,
-            stdout: "pipe",
-            stderr: "pipe",
-        });
-
-        const [output] = await Promise.all([
-            new Response(proc.stdout).text(),
-            proc.exited,
-        ]);
-
-        return output.trim();
-    }
-
-    async isGitRepo (dir: string)
-    {
-        return (await this.gitCommand(["rev-parse", "--is-inside-work-tree"], dir)) === 'true';
-    }
-
-    async getOrigin (dir: string)
-    {
-        const origin = await this.gitCommand(["remote", "get-url", "origin"], dir);
-        return origin;
-    }
-
-    async hasChanges (dir: string)
-    {
-        return (await this.gitCommand(["status", "--porcelain"], dir)).length > 0;
+        this.packageName = process.env.STORE_PACKAGE_NAME ?? "@simeonradivoev/gameflow-store";
+        this.registry = new URL(process.env.STORE_REGISTRY ?? "https://registry.npmjs.org");
+        this.storeVersion = process.env.STORE_VERSION ?? STORE_VERSION;
     }
 
     async start (context: JobContext<UpdateStoreJob, never, never>)
     {
         if (process.env.CUSTOM_STORE_PATH) return;
 
-        const storeFolder = getStoreFolder();
+        const tempCache = path.join(tmpdir(), "gameflow-bun-cache");
+        const storeFolder = getStoreRootFolder();
         await ensureDir(storeFolder);
-        context.setProgress(10);
-        if (await this.isGitRepo(storeFolder))
-        {
-            const existingOrigin = await this.getOrigin(storeFolder);
-            if (existingOrigin !== UpdateStoreJob.origin)
-            {
-                throw new Error(`Git Repo in downloads is not valid. It has origin of ${existingOrigin}. Repo must be of ${UpdateStoreJob.origin}`);
-            }
 
-            // check for uncommitted changes
-            const status = await this.gitCommand([" status", "--porcelain"], storeFolder);
-            if (status.length > 0)
-            {
-                console.log("Cleaning local changes...");
-                await this.gitCommand(["reset", "--hard"], storeFolder);
-                await this.gitCommand(["clean", "-fd"], storeFolder);
+        await Bun.spawn([process.execPath, "install", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
+            cwd: storeFolder,
+            stdout: 'pipe',
+            stderr: 'pipe',
+            env: {
+                BUN_BE_BUN: "1",
+                BUN_INSTALL_CACHE_DIR: tempCache
             }
-
-            // fetch & reset to remote
-            await this.gitCommand(["fetch", "origin"], storeFolder);
-            await this.gitCommand(["reset", "--hard", `origin/${UpdateStoreJob.branch}`], storeFolder);
-            console.log("Shop Repo updated");
-        } else
-        {
-            context.setProgress(50);
-            await this.gitCommand(["clone", "--depth", "1", "--branch", UpdateStoreJob.branch, UpdateStoreJob.origin, '.'], storeFolder);
-            context.setProgress(100);
-        }
+        }).exited;
     }
 }
