@@ -61,4 +61,4 @@ const moduleUrls = import.meta.glob
 // emulatorjs expects basenames instead of paths for some reason
 window.EJS_paths = Object.fromEntries(await Promise.all(Object.entries(moduleUrls).map(async ([key, value]) => [basename(key), await value()])));
 
-await import('@emulatorjs/emulatorjs/data/loader.js');
+await import('@emulatorjs/emulatorjs/data/loader.js' as any);

@@ -6,14 +6,14 @@ import * as schema from "@schema/app";
 import * as emulatorSchema from "@schema/emulators";
 import path from 'node:path';
 import { getPlatformApiPlatformsIdGet, getRomApiRomsIdGet, PlatformSchema } from "@clients/romm";
-import { config, db, emulatorsDb, events, jar } from "../app";
+import { config, db, emulatorsDb, events } from "../app";
 import { extractStoreGameSourceId, getStoreGameFromId } from "../store/services/gamesService";
 import * as igdb from 'ts-igdb-client';
 import secrets from "../secrets";
-import { hashFile } from "@/bun/utils";
+import { hashFile, simulateProgress } from "@/bun/utils";
 import { Downloader } from "@/bun/utils/downloader";
-import { sleep } from "bun";
 import _7z from '7zip-min';
+import z from "zod";
 
 interface JobConfig
 {
@@ -25,11 +25,14 @@ export type InstallJobStates = 'download' | 'extract';
 
 export class InstallJob implements IJob<never, InstallJobStates>
 {
+    static id = "install-job" as const;
+    static query = (q: { source: string; id: string; }) => `${InstallJob.id}-${q.source}-${q.id}`;
+    static dataSchema = z.never();
     public gameId: string;
     public source: string;
     public sourceId: string;
     public config?: JobConfig;
-    static id = "install-job" as const;
+
     public group = InstallJob.id;
 
     constructor(id: string, source: string, sourceId: string, config?: JobConfig)
@@ -53,7 +56,6 @@ export class InstallJob implements IJob<never, InstallJobStates>
             file_name: string;
             size?: number;
         }[] = [];
-        let cookie: string = '';
         let screenshotUrls: string[];
         let coverUrl: string;
         let rommPlatform: PlatformSchema | undefined;
@@ -115,7 +117,6 @@ export class InstallJob implements IJob<never, InstallJobStates>
                 }));
 
                 files.push(...rommFiles.filter(f => f !== undefined));
-                cookie = await jar.getCookieString(config.get('rommAddress') ?? '');
                 break;
             case 'store':
                 const game = await getStoreGameFromId(this.gameId);
@@ -295,12 +296,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
             });
         } else
         {
-            for (let i = 0; i < 10; i++)
-            {
-                cx.setProgress(i * 10, "download");
-                if (cx.abortSignal.aborted) return;
-                await sleep(1000);
-            }
+            await simulateProgress(p => cx.setProgress(p, "download"), cx.abortSignal);
         }
 
 

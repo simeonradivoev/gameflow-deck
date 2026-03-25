@@ -4,10 +4,12 @@ import { getStoreRootFolder } from "../store/services/gamesService";
 import { STORE_VERSION } from "@/shared/constants";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import z from "zod";
 
 export default class UpdateStoreJob implements IJob<never, never>
 {
     static id = "update-store" as const;
+    static dataSchema = z.never();
     packageName: string;
     registry: URL;
     storeVersion: string;
@@ -27,7 +29,8 @@ export default class UpdateStoreJob implements IJob<never, never>
         const storeFolder = getStoreRootFolder();
         await ensureDir(storeFolder);
 
-        await Bun.spawn([process.execPath, "install", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
+        console.log("Updating Store");
+        const proc = Bun.spawn([process.execPath, "add", `${this.packageName}@${this.storeVersion}`, "--production", "--registry", this.registry.href], {
             cwd: storeFolder,
             stdout: 'pipe',
             stderr: 'pipe',
@@ -35,6 +38,13 @@ export default class UpdateStoreJob implements IJob<never, never>
                 BUN_BE_BUN: "1",
                 BUN_INSTALL_CACHE_DIR: tempCache
             }
-        }).exited;
+        });
+
+        const stdout = await new Response(proc.stdout).text();
+        console.log(stdout);
+        const stderr = await new Response(proc.stderr).text();
+        if (stderr)
+            console.error(stderr);
+        await proc.exited;
     }
 }

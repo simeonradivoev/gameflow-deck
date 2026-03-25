@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { OptionSpace } from '../../components/options/OptionSpace';
 import { OptionInput } from '../../components/options/OptionInput';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '../../components/options/Button';
 import { Check, ChevronDown, FolderSearch, SearchAlert, Trash, TriangleAlert } from 'lucide-react';
 import { ContextDialog, ContextList, DialogEntry, OptionElement } from '../../components/ContextDialog';
@@ -15,6 +15,10 @@ import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import FilePicker from '@/mainview/components/FilePicker';
 import { dirname } from 'pathe';
 import { autoEmulatorsQuery, customEmulatorAddMutation, customEmulatorDeleteMutation, customEmulatorRemoveValueQuery, customEmulatorsQuery, setCustomEmulatorMutation } from '@queries/settings';
+import Carousel from '@/mainview/components/Carousel';
+import { FOCUS_KEYS } from '@/mainview/scripts/types';
+import { scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from '@/mainview/scripts/utils';
+import { SettingsOption } from '@/mainview/components/options/SettingsOption';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -99,6 +103,7 @@ function EmulatorPath (data: { id: string; })
   const [dirty, setDirty] = useState(false);
   const [localValue, setLocalValue] = useState<string | undefined>();
   const { data: remoteValue } = useQuery(customEmulatorRemoveValueQuery(data.id));
+  useEffect(() => { setLocalValue(remoteValue); }, [remoteValue]);
   const setSettingMutation = useMutation(setCustomEmulatorMutation(data.id, (v) =>
   {
     setLocalValue(v);
@@ -128,7 +133,7 @@ function EmulatorPath (data: { id: string; })
   };
 
   return (
-    <OptionSpace id={`${data.id}-space`} label={
+    <OptionSpace id={FOCUS_KEYS.EMULATOR_CUSTOM_PATH(data.id)} label={
       focus => <>
         <p className='font-semibold'>{data.id}</p>
         <small className='opacity-40'>{emulators[data.id]}</small>
@@ -140,7 +145,6 @@ function EmulatorPath (data: { id: string; })
           type="text"
           onBlur={handleSave}
           autocomplete="off"
-          defaultValue={remoteValue}
           onChange={(v) =>
           {
             setLocalValue(v);
@@ -187,22 +191,22 @@ function EmulatorBadge (data: {
   isCritical: boolean;
   pathCover?: string;
   addOverride: (emulator: string) => void;
-})
+} & FocusParams)
 {
   const { focusKey, ref, focused } = useFocusable({
-    focusKey: `badge-${data.emulator}`, onFocus: () =>
-    {
-      (ref.current as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
+    focusKey: FOCUS_KEYS.EMULATOR_CARD(data.emulator),
+    onFocus (l, p, details) { data.onFocus?.(focusKey, ref.current, details); }
   });
 
   useShortcuts(focusKey, () => [{
-    label: 'Add Override', button: GamePadButtonCode.A, action: () =>
+    label: 'Add Override',
+    button: GamePadButtonCode.A,
+    action: () =>
       data.addOverride(data.emulator)
   }], [data.addOverride]);
 
-  return <div className={classNames("tooltip tooltip-primary", { "tooltip-open": focused })} data-tip={`${emulators[data.emulator]}`}>
-    <div ref={ref} className={
+  return <div ref={ref} className={classNames("tooltip tooltip-primary tooltip-right", { "tooltip-open": focused })} data-tip={`${emulators[data.emulator]}`}>
+    <div className={
       twMerge('flex flex-col rounded-3xl bg-base-300 justify-center items-center p-4 overflow-hidden h-full',
         classNames({
           "bg-base-200": !data.path,
@@ -221,15 +225,38 @@ function EmulatorBadge (data: {
   </div>;
 }
 
-function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) => void; })
+function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) => void; } & FocusParams)
 {
-  const { data: autoEmulators } = useQuery(autoEmulatorsQuery);
-  const { ref, focusKey } = useFocusable({ focusKey: `emulator-badges`, focusable: !!autoEmulators && autoEmulators.length > 0 });
-  return <div ref={ref} className='grid grid-cols-[repeat(auto-fit,14rem)] auto-rows-[4rem] gap-2 justify-center-safe'>
+  const { data: autoEmulators } = useQuery({
+    ...autoEmulatorsQuery,
+    select (data)
+    {
+      return data.toSorted((a, b) =>
+      {
+        const sourceCompare = (b.validSource ? 1 : 0) - (a.validSource ? 1 : 0);
+        if (sourceCompare !== 0)
+        {
+          return sourceCompare;
+        } else
+        {
+          return b.name.localeCompare(b.name);
+        }
+      });
+    }
+  });
+  const { ref, focusKey } = useFocusable({
+    focusKey: `emulator-badges`,
+    focusable: !!autoEmulators && autoEmulators.length > 0,
+    onFocus (l, p, details) { data.onFocus?.(focusKey, ref.current, details); }
+  });
+  useDragScroll(ref);
+  return <Carousel scrollRef={ref} className='grid grid-flow-col overflow-x-scroll auto-cols-[16rem] grid-rows-[repeat(3,4rem)] gap-2 justify-center-safe py-4 no-scrollbar'>
+
     <FocusContext value={focusKey}>
-      {autoEmulators?.map(e => <EmulatorBadge key={e.name} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.logo} path={e.validSource?.binPath} exists={!!e.validSource} emulator={e.name} />)}
+      {autoEmulators?.map(e => <EmulatorBadge onFocus={(k, n, d) => scrollIntoNearestParent(n)} key={e.name} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.logo} path={e.validSource?.binPath} exists={!!e.validSource} emulator={e.name} />)}
+
     </FocusContext>
-  </div>;
+  </Carousel>;
 }
 
 function RouteComponent ()
@@ -242,11 +269,19 @@ function RouteComponent ()
 
   const { data: customEmulators } = useQuery(customEmulatorsQuery);
 
-  const addOverrideMutation = useMutation(customEmulatorAddMutation);
+  const addOverrideMutation = useMutation({
+    ...customEmulatorAddMutation, async onSuccess (data, variables, onMutateResult, context)
+    {
+      await context.client.invalidateQueries({ queryKey: ['custom-emulators'] });
+      setFocus(FOCUS_KEYS.EMULATOR_CUSTOM_PATH(variables));
+    },
+  });
 
   return <FocusContext value={focusKey}>
     <ul ref={ref} className="list rounded-box gap-2">
-      <EmulatorBadges addOverride={addOverrideMutation.mutate} />
+      <EmulatorBadges addOverride={addOverrideMutation.mutate} onFocus={scrollIntoViewHandler({ block: 'center' })} />
+      <div className="divider text-base-content/40">Preferences</div>
+      <SettingsOption label="Launch In Fullscreen" id="launchInFullscreen" type="checkbox" />
       <div className="divider text-base-content/40">Overrides</div>
       <NewEmulatorPath isAddingOverride={addOverrideMutation.isPending} addOverride={addOverrideMutation.mutate} />
       {!!customEmulators && customEmulators.map((key) => <EmulatorPath key={key} id={key} />)}

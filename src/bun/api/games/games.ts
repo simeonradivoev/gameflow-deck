@@ -1,27 +1,27 @@
 import Elysia, { status } from "elysia";
-import { activeGame, config, db, emulatorsDb, events, taskQueue } from "../app";
-import { and, eq, getTableColumns, inArray, not, or, sql } from "drizzle-orm";
-import z, { number } from "zod";
+import { config, db, emulatorsDb, taskQueue } from "../app";
+import { and, eq, getTableColumns, inArray, sql } from "drizzle-orm";
+import z from "zod";
 import * as schema from "@schema/app";
 import fs from "node:fs/promises";
-import { FrontEndEmulator, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeDetailedEmulator, GameListFilterSchema, SERVER_URL } from "@shared/constants";
-import { getCurrentUserApiUsersMeGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomsApiRomsGet } from "@clients/romm";
+import { GameListFilterSchema, SERVER_URL } from "@shared/constants";
+import { getPlatformsApiPlatformsGet, getRomsApiRomsGet } from "@clients/romm";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
-import { calculateSize, checkInstalled, convertLocalToFrontend, convertRomToFrontend, convertRomToFrontendDetailed, convertStoreToFrontend, convertStoreToFrontendDetailed, getLocalGameDetailed, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
+import { convertLocalToFrontend, convertRomToFrontend, convertStoreToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
 import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
 import { getEmulatorsForSystem, launchCommand } from "./services/launchGameService";
-import { getErrorMessage, SeededRandom, shuffleInPlace } from "@/bun/utils";
+import { getErrorMessage, SeededRandom } from "@/bun/utils";
 import { defaultFormats, defaultPlugins } from 'jimp';
 import { createJimp } from "@jimp/core";
 import webp from "@jimp/wasm-webp";
 import * as emulatorSchema from '@schema/emulators';
-import { buildStoreFrontendEmulatorSystems, extractStoreGameSourceId, getShuffledStoreGames, getStoreEmulatorPackage, getStoreGame, getStoreGameFromPath, getStoreGameManifest } from "../store/services/gamesService";
+import { buildStoreFrontendEmulatorSystems, getShuffledStoreGames, getStoreEmulatorPackage, getStoreGameFromPath, getStoreGameManifest } from "../store/services/gamesService";
 import { convertStoreEmulatorToFrontend } from "../store/services/emulatorsService";
-import { use } from "react";
 import { CACHE_KEYS, getOrCached } from "../cache";
 import { host } from "@/bun/utils/host";
+import { LaunchGameJob } from "../jobs/launch-game-job";
 
 // A custom jimp that supports webp
 const Jimp = createJimp({
@@ -31,23 +31,30 @@ const Jimp = createJimp({
 
 async function processImage (img: string | Buffer | ArrayBuffer, { blur, width, height, noBlur }: { blur?: number, width?: number, height?: number; noBlur?: boolean; })
 {
-    if (blur && !noBlur)
-    {
-        const jimp = await Jimp.read(img);
-        if (width)
-        {
-            jimp.resize({ w: width, h: height });
-        }
-        if (height)
-        {
-            jimp.resize({ w: width, h: height });
-        }
-        if (blur)
-        {
-            jimp.blur(blur);
-        }
 
-        return jimp.getBuffer('image/png');
+    try
+    {
+        if ((blur && !noBlur) || width || height)
+        {
+            const jimp = await Jimp.read(img);
+
+            if (blur && !noBlur)
+            {
+                jimp.blur(blur);
+            }
+
+            if (width)
+            {
+                jimp.resize({ w: width, h: height });
+            } else if (height)
+            {
+                jimp.resize({ w: width, h: height });
+            }
+            return jimp.getBuffer('image/webp');
+        }
+    } catch (e)
+    {
+
     }
 
     if (typeof img === 'string')
@@ -267,7 +274,7 @@ export default new Elysia()
                         {
                             return {
                                 name: 'EMULATORJS',
-                                validSource: { binPath: SERVER_URL(host), type: 'js', exists: true },
+                                validSource: { binPath: SERVER_URL(host), type: 'embedded', exists: true },
                                 logo: `/api/romm/image?url=${encodeURIComponent('https://emulatorjs.org/logo/EmulatorJS.png')}`,
                                 systems: [],
                                 gameCount: 0
@@ -312,11 +319,11 @@ export default new Elysia()
     })
     .post('/game/:source/:id/install', async ({ params: { id, source } }) =>
     {
-        if (!taskQueue.findJob(`install-rom-${source}-${id}`, InstallJob))
+        if (!taskQueue.findJob(InstallJob.query({ source, id }), InstallJob))
         {
             if (source === 'romm' || source === 'store')
             {
-                taskQueue.enqueue(`install-rom-${source}-${id}`, new InstallJob(id, source, id, { dryRun: true }));
+                taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source, id, { dryRun: true }));
                 return status(200);
             }
 
@@ -359,7 +366,7 @@ export default new Elysia()
                     if (validCommand)
                     {
                         // launch command waits for the game to exit, we don't want that.
-                        launchCommand(validCommand, source, id, validCommands.gameId);
+                        await launchCommand(validCommand, source, id, validCommands.gameId);
                         return { type: 'application', command: null };
                     } else
                     {
@@ -380,13 +387,10 @@ export default new Elysia()
     })
     .post("/stop", async ({ }) =>
     {
-        if (activeGame)
+        const job = taskQueue.findJob(LaunchGameJob.id, LaunchGameJob);
+        if (job)
         {
-            events.emit('activegameexit', {
-                source: 'local', id: String(activeGame.gameId),
-                exitCode: null,
-                signalCode: null
-            });
+            job.abort('cancel');
         }
     })
     .get('/emulatorjs/data/cores/*', async ({ params }) =>
@@ -563,6 +567,9 @@ export default new Elysia()
 
             if (g.platform_slug === sourceData.platform_slug)
                 rank += 1;
+
+            if (g.id.source === 'local')
+                rank -= 0.2;
 
             if (g.metadata)
             {

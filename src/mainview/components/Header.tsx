@@ -14,7 +14,7 @@ import
   Bell,
   Bluetooth,
   Clock,
-  User,
+  Settings,
   Wifi,
   WifiHigh,
   WifiLow,
@@ -22,70 +22,44 @@ import
 } from "lucide-react";
 import { RoundButton } from "./RoundButton";
 import { useQuery } from "@tanstack/react-query";
-import { getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "@clients/romm/@tanstack/react-query.gen";
 import { RPC_URL } from "../../shared/constants";
-import { JSX, Ref, RefObject, useEffect, useRef, useState } from "react";
+import { JSX, RefObject, useEffect, useRef, useState } from "react";
 import { systemApi } from "../scripts/clientApi";
 import { Router } from "..";
 import { useStickyDataAttr } from "../scripts/utils";
+import { twMerge } from "tailwind-merge";
+import { TwitchIcon } from "../scripts/brandIcons";
+import { rommUserQuery } from "../scripts/queries/romm";
+import { twitchLoginVerificationQuery } from "../scripts/queries/settings";
 
 function HeaderAvatar (data: {
   id: string;
-  imageSrc?: string | string[];
+  preview?: string | JSX.Element;
   className?: string;
   active?: boolean;
-  status?: HeaderAccount['status'];
   locked?: boolean;
-  type?: HeaderAccount['type'];
   onSelect?: () => void;
 })
 {
-  const { ref, focused } = useFocusable({ focusKey: data.id, onEnterPress: data.onSelect });
-  const bgColors = {
-    primary: " text-primary-content",
-    secondary: " text-secondary-content",
-    accent: " text-accent-content",
-    base: "bg-base-100",
-    none: undefined,
-  };
 
   return (
     <div
       id={data.id}
-      ref={ref}
       onClick={data.onSelect}
       style={{ viewTransitionName: `header-account-${data.id}` }}
-      className={classNames(
-        `avatar indicator ring-offset-base-100 sm:size-8 md:size-14 rounded-full flex items-center justify-center`,
-        bgColors[data.type ?? "none"],
-        "text-base-content cursor-pointer transition-all drop-shadow-md",
-        "hover:ring-primary hover:ring-7 focusable focusable-primary focused:ring-offset-base-100",
-        {
-          "ring-5 hover:ring-offset-5": data.active,
-          "ring-offset-5": focused && data.active,
-        },
+      className={twMerge(
+        `avatar overflow-visible bg-base-100 indicator border-7 sm:size-8 md:size-14 rounded-full flex items-center justify-center drop-shadow-md`,
         data.className,
       )}
     >
-      {data.imageSrc ? (
+      {typeof data.preview === 'string' ? (
         <div className="overflow rounded-full w-full h-full">
           <picture>
-            {typeof data.imageSrc === 'string' && <img key={"og-image"} src={data.imageSrc}></img>}
-            {Array.isArray(data.imageSrc) && data.imageSrc.map((s, i) =>
-            {
-              if (i === (data.imageSrc!.length - 1))
-              {
-                return <img key={'fallback-image'} src={s}></img>;
-              }
-              return <source key={`alt-img-${i}`} srcSet={s}></source>;
-            })}
+            <img key={"og-image"} src={data.preview}></img>
+
           </picture>
         </div>
-      ) : (
-        <User />
-      )}
-      <span className={classNames("indicator-item status md:left-1 top-1 sm:ring-2 md:ring-3 ring-base-100 z-1", data.status)}></span>
-
+      ) : data.preview}
     </div>
   );
 }
@@ -101,7 +75,7 @@ export interface HeaderButton
 export interface HeaderAccount
 {
   id: string;
-  previewUrl?: string | string[];
+  preview?: string | JSX.Element;
   status?: "status-error" | "status-success" | "status-neutral";
   type?: "base" | "primary" | "secondary" | "accent";
   locked?: boolean;
@@ -228,32 +202,52 @@ function BatteryStatus ()
 
 export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 {
-  const user = useQuery({
-    ...getCurrentUserApiUsersMeGetOptions(),
+  const rommUser = useQuery({
+    ...rommUserQuery(),
     refetchOnWindowFocus: false,
     retry: 1
   });
+  const twitchStatus = useQuery({
+    ...twitchLoginVerificationQuery, refetchOnWindowFocus: false,
+    retry: 1
+  });
 
-  const accounts: HeaderAccount[] = [{
-    id: 'romm', previewUrl: [
-      `${RPC_URL(__HOST__)}/api/romm/assets/logos/romm_logo_xbox_one_square.svg`,
-    ],
-    action: () =>
-    {
-      Router.navigate({ to: '/settings/accounts', search: { focus: 'rommAddress' } });
-    },
-    status: user.data ? "status-success" : 'status-error',
-    type: 'secondary'
-  }, ...data.accounts ?? []];
+  const { ref } = useFocusable({ focusKey: 'accounts' });
 
-  return <div className="flex items-center gap-2 drop-shadow-sm">
+  const accounts: HeaderAccount[] = [];
+  if (data.accounts) accounts.push(...data.accounts);
+
+  if (rommUser.data)
+  {
+    accounts.push({
+      id: 'romm', preview: `${RPC_URL(__HOST__)}/api/romm/assets/logos/romm_logo_xbox_one_square.svg`,
+      action: () =>
+      {
+        Router.navigate({ to: '/settings/accounts', search: { focus: 'rommAddress' } });
+      },
+      status: rommUser.data ? "status-success" : 'status-error',
+      type: 'secondary'
+    });
+  }
+
+  if (twitchStatus.data)
+  {
+    accounts.push({
+      id: 'twitch', preview: TwitchIcon,
+      action: () =>
+      {
+        Router.navigate({ to: '/settings/accounts', search: { focus: 'rommAddress' } });
+      },
+      type: 'secondary'
+    });
+  }
+
+  return <div ref={ref} className="avatar-group cursor-pointer -space-x-6 w-fit flex items-center gap-2 drop-shadow-sm overflow-visible rounded-3xl focusable focusable-hover ">
     {accounts?.map(a => <HeaderAvatar
       key={`header-avatar-${a.id}`}
-      type={a.type}
       id={`account-${a.id}`}
-      status={a.status}
       locked={a.locked}
-      imageSrc={a.previewUrl}
+      preview={a.preview}
       onSelect={a.action}
     />)}
   </div>;
@@ -273,7 +267,7 @@ export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElement
     <div className="flex gap-2">
       {data.buttonElements ?? data.buttons?.map(b => <RoundButton
         key={b.id}
-        className="header-icon sm:size-10 md:size-16"
+        className="header-icon sm:size-10 md:size-14"
         id={b.id}
         external={b.external}
         cssStyle={{ viewTransitionName: `header-button-${b.id}` }}
@@ -296,6 +290,10 @@ interface HeaderUIParams
 export function HeaderUI (data: HeaderUIParams)
 {
   const { ref, focusKey } = useFocusable({ focusKey: "header-elements", focusable: data.focusable, preferredChildFocusKey: data.preferredChildFocusKey });
+  const goToSettings = () =>
+  {
+    Router.navigate({ to: '/settings/accounts' });
+  };
   return (
     <FocusContext.Provider value={focusKey}>
       <header
@@ -305,7 +303,7 @@ export function HeaderUI (data: HeaderUIParams)
       >
         <HeaderAccounts accounts={data.accounts} />
         {data.title}
-        <HeaderStatusBar buttonElements={data.buttonElements} buttons={data.buttons} />
+        <HeaderStatusBar buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "settings", action: goToSettings, external: true }]} />
       </header>
     </FocusContext.Provider>
   );

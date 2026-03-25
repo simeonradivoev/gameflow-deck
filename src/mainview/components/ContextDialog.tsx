@@ -5,6 +5,7 @@ import { twMerge } from "tailwind-merge";
 import { X } from "lucide-react";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts";
 import { ContextDialogContext } from "../scripts/contexts";
+import { FOCUS_KEYS } from "../scripts/types";
 
 export function ContextList (data: { options?: DialogEntry[]; className?: string; showCloseButton?: boolean; })
 {
@@ -25,18 +26,18 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     };
     const handleAction = data.action ? () => data.action?.({ close: context.close, focus: focusSelf }) : undefined;
     const { ref, focusSelf, focusKey } = useFocusable({
-        focusKey: `${context.id}-list-option-${data.id}`,
+        focusKey: FOCUS_KEYS.CONTEXT_DIALOG_OPTION(context.id, data.id),
         onEnterPress: data.shortcuts ? undefined : handleAction,
         onFocus: handleFocus,
         trackChildren: typeof data.content !== 'string'
     });
     const colors = {
-        primary: "active:bg-primary control-pointer:hover:bg-primary focused:bg-primary focused:text-primary-content in-focused:bg-primary in-focused:text-primary-content",
-        secondary: "active:bg-secondary control-pointer:hover:bg-secondary focused:bg-secondary focused:text-secondary-content in-focused:bg-secondary in-focused:text-secondary-content",
-        accent: "active:bg-accent control-pointer:hover:bg-accent focused:bg-accent focused:text-accent-content in-focused:bg-accent in-focused:text-accent-content",
-        info: "active:bg-info control-pointer:hover:bg-info focused:bg-info focused:text-info-content in-focused:bg-info in-focused:text-info-content",
-        warning: "active:bg-warning control-pointer:hover:bg-warning focused:bg-warning focused:text-warning-content in-focused:bg-warning in-focused:text-warning-content",
-        error: "active:bg-error control-pointer:hover:bg-error focused:bg-error focused:text-error-content in-focused:bg-error in-focused:text-error-content"
+        primary: "active:bg-primary control-pointer:hover:bg-primary control-pointer:hover:text-primary-content focused:bg-primary focused:text-primary-content in-focused:bg-primary in-focused:text-primary-content",
+        secondary: "active:bg-secondary control-pointer:hover:bg-secondary control-pointer:hover:text-secondary-content focused:bg-secondary focused:text-secondary-content in-focused:bg-secondary in-focused:text-secondary-content",
+        accent: "active:bg-accent control-pointer:hover:bg-accent control-pointer:hover:text-accent-content focused:bg-accent focused:text-accent-content in-focused:bg-accent in-focused:text-accent-content",
+        info: "active:bg-info control-pointer:hover:bg-info control-pointer:hover:text-info-content focused:bg-info focused:text-info-content in-focused:bg-info in-focused:text-info-content",
+        warning: "active:bg-warning control-pointer:hover:bg-warning control-pointer:hover:text-warning-content focused:bg-warning focused:text-warning-content in-focused:bg-warning in-focused:text-warning-content",
+        error: "active:bg-error control-pointer:hover:bg-error control-pointer:hover:text-error-content focused:bg-error focused:text-error-content in-focused:bg-error in-focused:text-error-content"
     };
     if (data.shortcuts)
     {
@@ -47,9 +48,10 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
         className={
             twMerge("flex cursor-pointer sm:text-sm md:text-base")}>
         <FocusContext value={focusKey}>
-            <div className={twMerge("flex w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl transition-all gap-2  active:animate-scale in-focused:font-semibold",
+            <div className={twMerge("flex w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl transition-all gap-2 active:animate-scale in-focused:font-semibold",
                 data.className,
-                colors[data.type])}>
+                colors[data.type],
+                "active:bg-base-content! active:text-base-300! active:transition-none")}>
                 {data.icon}
                 {data.content}
             </div>
@@ -71,33 +73,34 @@ export function useContextDialog (id: string, data: { content?: JSX.Element; cla
 {
     const [open, setOpen] = useState(false);
     const [sourceFocusKey, setSourceFocusKey] = useState<string | undefined>(undefined);
-    const dialog = <ContextDialog id={id} open={open} close={() =>
+    const handleClose = (value: boolean, newSourceFocusKey?: string) =>
     {
-        setOpen(false);
-        data.onClose?.();
-    }} className={data.className} sourceFocusKey={sourceFocusKey} preferredChildFocusKey={data.preferredChildFocusKey}>
+        if (value === open) return;
+        if (value)
+        {
+            setOpen(true);
+            setSourceFocusKey(newSourceFocusKey);
+        } else
+        {
+            setOpen(false);
+            data.onClose?.();
+            if (newSourceFocusKey)
+            {
+                setFocus(newSourceFocusKey);
+            } else if (sourceFocusKey)
+            {
+                setFocus(sourceFocusKey);
+            }
+        }
+
+    };
+    const dialog = <ContextDialog id={id} open={open} close={handleClose} className={data.className} preferredChildFocusKey={data.preferredChildFocusKey}>
         {data.content}
     </ContextDialog>;
     return {
         dialog,
         open,
-        setOpen: (value: boolean, sourceFocusKey?: string) =>
-        {
-            if (value === open) return;
-            if (value)
-            {
-                setOpen(true);
-                setSourceFocusKey(sourceFocusKey);
-            } else
-            {
-                setOpen(false);
-                if (sourceFocusKey)
-                {
-                    setFocus(sourceFocusKey);
-                }
-            }
-
-        }
+        setOpen: handleClose
     };
 }
 
@@ -108,7 +111,6 @@ export function ContextDialog (data: {
     close: (open: boolean) => void;
     className?: string;
     preferredChildFocusKey?: string;
-    sourceFocusKey?: string;
 })
 {
     const { ref, focusKey, focusSelf } = useFocusable({
@@ -137,7 +139,7 @@ export function ContextDialog (data: {
     }] : [], [data.open]);
 
     return <dialog ref={ref} open={data.open} closedby="any" className={
-        twMerge("fixed modal cursor-pointer bg-base-300/80 backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
+        twMerge("fixed modal cursor-pointer bg-base-300/80 backdrop-blur-md backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
             classNames({ "opacity-0": !data.open }))
     }
         onClick={handleClose}>
@@ -145,7 +147,7 @@ export function ContextDialog (data: {
             <ContextDialogContext value={{ id: data.id, close: handleClose }} >
                 <div
                     className={twMerge(
-                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] cursor-auto",
+                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] cursor-auto backdrop-blur-2xl",
                         data.open ? "animate-scale-delayed" : "opacity-0",
                         data.className)
                     }

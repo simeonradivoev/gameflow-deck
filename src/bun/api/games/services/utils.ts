@@ -4,11 +4,11 @@ import path from "node:path";
 import { config, db, emulatorsDb } from "../../app";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@schema/app";
-import { FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement, StoreGameType } from "@shared/constants";
+import { StoreGameType } from "@shared/constants";
 import { DetailedRomSchema, getCurrentUserApiUsersMeGet, getRomApiRomsIdGet, SimpleRomSchema } from "@clients/romm";
 import * as emulatorSchema from "@schema/emulators";
-import romm from "@/mainview/scripts/queries/romm";
 import { extractStoreGameSourceId, getStoreGame } from "../../store/services/gamesService";
+import { isSteamDeck, isSteamDeckGameMode } from "@/bun/utils";
 
 export async function calculateSize (installPath: string | null)
 {
@@ -29,9 +29,10 @@ export function getLocalGameMatch (id: string, source: string)
 
 export function convertRomToFrontend (rom: SimpleRomSchema): FrontEndGameType
 {
+    const steamDeck = isSteamDeckGameMode();
     const game: FrontEndGameType = {
         id: { id: String(rom.id), source: 'romm' },
-        path_cover: `/api/romm/image/romm${rom.path_cover_large}`,
+        path_cover: `/api/romm/image/romm${steamDeck ? rom.path_cover_small : rom.path_cover_large}`,
         last_played: rom.rom_user.last_played ? new Date(rom.rom_user.last_played) : null,
         updated_at: new Date(rom.updated_at),
         slug: rom.slug,

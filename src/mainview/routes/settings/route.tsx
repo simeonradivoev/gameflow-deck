@@ -19,6 +19,7 @@ import
   Info,
   Joystick,
   MonitorCog,
+  Puzzle,
 } from "lucide-react";
 import { JSX, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
@@ -140,6 +141,12 @@ function SettingsMenu (data: {})
         route="/settings/directories"
         label="Directories"
         icon={<HardDrive />}
+      />
+      <MenuItem
+        focusSelect
+        route="/settings/plugins"
+        label="Plugins"
+        icon={<Puzzle />}
       />
       <MenuItem
         focusSelect

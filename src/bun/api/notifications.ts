@@ -1,4 +1,4 @@
-import { Notification } from '@shared/constants';
+
 import { events } from './app';
 
 export default function buildNotificationsStream ()
@@ -10,7 +10,7 @@ export default function buildNotificationsStream ()
         {
 
             const encoder = new TextEncoder();
-            function enqueue (data: Notification, event?: 'notification')
+            function enqueue (data: FrontendNotification, event?: 'notification')
             {
                 const evntString = event ? `event: ${event}\n` : '';
                 controller.enqueue(encoder.encode(`${evntString}data: ${JSON.stringify(data)}\n\n`));
@@ -30,7 +30,7 @@ export default function buildNotificationsStream ()
                 }
             }, 15000);
 
-            const notificationHandler = (notification: Notification) =>
+            const notificationHandler = (notification: FrontendNotification) =>
             {
                 enqueue(notification, 'notification');
             };

@@ -1,17 +1,13 @@
-import { HTMLInputTypeAttribute, JSX, useCallback, useState } from "react";
+import { HTMLInputTypeAttribute, JSX, useCallback, useEffect, useState } from "react";
 import { SettingsType } from "../../../shared/constants";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { OptionSpace } from "./OptionSpace";
 import { OptionInput } from "./OptionInput";
 import { getSettingQuery, setSettingMutation } from "@queries/settings";
 
-type KeysWithValueAssignableTo<T, Value> = {
-    [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
-}[keyof T];
-
 export function SettingsOption (data: {
     label: string;
-    id: KeysWithValueAssignableTo<SettingsType, string>;
+    id: KeysWithValueAssignableTo<SettingsType, string | boolean>;
     type: HTMLInputTypeAttribute;
     placeholder?: string;
     icon?: JSX.Element;
@@ -19,9 +15,15 @@ export function SettingsOption (data: {
 })
 {
     const [dirty, setDirty] = useState(false);
-    const [localValue, setLocalValue] = useState<string | undefined>();
-    useQuery(getSettingQuery(data.id));
+    const [localValue, setLocalValue] = useState<string | boolean | undefined>();
+    const { data: serverValue } = useQuery(getSettingQuery(data.id));
     const setMutation = useMutation(setSettingMutation(data.id));
+
+    useEffect(() =>
+    {
+        setLocalValue(serverValue as any);
+        setDirty(false);
+    }, [serverValue]);
 
     const handleSave = useCallback(() =>
     {
@@ -43,7 +45,14 @@ export function SettingsOption (data: {
                 onChange={(v) =>
                 {
                     setLocalValue(v);
-                    setDirty(true);
+
+                    if (data.type === 'checkbox')
+                    {
+                        setMutation.mutate(v);
+                    } else
+                    {
+                        setDirty(true);
+                    }
                 }}
                 value={localValue}
             />

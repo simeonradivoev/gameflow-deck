@@ -56,6 +56,7 @@ export function CardList (data: {
         data-index={i}
         title={g.title}
         subtitle={g.subtitle ?? ""}
+        srcset={g.previewSrcset}
         onFocus={(id, node, details) =>
         {
           g.onFocus?.(details);

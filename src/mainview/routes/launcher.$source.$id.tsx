@@ -1,6 +1,5 @@
 import { AnimatedBackground } from '@/mainview/components/AnimatedBackground';
 import { createFileRoute } from '@tanstack/react-router';
-import { GameInstallProgress, RPC_URL } from '@/shared/constants';
 import DotsLoading from '../components/backgrounds/dots';
 import { Router } from '..';
 import { useEffect } from 'react';
@@ -9,6 +8,7 @@ import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import Shortcuts from '../components/Shortcuts';
 import { gameQuery } from '@queries/romm';
+import { rommApi } from '../scripts/clientApi';
 
 export const Route = createFileRoute('/launcher/$source/$id')({
   component: RouteComponent,
@@ -30,30 +30,22 @@ function RouteComponent ()
 
   useEffect(() =>
   {
-    const es = new EventSource(`${RPC_URL(__HOST__)}/api/romm/status/${source}/${id}`);
+    if (!data) return;
+    const sub = rommApi.api.romm.status({ source: data.id.source })({ id: data.id.id }).subscribe();
 
-    es.onmessage = ({ data }) =>
+    sub.subscribe((e) =>
     {
-      const stats = JSON.parse(data) as GameInstallProgress;
-      if (stats.status !== 'playing')
+      if (e.data.status !== 'playing')
       {
         HandleGoBack();
       }
-    };
-
-    es.addEventListener('refresh', () =>
-    {
-      HandleGoBack();
     });
 
-    es.onerror = () =>
+    return () =>
     {
-      HandleGoBack();
+      sub.close();
     };
-
-    return () => es.close();
-  }, []);
-
+  }, [data?.id]);
 
   return <AnimatedBackground ref={ref} backgroundKey='game-details'>
     <div className='flex shadow-2xs shadow-black flex-col absolute w-screen h-screen overflow-hidden justify-center items-center gap-4'>

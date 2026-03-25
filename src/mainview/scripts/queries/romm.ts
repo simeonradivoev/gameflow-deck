@@ -1,4 +1,4 @@
-import { DefaultRommStaleTime, FrontEndId, GameListFilterType, RommLoginDataSchema, RPC_URL } from "@/shared/constants";
+import { DefaultRommStaleTime, GameListFilterType, RommLoginDataSchema } from "@/shared/constants";
 import { rommApi, settingsApi } from "../clientApi";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
 import z from "zod";
@@ -45,7 +45,7 @@ export const rommLoginMutation = mutationOptions({
 });
 export const rommUserQuery = () => queryOptions({
     ...getCurrentUserApiUsersMeGetOptions(),
-    queryKey: ['romm', 'auth', "login"],
+    queryKey: ['romm', 'auth', "login"] as any,
     refetchOnWindowFocus: false,
     retry: 0
 });

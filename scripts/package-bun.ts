@@ -1,17 +1,24 @@
 import fs from "node:fs/promises";
 import path, { } from "node:path";
 import os from "node:os";
+import app from '../package.json';
 
 const system = getPlatform();
 const buildSubDir = process.env.BUILD_DIR ?? `./build/${system.platform}`;
 
 const compileOption: Bun.CompileBuildOptions = {
     outfile: "gameflow",
-    execArgv: ['--windows-hide-console'],
     autoloadTsconfig: true,
     autoloadPackageJson: true,
     autoloadDotenv: true,
     autoloadBunfig: true,
+    windows: {
+        hideConsole: true,
+        icon: './src/mainview/public/favicon.ico',
+        title: app.displayName,
+        description: app.description,
+        version: app.version
+    },
 };
 
 if (process.env.TARGET)
@@ -63,8 +70,9 @@ await Bun.build({
                     }
                 }
             });
-            build.onEnd(async () =>
+            build.onEnd(async (b) =>
             {
+
                 await fs.cp('./dist', `${buildSubDir}/dist`, { recursive: true });
                 await fs.cp('./drizzle', `${buildSubDir}/drizzle`, { recursive: true });
                 await fs.cp(`./vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, `${buildSubDir}/vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, { recursive: true });

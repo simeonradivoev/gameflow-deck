@@ -3,103 +3,23 @@ import { which } from 'bun';
 import fs from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import * as schema from '@schema/emulators';
-import * as appSchema from "@schema/app";
 import { eq } from 'drizzle-orm';
-import { activeGame, config, customEmulators, db, emulatorsDb, events, setActiveGame } from '../../app';
+import { config, customEmulators, emulatorsDb, taskQueue } from '../../app';
 import os from 'node:os';
-import { $ } from 'bun';
-import { spawn } from 'node:child_process';
-import { updateRomUserApiRomsIdPropsPut } from '@/clients/romm';
-import { CommandEntry, EmulatorSourceType } from '@/shared/constants';
 import { cores } from '../../emulatorjs/emulatorjs';
+import { LaunchGameJob } from '../../jobs/launch-game-job';
 
 export const varRegex = /%([^%]+)%/g;
 export const assignRegex = /(%\w+%)=(\S+) /g;
 
-export async function launchCommand (validCommand: { command: string, startDir?: string; }, source: string, sourceId: string, id: number)
+export async function launchCommand (validCommand: CommandEntry, source: string, sourceId: string, id: number)
 {
-    if (activeGame && activeGame.process?.killed === false)
+    if (taskQueue.hasActiveOfType(LaunchGameJob))
     {
-        throw new Error(`${activeGame.name} currently running`);
+        throw new Error(`${id} currently running`);
     }
 
-    const localGame = await db.query.games.findFirst({
-        where: eq(appSchema.games.id, id), columns: {
-            name: true,
-            source_id: true,
-            source: true
-        }
-    });
-
-    await new Promise((resolve, reject) =>
-    {
-        const game = spawn(validCommand.command, {
-            shell: true,
-            cwd: validCommand.startDir
-        });
-        game.stdout.on('data', data => console.log(data));
-        game.on('close', (code) =>
-        {
-            events.emit('activegameexit', { source, id: sourceId, exitCode: code, signalCode: null });
-            resolve(code);
-        });
-        game.on('error', e =>
-        {
-            console.error(e);
-            events.emit('notification', { message: e.message, type: 'error' });
-            reject(e);
-        });
-
-        setActiveGame({
-            process: game,
-            name: localGame?.name ?? "Unknown",
-            gameId: id,
-            command: validCommand
-        });
-
-        function updateRommProps (id: number)
-        {
-            updateRomUserApiRomsIdPropsPut({ path: { id }, body: { update_last_played: true } });
-            events.emit('notification', { message: "Updated Last Played", type: 'success' });
-        }
-
-        if (source === 'romm') 
-        {
-            updateRommProps(Number(sourceId));
-        }
-        else if (localGame?.source === 'romm' && localGame.source_id)
-        {
-            updateRommProps(Number(localGame.source_id));
-        }
-    });
-
-    /* Old spawn lanching, cases issues, needs to be ran as shell
-
-    const cmd = Array.from(validCommand.command.command.matchAll(/(".*?"|[^\s"]+)/g)).map(m => m[0]);
-    const game = setActiveGame({
-        process: Bun.spawn({
-            cmd,
-            env: {
-                ...process.env
-            },
-            onExit (subprocess, exitCode, signalCode, error)
-            {
-                events.emit('activegameexit', { subprocess, exitCode, signalCode, error });
-            },
-            stdin: "ignore",
-            stdout: "inherit",
-            stderr: "inherit",
-        }),
-        name: localGame?.name ?? "Unknown",
-        gameId: validCommand.gameId,
-        command: validCommand.command.command
-    });
-
-    await game.process.exited;
-    if (game.process.exitCode && game.process.exitCode > 0)
-    {
-        return status('Internal Server Error');
-    }*/
+    taskQueue.enqueue(LaunchGameJob.id, new LaunchGameJob(id, validCommand, source, sourceId));
 }
 
 /**
@@ -277,11 +197,14 @@ export async function getValidLaunchCommands (data: {
                     let validExec = execs.find(e => e.exists);
 
                     emulator = emulatorName;
-                    return [[value, validExec ? validExec.path : undefined], ['%EMUDIR%', validExec ? escapeWindowsArg(path.dirname(validExec.path)) : undefined]];
+                    return [
+                        [value, validExec ? validExec.binPath : undefined] as [string, string | undefined],
+                        [`%EMUSOURCE%`, validExec?.type] as [string, string | undefined],
+                        ['%EMUDIR%', validExec?.rootPath ?? (validExec ? escapeWindowsArg(path.dirname(validExec.binPath)) : undefined)] as [string, string | undefined]];
                 }
 
                 const key = value[0].substring(1, value.length - 1);
-                return [[value, process.env[key]]];
+                return [[value, process.env[key]] as [string, string | undefined]];
             }));
 
             const vars = { ...Object.fromEntries(varList.flatMap(l => l)), ...staticVars };
@@ -311,7 +234,13 @@ export async function getValidLaunchCommands (data: {
                 label: label ?? undefined,
                 command: formattedCommand,
                 startDir,
-                valid: !invalid, emulator
+                valid: !invalid, emulator,
+                emulatorSource: vars['%EMUSOURCE%'] as any,
+                metadata: {
+                    romPath: staticVars['%ROM%'],
+                    emulatorBin: varList.flatMap(l => l).find(v => v[0].includes('%EMULATOR_'))?.[1],
+                    emulatorDir: vars['%EMUDIR%']
+                }
             } satisfies CommandEntry;
         }));
 
@@ -328,7 +257,7 @@ export async function findExecsByName (emulatorName: string)
     return findExecs(emulatorName, emulator);
 }
 
-export function findStoreEmulatorExec (id: string, emulator?: { systempath: string[]; }): EmulatorSourceType | undefined
+export function findStoreEmulatorExec (id: string, emulator?: { systempath: string[]; }): EmulatorSourceEntryType | undefined
 {
     const storeEmulatorFolder = path.join(config.get('downloadPath'), 'emulators', id);
     const storeExecName = emulator?.systempath.find(name => existsSync(path.join(storeEmulatorFolder, name)));
@@ -342,7 +271,7 @@ export function findStoreEmulatorExec (id: string, emulator?: { systempath: stri
 
 export async function findExecs (id: string, emulator?: { winregistrypath: string[], systempath: string[], staticpath: string[]; })
 {
-    const execs: EmulatorSourceType[] = [];
+    const execs: EmulatorSourceEntryType[] = [];
 
     if (customEmulators.has(id))
     {

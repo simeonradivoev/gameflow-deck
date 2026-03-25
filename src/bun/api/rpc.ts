@@ -7,15 +7,17 @@ import { system } from "./system";
 import { store } from "./store/store";
 import { host } from "../utils/host";
 import { jobs } from "./jobs/jobs";
+import plugins from "./plugins/plugins";
 
 const api = new Elysia({ serve: {} })
-    .use([cors(), clients, settings, system, store, jobs]);
+    .use([cors(), clients, settings, system, store, jobs, plugins]);
 
 export type RommAPIType = typeof clients;
 export type SettingsAPIType = typeof settings;
 export type SystemAPIType = typeof system;
 export type StoreAPIType = typeof store;
 export type JobsAPIType = typeof jobs;
+export type PluginsAPIType = typeof plugins;
 
 export function RunAPIServer ()
 {

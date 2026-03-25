@@ -1,5 +1,5 @@
-import { GameInstallProgress, GameStatusType, RPC_URL, } from "@shared/constants";
-import { activeGame, config, customEmulators, db, events, taskQueue } from "../../app";
+import { RPC_URL, } from "@shared/constants";
+import { config, customEmulators, db, taskQueue } from "../../app";
 import { getValidLaunchCommands } from "./launchGameService";
 import * as schema from '@schema/app';
 import { eq } from "drizzle-orm";
@@ -7,14 +7,13 @@ import { getErrorMessage } from "@/bun/utils";
 import { getLocalGameMatch } from "./utils";
 import { getRomApiRomsIdGet } from "@/clients/romm";
 import fs from 'node:fs/promises';
-import { ErrorLike } from "elysia/universal";
 import { getStoreGameFromId } from "../../store/services/gamesService";
 import { cores } from "../../emulatorjs/emulatorjs";
 import { host } from "@/bun/utils/host";
 import Elysia from "elysia";
 import z from "zod";
-import data from "@emulators";
 import { InstallJob, InstallJobStates } from "../../jobs/install-job";
+import { LaunchGameJob } from "../../jobs/launch-game-job";
 
 class CommandSearchError extends Error
 {
@@ -62,7 +61,10 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
                             label: "Emulator JS",
                             command: `core=${cores[localGame.platform_slug]}&gameUrl=${encodeURIComponent(gameUrl)}`,
                             valid: true,
-                            emulator: 'EMULATORJS'
+                            emulator: 'EMULATORJS',
+                            metadata: {
+                                romPath: gameUrl
+                            }
                         });
                     }
 
@@ -111,19 +113,19 @@ export default function buildStatusResponse ()
         {
             if (data === 'cancel')
             {
-                const activeTask = taskQueue.findJob(`install-rom-${ws.data.params.source}-${ws.data.params.id}`, InstallJob);
+                const activeTask = taskQueue.findJob(InstallJob.query({ source: ws.data.params.source, id: ws.data.params.id }), InstallJob);
                 activeTask?.abort('cancel');
             }
         },
         async open (ws)
         {
             sendLatests();
+            const installJobId = InstallJob.query({ source: ws.data.params.source, id: ws.data.params.id });
 
             async function sendLatests ()
             {
                 if (ws.readyState > 1) return;
-                const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(ws.data.params.id, ws.data.params.source), columns: { id: true } });
-                const activeTask = taskQueue.findJob(`install-rom-${ws.data.params.source}-${ws.data.params.id}`, InstallJob);
+                const activeTask = taskQueue.findJob(InstallJob.query({ source: ws.data.params.source, id: ws.data.params.id }), InstallJob);
                 if (activeTask)
                 {
                     if (activeTask.status === 'queued')
@@ -134,7 +136,7 @@ export default function buildStatusResponse ()
                         ws.send({ status: activeTask.state as InstallJobStates, progress: activeTask.progress });
                     }
 
-                } else if (activeGame && activeGame.gameId === localGame?.id)
+                } else if (taskQueue.hasActiveOfType(LaunchGameJob))
                 {
                     ws.send({ status: 'playing', details: 'Playing' });
                 }
@@ -189,7 +191,7 @@ export default function buildStatusResponse ()
             }
 
             const dispose: Function[] = [];
-            const handleActiveExit = async (data: { error?: ErrorLike; }) =>
+            const handleActiveExit = async (data: { error?: unknown; }) =>
             {
                 if (data.error)
                 {
@@ -200,38 +202,41 @@ export default function buildStatusResponse ()
                 }
                 await sendLatests();
             };
-            events.on('activegameexit', handleActiveExit);
-            dispose.push(() => events.off('activegameexit', handleActiveExit));
             dispose.push(taskQueue.on('progress', (data) =>
             {
-                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
+                if (data.id === installJobId)
                 {
-
                     ws.send({ status: data.job.state as InstallJobStates, progress: data.progress });
                 }
             }));
             dispose.push(taskQueue.on('queued', (data) =>
             {
-                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
+                if (data.id === installJobId)
                 {
                     ws.send({ status: 'queued' });
                 }
             }));
-            dispose.push(taskQueue.on('completed', (data) =>
+            dispose.push(taskQueue.on('ended', (data) =>
             {
-                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
+                if (data.id === installJobId)
                 {
                     ws.send({ status: 'refresh' });
+                } else if (data.job.job instanceof LaunchGameJob)
+                {
+                    handleActiveExit({});
                 }
             }));
             dispose.push(taskQueue.on('error', (data) =>
             {
-                if (data.id === `install-rom-${ws.data.params.source}-${ws.data.params.id}`)
+                if (data.id === installJobId)
                 {
                     ws.send({
                         status: 'error',
                         error: getErrorMessage(data.error)
                     });
+                } else if (data.job.job instanceof LaunchGameJob)
+                {
+                    handleActiveExit({ error: data.error });
                 }
             }));
 

@@ -10,6 +10,7 @@ import _7z from '7zip-min';
 import fs from "node:fs/promises";
 import { Downloader } from "@/bun/utils/downloader";
 import { move } from "fs-extra";
+import { simulateProgress } from "@/bun/utils";
 
 type EmulatorDownloadStates = "download" | "extract";
 
@@ -20,11 +21,13 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
     emulator: string;
     downloadSource: string;
     emulatorPackage?: EmulatorPackageType;
+    dryRun?: boolean;
 
-    constructor(emulator: string, downloadSource: string)
+    constructor(emulator: string, downloadSource: string, init?: { dryRun?: boolean; })
     {
         this.emulator = emulator;
         this.downloadSource = downloadSource;
+        this.dryRun = init?.dryRun ?? false;
     }
 
     async start (context: JobContext<EmulatorDownloadJob, z.infer<typeof EmulatorDownloadJob.dataSchema>, EmulatorDownloadStates>)
@@ -56,44 +59,53 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
             throw new Error("Invalid Download Type");
         }
 
-        const tmpFolder = path.join(config.get("downloadPath"), ".tmp");
-        const downloader = new Downloader(this.emulator,
-            [{ url: new URL(downloadUrl), file_name: path.basename(downloadUrl), file_path: this.emulator }],
-            tmpFolder,
-            {
-                onProgress (stats)
-                {
-                    context.setProgress(stats.progress, 'download');
-                },
-            });
-
-        const destinationPaths = await downloader.start();
-        if (destinationPaths)
+        if (this.dryRun)
         {
-            if (isArchive)
-            {
-                if (await downloader.start() && destinationPaths[0])
+            await simulateProgress(p => context.setProgress(p, "download"), context.abortSignal);
+            await simulateProgress(p => context.setProgress(p, "extract"), context.abortSignal);
+        } else
+        {
+            const tmpFolder = path.join(config.get("downloadPath"), ".tmp");
+            const downloader = new Downloader(this.emulator,
+                [{ url: new URL(downloadUrl), file_name: path.basename(downloadUrl), file_path: this.emulator }],
+                tmpFolder,
                 {
-                    let destinationPath = destinationPaths[0];
-                    await _7z.unpack(destinationPath, emulatorsFolder);
-                    await fs.rm(destinationPath, { recursive: true });
-
-                    // check if 1 root folder we need to get rid of
-                    const contents = await fs.readdir(emulatorsFolder);
-                    if (contents.length === 1)
+                    signal: context.abortSignal,
+                    onProgress (stats)
                     {
-                        const stat = await fs.stat(path.join(emulatorsFolder, contents[0]));
-                        if (stat.isDirectory())
+                        context.setProgress(stats.progress, 'download');
+                    },
+                });
+
+            const destinationPaths = await downloader.start();
+            if (destinationPaths)
+            {
+                if (isArchive)
+                {
+                    if (await downloader.start() && destinationPaths[0])
+                    {
+                        let destinationPath = destinationPaths[0];
+                        await _7z.unpack(destinationPath, emulatorsFolder);
+                        await fs.rm(destinationPath, { recursive: true });
+
+                        // check if 1 root folder we need to get rid of
+                        const contents = await fs.readdir(emulatorsFolder);
+                        if (contents.length === 1)
                         {
-                            console.log("Found 1 root folder, using that instead");
-                            const tmpEmulatorsFolder = `${emulatorsFolder} (1)`;
-                            await move(path.join(emulatorsFolder, contents[0]), tmpEmulatorsFolder, { overwrite: true });
-                            await move(tmpEmulatorsFolder, emulatorsFolder, { overwrite: true });
+                            const stat = await fs.stat(path.join(emulatorsFolder, contents[0]));
+                            if (stat.isDirectory())
+                            {
+                                console.log("Found 1 root folder, using that instead");
+                                const tmpEmulatorsFolder = `${emulatorsFolder} (1)`;
+                                await move(path.join(emulatorsFolder, contents[0]), tmpEmulatorsFolder, { overwrite: true });
+                                await move(tmpEmulatorsFolder, emulatorsFolder, { overwrite: true });
+                            }
                         }
                     }
                 }
             }
         }
+
     }
 
     exposeData ()

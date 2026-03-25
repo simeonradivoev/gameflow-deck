@@ -25,6 +25,7 @@ export interface GameCardParams
   type?: string;
   subtitle: string | JSX.Element;
   preview?: string | JSX.Element | ((p: { focused: boolean; }) => JSX.Element);
+  srcset?: string;
   focusKey: string;
   index: number;
   id: string;
@@ -64,7 +65,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
         data.onAction?.();
       }}
       className={twMerge(
-        "relative game-card bg-base-300 flex flex-col z-5 overflow-hidden transition-all duration-200 not-mobile:drop-shadow-lg cursor-pointer focusable focusable-primary focusable-hover select-none focused focused:not-control-mouse:animate-wiggle focused:not-control-mouse:bg-base-content focused:not-control-mouse:text-base-300 focused:not-control-mouse:drop-shadow-xl focused:not-control-mouse:drop-shadow-black/30 focused:not-control-mouse:scale-102 focused:not-control-mouse:z-10 group control-mouse:hover:bg-base-200 h-full [--tw-border-style:inset] border-2 border-base-content/5 backdrop-opacity-0 active:bg-base-content! active:text-base-100 active:transition-none",
+        "relative game-card light:bg-base-100 dark:bg-base-300 flex flex-col z-5 overflow-hidden transition-all duration-200 not-mobile:drop-shadow-lg cursor-pointer focusable focusable-primary focusable-hover select-none focused focused:not-control-mouse:animate-wiggle focused:not-control-mouse:bg-base-content focused:not-control-mouse:text-base-300 focused:not-control-mouse:drop-shadow-lg focused:not-control-mouse:drop-shadow-black/30 focused:not-control-mouse:scale-102 focused:not-control-mouse:z-10 group control-mouse:hover:bg-base-200 h-full [--tw-border-style:inset] border-2 border-base-content/5 backdrop-opacity-0 active:bg-base-content! active:text-base-100 active:transition-none",
         data.className
       )}
     >
@@ -75,7 +76,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
         classNames({ "h-full": typeof data.preview === "string" })
       )}>
         {typeof data.preview === "string" ? (
-          <img draggable={false} className={classNames("object-cover w-full h-full", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
+          <img draggable={false} srcSet={data.srcset} className={classNames("object-cover w-full h-full", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} loading="lazy" decoding="async" ></img>
         ) : (
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
         )}

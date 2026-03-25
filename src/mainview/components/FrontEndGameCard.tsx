@@ -1,4 +1,4 @@
-import { FrontEndGameType, FrontEndId, RPC_URL } from "@/shared/constants";
+import { RPC_URL } from "@/shared/constants";
 import CardElement from "./CardElement";
 import { Router } from "..";
 import { FileQuestion, HardDrive, Store } from "lucide-react";
@@ -57,7 +57,7 @@ export default function FrontEndGameCard (data: { index: number, game: FrontEndG
         subtitle={subtitle}
         focusKey={FOCUS_KEYS.GAME_CARD(data.game.id)}
         className={data.game.id.source === 'local' ? 'ring-offset-info/40 ring-offset-2' : ""}
-        previewClassName={data.game.id.source === 'local' ? "not-in-focused:opacity-40" : ""}
+        previewClassName={data.game.id.source === 'local' ? "dark:not-in-focused:opacity-40 light:not-in-focus:opacity-60" : ""}
         index={data.index}
         id={`game-${data.game.id.source}-${data.game.id.id}`}
     />;

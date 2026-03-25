@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry } from "./ContextDialog";
 import { systemApi } from "../scripts/clientApi";
 import { useContext, useRef, useState } from "react";
-import path, { dirname } from "pathe";
+import path from "pathe";
 import { Check, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { DirType } from "@/shared/constants";

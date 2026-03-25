@@ -11,7 +11,6 @@ import FocusDots from "../FocusDots";
 import { Router } from "@/mainview";
 import { StoreEmulatorCard } from "./StoreEmulatorCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
-import { FrontEndEmulator } from "@/shared/constants";
 import Carousel from "../Carousel";
 
 function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (details: { node: HTMLElement, instant: boolean; }) => void; })
@@ -51,18 +50,18 @@ export function EmulatorsSection (data: {
 
     return (
         <FocusContext.Provider value={focusKey}>
-            <section ref={ref} className="px-2 py-4">
+            <section ref={ref} className="px-2 py-4 pb-0">
                 <div className="flex items-center gap-3 px-4 mb-4 text-info">
                     {data.header ?? <>
-                        <div className="w-2 h-5 rounded-full bg-info shadow-sm shadow-error/40" />
-                        <Joystick />
-                        <h2 className="font-bold uppercase tracking-widest">
+                        <div className="w-2 h-5 rounded-full bg-info shadow-sm" />
+                        <Joystick className="shadow-sm" />
+                        <h2 className="font-bold uppercase tracking-widest text-shadow-sm">
                             Recommended Emulators
                         </h2>
                     </>}
                 </div>
 
-                <Carousel scrollRef={containerRef} className="flex *:min-w-[18rem] overflow-y-hidden overflow-x-scroll scrollbar-none py-2 px-4 gap-4 select-none">
+                <Carousel scrollRef={containerRef} className="flex *:min-w-[18rem] overflow-y-hidden overflow-x-scroll scrollbar-none py-2 pb-4 px-4 gap-4 select-none">
                     {data.emulators?.map((em) => (
                         <StoreEmulatorCard id={`${data.id}-${em.name}`} key={em.name} emulator={em} onSelect={(id, focusKey) => data.onSelect?.(em.name, focusKey)} onFocus={({ node, details }) =>
                         {

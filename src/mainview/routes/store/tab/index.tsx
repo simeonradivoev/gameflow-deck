@@ -4,7 +4,7 @@ import { MissingEmulatorsSection } from "../../../components/store/MissingEmulat
 import { EmulatorsSection } from "../../../components/store/EmulatorsSection";
 import { GamesSection } from "../../../components/store/GamesSection";
 import { StatsSection } from "../../../components/store/StatsSection";
-import { FrontEndGameTypeDetailed, RPC_URL } from '@/shared/constants';
+import { RPC_URL } from '@/shared/constants';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { scrollIntoViewHandler } from '@/mainview/scripts/utils';
 import { StoreContext } from '@/mainview/scripts/contexts';
@@ -53,18 +53,18 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
     const previewUrl = data.games ? new URL(`${RPC_URL(__HOST__)}${data.games[selectedGame].path_cover}`) : undefined;
     previewUrl?.searchParams.set('blur', '16');
 
-    return <div ref={ref} className='flex sm:flex-wrap md:flex-nowrap group-focusable p-4 mt-4 gap-4'>
+    return <div ref={ref} className='flex sm:flex-wrap md:flex-nowrap group-focusable md:px-12 p-4 mt-4 gap-6'>
 
         <FocusContext value={focusKey}>
-            {game ? <div key={selectedGame} className="flex transition-all duration-500 flex-col rounded-3xl overflow-hidden shadow-black/5 shadow-xl w-full">
+            {game ? <div key={selectedGame} className="flex transition-all duration-500 flex-col rounded-3xl overflow-hidden shadow-black/5 shadow-lg w-full ring-6 ring-base-200 border-6 border-base-200">
                 <div className='flex relative h-full overflow-hidden'>
                     <div className='absolute w-full h-full z-0  bg-base-200'>
                         <img key={selectedGame}
-                            className='w-full h-full object-cover transition-all duration-500 ease-out scale-110 opacity-0 z-0 mask-l-from-0'
+                            className='w-full h-full object-cover transition-all duration-500 ease-out scale-110 opacity-0 light:data-loaded:opacity-40 dark:data-loaded:opacity-100 z-0 mask-l-from-0'
                             src={previewUrl?.href}
                             onLoad={(e) =>
                             {
-                                e.currentTarget.classList.toggle('opacity-0', false);
+                                e.currentTarget.dataset.loaded = "true";
                                 e.currentTarget.classList.toggle('scale-110', false);
                             }}
                         />
@@ -140,9 +140,9 @@ export function RouteComponent ()
 
                 <div className="px-6 py-3">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-5 rounded-full bg-accent shadow-sm shadow-error/40" />
-                        <Gamepad2 className="text-accent" />
-                        <h2 className="font-bold uppercase tracking-widest text-accent grow">
+                        <div className="w-2 h-5 rounded-full bg-accent shadow-sm shadow-sm" />
+                        <Gamepad2 className="text-accent text-shadow-sm" />
+                        <h2 className="font-bold uppercase tracking-widest text-accent grow text-shadow-sm">
                             Featured Games
                         </h2>
                         <div className="flex gap-2 bg-accent text-accent-content rounded-full py-1 px-4 font-semibold opacity-80"><Star />Creator Picks</div>

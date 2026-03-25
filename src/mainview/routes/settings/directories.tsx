@@ -2,7 +2,6 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { Block, createFileRoute } from '@tanstack/react-router';
 import DownloadDirectoryOption from '@/mainview/components/options/DownloadDirectoryOption';
 import { useIsMutating, useMutation, useQuery } from '@tanstack/react-query';
-import { DownloadsDrive } from '@/shared/constants';
 import prettyBytes from 'pretty-bytes';
 import classNames from 'classnames';
 import { GamePadButtonCode, Shortcut, useShortcuts } from '@/mainview/scripts/shortcuts';
@@ -13,6 +12,7 @@ import { Button } from '@/mainview/components/options/Button';
 import { systemApi } from '@/mainview/scripts/clientApi';
 import useActiveControl from '@/mainview/scripts/gamepads';
 import { changeDownloadsMutation } from '@queries/settings';
+import { downloadDrivesQuery } from '@/mainview/scripts/queries/system';
 
 export const Route = createFileRoute('/settings/directories')({
   component: RouteComponent,
@@ -79,8 +79,8 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
 
-  const isMoving = useIsMutating(queries.settings.changeDownloadsMutation);
-  const { data: drives, refetch } = useQuery({ ...queries.system.downloadDrivesQuery, refetchInterval: isMoving > 0 ? 1000 : undefined });
+  const isMoving = useIsMutating(changeDownloadsMutation);
+  const { data: drives, refetch } = useQuery({ ...downloadDrivesQuery, refetchInterval: isMoving > 0 ? 1000 : undefined });
 
   return <FocusContext value={focusKey}>
     <Block shouldBlockFn={() => isMoving > 0} withResolver={false} />

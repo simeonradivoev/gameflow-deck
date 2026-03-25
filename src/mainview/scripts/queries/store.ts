@@ -1,6 +1,5 @@
 import { infiniteQueryOptions, mutationOptions, queryOptions } from "@tanstack/react-query";
 import { rommApi, storeApi } from "../clientApi";
-import { FrontEndGameType } from "@/shared/constants";
 
 
 export const storeEmulatorsQuery = queryOptions({
@@ -70,5 +69,20 @@ export const installEmulatorMutation = (id: string) => mutationOptions({
         const { data, error } = await storeApi.api.store.install.emulator({ id })({ source }).post();
         if (error) throw error;
         return data;
+    }
+});
+export const downloadBiosMutation = (id: string) => mutationOptions({
+    mutationKey: ["download", 'bios', id],
+    mutationFn: async () =>
+    {
+        const { error } = await storeApi.api.store.download.bios({ id }).post();
+        if (error) throw error;
+    }
+});
+export const deleteBiosMutation = mutationOptions({
+    mutationKey: ["delete", "bios"], mutationFn: async (id: string) =>
+    {
+        const { error } = await storeApi.api.store.bios({ id }).delete();
+        if (error) throw error;
     }
 });

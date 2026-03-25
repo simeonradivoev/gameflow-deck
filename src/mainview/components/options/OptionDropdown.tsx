@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { ContextDialog, ContextList, DialogEntry } from "../ContextDialog";
 import { ChevronDown } from "lucide-react";
+import { FOCUS_KEYS } from "@/mainview/scripts/types";
 
 export function OptionDropdown (data: {
     name: string;
@@ -38,7 +39,7 @@ export function OptionDropdown (data: {
                     setOpen(true);
                 }} className={'flex items-center justify-center border h-10 border-base-content/30 px-4 py-2 rounded-full cursor-pointer grow not-in-focused:bg-base-200 focusable focusable-accent hover:border-base-content hover:bg-base-content hover:text-base-300'}>{data.value}<ChevronDown /></button>
             </label>
-            {open && <ContextDialog id={`${data.name}-context`} open={true} close={handleClose}>
+            {open && <ContextDialog id={`${data.name}-context`} preferredChildFocusKey={FOCUS_KEYS.CONTEXT_DIALOG_OPTION(`${data.name}-context`, String(data.values.indexOf(data.value ?? '')))} open={true} close={handleClose}>
                 <ContextList options={data.values.map((v, i) => ({
                     content: v,
                     id: String(i),

@@ -7,7 +7,7 @@ import { isSteamDeck, openExternal } from "../utils";
 import fs from 'node:fs/promises';
 import buildNotificationsStream from "./notifications";
 import path, { dirname } from "node:path";
-import { DirSchema, DownloadsDrive } from "@/shared/constants";
+import { DirSchema } from "@/shared/constants";
 import { getDevices, getDevicesCurated } from "./drives";
 import getFolderSize from "get-folder-size";
 import si from 'systeminformation';

@@ -1,7 +1,9 @@
-import { $ } from 'bun';
+import { $, sleep } from 'bun';
 import path from 'node:path';
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
+import { SettingsType } from '@/shared/constants';
+import { config } from './api/app';
 
 export function checkRunning (pid: number)
 {
@@ -109,5 +111,35 @@ export function shuffleInPlace (array: any[], startSeed?: number)
     {
         const j = Math.floor(random.next() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+export function toggleElementInConfig<T> (id: KeysWithValueAssignableTo<SettingsType, Array<T>>, element: T, enabled: boolean)
+{
+    const disabled = config.get(id as any) as T[];
+    if (enabled)
+    {
+        const index = disabled.indexOf(element);
+        if (index < 0)
+        {
+            config.set('disabledPlugins', disabled.concat(element));
+        }
+    } else
+    {
+        const index = disabled.indexOf(element);
+        if (index >= 0)
+        {
+            config.set('disabledPlugins', disabled.toSpliced(index, 1));
+        }
+    }
+}
+
+export async function simulateProgress (setProgress: (p: number) => void, signal?: AbortSignal)
+{
+    for (let i = 0; i < 10; i++)
+    {
+        setProgress(i * 10);
+        if (signal && signal.aborted) return;
+        await sleep(1000);
     }
 }

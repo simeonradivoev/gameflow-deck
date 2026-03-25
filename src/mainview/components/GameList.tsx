@@ -1,8 +1,8 @@
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
-import { FrontEndGameType, FrontEndId, GameListFilterType, RPC_URL } from "@shared/constants";
+import { GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
-import { FileQuestion, HardDrive, Store } from "lucide-react";
+import { HardDrive } from "lucide-react";
 import { JSX, useContext } from "react";
 import { GameCardFocusHandler } from "./CardElement";
 import { useLocalSetting } from "../scripts/utils";
@@ -75,7 +75,7 @@ export function GameList (data: GameListParams)
 
                             const previewUrl = new URL(`${RPC_URL(__HOST__)}${g.path_cover}`);
                             previewUrl.searchParams.delete('ts');
-                            previewUrl.searchParams.set('width', "16");
+
                             const platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
                             platformUrl.searchParams.set('width', "64");
 

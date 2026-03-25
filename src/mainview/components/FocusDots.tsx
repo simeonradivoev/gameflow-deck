@@ -2,7 +2,7 @@ import { setFocus } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { twMerge } from "tailwind-merge";
 import { useGlobalFocus } from "../scripts/spatialNavigation";
-import { JSX, RefObject, useMemo, useState } from "react";
+import { RefObject, useMemo, useState } from "react";
 import { useEventListener } from "usehooks-ts";
 
 function ScrollDot (data: { index: number; parent: RefObject<HTMLElement | null>, peers: HTMLElement[]; })

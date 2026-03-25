@@ -4,7 +4,6 @@ import fs from 'node:fs/promises';
 
 import { createWriteStream } from "node:fs";
 import { config, jar } from "../api/app";
-import { file } from "bun";
 
 export interface FileEntry
 {
@@ -24,6 +23,10 @@ interface TmpDownloadMetadata
     files: FileEntry[];
 }
 
+/**
+ * It download files and reports progress.
+ * It also automatically applies cookies from the jar store.
+ */
 export class Downloader
 {
     files: FileEntry[];

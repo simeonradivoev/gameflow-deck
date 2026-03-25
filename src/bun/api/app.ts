@@ -8,21 +8,21 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import Conf from "conf";
 import projectPackage from '~/package.json';
-import { Notification, SettingsSchema, SettingsType } from "@shared/constants";
+import { SettingsSchema, SettingsType } from "@shared/constants";
 import { client } from "@clients/romm/client.gen";
 import * as schema from "@schema/app";
 import cacheSchema from "@schema/cache";
 import * as emulatorSchema from "@schema/emulators";
 import { login, logout } from "./auth";
 import os from 'node:os';
-import { ActiveGame } from "../types/types";
 import EventEmitter from "node:events";
-import { ErrorLike } from "bun";
-import { appPath, getErrorMessage } from "../utils";
+import { appPath } from "../utils";
 import { DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
 import { ensureDir } from "fs-extra";
 import UpdateStoreJob from "./jobs/update-store";
 import { getStoreFolder } from "./store/services/gamesService";
+import { PluginManager } from "./plugins/plugin-manager";
+import registerPlugins from "./plugins/register-plugins";
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,
@@ -31,7 +31,7 @@ export const config = new Conf<SettingsType>({
     defaults: SettingsSchema.parse({
         downloadPath: path.join(os.homedir(), "gameflow"),
         windowSize: { width: 1280, height: 800 }
-    } satisfies SettingsType),
+    }),
 });
 export const customEmulators = new Conf<Record<string, string>>({
     projectName: projectPackage.name,
@@ -64,21 +64,9 @@ export const emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
 export const taskQueue = new TaskQueue();
 config.onDidChange('rommAddress', v => client.setConfig({ baseUrl: v }));
 await login();
-export let activeGame: ActiveGame | undefined;
-export function setActiveGame (game: ActiveGame)
-{
-    if (activeGame) throw new Error("Only one active game at a time");
-    return activeGame = game;
-}
+export const plugins = new PluginManager();
+registerPlugins(plugins);
 export const events = new EventEmitter<AppEventMap>();
-events.addListener('activegameexit', ({ error }) =>
-{
-    activeGame = undefined;
-    if (error)
-    {
-        events.emit('notification', { message: getErrorMessage(error), type: 'error' });
-    }
-});
 config.onDidChange('downloadPath', () => reloadDatabase());
 taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
 
@@ -110,9 +98,3 @@ export async function reloadDatabase ()
     `);
 }
 
-interface AppEventMap
-{
-    activegameexit: [{ source: string, id: string, subprocess?: Bun.Subprocess, exitCode: number | null, signalCode: number | null, error?: ErrorLike; }];
-    exitapp: [];
-    notification: [Notification];
-}

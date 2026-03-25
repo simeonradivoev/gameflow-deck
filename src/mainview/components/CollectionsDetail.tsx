@@ -7,10 +7,8 @@ import { JSX, Suspense, useEffect } from 'react';
 import Shortcuts from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
-import { PopNavigateSource } from '../scripts/spatialNavigation';
 import { GameListFilterType } from '@/shared/constants';
 import { GameCardFocusHandler } from './CardElement';
-import { Router } from '..';
 import { HandleGoBack } from '../scripts/utils';
 
 export interface CollectionsDetailParams

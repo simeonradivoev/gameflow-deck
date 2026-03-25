@@ -1,4 +1,4 @@
-import { CSSProperties, Ref, RefObject, useEffect, useRef } from "react";
+import { Ref, useEffect, useRef } from "react";
 import
 {
     useFocusable,
@@ -6,7 +6,6 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import { scrollIntoNearestParent, useDragScroll } from "@/mainview/scripts/utils";
 import FocusDots from "../FocusDots";
-import { FrontEndGameType, FrontEndId } from "@/shared/constants";
 import FrontEndGameCard from "../FrontEndGameCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import Carousel from "../Carousel";

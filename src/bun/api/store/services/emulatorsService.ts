@@ -1,5 +1,5 @@
-import { EmulatorPackageType, EmulatorSourceType, FrontEndEmulator } from "@/shared/constants";
-import { emulatorsDb } from "../../app";
+import { EmulatorPackageType } from "@/shared/constants";
+import { emulatorsDb, plugins } from "../../app";
 import * as emulatorSchema from '@schema/emulators';
 import { findExecs } from "../../games/services/launchGameService";
 import { eq } from "drizzle-orm";
@@ -10,7 +10,7 @@ export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageT
     icon: string;
 }[])
 {
-    let execPath: EmulatorSourceType | undefined;
+    let execPath: EmulatorSourceEntryType | undefined;
     const esEmulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, emulator.name) });
 
     if (esEmulator)
@@ -24,8 +24,17 @@ export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageT
         logo: emulator.logo,
         systems,
         gameCount,
-        validSource: execPath
+        validSource: execPath,
+        integration: findEmulatorPluginIntegration(emulator.name)
     };
 
     return em;
+}
+
+export function findEmulatorPluginIntegration (name: string)
+{
+    const lowerCaseName = name.toLowerCase();
+    const integration = Object.entries(plugins.plugins).find(p => p[1].description.keywords?.includes(lowerCaseName));
+    if (!integration) return undefined;
+    return { name: integration[0], version: integration[1].description.version };
 }

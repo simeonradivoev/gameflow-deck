@@ -6,9 +6,9 @@ declare module "@emulators" {
   export default data;
 }
 
-global
+declare global
 {
-  declare module "react" {
+  module "react" {
     interface HTMLAttributes<T> extends AriaAttributes, DOMAttributes<T>
     {
       // extends React's HTMLAttributes
@@ -18,17 +18,17 @@ global
   }
 }
 
-interface FocusParams
+declare interface FocusParams
 {
   onFocus?: (focusKey: string, node: HTMLElement, details: Record<string, any>) => void;
 }
 
-interface InteractParams
+declare interface InteractParams
 {
   onAction?: (e?: Event) => void;
 }
 
-interface FilterOption extends FocusParams, InteractParams
+declare interface FilterOption extends FocusParams, InteractParams
 {
   label: string;
   selected: boolean;

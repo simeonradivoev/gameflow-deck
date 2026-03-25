@@ -1,15 +1,4 @@
-import { ChildProcess } from "node:child_process";
-
-declare const IS_BINARY: string;
-
-export type ActiveGame = {
-    process?: ChildProcess;
-    gameId: number;
-    name: string;
-    command: { command: string, startDir?: string; };
-};
-
-interface ObjectConstructor
+declare interface ObjectConstructor
 {
     /**
      * Groups members of an iterable according to the return value of the passed callback.
@@ -22,7 +11,7 @@ interface ObjectConstructor
     ): Partial<Record<K, T[]>>;
 }
 
-interface MapConstructor
+declare interface MapConstructor
 {
     /**
      * Groups members of an iterable according to the return value of the passed callback.
@@ -33,4 +22,10 @@ interface MapConstructor
         items: Iterable<T>,
         keySelector: (item: T, index: number) => K,
     ): Map<K, T[]>;
+}
+
+declare interface AppEventMap
+{
+    exitapp: [];
+    notification: [FrontendNotification];
 }

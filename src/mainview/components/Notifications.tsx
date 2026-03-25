@@ -1,4 +1,4 @@
-import { Notification, RPC_URL } from "@/shared/constants";
+import { RPC_URL } from "@/shared/constants";
 import { useEffect } from "react";
 import toast, { ToastOptions } from "react-hot-toast";
 
@@ -9,7 +9,7 @@ export default function Notifications (data: {})
         const es = new EventSource(`${RPC_URL(__HOST__)}/api/system/notifications`);
         es.addEventListener('notification', (e) =>
         {
-            const notification = JSON.parse(e.data) as Notification;
+            const notification = JSON.parse(e.data) as FrontendNotification;
             const options: ToastOptions = { removeDelay: notification.duration };
             if (notification.type === 'error')
             {

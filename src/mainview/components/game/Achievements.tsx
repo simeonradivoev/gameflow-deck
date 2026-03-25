@@ -1,4 +1,4 @@
-import { FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement } from "@/shared/constants";
+
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Medal } from "lucide-react";
 

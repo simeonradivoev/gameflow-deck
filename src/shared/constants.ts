@@ -25,6 +25,7 @@ export interface GameMeta
     title: string,
     subtitle: string | JSX.Element,
     previewUrl?: string;
+    previewSrcset?: string;
 };
 
 export const SettingsSchema = z.object({
@@ -32,7 +33,9 @@ export const SettingsSchema = z.object({
     rommUser: z.string().default('admin').optional(),
     windowSize: z.object({ width: z.number(), height: z.number() }).optional(),
     windowPosition: z.object({ x: z.number(), y: z.number() }).optional(),
-    downloadPath: z.string()
+    downloadPath: z.string(),
+    launchInFullscreen: z.boolean().default(true),
+    disabledPlugins: z.array(z.string()).default([])
 });
 
 export const LocalSettingsSchema = z.object({
@@ -59,43 +62,6 @@ export const DirSchema = z.object({ name: z.string(), parentPath: z.string(), is
 export type DirType = z.infer<typeof DirSchema>;
 
 export const CustomEmulatorSchema = z.record(z.string(), z.string());
-
-export interface FrontEndId
-{
-    id: string;
-    source: string;
-}
-
-export interface FrontEndPlatformType
-{
-    id: FrontEndId;
-    slug: string;
-    name: string;
-    family_name?: string | null;
-    path_cover: string | null;
-    game_count: number;
-    updated_at: Date;
-    hasLocal: boolean;
-    paths_screenshots: string[];
-}
-
-export interface FrontEndGameType
-{
-    platform_display_name: string | null,
-    path_platform_cover: string | null;
-    id: FrontEndId,
-    source: string | null,
-    source_id: string | null,
-    path_fs: string | null,
-    path_cover: string | null,
-    last_played: Date | null,
-    updated_at: Date,
-    slug: string | null,
-    name: string | null,
-    platform_id: number | null,
-    platform_slug: string | null,
-    paths_screenshots: string[];
-};
 
 export const GithubManifestSchema = z.object({
     sha: z.hash('sha1'),
@@ -136,7 +102,8 @@ export const EmulatorPackageSchema = z.object({
         pattern: z.string(),
         path: z.string().optional()
     }))).optional(),
-    systems: z.array(z.string())
+    systems: z.array(z.string()),
+    bios: z.literal(["required", "optional"]).optional()
 });
 
 export const GithubReleaseSchema = z.object({
@@ -149,143 +116,6 @@ export const GithubReleaseSchema = z.object({
 
 export type EmulatorPackageType = z.infer<typeof EmulatorPackageSchema>;
 export type StoreGameType = z.infer<typeof StoreGameSchema>;
-export interface EmulatorSourceType
-{
-    binPath: string;
-    rootPath?: string;
-    type: string;
-    exists: boolean;
-}
-
-export interface FrontEndEmulator
-{
-    name: string;
-    logo: string;
-    systems: { id: string, name: string, icon: string; }[];
-    gameCount: number;
-    validSource?: EmulatorSourceType;
-}
-
-export interface FrontEndEmulatorDetailedDownload
-{
-    name: string;
-    type: string | undefined;
-}
-
-export interface FrontEndEmulatorDetailed extends FrontEndEmulator
-{
-    homepage: string;
-    description: string;
-    downloads: FrontEndEmulatorDetailedDownload[];
-    keywords?: string[];
-    screenshots: string[];
-    sources: EmulatorSourceType[];
-}
-
-export interface FrontEndGameTypeDetailedAchievement
-{
-    id: string;
-    title: string;
-    description?: string;
-    date?: Date;
-    date_hardcode?: Date;
-    badge_url?: string;
-    display_order: number;
-    type?: string;
-}
-
-export interface FrontEndGameTypeDetailedEmulator extends FrontEndEmulator
-{
-
-}
-
-export interface FrontEndGameTypeDetailed extends FrontEndGameType
-{
-    summary: string | null;
-    fs_size_bytes: number | null;
-    missing: boolean;
-    local: boolean;
-    genres?: string[];
-    companies?: string[];
-    release_date?: Date;
-    emulators?: FrontEndGameTypeDetailedEmulator[],
-    achievements?: {
-        unlocked: number;
-        total: number;
-        entires: FrontEndGameTypeDetailedAchievement[];
-    };
-};
-
-export interface Drive
-{
-    parent: string | null;
-    device: string;
-    label: string;
-    mountPoint: string | null;
-    type: string;
-    size: number;
-    used: number;
-    isRemovable: boolean;
-    interfaceType: string | null;
-    hasWriteAccess: boolean;
-    hasReadAccess: boolean;
-}
-
-export interface DownloadsDrive
-{
-    device: string;
-    label: string;
-    mountPoint: string | null;
-    isRemovable: boolean;
-    size: number;
-    used: number;
-    isCurrentlyUsed: boolean;
-    unusableReason: 'not_enough_space' | 'already_used' | null;
-}
-
-export interface Notification
-{
-    title?: string;
-    message: string;
-    type: 'success' | 'error' | 'info';
-    duration?: number;
-}
-
-export interface CommandEntry
-{
-    id: string | number;
-    label?: string;
-    command: string;
-    startDir?: string;
-    valid: boolean;
-    emulator?: string;
-}
-
-
-
-export type JobStatus = 'completed' | 'error' | 'running' | 'queued' | 'aborted';
-
 export type SettingsType = z.infer<typeof SettingsSchema>;
 export type LocalSettingsType = z.infer<typeof LocalSettingsSchema>;
-export interface GameInstallProgress
-{
-    progress?: number;
-    status?: GameStatusType;
-    details?: string;
-    commands?: CommandEntry[];
-    error?: any;
-}
-
-export type GameInstallProgressEvent = 'refresh';
-
 export const PlatformSchema = z.object({ slug: z.string() });
-export const GameLaunchSchema = z.object({ platform: PlatformSchema, id: z.number(), slug: z.string(), directory: z.string() });
-
-export const GameflowPluginSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    getSupportedPlatform: z.function({ output: z.array(PlatformSchema) }),
-    launchGame: z.function({ input: [GameLaunchSchema] })
-});
-export interface GameflowPlugin extends z.infer<typeof GameflowPluginSchema> { }
-export type GameStatusType = 'installed' | 'missing-emulator' | 'error' | 'install' | 'download' | 'extract' | 'playing' | 'queued';

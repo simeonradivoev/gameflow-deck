@@ -25,6 +25,7 @@ export default function NotFound ()
             <Button className="text-2xl! p-6! focusable focusable-primary" id="return" onAction={handleReturn}><Home />Return Home</Button>
             <div className="mobile:hidden bg-gradient"></div>
             <div className="mobile:hidden bg-noise"></div>
+            <div className="mobile:hidden bg-dots"></div>
             <div className="flex justify-end fixed bottom-4 left-4 right-4"><Shortcuts shortcuts={shortcuts} /></div>
         </FocusContext>
     </div>;

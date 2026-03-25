@@ -1,4 +1,3 @@
-import { Drive } from "@/shared/constants";
 import si from 'systeminformation';
 import fs from 'node:fs';
 import os from "node:os";

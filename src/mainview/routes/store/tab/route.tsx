@@ -4,9 +4,8 @@ import { HeaderUI } from '@/mainview/components/Header';
 import Shortcuts from '@/mainview/components/Shortcuts';
 import { StoreContext } from '@/mainview/scripts/contexts';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '@/mainview/scripts/shortcuts';
-import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { mobileCheck, useStickyDataAttr } from '@/mainview/scripts/utils';
-import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useMatchRoute } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
@@ -111,11 +110,6 @@ function RouteComponent ()
 
   };
 
-  const goToSettings = () =>
-  {
-    Router.navigate({ to: '/settings' });
-  };
-
   const isMobile = mobileCheck();
   useStickyDataAttr(headerRef, sentinelRef, ref);
 
@@ -125,7 +119,7 @@ function RouteComponent ()
         <div className="relative flex flex-col min-h-screen text-base-content z-10" >
           <div ref={sentinelRef} className="h-0" />
           <div ref={headerRef} className='sticky p-2 group top-0 not-mobile:data-stuck:backdrop-blur-xl z-15 mobile:data-stuck:bg-base-300'>
-            <HeaderUI buttons={[{ icon: <Settings />, id: "settings", action: goToSettings, external: true }]} />
+            <HeaderUI />
           </div>
           <TopArea filters={filters} />
           <StoreOutlet />
@@ -135,6 +129,7 @@ function RouteComponent ()
           {!isMobile && <>
             <div className='bg-gradient'></div>
             <div className='bg-noise'></div>
+            <div className='bg-dots'></div>
           </>}
         </div>
       </FocusContext.Provider>

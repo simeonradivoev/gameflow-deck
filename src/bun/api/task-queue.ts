@@ -1,12 +1,12 @@
 
-import { JobStatus } from '@/shared/constants';
+
 import EventEmitter from 'node:events';
-import z, { ZodTypeAny } from 'zod';
+import z from 'zod';
 
 export class TaskQueue
 {
-    private activeQueue: { context: JobContext<any, string, any>, promise?: Promise<void>; }[] = [];
-    private queue?: { context: JobContext<any, string, any>, promise?: Promise<void>; }[] = [];
+    private activeQueue: { context: JobContext<IJob<any, string>, any, string>, promise?: Promise<void>; }[] = [];
+    private queue?: { context: JobContext<IJob<any, string>, any, string>, promise?: Promise<void>; }[] = [];
     private events?: EventEmitter<EventsList> = new EventEmitter<EventsList>();
 
     public enqueue<TData, TState extends string, T extends IJob<TData, TState>> (id: string, job: T)
@@ -36,6 +36,8 @@ export class TaskQueue
             {
                 const index = this.activeQueue.indexOf(job.job);
                 this.activeQueue.splice(index, 1);
+                // We need to call it after it has been removed from the queue, so that the has active of type doesn't return true
+                this.events?.emit('ended', { id: job.job.context.id, job: job.job.context });
                 setTimeout(() => this.processQueue(), 0);
             });
         });
@@ -162,7 +164,7 @@ type JobClassWithStatics = JobClass & {
 export type JobContextFromClass<C extends JobClassWithStatics> =
     JobContext<
         InstanceType<C>,
-        C extends { dataSchema: ZodTypeAny; }
+        C extends { dataSchema: z.ZodAny; }
         ? z.infer<C['dataSchema']>
         : never,
         C['id']
@@ -215,7 +217,6 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
         } finally
         {
             this.running = false;
-            this.events.emit('ended', { id: this.m_id, job: this });
         }
     }
 

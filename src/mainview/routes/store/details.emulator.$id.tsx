@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import
 {
     useFocusable,
@@ -11,9 +11,9 @@ import Shortcuts from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
-import { ChevronDown, Download, Gamepad2, Info, Settings, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronDown, Cpu, Download, Gamepad2, Info, Settings, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
 import { ContextList, DialogEntry, useContextDialog } from "@/mainview/components/ContextDialog";
-import { FrontEndEmulatorDetailed, RPC_URL } from "@/shared/constants";
+import { RPC_URL } from "@/shared/constants";
 import Screenshots from "@/mainview/components/Screenshots";
 import { StickyHeaderUI } from "@/mainview/components/Header";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -24,8 +24,9 @@ import { getErrorMessage } from "react-error-boundary";
 import { emulatorStatusIcons } from "@/mainview/components/store/StoreEmulatorCard";
 import StatList, { StatEntry } from "@/mainview/components/StatList";
 import { GamesSection } from "@/mainview/components/store/GamesSection";
-import { installEmulatorMutation, storeEmulatorDeleteMutation, storeEmulatorDetailsQuery, storeEmulatorsRecommendedQuery } from "@queries/store";
+import { deleteBiosMutation, downloadBiosMutation, installEmulatorMutation, storeEmulatorDeleteMutation, storeEmulatorDetailsQuery, storeEmulatorsRecommendedQuery } from "@queries/store";
 import { gamesRecommendedBasedOnEmulatorQuery } from "@queries/romm";
+import FocusTooltip from "@/mainview/components/FocusTooltip";
 
 export const Route = createFileRoute('/store/details/emulator/$id')({
     component: RouteComponent,
@@ -42,7 +43,7 @@ function HomePageLink (data: { homepage?: string; })
     const { ref } = useFocusable({ focusKey: 'homepage-link' });
     return <a
         ref={ref}
-        className="text-lg text-info cursor-pointer focusable focusable-accent focusable-hover bg-base-200 rounded-full px-4 py-1"
+        className="text-lg text-info cursor-pointer focusable focusable-accent focusable-hover bg-base-200 rounded-full px-4 py-1 not-mobile:shadow-2xl"
         onClick={() =>
         {
             if (data.homepage) systemApi.api.system.open.post({ url: data.homepage });
@@ -58,10 +59,44 @@ function TitleArea (data: {
 {
     const queryClient = useQueryClient();
     const deleteMutation = useMutation({
-        ...storeEmulatorDeleteMutation, onSuccess: (data, variables, onMutateResult, context) => context.client.refetchQueries(storeEmulatorDetailsQuery(variables)),
+        ...storeEmulatorDeleteMutation,
+        onSuccess (data, variables, onMutateResult, context)
+        {
+            context.client.refetchQueries(storeEmulatorDetailsQuery(variables));
+        },
+    });
+    const downloadBios = useMutation(downloadBiosMutation(data.emulator?.name ?? ''));
+    const deleteBios = useMutation({
+        ...deleteBiosMutation,
+        onSuccess (data, variables, onMutateResult, context)
+        {
+            context.client.refetchQueries(storeEmulatorDetailsQuery(variables));
+            toast.success("BIOS Deleted", { icon: <Trash2 /> });
+        },
     });
     const installProgressRef = useRef<HTMLProgressElement>(null);
-    const { data: installJob, status: installStatus } = useJobStatus('download-emulator', {
+    const { data: biosInstallJob, state: biosDownloadState } = useJobStatus('bios-download-job', {
+        query: { id: data.emulator?.name },
+        onError (error)
+        {
+            console.log(error);
+            toast.error(getErrorMessage(error) ?? "Error During Bios Download");
+        },
+        onProgress (process)
+        {
+            if (installProgressRef.current)
+                installProgressRef.current.value = process;
+        },
+        onCompleted (data)
+        {
+            toast.success("BIOS Downloaded", { icon: <Download /> });
+        },
+        onEnded (data)
+        {
+            queryClient.refetchQueries(storeEmulatorDetailsQuery(data.emulator));
+        },
+    });
+    const { data: installJob, state: installState } = useJobStatus('download-emulator', {
         onError (error)
         {
             console.log(error);
@@ -80,12 +115,13 @@ function TitleArea (data: {
         },
     });
 
-    const isInstalling = !!installJob;
+    const isInstalling = !!installJob || !!biosInstallJob;
 
     const options: DialogEntry[] = [];
+    const installedFromStore = !!data.emulator?.sources.find(s => s.type === 'store' && s.exists);
     if (data.emulator)
     {
-        if (!isInstalling && !data.emulator?.validSource)
+        if (!isInstalling && !installedFromStore)
         {
             options.push(...data.emulator.downloads.map(d =>
             {
@@ -101,7 +137,7 @@ function TitleArea (data: {
                 };
                 return entry;
             }));
-        } else if (data.emulator.sources.find(s => s.type === 'store' && s.exists))
+        } else if (installedFromStore)
         {
             options.push({
                 content: "Delete",
@@ -114,12 +150,43 @@ function TitleArea (data: {
                 },
                 id: "delete"
             });
+
+            if (!data.emulator.bios || data.emulator.bios.length <= 0)
+            {
+                options.push({
+                    content: "Download BIOS",
+                    type: "primary",
+                    icon: <Download />,
+                    action (ctx)
+                    {
+                        downloadBios.mutate();
+                        ctx.close();
+                    },
+                    id: "download-bios"
+                });
+            } else
+            {
+                options.push({
+                    content: "Delete BIOS",
+                    type: "error",
+                    icon: <Trash2 />,
+                    action (ctx)
+                    {
+                        if (!data.emulator) return;
+                        deleteBios.mutate(data.emulator.name);
+                        ctx.close();
+                    },
+                    id: "download-bios"
+                });
+            }
+
         }
     }
 
-    const { ref, focusKey } = useFocusable({
+    const { ref, focusKey, hasFocusedChild } = useFocusable({
         focusKey: 'title-area',
         preferredChildFocusKey: "install-btn",
+        trackChildren: true,
         onFocus: () => { (ref.current as HTMLElement).scrollIntoView({ behavior: "smooth", block: 'end' }); }
     });
 
@@ -131,7 +198,16 @@ function TitleArea (data: {
     }
     else if (isInstalling)
     {
-        installButtonContent = <><span className="loading loading-spinner loading-lg"></span>{installStatus}</>;
+        const status: any = {
+            bios: {
+                download: "Downloading BIOS"
+            },
+            install: {
+                download: "Downloading",
+                extract: "Extracting"
+            }
+        };
+        installButtonContent = <><span className="loading loading-spinner loading-lg"></span>{installState ? status.install[installState] : biosDownloadState ? status.bios[biosDownloadState] : undefined}</>;
     } else if (data.emulator.validSource)
     {
         installButtonContent = <><Settings /> Options</>;
@@ -155,25 +231,37 @@ function TitleArea (data: {
 
     return <div ref={ref} className="flex flex-wrap gap-4 sm:portrait:justify-center md:justify-normal items-center">
         <FocusContext value={focusKey}>
-            {data.emulator ? <img className="size-32" src={data.emulator.logo}></img> : <div className="skeleton h-32 w-32" />}
+            {data.emulator ? <img className="size-32 rounded-full shadow-lg bg-base-200 ring-7 ring-base-200" src={data.emulator.logo}></img> : <div className="skeleton h-32 w-32" />}
             <div className="flex flex-col grow gap-1 sm:portrait:items-center md:items-start">
-                <h1 className="text-4xl font-semibold">{data.emulator?.name ?? <div className="skeleton h-10 w-84" />}</h1>
+                <h1 className="text-4xl font-semibold text-shadow-md">{data.emulator?.name ?? <div className="skeleton h-10 w-84" />}</h1>
                 <div className="flex gap-2">
                     {data.emulator?.systems.map(({ id, name, icon }) =>
                     {
                         return <div key={id} className="flex gap-1 items-center text-base-content/35 mt-0.5">
                             {!!icon && <img className="size-6 p-1 bg-base-200 rounded-full" src={`${RPC_URL(__HOST__)}${icon}`} />}
-                            <p className="text-nowrap text-ellipsis overflow-hidden">{name}</p>
+                            <p className="text-nowrap text-ellipsis overflow-hidden dark:text-shadow-lg">{name}</p>
                         </div>;
                     }) ?? <><div className="skeleton h-4 w-48" /><div className="skeleton h-4 w-32" /></>}
                 </div>
                 <div className="flex pt-2 gap-1">
                     <HomePageLink homepage={data.emulator?.homepage} />
+                    <div className="divider divider-horizontal m-0"></div>
+                    {!!data.emulator?.bios?.[0] && <div className="tooltip" data-tip="Has BIOS">
+                        <div className="flex items-center justify-center bg-base-200 p-2 rounded-full"><Cpu className="size-5" /></div>
+                    </div>}
+                    {data.emulator && !!data.emulator.integration && data.emulator.validSource?.type === 'store' && <div className="tooltip" data-tip="Has Integration">
+                        <div className="bg-base-200 rounded-full p-2"><WandSparkles className="size-5" /></div>
+                    </div>}
                 </div>
             </div>
-            <div className="flex relative sm:portrait:grow md:grow-0 justify-center gap-4">
-                <Button style="accent" id="install-btn" className="px-8 py-3 rounded-4xl focusable focusable-accent sm:portrait:grow flex-col gap-2" onAction={handleOptionsOpen} >
+            <div className="flex relative sm:portrait:grow md:grow-0 justify-center gap-4 items-center">
+                <FocusTooltip visible={hasFocusedChild} parentRef={ref} />
+                {(!data.emulator?.bios || data.emulator.bios.length <= 0) && (data.emulator?.biosRequirement === 'required') && installedFromStore && <div className="tooltip tooltip-error" data-tip="Missing BIOS">
+                    <Button id="bios-warning-bt" tooltipType="error" tooltip="Missing BIOS" style="error" className="rounded-full size-14 focusable focusable-error shadow-lg" onAction={() => setOpen(true, 'bios-warning-bt')}><TriangleAlert /></Button>
+                </div>}
+                <Button style="accent" id="install-btn" className="px-8 py-3 rounded-4xl focusable focusable-accent sm:portrait:grow flex-col gap-2 light:ring-offset-7 light:ring-offset-base-100 light:focused:ring-offset-0  shadow-lg" onAction={handleOptionsOpen} >
                     <div className="flex gap-4">
+
                         {installButtonContent}
                         <div className="divider divider-horizontal divider-neutral m-0 opacity-20"></div>
                         <ChevronDown />
@@ -189,11 +277,11 @@ function TitleArea (data: {
 function Description (data: { emulator?: FrontEndEmulatorDetailed; })
 {
     return <div className="flex-col sm:px-8 md:px-16 pt-8 sm:pb-8 md:pb-12 bg-base-100">
-        <p>{data.emulator?.description ?? <div className="flex flex-col gap-4 w-full">
+        <div>{data.emulator?.description ?? <div className="flex flex-col gap-4 w-full">
             <div className="skeleton h-4 w-[40%]"></div>
             <div className="skeleton h-4 w-[80%]"></div>
             <div className="skeleton h-4 w-full"></div>
-        </div>}</p>
+        </div>}</div>
     </div>;
 }
 
@@ -236,6 +324,14 @@ export function RouteComponent ()
             stats.push({ label: "Tags", content: emulator.keywords });
         stats.push({ label: "Systems", content: emulator.systems.map(s => s.name) });
         stats.push(...emulator.sources.flatMap(s => [{ label: "Source", content: s.type, icon: emulatorStatusIcons[s.type] }, { label: "Location", content: s.binPath }]));
+        if (emulator.bios)
+            stats.push({
+                label: "Bios", content: emulator.bios && emulator.bios.length > 0 ? emulator.bios : <div className="text-warning font-semibold">Missing</div>
+            });
+        if (emulator.integration)
+        {
+            stats.push({ label: "Integration", content: `${emulator.integration.name} (${emulator.integration.version})` });
+        }
     }
 
     return (
@@ -248,6 +344,7 @@ export function RouteComponent ()
 
                         <div className='mobile:hidden left-0 top-0 absolute bg-gradient'></div>
                         <div className='mobile:hidden left-0 top-0 absolute bg-noise'></div>
+                        <div className='mobile:hidden left-0 top-0 absolute bg-dots'></div>
                     </div>
                     <div className="flex flex-col bg-base-100 gap-4 pt-4 h-[50vh] min-h-128 grow text-lg">
                         {isEmulatorPending || (!!emulator && emulator?.screenshots.length > 0) && <Screenshots className="grow bg-base-200" screenshots={emulator?.screenshots} onFocus={scrollIntoViewHandler({ block: 'end' })} />}
@@ -258,6 +355,7 @@ export function RouteComponent ()
                     <div className="divider"> <Info className="size-12" /> Stats</div>
                     <StatList id="emulator-details-stats" stats={stats} onFocus={scrollIntoViewHandler({ block: 'center' })} />
                     {recommendedEmulators && <div className="relative bg-base-200">
+                        <div className="bg-dots z-0"></div>
                         <EmulatorsSection
                             id={`${id}-recommended`}
                             header={<><div className="w-2 h-5 rounded-full bg-info shadow-sm shadow-error/40" />

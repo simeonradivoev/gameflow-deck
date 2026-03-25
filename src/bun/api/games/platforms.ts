@@ -3,7 +3,6 @@ import { getPlatformApiPlatformsIdGet, getPlatformsApiPlatformsGet, getRomsApiRo
 import z from "zod";
 import { and, count, eq, getTableColumns, not } from "drizzle-orm";
 import { db } from "../app";
-import { FrontEndPlatformType } from "@shared/constants";
 import * as schema from "@schema/app";
 import { CACHE_KEYS, getOrCached } from "../cache";
 

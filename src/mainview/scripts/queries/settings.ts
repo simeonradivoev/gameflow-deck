@@ -74,8 +74,7 @@ export const customEmulatorAddMutation = mutationOptions({
         const { data, error } = await settingsApi.api.settings.emulators.custom({ id }).put({ value: '' });
         if (error) throw error;
         return data;
-    },
-    onSuccess: (d, v, r, ctx) => ctx.client.invalidateQueries({ queryKey: ['custom-emulators'] })
+    }
 });
 export const customEmulatorDeleteMutation = (id: string) => mutationOptions({
     mutationKey: ["emulator", id, 'delete'],

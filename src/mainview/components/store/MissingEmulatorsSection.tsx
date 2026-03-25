@@ -7,7 +7,7 @@ import { Button } from "../options/Button";
 import useActiveControl from "@/mainview/scripts/gamepads";
 import { ChevronRight, CircleQuestionMark, SearchAlert } from "lucide-react";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
-import { FrontEndEmulator, RPC_URL } from "@/shared/constants";
+import { RPC_URL } from "@/shared/constants";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 
 // ── Single missing-emulator card ───────────────────────────────────────────

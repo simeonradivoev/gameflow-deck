@@ -3,17 +3,18 @@ import Elysia, { status } from "elysia";
 import { config, db, taskQueue } from "../app";
 import path from "node:path";
 import fs from 'node:fs/promises';
-import { FrontEndEmulatorDetailed, FrontEndEmulatorDetailedDownload, StoreGameSchema } from "@/shared/constants";
+import { StoreGameSchema } from "@/shared/constants";
 import { findExecsByName } from "../games/services/launchGameService";
 import * as appSchema from '@schema/app';
 import z from "zod";
 import { convertLocalToFrontendDetailed, convertStoreToFrontendDetailed, getLocalGameMatch } from "../games/services/utils";
 import { getPlatformsApiPlatformsGet } from "@/clients/romm";
 import { CACHE_KEYS, getOrCached, getOrCachedGithubRelease } from "../cache";
-import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage } from "./services/gamesService";
+import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "./services/gamesService";
 import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
 import { Glob } from "bun";
-import { convertStoreEmulatorToFrontend } from "./services/emulatorsService";
+import { convertStoreEmulatorToFrontend, findEmulatorPluginIntegration } from "./services/emulatorsService";
+import { BiosDownloadJob } from "../jobs/bios-download-job";
 
 export const store = new Elysia({ prefix: '/api/store' })
     .get('/emulators', async ({ query }) =>
@@ -97,13 +98,11 @@ export const store = new Elysia({ prefix: '/api/store' })
     })
     .get('/screenshot/emulator/:id/:name', async ({ params: { id, name } }) =>
     {
-        const downlodDir = config.get('downloadPath');
-        return Bun.file(path.join(downlodDir, "store", "media", "screenshots", id, name));
+        return Bun.file(path.join(getStoreFolder(), "media", "screenshots", id, name));
     },
         { params: z.object({ id: z.string(), name: z.string() }) })
     .get('/emulator/:id', async ({ params: { id } }) =>
     {
-        const downlodDir = config.get('downloadPath');
         const emulatorPackage = await getStoreEmulatorPackage(id);
         if (!emulatorPackage) return status("Not Found");
 
@@ -111,9 +110,12 @@ export const store = new Elysia({ prefix: '/api/store' })
 
         const execPaths = await findExecsByName(emulatorPackage.name);
 
-        const emulatorScreenshotsPath = path.join(downlodDir, "store", "media", "screenshots", id);
+        const emulatorScreenshotsPath = path.join(getStoreFolder(), "media", "screenshots", id);
         const screenshots = await fs.exists(emulatorScreenshotsPath) ? await fs.readdir(emulatorScreenshotsPath) : [];
         const validExec = execPaths.find(p => p.exists);
+        const biosDirPath = path.join(config.get('downloadPath'), 'bios', id);
+        const biosFiles = await fs.exists(biosDirPath) ? await fs.readdir(biosDirPath) : [];
+
         const emulator: FrontEndEmulatorDetailed = {
             name: emulatorPackage.name,
             description: emulatorPackage.description,
@@ -138,7 +140,10 @@ export const store = new Elysia({ prefix: '/api/store' })
                 return { name: d.type, type: "Unknown" };
             }) ?? []),
             logo: emulatorPackage.logo,
-            sources: execPaths
+            sources: execPaths,
+            biosRequirement: emulatorPackage.bios,
+            bios: biosFiles,
+            integration: findEmulatorPluginIntegration(emulatorPackage.name)
         };
 
         return emulator;
@@ -154,7 +159,6 @@ export const store = new Elysia({ prefix: '/api/store' })
     })
     .delete('/emulator/:id', async ({ params: { id } }) =>
     {
-
         const storeEmulatorFolder = path.join(config.get('downloadPath'), 'emulators', id);
         if (await fs.exists(storeEmulatorFolder))
         {
@@ -162,4 +166,24 @@ export const store = new Elysia({ prefix: '/api/store' })
             return status("OK");
         }
         return status("Not Found");
+    })
+    .post('/download/bios/:id', async ({ params: { id } }) =>
+    {
+        if (taskQueue.findJob(BiosDownloadJob.query({ id }), BiosDownloadJob))
+        {
+            return status("Conflict", "Bios Download Already Active");
+        }
+
+        return taskQueue.enqueue(BiosDownloadJob.query({ id }), new BiosDownloadJob(id));
+    })
+    .delete('/bios/:id', async ({ params: { id } }) =>
+    {
+        const biosFolder = path.join(config.get('downloadPath'), "bios", id);
+        if (await fs.exists(biosFolder))
+        {
+            await fs.rm(biosFolder, { recursive: true });
+        } else
+        {
+            return status("Not Found");
+        }
     });

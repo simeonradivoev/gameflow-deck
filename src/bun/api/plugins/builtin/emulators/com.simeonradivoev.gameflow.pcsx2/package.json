@@ -1,0 +1,14 @@
+{
+    "name": "com.simeonradivoev.gameflow.pcsx2",
+    "displayName": "PCSX2 Integration",
+    "version": "0.0.1",
+    "description": "PCSX2 Emulator Integration",
+    "main": "./pcsx2.ts",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/2/2b/PCSX2_logo4.png",
+    "keywords": [
+        "integration",
+        "emulator",
+        "ps2",
+        "pcsx2"
+    ]
+}

@@ -10,10 +10,6 @@ import FilePicker from "../FilePicker";
 import { setFocus } from "@noriginmedia/norigin-spatial-navigation";
 import { getSettingQuery, setSettingMutation } from "@queries/settings";
 
-type KeysWithValueAssignableTo<T, Value> = {
-    [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
-}[keyof T];
-
 export interface PathSettingsOptionParams
 {
     label: string;
@@ -68,11 +64,8 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
 
     useEffect(() =>
     {
-        if (!data.isDirty)
-        {
-            data.setLocalValue(String(defaultValue));
-        }
-    }, [data.isDirty, defaultValue]);
+        data.setLocalValue(String(defaultValue));
+    }, [defaultValue]);
 
     const handleSelectPath = (path: string) =>
     {

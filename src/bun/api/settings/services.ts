@@ -2,10 +2,9 @@
 import * as appSchema from '@schema/app';
 import * as emulatorSchema from "@schema/emulators";
 import { eq, inArray } from 'drizzle-orm';
-import { customEmulators, db, emulatorsDb } from '../app';
-import fs from 'node:fs/promises';
+import { db, emulatorsDb } from '../app';
 import { cores } from '../emulatorjs/emulatorjs';
-import { FrontEndEmulator, SERVER_URL } from '@/shared/constants';
+import { SERVER_URL } from '@/shared/constants';
 import { findExecsByName } from '../games/services/launchGameService';
 import { host } from '@/bun/utils/host';
 

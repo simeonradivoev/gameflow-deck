@@ -11,7 +11,7 @@ export function OptionInput (data: {
     className?: string;
     placeholder?: string;
     icon?: JSX.Element;
-    value?: string;
+    value?: string | boolean;
     defaultValue?: string | boolean;
     autocomplete?: HTMLInputAutoCompleteAttribute;
     onBlur?: FocusEventHandler<HTMLInputElement>;
@@ -58,7 +58,7 @@ export function OptionInput (data: {
                 id={data.name}
                 data-focus={"input"}
                 name={data.name}
-                value={data.value}
+                value={String(data.value)}
                 defaultValue={typeof data.defaultValue === 'string' ? data.defaultValue : undefined}
                 type={data.type}
                 autoComplete={data.autocomplete}
@@ -68,24 +68,22 @@ export function OptionInput (data: {
                 onBlur={data.onBlur}
                 defaultChecked={typeof data.defaultValue === 'boolean' ? data.defaultValue : undefined}
                 className={twMerge(
-                    "flex text-base-content px-4 py-2 items-center justify-center border border-base-content/20 grow rounded-full focus:ring-base-content in-focused:bg-base-200 focusable focusable-accent focus:not-focused:ring-7 control-mouse:ring-0! hover:border-base-content",
+                    "flex text-base-content px-4 py-2 items-center justify-center border bg-base-200 border-base-content/20 grow rounded-full focus:ring-base-content in-focused:bg-base-100 focusable focusable-accent focus:not-focused:ring-7 control-mouse:ring-0! hover:border-base-content",
                     data.className
                 )}
             />}
-            {data.type === 'checkbox' && <div className="toggle toggle-xl before:size-6 h-8 border-base-content/30 rounded-full before:rounded-full text-base-content not-in-focus:bg-base-200 focused-child:border-0 ml-1 ring-7 hover:border-base-content focusable focusable-accent">
+            {data.type === 'checkbox' && <div className="toggle toggle-xl toggle-success before:size-6 h-8 border-base-content/30 rounded-full before:bg-base-100 before:rounded-full text-base-content not-in-focus:bg-base-200 focused-child:border-0 ml-1 ring-7 hover:border-base-content focusable has-checked:bg-success not-has-checked:bg-error">
                 <input
                     ref={inputRef}
                     id={data.name}
                     name={data.name}
-                    value={data.value}
-                    defaultValue={typeof data.defaultValue === 'string' ? data.defaultValue : undefined}
+                    checked={Boolean(data.value)}
                     type={data.type}
                     autoComplete={data.autocomplete}
                     onFocus={handleFocus}
                     placeholder={data.placeholder}
-                    onChange={e => data.onChange?.(typeof data.defaultValue === 'boolean' ? e.target.checked : e.target.value)}
+                    onChange={e => data.onChange?.(e.target.checked)}
                     onBlur={data.onBlur}
-                    defaultChecked={typeof data.defaultValue === 'boolean' ? data.defaultValue : undefined}
                     className={twMerge(
                         data.className
                     )}

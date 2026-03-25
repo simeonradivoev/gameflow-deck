@@ -1,11 +1,13 @@
 import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
-import { doesFocusableExist, FocusableComponentLayout, FocusDetails, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
+import { doesFocusableExist, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { jobsApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";
 import { Router } from "..";
-import data from "@emulators";
+import Elysia from "elysia";
+import { Prettify } from "elysia/types";
+import z from "zod";
 
 export function selfFocusSmart (shouldFocus: boolean, focusSelf: () => void)
 {
@@ -70,10 +72,10 @@ export function mobileCheck ()
   return check;
 };
 
-export function useLocalSetting (key: keyof LocalSettingsType)
+export function useLocalSetting<TKey extends keyof LocalSettingsType> (key: TKey)
 {
   const [localValue] = useLocalStorage(key, LocalSettingsSchema.shape[key].parse(undefined), { deserializer: (value) => LocalSettingsSchema.shape[key].parse(JSON.parse(value)) });
-  return localValue;
+  return localValue as LocalSettingsType[TKey];
 }
 
 export function useAsyncGenerator<T> (
@@ -268,8 +270,10 @@ type JobResponse<JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> =
 export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> (
   id: JOB,
   init?: {
-    onProgress?: (process: number, data: ExtractField<JobResponse<JOB>, "data" | "started" | "progress", 'data'>) => void,
+    query?: Record<string, any>,
+    onProgress?: (process: number, data: ExtractField<JobResponse<JOB>, "data" | "started" | "progress" | "completed" | "ended", 'data'>) => void,
     onEnded?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
+    onCompleted?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
     onError?: (error: string) => void;
   }
 )
@@ -279,12 +283,12 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
 
   const ref = useRef<ReturnType<typeof jobsApi.api.jobs[JOB]['subscribe']>>(null);
   const [data, setData] = useState<DataPayload>();
-  const [status, setStatus] = useState<string>();
+  const [state, setState] = useState<string>();
   const [error, setError] = useState<string>();
 
   useEffect(() =>
   {
-    const sub = jobsApi.api.jobs[id].subscribe();
+    const sub = jobsApi.api.jobs[id].subscribe({ query: init?.query });
     ref.current = sub as any;
 
     sub.subscribe(({ data }) =>
@@ -293,23 +297,24 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
       {
         case 'error':
           setError(data.error);
-          setStatus(status);
+          setState(undefined);
           setData(undefined);
           init?.onError?.(data.error);
           break;
         case 'ended':
-          setStatus(status);
+          setState(undefined);
           setData(undefined);
           init?.onEnded?.(data.data as any);
           break;
         case 'completed':
-          setStatus(status);
+          setState(undefined);
           setData(undefined);
+          init?.onCompleted?.(data.data as any);
           break;
         default:
           setData(data.data as DataPayload);
-          setStatus(status);
-          init?.onProgress?.(data.progress, data.data);
+          setState(data.state);
+          init?.onProgress?.(data.progress, data.data as any);
       }
     });
 
@@ -318,9 +323,9 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
       sub.close();
       ref.current = null;
     };
-  }, []);
+  }, [id, init?.query, init?.onEnded, init?.onCompleted, init?.onProgress, init?.onError]);
 
-  return { data, status, error, wsRef: ref };
+  return { data, state, error, wsRef: ref };
 }
 
 export function HandleGoBack ()

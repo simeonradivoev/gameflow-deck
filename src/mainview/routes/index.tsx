@@ -1,4 +1,4 @@
-import { JSX, Suspense, useContext, useEffect, useState } from "react";
+import { JSX, Suspense, useContext, useState } from "react";
 import
 {
   Gamepad2,
@@ -14,7 +14,6 @@ import
 import
 {
   createFileRoute,
-  useNavigate,
 } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import
@@ -25,7 +24,7 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { useEventListener } from "usehooks-ts";
-import { HeaderAccounts, HeaderStatusBar } from "../components/Header";
+import { HeaderAccounts, HeaderButton, HeaderStatusBar } from "../components/Header";
 import { FilterUI } from "../components/Filters";
 import { AnimatedBackground } from "../components/AnimatedBackground";
 import { GameList } from "../components/GameList";
@@ -43,7 +42,6 @@ import CollectionList from "../components/CollectionList";
 import { zodValidator } from '@tanstack/zod-adapter';
 import { mobileCheck, useDragScroll } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
-import { FrontEndId } from "@/shared/constants";
 import Carousel from "../components/Carousel";
 import { closeMutation } from "@queries/system";
 
@@ -301,10 +299,14 @@ export default function ConsoleHomeUI ()
   const setFilter = (filter: string) => Router.navigate({ to: '/', search: { filter }, viewTransition: false, replace: true });
 
   const { shortcuts } = useShortcutContext();
-  const headerButtons = [];
+  const headerButtons: HeaderButton[] = [];
   if (mobileCheck())
     headerButtons.push({ id: "fullscreen", icon: <Maximize />, action: handleFullscreen });
-  headerButtons.push({ id: "search", icon: <Search /> }, { id: "power-button", icon: <Power />, external: true, action: () => close.mutate() });
+  headerButtons.push(
+    { id: "search-header-button", icon: <Search /> },
+    { id: "power-button", icon: <Power />, external: true, action: () => close.mutate() },
+    { id: "settings-header-button", icon: <Settings />, external: true, action: () => Router.navigate({ to: "/settings/accounts" }) }
+  );
 
   return (
     <AnimatedBackground animated ref={ref} backgroundKey="home-background" className="grid grid-cols-3 sm:landscape:grid-rows-[3rem_minmax(var(--game-card-height-safe),1fr)_4rem] md:landscape:grid-rows-[5rem_4rem_minmax(var(--game-card-height-safe),1fr)_6rem_6rem] gap-1 portrait:grid-rows-[3rem_4rem_minmax(var(--game-card-height-safe),1fr)] max-h-screen overflow-clip">

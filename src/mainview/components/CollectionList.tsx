@@ -34,7 +34,7 @@ export default function CollectionList (data: {
                     title: g.name,
                     focusKey: `collection-${g.id}`,
                     subtitle: g.owner_username,
-                    previewUrl: `${RPC_URL(__HOST__)}/api/romm/${g.path_covers_large[0]}`,
+                    previewUrl: `${RPC_URL(__HOST__)}/api/romm/${g.path_covers_small[0]}`,
                     badges: [
                         <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">
                             {g.rom_count}
