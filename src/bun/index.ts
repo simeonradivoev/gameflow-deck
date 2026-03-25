@@ -1,9 +1,10 @@
 import { RunBunServer } from './server';
 import { RunAPIServer } from './api/rpc';
-import { cleanup as appCleanup, config, events } from './api/app';
+import * as app from './api/app';
 import init from './browser';
 import { dirname } from 'pathe';
 import { createInterface } from 'readline';
+import { isSteamDeckGameMode } from './utils';
 
 const api = RunAPIServer();
 let bunServer: { stop: () => void; } | undefined;
@@ -16,7 +17,7 @@ if (!process.env.PUBLIC_ACCESS)
 async function cleanup ()
 {
   console.log("Cleaning Up");
-  await appCleanup();
+  await app.cleanup();
   bunServer?.stop();
   await api.apiServer.stop(true);
   await api.cleanup();
@@ -38,17 +39,18 @@ if (process.env.HEADLESS)
   });
 
   // Called by user
-  events.on('exitapp', () =>
+  app.events.on('exitapp', () =>
   {
     process.send?.({ type: 'exitapp' });
     cleanup();
   });
 } else
 {
-  await init(events, Bun.env.FORCE_BROWSER === "true", {
-    configPath: dirname(config.path),
-    windowPosition: config.get('windowPosition'),
-    windowSize: config.get('windowSize')
+  await init(app.events, Bun.env.FORCE_BROWSER === "true", {
+    configPath: dirname(app.config.path),
+    windowPosition: app.config.get('windowPosition'),
+    windowSize: app.config.get('windowSize'),
+    isSteamDeckGameMode: isSteamDeckGameMode()
   });
   await cleanup();
 }

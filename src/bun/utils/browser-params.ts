@@ -2,7 +2,6 @@ import { SERVER_URL } from "@shared/constants";
 import os from 'node:os';
 import path from 'node:path';
 import { getBrowserPath } from "./get-browser";
-import { isSteamDeckGameMode } from "../utils";
 import { ensureDir } from 'fs-extra';
 import { host } from "./host";
 
@@ -11,6 +10,7 @@ export interface BrowserParams
     configPath: string;
     windowPosition?: { x: number, y: number; };
     windowSize?: { width?: number, height?: number; };
+    isSteamDeckGameMode: boolean;
 }
 
 export async function BuildParams (data: BrowserParams)
@@ -54,7 +54,7 @@ export async function BuildParams (data: BrowserParams)
         args.push('--allow-insecure-localhost');
         args.push('--auto-accept-camera-and-microphone-capture');
 
-        if (isSteamDeckGameMode())
+        if (data.isSteamDeckGameMode)
         {
             args.push('--kiosk');
         } else if (data.windowSize)

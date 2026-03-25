@@ -49,7 +49,10 @@ function spawnBrowser ()
     try
     {
 
-        return browser(events, process.env.FORCE_BROWSER === "true", { configPath: path.join(tmpdir(), 'gameflow') });
+        return browser(events, process.env.FORCE_BROWSER === "true", {
+            configPath: path.join(tmpdir(), 'gameflow'),
+            isSteamDeckGameMode: false
+        });
     } catch (error)
     {
         console.error(error);
