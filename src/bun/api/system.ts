@@ -65,10 +65,6 @@ export const system = new Elysia({ prefix: '/api/system' })
         response: SystemInfoSchema,
         async open (ws)
         {
-            const valuesObject = {
-                battery: 'percent, isCharging, acConnected, hasBattery'
-            };
-
             const battery = await si.battery();
             const wifi = await si.wifiConnections();
             const bluetooth = await si.bluetoothDevices();
@@ -78,27 +74,22 @@ export const system = new Elysia({ prefix: '/api/system' })
                 bluetoothDevices: bluetooth
             }, true);
 
-            (ws.data as any).observer = si.observe(valuesObject, 1000 * 30, (data) =>
+            (ws.data as any).observer = setInterval(async () =>
             {
-                ws.send(data);
-            });
+                const battery = await si.battery();
+                const wifi = await si.wifiConnections();
+                const bluetooth = await si.bluetoothDevices();
+                ws.send({
+                    battery: battery,
+                    wifiConnections: wifi,
+                    bluetoothDevices: bluetooth
+                }, true);
+            }, 1000 * 30);
         },
         close (ws)
         {
             clearInterval((ws.data as any).observer);
         }
-    })
-    .get('/info/battery', async () =>
-    {
-        return si.battery();
-    })
-    .get('/info/wifi', async () =>
-    {
-        return si.wifiConnections();
-    })
-    .get('/info/bluetooth', async () =>
-    {
-        return si.bluetoothDevices();
     })
     .get('/drives', async () =>
     {
