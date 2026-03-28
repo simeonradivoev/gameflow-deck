@@ -34,10 +34,10 @@ export default function StatList (data: {
                 let content: any = undefined;
                 if (s.content instanceof Array)
                 {
-                    content = <div key={`label-items-${i}`} className="flex flex-wrap gap-2">{s.content.map((c, ci) => <span key={`label-items-${i}-${ci}`} className={twMerge("rounded-full bg-base-200 px-3 py-1", data.elementClassName)}>{c}</span>)}</div>;
+                    content = <div key={`label-items-${i}`} className="flex flex-wrap gap-2">{s.content.map((c, ci) => <span key={`label-items-${i}-${ci}`} className={twMerge("rounded-3xl bg-base-200 px-3 py-1", data.elementClassName)}>{c}</span>)}</div>;
                 } else
                 {
-                    content = <div key={`label-element-${i}`} className={twMerge("flex gap-2 rounded-full bg-base-200 px-3 py-1", data.elementClassName)}>{s.icon}{s.content}</div>;
+                    content = <div key={`label-element-${i}`} className={twMerge("flex gap-2 rounded-3xl bg-base-200 px-3 py-1", data.elementClassName)}>{s.icon}{s.content}</div>;
                 }
                 const element = <>
                     <Label id={`${data.id}-label-${i}`} key={`label-${i}`} label={s.label} />

@@ -45,7 +45,7 @@ export const Router = createRouter({
   history: hashHistory,
   defaultPreload: "intent",
   context: { queryClient },
-  scrollRestoration: true,
+  scrollRestoration: false,
   defaultNotFoundComponent: NotFound,
   defaultPendingMs: 300,
   defaultErrorComponent: Error,
@@ -67,6 +67,7 @@ export const Router = createRouter({
 });
 
 const focusMap = new Map<number, string>();
+export const focusQueue: string[] = [];
 
 Router.history.subscribe((op) =>
 {
@@ -77,7 +78,8 @@ Router.history.subscribe((op) =>
   {
     if (focusMap.has(op.location.state.__TSR_index))
     {
-      setFocus(focusMap.get(op.location.state.__TSR_index)!);
+      focusQueue.pop();
+      focusQueue.push(focusMap.get(op.location.state.__TSR_index)!);
       focusMap.delete(op.location.state.__TSR_index);
     }
   }

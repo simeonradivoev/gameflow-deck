@@ -3,7 +3,7 @@ import { ContextList, DialogEntry } from "./ContextDialog";
 import { systemApi } from "../scripts/clientApi";
 import { useContext, useRef, useState } from "react";
 import path from "pathe";
-import { Check, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
+import { Check, File, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { DirType } from "@/shared/constants";
 import classNames from "classnames";
@@ -44,13 +44,13 @@ function List (data: {
                     {
                         const fullPath = path.join(f.parentPath, f.name);
                         const isDefaultPath = fullPath === startingPath;
-                        let icon = <Folder />;
+                        let icon = <Folder className="text-warning" />;
                         if (isDefaultPath)
                         {
-                            icon = <FolderInput />;
+                            icon = <FolderInput className="text-warning" />;
                         } else if (!f.isDirectory)
                         {
-                            icon = <></>;
+                            icon = <File />;
                         }
                         const shortcuts: Shortcut[] = [];
                         let action: () => void;
@@ -201,7 +201,7 @@ function ListWithDrives (data: {
                 <div className="divider divider-horizontal m-1"></div>
             </div>
             <div className="divider divider-horizontal m-0"></div>
-            <div className="overflow-y-auto w-full">
+            <div className="overflow-y-auto w-full p-2">
                 <List
                     id={`list-${data.id}`}
                     dirs={data.files.filter(d =>

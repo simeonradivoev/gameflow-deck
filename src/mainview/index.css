@@ -365,8 +365,10 @@ body {
 
     .bg-noise {
         position: absolute;
-        width: 100%;
-        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         z-index: -1;
         background-image: url("https://momentsingraphics.de/Media/BlueNoise/BlueNoise470.png");
         mix-blend-mode: color-dodge;
@@ -375,8 +377,10 @@ body {
 
     .bg-dots {
         position: absolute;
-        width: 100%;
-        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
         z-index: -1;
         background-image: radial-gradient(var(--color-neutral) 0.1rem, transparent 0.1rem);
         background-size: 2rem 2rem;
@@ -421,11 +425,11 @@ body {
     html:active-view-transition-type(slide-up) {
 
         &::view-transition-old(root) {
-            animation: fade-out 300ms ease-in forwards;
+            animation: fade-out 200ms ease-in forwards;
         }
 
         &::view-transition-new(root) {
-            animation: slide-up 300ms ease-in-out forwards;
+            animation: slide-up 200ms ease-out forwards;
         }
     }
 

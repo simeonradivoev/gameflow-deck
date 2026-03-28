@@ -47,9 +47,4 @@ export default class PCSX2Integration implements PluginType
             }
         });
     }
-
-    async downloadBios (id: number)
-    {
-
-    }
 }

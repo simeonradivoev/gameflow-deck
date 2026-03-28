@@ -113,7 +113,7 @@ export async function getAllStoreEmulatorPackages ()
     return emulatesParsed;
 }
 
-export async function buildStoreFrontendEmulatorSystems (emulator: EmulatorPackageType)
+export async function buildStoreFrontendEmulatorSystems (emulator: EmulatorPackageType): Promise<EmulatorSystem[]>
 {
     const systems = await Promise.all(emulator.systems.map(async system =>
     {
@@ -125,7 +125,7 @@ export async function buildStoreFrontendEmulatorSystems (emulator: EmulatorPacka
 
         let icon: string = `/api/romm/image/romm/assets/platforms/${rommSystem?.sourceSlug ?? system}.svg`;
 
-        return { id: system, romm_slug: rommSystem?.sourceSlug, name: esSystem?.fullname ?? system, icon: icon };
+        return { id: system, romm_slug: rommSystem?.sourceSlug ?? undefined, name: esSystem?.fullname ?? system, iconUrl: icon } satisfies EmulatorSystem;
     }));
 
     return systems;

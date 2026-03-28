@@ -28,13 +28,13 @@ function AchievementsInfo (data: { game: FrontEndGameTypeDetailed; } & InteractP
     </ActionButton>;
 }
 
-export default function ActionButtons (data: { game: FrontEndGameTypeDetailed, source: string, id: string; })
+export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {
     const [, setDetailsSection] = useLocalStorage('details-section', 'screenshots');
 
-    const { ref, focusKey, hasFocusedChild } = useFocusable({ focusKey: 'actions', trackChildren: true });
+    const { ref, focusKey, hasFocusedChild } = useFocusable({ focusKey: 'actions', forceFocus: true, trackChildren: true, preferredChildFocusKey: 'mainAction' });
     const deleteMutation = useMutation({
-        ...deleteGameMutation(data.game.id),
+        ...deleteGameMutation({ id: data.id, source: data.source }),
         onSuccess: () =>
         {
             location.reload();
@@ -47,7 +47,7 @@ export default function ActionButtons (data: { game: FrontEndGameTypeDetailed, s
     });
 
     const contextOptions: DialogEntry[] = [];
-    if (data.game.local)
+    if (data.game?.local)
     {
         contextOptions.push({
             id: 'delete',
@@ -66,15 +66,15 @@ export default function ActionButtons (data: { game: FrontEndGameTypeDetailed, s
     return <div ref={ref} className="flex sm:gap-2 md:gap-4 sm:h-16 md:h-32 overflow-hidden p-2 items-center shrink-0">
         <FocusContext value={focusKey}>
             <MainActions game={data.game} source={data.source} id={data.id} />
-            <AchievementsInfo game={data.game} onAction={() =>
+            {data.game && <AchievementsInfo game={data.game} onAction={() =>
             {
                 setDetailsSection("achievements");
-                if (data.game.achievements?.entires[0])
+                if (data.game?.achievements?.entires[0])
                 {
                     setFocus(data.game.achievements.entires[0].id);
                 }
 
-            }} />
+            }} />}
             <ActionButton tooltip="Settings" onAction={() => setOpen(true, 'settings')} type="base" id="settings" icon={<Settings />} >
             </ActionButton >
             {settingsDialog}

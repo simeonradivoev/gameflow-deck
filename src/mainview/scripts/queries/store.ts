@@ -18,10 +18,10 @@ export const storeFeaturedGamesQuery = queryOptions({
         return data;
     }
 });
-export const storeEmulatorsRecommendedQuery = queryOptions({
-    queryKey: ['store-emulators', 'recommended'], queryFn: async () =>
+export const storeEmulatorsRecommendedQuery = (id?: string) => queryOptions({
+    queryKey: ['store-emulators', 'recommended', id ?? 'all'], queryFn: async () =>
     {
-        const { data, error } = await storeApi.api.store.emulators.get({ query: { limit: 6, missing: true, orderBy: 'importance' } });
+        const { data, error } = await storeApi.api.store.emulators.get({ query: { limit: 6, missing: true, orderBy: 'importance', related: id } });
         if (error) throw error;
         return data;
     }

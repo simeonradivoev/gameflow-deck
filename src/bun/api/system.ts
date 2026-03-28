@@ -7,10 +7,10 @@ import { isSteamDeck, openExternal } from "../utils";
 import fs from 'node:fs/promises';
 import buildNotificationsStream from "./notifications";
 import path, { dirname } from "node:path";
-import { DirSchema } from "@/shared/constants";
+import { DirSchema, SystemInfoSchema } from "@/shared/constants";
 import { getDevices, getDevicesCurated } from "./drives";
 import getFolderSize from "get-folder-size";
-import si from 'systeminformation';
+import si, { battery } from 'systeminformation';
 import { getStoreFolder } from "./store/services/gamesService";
 
 export const system = new Elysia({ prefix: '/api/system' })
@@ -60,6 +60,33 @@ export const system = new Elysia({ prefix: '/api/system' })
         set.headers["cache-control"] = 'no-cache';
         set.headers['connection'] = 'keep-alive';
         return new Response(buildNotificationsStream());
+    })
+    .ws('/info/system', {
+        response: SystemInfoSchema,
+        async open (ws)
+        {
+            const valuesObject = {
+                battery: 'percent, isCharging, acConnected, hasBattery'
+            };
+
+            const battery = await si.battery();
+            const wifi = await si.wifiConnections();
+            const bluetooth = await si.bluetoothDevices();
+            ws.send({
+                battery: battery,
+                wifiConnections: wifi,
+                bluetoothDevices: bluetooth
+            }, true);
+
+            (ws.data as any).observer = si.observe(valuesObject, 1000 * 30, (data) =>
+            {
+                ws.send(data);
+            });
+        },
+        close (ws)
+        {
+            clearInterval((ws.data as any).observer);
+        }
     })
     .get('/info/battery', async () =>
     {

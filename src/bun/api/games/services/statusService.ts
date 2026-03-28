@@ -1,11 +1,10 @@
 import { RPC_URL, } from "@shared/constants";
-import { config, customEmulators, db, taskQueue } from "../../app";
+import { config, customEmulators, db, emulatorsDb, plugins, taskQueue } from "../../app";
 import { getValidLaunchCommands } from "./launchGameService";
-import * as schema from '@schema/app';
-import { eq } from "drizzle-orm";
-import { getErrorMessage } from "@/bun/utils";
-import { getLocalGameMatch } from "./utils";
-import { getRomApiRomsIdGet } from "@/clients/romm";
+import * as emulatorSchema from '@schema/emulators';
+import { and, eq } from "drizzle-orm";
+import { getErrorMessage, hashFile } from "@/bun/utils";
+import { checkFiles, getLocalGameMatch } from "./utils";
 import fs from 'node:fs/promises';
 import { getStoreGameFromId } from "../../store/services/gamesService";
 import { cores } from "../../emulatorjs/emulatorjs";
@@ -26,17 +25,15 @@ class CommandSearchError extends Error
 
 export async function getLocalGame (source: string, id: string)
 {
-    const localGames = await db.select({ id: schema.games.id, path_fs: schema.games.path_fs, platform_slug: schema.platforms.es_slug })
-        .from(schema.games)
-        .where(getLocalGameMatch(id, source))
-        .leftJoin(schema.platforms, eq(schema.games.platform_id, schema.platforms.id));
+    const localGame = await db.query.games.findFirst({
+        columns: { id: true, path_fs: true },
+        where: getLocalGameMatch(id, source),
+        with: {
+            platform: { columns: { slug: true } }
+        }
+    });
 
-    if (localGames.length > 0)
-    {
-        return localGames[0];
-    }
-
-    return undefined;
+    return localGame;
 }
 
 export async function getValidLaunchCommandsForGame (source: string, id: string)
@@ -44,22 +41,24 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
     const localGame = await getLocalGame(source, id);
     if (localGame)
     {
-        if (localGame.platform_slug)
+        const rommPlatform = localGame.platform.slug;
+        const esPlatform = await emulatorsDb.query.systemMappings.findFirst({ where: and(eq(emulatorSchema.systemMappings.sourceSlug, rommPlatform), eq(emulatorSchema.systemMappings.source, 'romm')) });
+
+        if (esPlatform)
         {
             if (localGame.path_fs)
             {
-
                 try
                 {
-                    const commands = await getValidLaunchCommands({ systemSlug: localGame.platform_slug, customEmulatorConfig: customEmulators, gamePath: localGame.path_fs });
+                    const commands = await getValidLaunchCommands({ systemSlug: esPlatform.system, customEmulatorConfig: customEmulators, gamePath: localGame.path_fs });
 
-                    if (cores[localGame.platform_slug])
+                    if (cores[esPlatform.system])
                     {
                         const gameUrl = `${RPC_URL(host)}/api/romm/rom/${source}/${id}`;
                         commands.push({
                             id: 'EMULATORJS',
                             label: "Emulator JS",
-                            command: `core=${cores[localGame.platform_slug]}&gameUrl=${encodeURIComponent(gameUrl)}`,
+                            command: `core=${cores[esPlatform.system]}&gameUrl=${encodeURIComponent(gameUrl)}`,
                             valid: true,
                             emulator: 'EMULATORJS',
                             metadata: {
@@ -90,7 +89,7 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
         }
         else
         {
-            return new CommandSearchError('error', 'Missing Platform');
+            return new CommandSearchError('error', `Missing Platform ${localGame.platform.slug}`);
         }
 
     }
@@ -107,6 +106,7 @@ export default function buildStatusResponse ()
             z.object({ status: z.literal(['refresh', 'queued']) }),
             z.object({ status: z.literal('playing'), details: z.string() }),
             z.object({ status: z.literal('install'), details: z.string() }),
+            z.object({ status: z.literal('present'), details: z.string() }),
             z.object({ status: z.literal(['download', 'extract']), progress: z.number() }),
         ]),
         message (ws, data)
@@ -158,20 +158,6 @@ export default function buildStatusResponse ()
                             });
                         }
 
-                    }
-                    else if (ws.data.params.source === 'romm')
-                    {
-                        // TODO: Add Caching
-                        const remoteGame = await getRomApiRomsIdGet({ path: { id: Number(ws.data.params.id) } });
-                        const stats = await fs.statfs(config.get('downloadPath'));
-                        if (remoteGame.data?.fs_size_bytes && remoteGame.data?.fs_size_bytes > stats.bsize * stats.bavail)
-                        {
-                            ws.send({ status: 'error', error: "Not Enough Free Space" });
-                        } else
-                        {
-                            ws.send({ status: 'install', details: 'Install' });
-                        }
-
                     } else if (ws.data.params.source === 'store')
                     {
                         const storeGame = await getStoreGameFromId(ws.data.params.id);
@@ -186,6 +172,41 @@ export default function buildStatusResponse ()
                         {
                             ws.send({ status: 'install', details: 'Install' });
                         }
+                    } else
+                    {
+                        const files = await plugins.hooks.games.fetchDownloads.promise({
+                            source: ws.data.params.source,
+                            id: ws.data.params.id
+                        });
+
+                        let filesChecked: LocalDownloadFileEntry[] | undefined;
+
+                        if (files)
+                        {
+                            filesChecked = await checkFiles(files.files, !!files.extract_path);
+                        }
+
+                        if (filesChecked && !filesChecked.some(f => f.exists === false || f.matches === false))
+                        {
+                            ws.send({ status: 'present', details: "Files Exist On Disk, Import" });
+                        } else
+                        {
+                            const size = filesChecked?.filter(f => f.exists !== true || f.matches !== true).reduce((p, f) => p += f.size ?? 0, 0);
+                            const stats = await fs.statfs(config.get('downloadPath'));
+                            if (size && size > stats.bsize * stats.bavail)
+                            {
+                                ws.send({ status: 'error', error: "Not Enough Free Space" });
+                            } else if (filesChecked?.some(f => f.exists === true && f.matches === false))
+                            {
+                                ws.send({ status: 'install', details: 'Some Files Present, Install' });
+                            }
+                            else
+                            {
+                                ws.send({ status: 'install', details: 'Install' });
+                            }
+                        }
+
+
                     }
                 }
             }

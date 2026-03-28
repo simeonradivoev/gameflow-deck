@@ -464,7 +464,7 @@ const assets = new Set<string>([
 ]);
 
 // Store basePath resolved from Vite config
-const BASE_PATH = "./";
+const BASE_PATH = "/";
 
 
 /**

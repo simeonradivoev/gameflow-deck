@@ -119,14 +119,14 @@ export function AnimatedBackground (data: {
 
             >
                 {!data.scrolling && <div className='absolute top-0 left-0 right-0 bottom-0 overflow-hidden'>
+                    <div className='absolute w-full h-full bg-radial from-base-100 to-base-300 -z-5'></div>
                     {blur && finalLastBackgroundUrl && <img className='absolute w-full h-full object-cover object-center -z-4 mask-radial-at-center mask-radial-from-0 mask-radial-farthest-corner' src={finalLastBackgroundUrl.href}></img>}
                     {finalBackgroundUrl ? <img
-                        loading="lazy"
                         decoding="async"
                         key={finalBackgroundUrl?.href}
                         className={'absolute w-full h-full object-cover object-center opacity-0 -z-3 mask-radial-from-0'}
                         src={finalBackgroundUrl?.href}
-                        onLoad={e => e.currentTarget.classList.add(blur ? "animate-bg-zoom-big" : "animate-bg-zoom")}
+                        onLoad={e => e.currentTarget.classList.add("animate-bg-zoom")}
                     ></img> : <><div className='mobile:hidden bg-gradient'></div></>}
                     <div className='absolute top-0 left-0 right-0 bottom-0 bg-linear-to-b from-base-100/60 to-base-300/80 -z-2' />
                     <div className='mobile:hidden bg-noise'></div>

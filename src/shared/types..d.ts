@@ -12,14 +12,17 @@ declare interface FrontEndEmulator
 {
     name: string;
     logo: string;
-    systems: { id: string, name: string, icon: string; }[];
+    systems: EmulatorSystem[];
+    description?: string;
     gameCount: number;
-    validSource?: EmulatorSourceEntryType;
+    validSources: EmulatorSourceEntryType[];
     integration?: {
         name: string;
         version: string;
     };
 }
+
+declare interface EmulatorSystem { id: string, romm_slug?: string, name: string, iconUrl: string; }
 
 declare interface FrontEndEmulatorDetailedDownload
 {
@@ -200,3 +203,65 @@ declare type PluginSourceType = "builtin";
 declare type KeysWithValueAssignableTo<T, Value> = {
     [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
 }[keyof T];
+
+declare interface DownloadInfo
+{
+    screenshotUrls: string[];
+    coverUrl: string;
+    platform?: DownloadPlatform;
+    slug?: string;
+    path_fs?: string;
+    summary?: string;
+    name: string;
+    last_played?: Date;
+    igdb_id?: number;
+    ra_id?: number;
+    source_id: string;
+    system_slug: string;
+    extract_path?: string;
+    metadata?: any;
+    files: DownloadFileEntry[];
+    auth?: string;
+}
+
+declare interface DownloadPlatform
+{
+    igdb_id?: number;
+    igdb_slug?: string;
+    ra_id?: number;
+    moby_id?: number;
+    slug: string;
+    name: string;
+    /** Like Sony or Nintendo */
+    family_name?: string;
+}
+
+declare interface DownloadFileEntry
+{
+    url: URL;
+    /** The path of the file, excluding the name */
+    file_path: string;
+    /** Just the name of the file including the extension */
+    file_name: string;
+    /** Checksum of the file */
+    sha1?: string;
+    /** Size in bytes */
+    size?: number;
+}
+
+declare interface LocalDownloadFileEntry extends DownloadFileEntry
+{
+    /** Exists on the file system */
+    exists: boolean;
+    /** Matches the checksum */
+    matches: boolean;
+}
+
+declare interface FrontEndCollection
+{
+    id: FrontEndId;
+    name: string;
+    description: string;
+    path_platform_cover: string | null;
+    game_count: number;
+}

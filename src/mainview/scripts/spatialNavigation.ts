@@ -9,6 +9,8 @@ import
   UseFocusableResult,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { RefObject, useEffect, useState } from "react";
+import { focusQueue, Router } from "..";
+import { scrollIntoViewHandler } from "./utils";
 
 init({
   shouldFocusDOMNode: false,
@@ -21,6 +23,7 @@ let sortSiblingsByPriority = SpatialNavigation.sortSiblingsByPriority.bind(Spati
 let removeFocusable = SpatialNavigation.removeFocusable.bind(SpatialNavigation);
 let setFocus = SpatialNavigation.setFocus.bind(SpatialNavigation);
 let setCurrentFocusedKey = SpatialNavigation.setCurrentFocusedKey.bind(SpatialNavigation);
+let updateLayout = SpatialNavigation.updateLayout.bind(SpatialNavigation);
 
 type SaveFocusType = "session" | "local";
 
@@ -87,6 +90,11 @@ export function useGlobalFocus ()
   return focused;
 }
 
+SpatialNavigation.updateLayout = (focusKey) =>
+{
+  updateLayout(focusKey);
+};
+
 SpatialNavigation.setFocus = (newFocusKey, focusDetails) =>
 {
   setFocus(newFocusKey, focusDetails);
@@ -113,6 +121,16 @@ SpatialNavigation.sortSiblingsByPriority = (siblings, currentLayout, direction, 
 SpatialNavigation.addFocusable = (toAdd) =>
 {
   addFocusable(toAdd);
+  const queuedFocus = focusQueue[0];
+  if (queuedFocus === toAdd.focusKey)
+  {
+    // Use double request to account for dynamic layouts
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+    {
+      setFocus(queuedFocus, { instant: true });
+    }));
+  }
+
   const component: {
     lastFocusedChildKey?: string;
     preferredChildFocusKey?: string;

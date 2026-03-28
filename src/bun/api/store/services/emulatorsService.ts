@@ -4,19 +4,15 @@ import * as emulatorSchema from '@schema/emulators';
 import { findExecs } from "../../games/services/launchGameService";
 import { eq } from "drizzle-orm";
 
-export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageType, gameCount: number, systems: {
-    id: string;
-    name: string;
-    icon: string;
-}[])
+export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageType, gameCount: number, systems: EmulatorSystem[])
 {
-    let execPath: EmulatorSourceEntryType | undefined;
+    const execPaths: EmulatorSourceEntryType[] = [];
     const esEmulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, emulator.name) });
 
     if (esEmulator)
     {
         const allExecs = await findExecs(emulator.name, esEmulator);
-        if (allExecs.length > 0) execPath = allExecs[0];
+        execPaths.push(...allExecs);
     }
 
     const em: FrontEndEmulator = {
@@ -24,7 +20,7 @@ export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageT
         logo: emulator.logo,
         systems,
         gameCount,
-        validSource: execPath,
+        validSources: execPaths,
         integration: findEmulatorPluginIntegration(emulator.name)
     };
 

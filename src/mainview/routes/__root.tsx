@@ -4,7 +4,10 @@ import Notifications from "../components/Notifications";
 import { Toaster } from "react-hot-toast";
 import { mobileCheck, useLocalSetting } from "../scripts/utils";
 import useActiveControl from "../scripts/gamepads";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { SystemInfoContext } from "../scripts/contexts";
+import { SystemInfoType } from "@/shared/constants";
+import { systemApi } from "../scripts/clientApi";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
@@ -31,11 +34,25 @@ function RootComponent ()
 
   }, [theme]);
 
+  const [systemInfo, setSystemInfo] = useState<SystemInfoType | undefined>();
+  useEffect(() =>
+  {
+    const sub = systemApi.api.system.info.system.subscribe();
+    sub.subscribe(({ data }) =>
+    {
+      setSystemInfo(data);
+    });
+
+    document.documentElement.dataset.loaded = "true";
+  }, []);
+
   return (
     <div data-device={isMobile ? 'mobile' : ''} data-active-control={control} className="w-screen h-screen overflow-hidden">
-      <Outlet />
+      <SystemInfoContext value={systemInfo}>
+        <Outlet />
+      </SystemInfoContext>
       <Notifications />
-      <Toaster containerStyle={{ viewTimelineName: 'toasters' }} />
+      <Toaster containerStyle={{ viewTimelineName: 'toasters', viewTransitionName: 'notifications' }} />
       {/*import.meta.env.DEV && !isMobile &&
         <>
           <TanStackRouterDevtools position="top-left" />

@@ -3,9 +3,12 @@ import { FilterUI } from '@/mainview/components/Filters';
 import { HeaderUI } from '@/mainview/components/Header';
 import Shortcuts from '@/mainview/components/Shortcuts';
 import { StoreContext } from '@/mainview/scripts/contexts';
+import { gameQuery } from '@/mainview/scripts/queries/romm';
+import { storeEmulatorDetailsQuery } from '@/mainview/scripts/queries/store';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { mobileCheck, useStickyDataAttr } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMatchRoute } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
@@ -78,6 +81,7 @@ function RouteComponent ()
     preferredChildFocusKey: 'top-area',
     forceFocus: true
   });
+  const queryClient = useQueryClient();
   const headerRef = useRef(null);
   const sentinelRef = useRef(null);
   const filters: Record<string, FilterOption> = {
@@ -110,11 +114,23 @@ function RouteComponent ()
 
   };
 
+  const handlePrefetch = (type: string, source: string, id: string) =>
+  {
+    if (type === 'emulator')
+    {
+      queryClient.prefetchQuery(storeEmulatorDetailsQuery(id));
+    }
+    else if (type === 'game')
+    {
+      queryClient.prefetchQuery(gameQuery(source, id));
+    }
+  };
+
   const isMobile = mobileCheck();
   useStickyDataAttr(headerRef, sentinelRef, ref);
 
   return <div ref={ref} className='overflow-y-scroll w-screen h-screen' >
-    <StoreContext value={{ showDetails: handleDetails }} >
+    <StoreContext value={{ showDetails: handleDetails, prefetchDetails: handlePrefetch }} >
       <FocusContext.Provider value={focusKey}>
         <div className="relative flex flex-col min-h-screen text-base-content z-10" >
           <div ref={sentinelRef} className="h-0" />

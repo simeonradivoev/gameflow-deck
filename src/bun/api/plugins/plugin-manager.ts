@@ -27,7 +27,8 @@ export class PluginManager
                 if (plugin.setup) await plugin.setup();
                 this.plugins[description.name] = {
                     enabled: !config.get('disabledPlugins').includes(description.name),
-                    loaded: false, plugin: plugin,
+                    loaded: false,
+                    plugin: plugin,
                     source: source,
                     description: description
                 };

@@ -5,14 +5,6 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from "node:fs";
 import { config, jar } from "../api/app";
 
-export interface FileEntry
-{
-    url: URL;
-    file_path: string;
-    file_name: string;
-    size?: number;
-}
-
 export interface ProgressStats
 {
     progress: number;
@@ -20,7 +12,7 @@ export interface ProgressStats
 
 interface TmpDownloadMetadata
 {
-    files: FileEntry[];
+    files: DownloadFileEntry[];
 }
 
 /**
@@ -29,11 +21,11 @@ interface TmpDownloadMetadata
  */
 export class Downloader
 {
-    files: FileEntry[];
+    files: DownloadFileEntry[];
     headers?: Record<string, string>;
     onProgress?: (stats: ProgressStats) => void;
     signal?: AbortSignal;
-    activeFile?: FileEntry;
+    activeFile?: DownloadFileEntry;
     downloadPath: string;
     id: string;
     tmpPath: string;
@@ -41,7 +33,7 @@ export class Downloader
 
     constructor(
         id: string,
-        files: FileEntry[],
+        files: DownloadFileEntry[],
         downloadPath: string, init?: {
             headers?: Record<string, string>,
             onProgress?: (stats: ProgressStats) => void;

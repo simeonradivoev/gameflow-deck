@@ -6,11 +6,11 @@ import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
 import { useLocalStorage } from "usehooks-ts";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
-import { Clock, Download, EllipsisVertical, PackageOpen, Play, TriangleAlert } from "lucide-react";
+import { Clock, Download, EllipsisVertical, Import, PackageOpen, Play, TriangleAlert } from "lucide-react";
 import { installMutation, playMutation } from "@/mainview/scripts/queries/romm";
 import ActionButton from "./ActionButton";
 
-export default function MainActions (data: { game: FrontEndGameTypeDetailed, source: string, id: string; })
+export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {
     const installMut = useMutation(installMutation(data.source, data.id));
     const playMut = useMutation({
@@ -29,7 +29,7 @@ export default function MainActions (data: { game: FrontEndGameTypeDetailed, sou
     const [error, setError] = useState<string | undefined>(undefined);
     const [details, setDetails] = useState<string | undefined>(undefined);
     const [commands, setCommands] = useState<CommandEntry[] | undefined>(undefined);
-    const [preferredCommand, setPreferredCommand] = useLocalStorage<string | number | undefined>(`${data.game.source ?? data.game.id.source}-${data.game.source_id ?? data.game.id.id}-preferred-command`, undefined);
+    const [preferredCommand, setPreferredCommand] = useLocalStorage<string | number | undefined>(`${data.game?.source ?? data.game?.id.source}-${data.game?.source_id ?? data.game?.id.id}-preferred-command`, undefined);
     const queryClient = useQueryClient();
     const validCommands = commands ? commands.filter(c => c.valid) : [];
     const validDefaultCommand = commands?.find(c =>
@@ -41,7 +41,7 @@ export default function MainActions (data: { game: FrontEndGameTypeDetailed, sou
 
     useEffect(() =>
     {
-        const sub = rommApi.api.romm.status({ source: data.game.id.source })({ id: data.game.id.id }).subscribe();
+        const sub = rommApi.api.romm.status({ source: data.source })({ id: data.id }).subscribe();
         ws.current = sub.ws;
 
         sub.subscribe((e) =>
@@ -69,7 +69,7 @@ export default function MainActions (data: { game: FrontEndGameTypeDetailed, sou
             sub.close();
             ws.current = undefined;
         };
-    }, [data.game.id]);
+    }, [data.source, data.id]);
 
     let progressIcon: JSX.Element | undefined = undefined;
     switch (status)
@@ -101,7 +101,7 @@ export default function MainActions (data: { game: FrontEndGameTypeDetailed, sou
             Router.navigate({ to: '/embedded/$source/$id', params: { source: data.source, id: data.id }, search: Object.fromEntries(params.entries()), replace: true });
         } else
         {
-            playMut.mutate({ source: data.game.id.source, id: data.game.id.id, command_id: cmd.id });
+            playMut.mutate({ source: data.source, id: data.id, command_id: cmd.id });
         }
     };
 
@@ -142,20 +142,31 @@ export default function MainActions (data: { game: FrontEndGameTypeDetailed, sou
     }
     else
     {
+        let icon = <span className="loading loading-spinner loading-lg"></span>;
+        if (status === 'install')
+        {
+            icon = <Download />;
+        } else if (status === 'present')
+        {
+            icon = <Import />;
+        }
         mainButton = <ActionButton
             key={status ?? 'unknown'}
             disabled={installMut.isPending}
             onAction={() =>
             {
-                if (status === 'install')
+                switch (status)
                 {
-                    installMut.mutate();
+                    case 'present':
+                    case 'install':
+                        installMut.mutate();
+                        break;
                 }
             }}
             tooltip={details ?? status}
             type='primary'
             id="mainAction">
-            {status === 'install' ? <Download /> : <span className="loading loading-spinner loading-lg"></span>}
+            {icon}
         </ActionButton>;
     }
 

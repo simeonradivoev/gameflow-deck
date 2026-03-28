@@ -1,0 +1,12 @@
+{
+    "name": "com.simeonradivoev.gameflow.romm",
+    "displayName": "ROMM Integration",
+    "version": "0.0.1",
+    "description": "ROMM Server Integration",
+    "main": "./romm.ts",
+    "icon": "https://romm.app/_ipx/q_80/images/blocks/logos/romm.svg",
+    "keywords": [
+        "integration",
+        "romm"
+    ]
+}

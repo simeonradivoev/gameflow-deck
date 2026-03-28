@@ -2,16 +2,16 @@ import { createFileRoute } from '@tanstack/react-router';
 import { OptionSpace } from '../../components/options/OptionSpace';
 import { OptionInput } from '../../components/options/OptionInput';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { JSX, useCallback, useEffect, useState } from 'react';
 import { Button } from '../../components/options/Button';
-import { Check, ChevronDown, FolderSearch, SearchAlert, Trash, TriangleAlert } from 'lucide-react';
+import { Check, ChevronDown, FileQuestion, FolderSearch, Plug, SearchAlert, Store, Trash, TriangleAlert } from 'lucide-react';
 import { ContextDialog, ContextList, DialogEntry, OptionElement } from '../../components/ContextDialog';
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
 import { RPC_URL } from '../../../shared/constants';
 import emulators from '@emulators';
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
+import { GamePadButtonCode, Shortcut, useShortcuts } from '@/mainview/scripts/shortcuts';
 import FilePicker from '@/mainview/components/FilePicker';
 import { dirname } from 'pathe';
 import { autoEmulatorsQuery, customEmulatorAddMutation, customEmulatorDeleteMutation, customEmulatorRemoveValueQuery, customEmulatorsQuery, setCustomEmulatorMutation } from '@queries/settings';
@@ -19,6 +19,7 @@ import Carousel from '@/mainview/components/Carousel';
 import { FOCUS_KEYS } from '@/mainview/scripts/types';
 import { scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from '@/mainview/scripts/utils';
 import { SettingsOption } from '@/mainview/components/options/SettingsOption';
+import { Router } from '@/mainview';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -54,7 +55,7 @@ function EmulatorListType (data: { category: string, action: (e: string) => void
   const { ref, focusKey } = useFocusable({ focusKey: 'list-section' });
   return <div ref={ref} className='grow'>
     <FocusContext value={focusKey}>
-      <ContextList className='sm:h-[80vh] md:h-[60vh] overflow-auto' options={Object.keys(emulators).filter(e => e.startsWith(data.category)).map(e => ({
+      <ContextList className='sm:h-[80vh] md:h-[60vh] p-2 overflow-auto' options={Object.keys(emulators).filter(e => e.startsWith(data.category)).map(e => ({
         id: e,
         action: (ctx) =>
         {
@@ -185,43 +186,88 @@ function EmulatorPath (data: { id: string; })
 }
 
 function EmulatorBadge (data: {
-  path?: string,
-  exists: boolean,
-  emulator: string;
-  isCritical: boolean;
-  pathCover?: string;
+  emulator: FrontEndEmulator & {
+    isCritical: boolean;
+  },
   addOverride: (emulator: string) => void;
 } & FocusParams)
 {
   const { focusKey, ref, focused } = useFocusable({
-    focusKey: FOCUS_KEYS.EMULATOR_CARD(data.emulator),
+    focusKey: FOCUS_KEYS.EMULATOR_CARD(data.emulator.name),
     onFocus (l, p, details) { data.onFocus?.(focusKey, ref.current, details); }
   });
 
-  useShortcuts(focusKey, () => [{
-    label: 'Add Override',
-    button: GamePadButtonCode.A,
-    action: () =>
-      data.addOverride(data.emulator)
-  }], [data.addOverride]);
+  useShortcuts(focusKey, () =>
+  {
+    const shortcuts: Shortcut[] = [{
+      label: 'Add Override',
+      button: GamePadButtonCode.A,
+      action: () =>
+        data.addOverride(data.emulator.name)
+    }];
+    if (data.emulator.validSources.some(s => s.type === 'store'))
+    {
+      shortcuts.push({
+        button: GamePadButtonCode.Y,
+        label: "Visit Store",
+        action ()
+        {
+          Router.navigate({ to: '/store/details/emulator/$id', params: { id: data.emulator.name } });
+        },
+      });
+    }
+    return shortcuts;
+  }, [data.addOverride]);
 
-  return <div ref={ref} className={classNames("tooltip tooltip-primary tooltip-right", { "tooltip-open": focused })} data-tip={`${emulators[data.emulator]}`}>
-    <div className={
-      twMerge('flex flex-col rounded-3xl bg-base-300 justify-center items-center p-4 overflow-hidden h-full',
-        classNames({
-          "bg-base-200": !data.path,
-          "border-dashed border-base-content/40 border-2": !data.path && data.isCritical && !focused,
-          "border-dashed border-accent border-4": focused
 
-        }))
-    }>
-      <p className='flex gap-2 font-semibold'>
-        {data.path ? data.exists ? <Check /> : <TriangleAlert className='text-error' /> : <SearchAlert className={data.isCritical ? 'text-warning' : 'text-base-content/40'} />}
-        {!!data.pathCover && <img className='size-6 drop-shadow drop-shadow-black/20' src={`${RPC_URL(__HOST__)}${data.pathCover}`}></img>}
-        {data.emulator}
-      </p>
-      {data.path ? <small className={classNames('opacity-60 max-w-full overflow-clip text-nowrap text-ellipsis', { 'text-error': !data.exists })}>{data.path}</small> : ""}
+  let statusIcon = <SearchAlert className={data.emulator.isCritical ? 'text-warning' : 'text-base-content/40'} />;
+  if (data.emulator.validSources.some(s => s.exists))
+  {
+    statusIcon = <Check />;
+  }
+
+  return <div ref={ref} className={
+    twMerge('grid grid-rows-3 grid-cols-1 flex-col rounded-3xl bg-base-300 items-center p-4 overflow-hidden h-full select-none focusable focusable-accent',
+      classNames({
+        "bg-base-200": !data.emulator.validSources.some(v => v.exists),
+        "border-dashed border-base-content/40 border-2": !data.emulator.validSources.some(v => v.exists) && data.emulator.isCritical && !focused,
+
+      }))
+  }>
+    <div className='flex flex-col items-center gap-1'>
+      <div className='flex gap-2 font-semibold'>
+        {statusIcon}
+        {!!data.emulator.logo && <img className='size-6 drop-shadow drop-shadow-black/20' src={`${RPC_URL(__HOST__)}${data.emulator.logo}`}></img>}
+        {data.emulator.name}
+      </div>
+      <div className='text-base-content/40 max-w-full overflow-hidden text-nowrap text-ellipsis'>
+        {data.emulator.description ?? emulators[data.emulator.name]}
+      </div>
     </div>
+    {data.emulator.validSources.length > 0 && <div className="divider">
+      <div className='flex p-2 gap-1'>{data.emulator.validSources.map(s =>
+      {
+        let icon = <FileQuestion />;
+        let action: (() => void) | undefined = undefined;
+        let className = "bg-warning text-warning-content";
+        switch (s.type)
+        {
+          case 'store':
+            icon = <Store />;
+            className = "hover:bg-base-content hover:text-base-100 cursor-pointer bg-accent text-accent-content";
+            action = () => { Router.navigate({ to: '/store/details/emulator/$id', params: { id: data.emulator.name } }); };
+            break;
+          case 'embedded':
+            icon = <Plug />;
+            className = "bg-info text-info-content";
+            break;
+        }
+        return <div onClick={action} className={twMerge('drop-shadow-md rounded-full p-1', className)}>{icon}</div>;
+      })}</div>
+    </div>}
+    <ul className='list'>
+      {data.emulator.validSources.slice(0, 3).filter(s => s.exists).map(s => <li className={classNames('list-item opacity-60 max-w-full overflow-clip text-nowrap text-ellipsis', { 'text-error': !s.exists })}>{s.binPath}</li>)}
+    </ul>
   </div>;
 }
 
@@ -233,7 +279,7 @@ function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) 
     {
       return data.toSorted((a, b) =>
       {
-        const sourceCompare = (b.validSource ? 1 : 0) - (a.validSource ? 1 : 0);
+        const sourceCompare = (b.validSources.some(s => s.exists) ? 1 : 0) - (a.validSources.some(s => s.exists) ? 1 : 0);
         if (sourceCompare !== 0)
         {
           return sourceCompare;
@@ -250,10 +296,10 @@ function EmulatorBadges (data: { path?: string; addOverride: (emulator: string) 
     onFocus (l, p, details) { data.onFocus?.(focusKey, ref.current, details); }
   });
   useDragScroll(ref);
-  return <Carousel scrollRef={ref} className='grid grid-flow-col overflow-x-scroll auto-cols-[16rem] grid-rows-[repeat(3,4rem)] gap-2 justify-center-safe py-4 no-scrollbar'>
+  return <Carousel scrollRef={ref} className='grid grid-flow-col overflow-x-scroll auto-cols-[16rem] grid-rows-[repeat(1,12rem)] gap-2 justify-center-safe py-4 no-scrollbar px-12'>
 
     <FocusContext value={focusKey}>
-      {autoEmulators?.map(e => <EmulatorBadge onFocus={(k, n, d) => scrollIntoNearestParent(n)} key={e.name} isCritical={e.isCritical} addOverride={data.addOverride} pathCover={e.logo} path={e.validSource?.binPath} exists={!!e.validSource} emulator={e.name} />)}
+      {autoEmulators?.map(e => <EmulatorBadge onFocus={(k, n, d) => scrollIntoNearestParent(n)} key={e.name} addOverride={data.addOverride} emulator={e} />)}
 
     </FocusContext>
   </Carousel>;

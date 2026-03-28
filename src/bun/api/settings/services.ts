@@ -54,7 +54,6 @@ export async function getRelevantEmulators ()
     const finalEmulators = await Promise.all(Array.from(groupedEmulators.entries()).map(async ([emulator, system_slug]) =>
     {
         const execPaths = await findExecsByName(emulator);
-        const validExecPath = execPaths.find(e => e.exists);
 
         let platform: number | null | undefined = null;
         const validSystemSlug = system_slug.find(s => s.system);
@@ -63,7 +62,7 @@ export async function getRelevantEmulators ()
             platform = platformLookup.get(validSystemSlug.system)?.platform_id;
         }
         const systems = Array.from(new Set(system_slug.filter(s => s.system).map(s => s.system!)));
-        if (validExecPath)
+        if (execPaths.some(p => p.exists))
         {
             systems.forEach(s => platformViability.set(s, true));
         }
@@ -71,10 +70,10 @@ export async function getRelevantEmulators ()
         const em: FrontEndEmulator & { isCritical: boolean; } = {
             name: emulator,
             logo: platform ? `/api/romm/platform/local/${platform}/cover` : '',
-            systems: systems.map(s => platformLookup.get(s)).filter(s => !!s).map(e => ({ icon: `/api/romm/image/romm/assets/platforms/${e.es_slug}.svg`, name: e.platform_name ?? 'Unknown', id: e.es_slug ?? '' })),
+            systems: systems.map(s => platformLookup.get(s)).filter(s => !!s).map(e => ({ iconUrl: `/api/romm/image/romm/assets/platforms/${e.es_slug}.svg`, name: e.platform_name ?? 'Unknown', id: e.es_slug ?? '' })),
             gameCount: 0,
             isCritical: false,
-            validSource: validExecPath
+            validSources: execPaths
         };
 
         return em;
@@ -82,11 +81,12 @@ export async function getRelevantEmulators ()
 
     finalEmulators.push({
         name: 'EMULATORJS',
-        validSource: { binPath: `${SERVER_URL(host)}`, type: 'js', exists: true },
+        validSources: [{ binPath: `${SERVER_URL(host)}`, type: 'embedded', exists: true }],
         logo: `/api/romm/image?url=${encodeURIComponent('https://emulatorjs.org/logo/EmulatorJS.png')}`,
         systems: [],
         gameCount: 0,
         isCritical: false,
+        description: "Embedded Emulator. Uses Retroarch Cores"
     });
 
     return finalEmulators.map(e =>

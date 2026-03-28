@@ -7,7 +7,7 @@ import
 import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import classNames from "classnames";
-import { Key, Link, Lock, LogOut, Save, ScanQrCode, Trash, User, X } from "lucide-react";
+import { Key, Link, Lock, LogIn, LogOut, Save, ScanQrCode, Trash, User, X } from "lucide-react";
 import
 {
   useEffect,
@@ -24,7 +24,8 @@ import { useJobStatus } from "@/mainview/scripts/utils";
 import { useInterval } from "usehooks-ts";
 import { TwitchIcon } from "@/mainview/scripts/brandIcons";
 import { twitchLoginMutation, twitchLoginVerificationQuery, twitchLogoutMutation } from "@queries/settings";
-import { rommGetOptionsQuery, rommHasPasswordQuery, rommHostnameQuery, rommLoginMutation, rommLogoutMutation, rommQrLoginMutation, rommUsernameQuery, rommUserQuery } from "@queries/romm";
+import { rommGetOptionsQuery, rommLoggedInQuery, rommHostnameQuery, rommLoginMutation, rommLogoutMutation, rommQrLoginMutation, rommUsernameQuery, rommUserQuery } from "@queries/romm";
+import { systemApi } from "@/mainview/scripts/clientApi";
 
 export const Route = createFileRoute("/settings/accounts")({
   component: RouteComponent,
@@ -47,7 +48,10 @@ function LoginQR (data: { id: string, isOpen: boolean, cancel: () => void, url: 
     <QRCode value={data.url} />
     <progress ref={progressRef} className="progress w-56" max="100"></progress>
     {!!data.code && <p> Code: {data.code} </p>}
-    <Button id="qr-login-cancel" focusClassName="btn-warning" type="button" onAction={() => data.cancel()}><X /> Cancel</Button>
+    <div className="flex gap-2">
+      <Button id="qr-login-open-url" focusClassName="btn-primary" type="button" onAction={() => systemApi.api.system.open.post({ url: data.url })}><Link /> Open</Button>
+      <Button id="qr-login-cancel" focusClassName="btn-warning" type="button" onAction={() => data.cancel()}><X /> Cancel</Button>
+    </div>
   </ContextDialog>;
 }
 
@@ -83,11 +87,12 @@ function TwitchLogin ()
   </div>;
 }
 
-function LoginControls (data: { hasPassword: boolean; })
+function LoginControls (data: {})
 {
-  const user = useQuery(rommUserQuery());
+  const user = useQuery(rommUserQuery);
   const loginMutation = useMutation(rommQrLoginMutation);
   const { data: statusValue, wsRef } = useJobStatus('login-job');
+  const { data: loginStatusData } = useQuery(rommLoggedInQuery);
   const context = useSettingsFormContext({});
   const isMutatingRomm = useIsMutating({ mutationKey: ["romm", "auth"] }) > 0;
   const logoutMutation = useMutation({
@@ -107,15 +112,15 @@ function LoginControls (data: { hasPassword: boolean; })
     }
     <Button id="qr-login" type="button" disabled={loginMutation.isPending} onAction={() => loginMutation.mutate()}><ScanQrCode /> </Button>
     <Button id="can-submit" disabled={!context.state.canSubmit || !context.state.isDirty} type="submit" onAction={() => context.handleSubmit()} >
-      <Save /> Save
+      <LogIn /> Login
     </Button>
-    {data.hasPassword &&
+    {loginStatusData?.hasLogin &&
       <Button id="forget" onAction={() =>
       {
         toast("Logout", { id: 'romm-logout-noti' });
         logoutMutation.mutate();
       }} disabled={isMutatingRomm} type="button" >
-        <Trash /> Forget
+        <LogOut /> Logout
       </Button>
     }
     <Button id="cancel" disabled={context.state.isDefaultValue} type="reset" onAction={() => context.reset()}>
@@ -137,7 +142,6 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
 
-  const { data: hasPassword } = useQuery(rommHasPasswordQuery);
   const { data: hostname } = useQuery(rommHostnameQuery);
   const { data: username } = useQuery(rommUsernameQuery);
 
@@ -217,10 +221,10 @@ function RouteComponent ()
             <loginForm.AppField name="username" children={(field) =>
               <field.FormOption label={"Romm Username"} icon={<User />} type="text" />} />
             <loginForm.AppField name="password" children={(field) =>
-              <field.FormOption label={"Romm Password"} icon={<Key />} type="password" placeholder={hasPassword ? '*****' : "Password"} />} />
+              <field.FormOption label={"Romm Password"} icon={<Key />} type="password" placeholder="Password" />} />
             <loginForm.Subscribe children={(form) =>
               <OptionSpace id="login-controls-space" className="justify-end border-0">
-                <LoginControls hasPassword={hasPassword === true} />
+                <LoginControls />
               </OptionSpace>} />
           </form>
         </loginForm.AppForm>

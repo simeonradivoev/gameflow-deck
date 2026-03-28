@@ -14,6 +14,7 @@ import
   Bell,
   Bluetooth,
   Clock,
+  Plug,
   Settings,
   Wifi,
   WifiHigh,
@@ -21,16 +22,18 @@ import
   WifiZero,
 } from "lucide-react";
 import { RoundButton } from "./RoundButton";
-import { useQuery } from "@tanstack/react-query";
-import { RPC_URL } from "../../shared/constants";
-import { JSX, RefObject, useEffect, useRef, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { RPC_URL, SystemInfoType } from "../../shared/constants";
+import { JSX, RefObject, useContext, useEffect, useRef, useState } from "react";
 import { systemApi } from "../scripts/clientApi";
 import { Router } from "..";
 import { useStickyDataAttr } from "../scripts/utils";
 import { twMerge } from "tailwind-merge";
 import { TwitchIcon } from "../scripts/brandIcons";
-import { rommUserQuery } from "../scripts/queries/romm";
+import { rommLoggedInQuery, rommUserQuery } from "../scripts/queries/romm";
 import { twitchLoginVerificationQuery } from "../scripts/queries/settings";
+import { da } from "zod/v4/locales";
+import { SystemInfoContext } from "../scripts/contexts";
 
 function HeaderAvatar (data: {
   id: string;
@@ -76,7 +79,7 @@ export interface HeaderAccount
 {
   id: string;
   preview?: string | JSX.Element;
-  status?: "status-error" | "status-success" | "status-neutral";
+  className?: string;
   type?: "base" | "primary" | "secondary" | "accent";
   locked?: boolean;
   action?: () => void;
@@ -128,26 +131,19 @@ function ClockStatus ()
 
 function BluetoothStatus ()
 {
-  const { data: bluetooth } = useQuery({
-    queryKey: ['wifi'],
-    queryFn: () => systemApi.api.system.info.bluetooth.get().then(d => d.data),
-    refetchInterval: 3000
-  });
-  return bluetooth && bluetooth.find(b => b.connected) && <div>
+  const systemContext = useContext(SystemInfoContext);
+
+  return systemContext?.bluetoothDevices.find(b => b.connected) && <div>
     <Bluetooth className="w-6 h-6" />
   </div>;
 }
 
 function WiFiStatus ()
 {
-  const { data: wifi, isLoading } = useQuery({
-    queryKey: ['wifi'],
-    queryFn: () => systemApi.api.system.info.wifi.get().then(d => d.data),
-    refetchInterval: 3000
-  });
+  const systemContext = useContext(SystemInfoContext);
 
-  return (!!wifi && wifi.length > 0) || isLoading ? <div>
-    {wifi?.map(w =>
+  return systemContext && systemContext.wifiConnections.length > 0 ? <div>
+    {systemContext.wifiConnections.map(w =>
     {
       const className = "w-6 h-6";
       let icon = <Wifi className={className} />;
@@ -170,46 +166,44 @@ function WiFiStatus ()
 
 function BatteryStatus ()
 {
-  const { data: battery } = useQuery({
-    queryKey: ['battery'],
-    queryFn: () => systemApi.api.system.info.battery.get().then(d => d.data),
-    refetchInterval: 3000
-  });
-  const batteryClassName = "w-6 h-6";
+  const systemContext = useContext(SystemInfoContext);
+
+  const batteryClassName = "md:size-10 sm:size-6";
   let batteryIcon = <BatteryFull className={batteryClassName} />;
-  if (battery?.isCharging || battery?.acConnected)
+  if (systemContext)
   {
-    batteryIcon = <BatteryCharging className={batteryClassName} />;
-  } else if (battery?.percent)
-  {
-    if (battery.percent < 5)
+    if (systemContext.battery.isCharging || systemContext.battery.acConnected)
     {
-      batteryIcon = <BatteryWarning className={batteryClassName} />;
-    }
-    else if (battery.percent < 15)
+      batteryIcon = <BatteryCharging className={batteryClassName} />;
+    } else if (systemContext.battery.percent)
     {
-      batteryIcon = <BatteryLow className={batteryClassName} />;
-    } else if (battery.percent < 50)
-    {
-      batteryIcon = <BatteryMedium className={batteryClassName} />;
+      if (systemContext.battery.percent < 5)
+      {
+        batteryIcon = <BatteryWarning className={batteryClassName} />;
+      }
+      else if (systemContext.battery.percent < 15)
+      {
+        batteryIcon = <BatteryLow className={batteryClassName} />;
+      } else if (systemContext.battery.percent < 50)
+      {
+        batteryIcon = <BatteryMedium className={batteryClassName} />;
+      }
     }
   }
-  return !!battery && battery.hasBattery && <div className="flex gap-2 items-center">
+  return !!systemContext?.battery.hasBattery && <div className="flex gap-2 items-center">
     {batteryIcon}
-    <span className="font-semibold">{battery?.percent} %</span>
+    <span className="font-semibold">{systemContext.battery?.percent} %</span>
   </div>;
 }
 
 export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 {
-  const rommUser = useQuery({
-    ...rommUserQuery(),
-    refetchOnWindowFocus: false,
-    retry: 1
-  });
+  const rommUser = useQuery({ ...rommLoggedInQuery, placeholderData: keepPreviousData });
   const twitchStatus = useQuery({
-    ...twitchLoginVerificationQuery, refetchOnWindowFocus: false,
-    retry: 1
+    ...twitchLoginVerificationQuery,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    placeholderData: keepPreviousData
   });
 
   const { ref } = useFocusable({ focusKey: 'accounts' });
@@ -217,15 +211,15 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
   const accounts: HeaderAccount[] = [];
   if (data.accounts) accounts.push(...data.accounts);
 
-  if (rommUser.data)
+  if (rommUser.data?.hasLogin || rommUser.isError)
   {
     accounts.push({
-      id: 'romm', preview: `${RPC_URL(__HOST__)}/api/romm/assets/logos/romm_logo_xbox_one_square.svg`,
+      id: 'romm', preview: `https://romm.app/_ipx/q_80/images/blocks/logos/romm.svg`,
       action: () =>
       {
         Router.navigate({ to: '/settings/accounts', search: { focus: 'rommAddress' } });
       },
-      status: rommUser.data ? "status-success" : 'status-error',
+      className: rommUser.data?.hasLogin && !rommUser.isError ? undefined : "border-error",
       type: 'secondary'
     });
   }
@@ -248,6 +242,7 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
       id={`account-${a.id}`}
       locked={a.locked}
       preview={a.preview}
+      className={a.className}
       onSelect={a.action}
     />)}
   </div>;
@@ -303,7 +298,7 @@ export function HeaderUI (data: HeaderUIParams)
       >
         <HeaderAccounts accounts={data.accounts} />
         {data.title}
-        <HeaderStatusBar buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "settings", action: goToSettings, external: true }]} />
+        <HeaderStatusBar key={"header-status-bar"} buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "settings", action: goToSettings, external: true }]} />
       </header>
     </FocusContext.Provider>
   );

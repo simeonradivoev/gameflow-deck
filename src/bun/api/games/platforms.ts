@@ -1,18 +1,12 @@
 import Elysia, { status } from "elysia";
-import { getPlatformApiPlatformsIdGet, getPlatformsApiPlatformsGet, getRomsApiRomsGet } from "@clients/romm";
 import z from "zod";
 import { and, count, eq, getTableColumns, not } from "drizzle-orm";
-import { db } from "../app";
+import { db, plugins } from "../app";
 import * as schema from "@schema/app";
-import { CACHE_KEYS, getOrCached } from "../cache";
 
 export default new Elysia()
     .get('/platforms', async () =>
     {
-        const platforms: FrontEndPlatformType[] = [];
-        let rommPlatformsSet: Set<string> | undefined;
-        const rommPlatforms = await getOrCached(CACHE_KEYS.ROM_PLATFORMS, () => getPlatformsApiPlatformsGet({ throwOnError: true }), { expireMs: 60 * 60 * 1000 }).then(d => d.data).catch(e => console.error(e));
-
         const localPlatforms = await db.select({ ...getTableColumns(schema.platforms), game_count: count(schema.games.id) })
             .from(schema.platforms)
             .leftJoin(schema.games, eq(schema.games.platform_id, schema.platforms.id))
@@ -20,49 +14,31 @@ export default new Elysia()
 
         const localPlatformSet = new Set(localPlatforms.filter(p => p.game_count > 0).map(p => p.slug));
 
-        if (rommPlatforms)
+        const remotePlatforms: FrontEndPlatformType[] = [];
+
+        await plugins.hooks.games.fetchPlatforms.promise({ platforms: remotePlatforms });
+
+        await Promise.all(remotePlatforms.map(async p =>
         {
-            const frontEndPlatforms = await Promise.all(rommPlatforms.map(async p =>
+            p.hasLocal = localPlatformSet.has(p.slug);
+
+            if (p.paths_screenshots.length <= 0)
             {
-                const screenshots: string[] = [];
-                const rommGames = await getRomsApiRomsGet({ query: { platform_ids: [p.id], limit: 3 } }).then(d => d.data);
-                if (rommGames)
-                {
-                    const rommScreenshots = rommGames.items.find(i => i.merged_screenshots.length > 0)?.merged_screenshots.map(s => `/api/romm/image/romm/${s}`);
-                    if (rommScreenshots)
-                        screenshots.push(...rommScreenshots);
-                }
+                const localScreenshots = await db.select({ id: schema.screenshots.id }).from(schema.games).leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id)).where(eq(schema.platforms.slug, p.slug)).leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id)).limit(1);
 
-                if (screenshots.length <= 0)
-                {
-                    const localScreenshots = await db.select({ id: schema.screenshots.id }).from(schema.games).leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id)).where(eq(schema.platforms.slug, p.slug)).leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id)).limit(1);
+                if (localScreenshots)
+                    p.paths_screenshots.push(...localScreenshots.map(s => `/api/romm/screenshot/${s.id}`));
+            }
 
-                    if (localScreenshots)
-                        screenshots.push(...localScreenshots.map(s => `/api/romm/screenshot/${s.id}`));
-                }
+            const localGames = await db.select({ id: schema.games.id, source: schema.games.source, souceId: schema.games.source_id }).from(schema.games).leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id)).where(and(eq(schema.platforms.slug, p.slug), not(eq(schema.games.source, 'romm')))).groupBy(schema.games.id);
+            p.game_count += localGames.length;
+        }));
 
-                const localGames = await db.select({ id: schema.games.id, source: schema.games.source, souceId: schema.games.source_id }).from(schema.games).leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id)).where(and(eq(schema.platforms.slug, p.slug), not(eq(schema.games.source, 'romm')))).groupBy(schema.games.id);
+        const platformSlugSet = new Set(remotePlatforms.map(p => p.slug));
 
-                const platform: FrontEndPlatformType = {
-                    slug: p.slug,
-                    name: p.display_name,
-                    family_name: p.family_name,
-                    path_cover: `/api/romm/image/romm/assets/platforms/${p.slug}.svg`,
-                    game_count: p.rom_count + localGames.length,
-                    updated_at: new Date(p.updated_at),
-                    id: { source: 'romm', id: String(p.id) },
-                    hasLocal: localPlatformSet.has(p.slug),
-                    paths_screenshots: screenshots
-                };
-
-                return platform;
-            }));
-
-            rommPlatformsSet = new Set(rommPlatforms.map(p => p.slug));
-            platforms.push(...frontEndPlatforms);
-        }
-
-        platforms.push(...await Promise.all(localPlatforms.filter(p => !rommPlatformsSet?.has(p.slug)).map(async p =>
+        const platforms: FrontEndPlatformType[] = [];
+        platforms.push(...remotePlatforms);
+        platforms.push(...await Promise.all(localPlatforms.filter(p => !platformSlugSet?.has(p.slug)).map(async p =>
         {
             const game = await db.query.games.findFirst({ where: eq(schema.games.platform_id, p.id) });
             let screenshots: { id: number; }[] = [];
@@ -90,31 +66,9 @@ export default new Elysia()
         return { platforms };
     }).get('/platforms/:source/:id', async ({ params: { source, id } }) =>
     {
-        if (source === 'romm')
+        if (source === 'local')
         {
-            const { data: rommPlatform, response } = await getPlatformApiPlatformsIdGet({ path: { id } });
-            if (rommPlatform)
-            {
-                const platform: FrontEndPlatformType = {
-                    slug: rommPlatform.slug,
-                    name: rommPlatform.display_name,
-                    family_name: rommPlatform.family_name,
-                    path_cover: `/api/romm/image/romm/assets/platforms/${rommPlatform.slug}.svg`,
-                    game_count: rommPlatform.rom_count,
-                    updated_at: new Date(rommPlatform.updated_at),
-                    id: { source: 'romm', id: String(rommPlatform.id) },
-                    paths_screenshots: [],
-                    hasLocal: false
-                };
-
-                return platform;
-            }
-
-            return status("Not Found", response);
-        }
-        else if (source === 'local')
-        {
-            const localPlatform = await db.query.platforms.findFirst({ where: eq(schema.platforms.id, id) });
+            const localPlatform = await db.query.platforms.findFirst({ where: eq(schema.platforms.id, Number(id)) });
             if (localPlatform)
             {
                 const platform: FrontEndPlatformType = {
@@ -133,10 +87,13 @@ export default new Elysia()
             }
 
             return status("Not Found");
+        } else
+        {
+            const remotePlatform = await plugins.hooks.games.fetchPlatform.promise({ source, id });
+            if (!remotePlatform) return status("Not Found");
+            return remotePlatform;
         }
-
-        return status("Not Implemented");
-    }, { params: z.object({ source: z.string(), id: z.coerce.number() }) }).get('/platform/local/:id/cover', async ({ params: { id }, set }) =>
+    }, { params: z.object({ source: z.string(), id: z.string() }) }).get('/platform/local/:id/cover', async ({ params: { id }, set }) =>
     {
         set.headers["cross-origin-resource-policy"] = 'cross-origin';
 

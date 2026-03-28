@@ -3,6 +3,7 @@ import secrets from "../secrets";
 import open from "open";
 import z from "zod";
 import { delay } from "@/shared/utils";
+import { plugins } from "../app";
 
 
 interface TwitchDevice
@@ -94,6 +95,8 @@ export default class TwitchLoginJob implements IJob<z.infer<typeof TwitchLoginJo
                     secrets.set({ service: 'gamflow_twitch', name: 'access_token', value: data.access_token });
                     secrets.set({ service: 'gamflow_twitch', name: 'refresh_token', value: data.refresh_token });
                     secrets.set({ service: 'gamflow_twitch', name: 'expires_in', value: new Date(new Date().getTime() + data.expires_in).toString() });
+
+                    await plugins.hooks.auth.loginComplete.promise({ service: 'twitch' });
                     break;
                 }
                 else if (res.status !== 400)

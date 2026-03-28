@@ -1,9 +1,9 @@
 import { RPC_URL } from "@/shared/constants";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { CardList, GameMetaExtra } from "./CardList";
 import { GameCardFocusHandler } from "./CardElement";
 import { getCollectionsQuery } from "@queries/romm";
+import { Router } from "..";
 
 export default function CollectionList (data: {
     id: string,
@@ -14,12 +14,16 @@ export default function CollectionList (data: {
     saveChildFocus?: 'session' | 'local';
 })
 {
-    const navigate = useNavigate();
-    const { data: collections } = useSuspenseQuery(getCollectionsQuery());
+    const { data: collections } = useSuspenseQuery(getCollectionsQuery);
 
-    const handleDefaultSelect = (id: string) =>
+    const handleDefaultSelect = (gameId: string) =>
     {
-        navigate({ to: `/collection/${id}` });
+        const [source, id] = gameId.split('@');
+        Router.navigate({
+            to: `/collection/$source/$id`,
+            params: { source, id },
+            search: { countHint: collections.find(c => c.id.id === id && c.id.source === source)?.game_count }
+        });
     };
 
     return (
@@ -28,16 +32,16 @@ export default function CollectionList (data: {
             id={data.id}
             className={data.className}
             saveChildFocus={data.saveChildFocus}
-            games={collections.sort((a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at))
+            games={collections
                 .map((g) => ({
-                    id: String(g.id),
+                    id: `${g.id.source}@${g.id.id}`,
                     title: g.name,
                     focusKey: `collection-${g.id}`,
-                    subtitle: g.owner_username,
-                    previewUrl: `${RPC_URL(__HOST__)}/api/romm/${g.path_covers_small[0]}`,
+                    subtitle: "",
+                    previewUrl: `${RPC_URL(__HOST__)}${g.path_platform_cover}`,
                     badges: [
                         <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">
-                            {g.rom_count}
+                            {g.game_count}
                         </span>
                     ],
                 } satisfies GameMetaExtra))}

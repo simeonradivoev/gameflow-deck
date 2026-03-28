@@ -107,9 +107,9 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
 export function RouteComponent ()
 {
     const { focus } = useSearch({ from: '/store/tab' });
-    const { data: crucialEmulators, isSuccess } = useQuery({ ...autoEmulatorsQuery, select: (data) => data.filter(e => !e.validSource && e.isCritical) });
+    const { data: crucialEmulators, isSuccess } = useQuery({ ...autoEmulatorsQuery, select: (data) => data.filter(e => !e.validSources.some(s => s.exists) && e.isCritical) });
     const { data: featuredGames } = useQuery(storeFeaturedGamesQuery);
-    const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery);
+    const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery());
 
     const { focusKey, ref, focusSelf } = useFocusable({ focusKey: 'main-area', preferredChildFocusKey: focus ?? "recommended-emulators" });
     const storeContext = useContext(StoreContext);

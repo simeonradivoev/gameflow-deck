@@ -7,7 +7,7 @@ import useActiveControl from "../scripts/gamepads";
 export function GameCardSkeleton ()
 {
   return (
-    <li className="game-card bg-base-100/80 p-4 z-0 mx-2 max-h-(--game-card-height) min-w-(--game-card-width) w-(--game-card-width)">
+    <li className="game-card bg-base-100/80 p-4 z-0 mx-2 min-w-(--game-card-width) w-(--game-card-width)">
       <div className="flex flex-col gap-4">
         <div className="skeleton h-60 w-full opacity-40"></div>
         <div className="skeleton h-4 w-full opacity-40"></div>
@@ -22,7 +22,6 @@ export type GameCardFocusHandler = (id: string, node: HTMLElement, details: Focu
 export interface GameCardParams
 {
   title: string;
-  type?: string;
   subtitle: string | JSX.Element;
   preview?: string | JSX.Element | ((p: { focused: boolean; }) => JSX.Element);
   srcset?: string;
@@ -43,7 +42,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
     focusKey: data.focusKey,
     onFocus: (l, p, details) => data.onFocus?.(data.id, ref.current as any, details),
     onEnterPress: () => data.onAction?.(),
-    onBlur: () => data.onBlur?.(data.id)
+    onBlur: () => data.onBlur?.(data.id),
   });
   const { isPointer } = useActiveControl();
 
@@ -76,7 +75,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
         classNames({ "h-full": typeof data.preview === "string" })
       )}>
         {typeof data.preview === "string" ? (
-          <img draggable={false} srcSet={data.srcset} className={classNames("object-cover w-full h-full", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} loading="lazy" decoding="async" ></img>
+          <img draggable={false} srcSet={data.srcset} className={classNames("object-cover aspect-3/4", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
         ) : (
           typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
         )}

@@ -18,7 +18,6 @@ import { Route as SettingsEmulatorsRouteImport } from './../routes/settings/emul
 import { Route as SettingsDirectoriesRouteImport } from './../routes/settings/directories'
 import { Route as SettingsAccountsRouteImport } from './../routes/settings/accounts'
 import { Route as SettingsAboutRouteImport } from './../routes/settings/about'
-import { Route as CollectionIdRouteImport } from './../routes/collection.$id'
 import { Route as StoreTabRouteRouteImport } from './../routes/store/tab/route'
 import { Route as StoreTabIndexRouteImport } from './../routes/store/tab/index'
 import { Route as StoreTabGamesRouteImport } from './../routes/store/tab/games'
@@ -27,6 +26,7 @@ import { Route as PlatformSourceIdRouteImport } from './../routes/platform.$sour
 import { Route as LauncherSourceIdRouteImport } from './../routes/launcher.$source.$id'
 import { Route as GameSourceIdRouteImport } from './../routes/game/$source.$id'
 import { Route as EmbeddedSourceIdRouteImport } from './../routes/embedded.$source.$id'
+import { Route as CollectionSourceIdRouteImport } from './../routes/collection.$source.$id'
 import { Route as StoreDetailsEmulatorIdRouteImport } from './../routes/store/details.emulator.$id'
 
 const GamesRoute = GamesRouteImport.update({
@@ -74,11 +74,6 @@ const SettingsAboutRoute = SettingsAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => SettingsRouteRoute,
 } as any)
-const CollectionIdRoute = CollectionIdRouteImport.update({
-  id: '/collection/$id',
-  path: '/collection/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const StoreTabRouteRoute = StoreTabRouteRouteImport.update({
   id: '/store/tab',
   path: '/store/tab',
@@ -119,6 +114,11 @@ const EmbeddedSourceIdRoute = EmbeddedSourceIdRouteImport.update({
   path: '/embedded/$source/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CollectionSourceIdRoute = CollectionSourceIdRouteImport.update({
+  id: '/collection/$source/$id',
+  path: '/collection/$source/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoreDetailsEmulatorIdRoute = StoreDetailsEmulatorIdRouteImport.update({
   id: '/store/details/emulator/$id',
   path: '/store/details/emulator/$id',
@@ -130,13 +130,13 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteRouteWithChildren
   '/games': typeof GamesRoute
   '/store/tab': typeof StoreTabRouteRouteWithChildren
-  '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
   '/settings/plugins': typeof SettingsPluginsRoute
+  '/collection/$source/$id': typeof CollectionSourceIdRoute
   '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
@@ -150,13 +150,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
   '/games': typeof GamesRoute
-  '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
   '/settings/plugins': typeof SettingsPluginsRoute
+  '/collection/$source/$id': typeof CollectionSourceIdRoute
   '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
@@ -172,13 +172,13 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteRouteWithChildren
   '/games': typeof GamesRoute
   '/store/tab': typeof StoreTabRouteRouteWithChildren
-  '/collection/$id': typeof CollectionIdRoute
   '/settings/about': typeof SettingsAboutRoute
   '/settings/accounts': typeof SettingsAccountsRoute
   '/settings/directories': typeof SettingsDirectoriesRoute
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
   '/settings/plugins': typeof SettingsPluginsRoute
+  '/collection/$source/$id': typeof CollectionSourceIdRoute
   '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
@@ -195,13 +195,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/games'
     | '/store/tab'
-    | '/collection/$id'
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
     | '/settings/emulators'
     | '/settings/interface'
     | '/settings/plugins'
+    | '/collection/$source/$id'
     | '/embedded/$source/$id'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
@@ -215,13 +215,13 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/games'
-    | '/collection/$id'
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
     | '/settings/emulators'
     | '/settings/interface'
     | '/settings/plugins'
+    | '/collection/$source/$id'
     | '/embedded/$source/$id'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
@@ -236,13 +236,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/games'
     | '/store/tab'
-    | '/collection/$id'
     | '/settings/about'
     | '/settings/accounts'
     | '/settings/directories'
     | '/settings/emulators'
     | '/settings/interface'
     | '/settings/plugins'
+    | '/collection/$source/$id'
     | '/embedded/$source/$id'
     | '/game/$source/$id'
     | '/launcher/$source/$id'
@@ -258,7 +258,7 @@ export interface RootRouteChildren {
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
   GamesRoute: typeof GamesRoute
   StoreTabRouteRoute: typeof StoreTabRouteRouteWithChildren
-  CollectionIdRoute: typeof CollectionIdRoute
+  CollectionSourceIdRoute: typeof CollectionSourceIdRoute
   EmbeddedSourceIdRoute: typeof EmbeddedSourceIdRoute
   GameSourceIdRoute: typeof GameSourceIdRoute
   LauncherSourceIdRoute: typeof LauncherSourceIdRoute
@@ -331,13 +331,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAboutRouteImport
       parentRoute: typeof SettingsRouteRoute
     }
-    '/collection/$id': {
-      id: '/collection/$id'
-      path: '/collection/$id'
-      fullPath: '/collection/$id'
-      preLoaderRoute: typeof CollectionIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/store/tab': {
       id: '/store/tab'
       path: '/store/tab'
@@ -394,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmbeddedSourceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/collection/$source/$id': {
+      id: '/collection/$source/$id'
+      path: '/collection/$source/$id'
+      fullPath: '/collection/$source/$id'
+      preLoaderRoute: typeof CollectionSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/store/details/emulator/$id': {
       id: '/store/details/emulator/$id'
       path: '/store/details/emulator/$id'
@@ -447,7 +447,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
   GamesRoute: GamesRoute,
   StoreTabRouteRoute: StoreTabRouteRouteWithChildren,
-  CollectionIdRoute: CollectionIdRoute,
+  CollectionSourceIdRoute: CollectionSourceIdRoute,
   EmbeddedSourceIdRoute: EmbeddedSourceIdRoute,
   GameSourceIdRoute: GameSourceIdRoute,
   LauncherSourceIdRoute: LauncherSourceIdRoute,

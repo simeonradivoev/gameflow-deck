@@ -37,7 +37,7 @@ export class LoginJob implements IJob<z.infer<typeof LoginJob.dataSchema>, "base
             .post(`/login`, async ({ body }) =>
             {
                 const response = await tryLoginAndSave(body as any);
-                if (response?.code === 200)
+                if (response.response.ok)
                 {
                     context.abort("success");
                     return status("Accepted");

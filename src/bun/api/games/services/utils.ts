@@ -1,14 +1,14 @@
 import getFolderSize from "get-folder-size";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { config, db, emulatorsDb } from "../../app";
+import { config, db, emulatorsDb, plugins } from "../../app";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@schema/app";
 import { StoreGameType } from "@shared/constants";
 import { DetailedRomSchema, getCurrentUserApiUsersMeGet, getRomApiRomsIdGet, SimpleRomSchema } from "@clients/romm";
 import * as emulatorSchema from "@schema/emulators";
 import { extractStoreGameSourceId, getStoreGame } from "../../store/services/gamesService";
-import { isSteamDeck, isSteamDeckGameMode } from "@/bun/utils";
+import { hashFile, isSteamDeck, isSteamDeckGameMode } from "@/bun/utils";
 
 export async function calculateSize (installPath: string | null)
 {
@@ -25,29 +25,6 @@ export async function checkInstalled (installPath: string | null)
 export function getLocalGameMatch (id: string, source: string)
 {
     return source !== 'local' ? and(eq(schema.games.source_id, id), eq(schema.games.source, source)) : eq(schema.games.id, Number(id));
-}
-
-export function convertRomToFrontend (rom: SimpleRomSchema): FrontEndGameType
-{
-    const steamDeck = isSteamDeckGameMode();
-    const game: FrontEndGameType = {
-        id: { id: String(rom.id), source: 'romm' },
-        path_cover: `/api/romm/image/romm${steamDeck ? rom.path_cover_small : rom.path_cover_large}`,
-        last_played: rom.rom_user.last_played ? new Date(rom.rom_user.last_played) : null,
-        updated_at: new Date(rom.updated_at),
-        slug: rom.slug,
-        platform_id: rom.platform_id,
-        platform_display_name: rom.platform_display_name,
-        name: rom.name,
-        path_fs: null,
-        path_platform_cover: `/api/romm/image/romm/assets/platforms/${rom.platform_slug}.svg`,
-        source: null,
-        source_id: null,
-        paths_screenshots: rom.merged_screenshots.map(s => `/api/romm/image/romm/${s}`),
-        platform_slug: rom.platform_slug
-    };
-
-    return game;
 }
 
 export function convertLocalToFrontend (g: typeof schema.games.$inferSelect & {
@@ -160,49 +137,6 @@ export async function convertStoreToFrontendDetailed (system: string, id: string
     return detailed;
 }
 
-export async function convertRomToFrontendDetailed (rom: DetailedRomSchema)
-{
-    const detailed: FrontEndGameTypeDetailed = {
-        ...convertRomToFrontend(rom),
-        summary: rom.summary,
-        fs_size_bytes: rom.fs_size_bytes,
-        local: false,
-        missing: rom.missing_from_fs,
-        genres: rom.metadatum.genres,
-        companies: rom.metadatum.companies,
-        release_date: rom.metadatum.first_release_date ? new Date(rom.metadatum.first_release_date) : undefined
-    };
-
-    const userData = await getCurrentUserApiUsersMeGet();
-    const gameAchievements = userData.data?.ra_progression?.results?.find(p => p.rom_ra_id == rom.ra_id);
-
-    if (rom.merged_ra_metadata?.achievements)
-    {
-        const earnedMap = new Map<string, { date: Date; date_hardcode?: Date; }>(gameAchievements?.earned_achievements.map(a => [a.id, { date: new Date(a.date), date_hardcore: a.date_hardcore ? new Date(a.date_hardcore) : undefined }]));
-        detailed.achievements = {
-            unlocked: gameAchievements?.num_awarded ?? 0,
-            entires: rom.merged_ra_metadata.achievements.map(a =>
-            {
-                const earned = a.badge_id ? earnedMap.get(a.badge_id) : undefined;
-                const ach: FrontEndGameTypeDetailedAchievement = {
-                    id: a.badge_id ?? String(a.ra_id) ?? 'unknown',
-                    title: a.title ?? "Unknown",
-                    badge_url: (earned ? a.badge_url : a.badge_url_lock) ?? undefined,
-                    date: earned?.date,
-                    date_hardcode: earned?.date_hardcode,
-                    description: a.description ?? undefined,
-                    display_order: a.display_order ?? 0,
-                    type: a.type ?? undefined
-                };
-
-                return ach;
-            }).sort((a, b) => a.display_order - b.display_order),
-            total: rom.merged_ra_metadata.achievements.length
-        };
-    }
-    return detailed;
-}
-
 export async function getLocalGameDetailed (match: any)
 {
     const localGame = await db.query.games.findFirst({
@@ -254,29 +188,8 @@ export async function getSourceGameDetailed (source: string, id: string)
     else
     {
         const localGame = await getLocalGameDetailed(getLocalGameMatch(id, source));
-        if (source === 'romm')
-        {
-            const rom = await getRomApiRomsIdGet({ path: { id: Number(id) } });
-            if (rom.data)
-            {
-                const romGame = await convertRomToFrontendDetailed(rom.data);
-                if (localGame)
-                {
-                    return {
-                        ...romGame,
-                        ...localGame,
-                    };
-                }
-                return romGame;
-            }
-            else if (localGame)
-            {
-                return localGame;
-            }
 
-            return undefined;
-        }
-        else if (source === 'store')
+        if (source === 'store')
         {
             const gameId = extractStoreGameSourceId(id);
             const storeGame = await getStoreGame(gameId.system, gameId.id);
@@ -287,11 +200,45 @@ export async function getSourceGameDetailed (source: string, id: string)
                 return { ...storeFrontendGame, ...localGame };
             }
             return storeFrontendGame;
-        } else if (localGame)
+        } else
         {
-            return localGame;
+            const remoteGame = await plugins.hooks.games.fetchGame.promise({ source, id, localGame });
+            if (remoteGame)
+            {
+                return remoteGame;
+            } else if (localGame)
+            {
+                return localGame;
+            }
         }
 
         return undefined;
     }
+}
+
+export async function checkFiles (files: DownloadFileEntry[], isArchive: boolean): Promise<LocalDownloadFileEntry[]>
+{
+    return Promise.all(files.map(async f =>
+    {
+        // file is either zip or doesn't support sha checking 
+        if (!f.sha1 || isArchive) return { ...f, exists: false, matches: false } satisfies LocalDownloadFileEntry;
+        const localPath = path.join(f.file_path, f.file_name);
+        if (await fs.exists(localPath))
+        {
+            if (f.size && f.size !== (await fs.stat(localPath)).size)
+            {
+                return { ...f, exists: true, matches: false } satisfies LocalDownloadFileEntry;
+            }
+
+            const existingHash = await hashFile(localPath, 'sha1');
+            if (existingHash === f.sha1)
+            {
+                return { ...f, exists: true, matches: true } satisfies LocalDownloadFileEntry;
+            } else
+            {
+                return { ...f, exists: true, matches: false } satisfies LocalDownloadFileEntry;
+            }
+        }
+        return { ...f, exists: false, matches: false } satisfies LocalDownloadFileEntry;
+    }));
 }

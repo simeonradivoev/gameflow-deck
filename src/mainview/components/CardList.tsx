@@ -16,6 +16,42 @@ export interface GameMetaExtra extends GameMeta
   focusKey: string;
 }
 
+function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusParams & InteractParams)
+{
+  let preview: GameCardParams['preview'] = data.game.preview;
+  if (!preview && data.game.previewUrl)
+  {
+    preview = data.game.previewUrl;
+  }
+
+  const handleAction = () =>
+  {
+    data.game.onSelect?.();
+    data.onAction?.();
+  };
+  useShortcuts(data.game.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: handleAction }]);
+
+  return (
+    <CardElement
+      index={data.i}
+      focusKey={data.game.focusKey}
+      data-index={data.i}
+      title={data.game.title}
+      subtitle={data.game.subtitle ?? ""}
+      srcset={data.game.previewSrcset}
+      onFocus={(id, node, details) =>
+      {
+        data.game.onFocus?.(details);
+        data.onFocus?.(id, node, details);
+      }}
+      onAction={handleAction}
+      preview={preview}
+      badges={data.game.badges}
+      id={data.game.id}
+    />
+  );
+}
+
 export function CardList (data: {
   id: string;
   type?: string;
@@ -30,45 +66,9 @@ export function CardList (data: {
 {
   const { ref, focusKey } = useFocusable({
     focusKey: data.id,
+    forceFocus: true,
+    autoRestoreFocus: true
   });
-
-  function BuildCard (g: GameMetaExtra, i: number)
-  {
-    let preview: GameCardParams['preview'] = g.preview;
-    if (!preview && g.previewUrl)
-    {
-      preview = g.previewUrl;
-    }
-
-    const handleAction = () =>
-    {
-      g.onSelect?.();
-      data.onSelectGame?.(g.id);
-    };
-    useShortcuts(g.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: handleAction }]);
-
-    return (
-      <CardElement
-        key={g.id}
-        type={data.type}
-        index={i}
-        focusKey={g.focusKey}
-        data-index={i}
-        title={g.title}
-        subtitle={g.subtitle ?? ""}
-        srcset={g.previewSrcset}
-        onFocus={(id, node, details) =>
-        {
-          g.onFocus?.(details);
-          data.onGameFocus?.(id, node, details);
-        }}
-        onAction={handleAction}
-        preview={preview}
-        badges={g.badges}
-        id={g.id}
-      />
-    );
-  }
 
   return (
     <ul
@@ -88,7 +88,8 @@ export function CardList (data: {
       }}
     >
       <FocusContext.Provider value={focusKey}>
-        {data.games.map(BuildCard)}
+        {data.games.map((g, i) => <LocalCardElement
+          key={g.id} onFocus={data.onGameFocus} game={g} onAction={() => data.onSelectGame?.(g.id)} i={i} />)}
         {data.finalElement}
       </FocusContext.Provider>
     </ul>

@@ -44,6 +44,7 @@ export function OptionDropdown (data: {
                     content: v,
                     id: String(i),
                     type: 'primary',
+                    selected: data.value === v,
                     action: () =>
                     {
                         data.onChange?.(v);

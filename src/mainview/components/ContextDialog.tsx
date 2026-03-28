@@ -10,8 +10,9 @@ import { FOCUS_KEYS } from "../scripts/types";
 export function ContextList (data: { options?: DialogEntry[]; className?: string; showCloseButton?: boolean; })
 {
     const context = useContext(ContextDialogContext);
-    return <ul className={twMerge("list", data.className)}>
+    return <ul className={twMerge("list gap-1", data.className)}>
         {data.options?.map(o => <OptionElement className="list-row" key={o.id} {...o} />)}
+        <div className="divider m-0 "></div>
         {data.showCloseButton !== false && <OptionElement className="list-row" type='accent' icon={<X />} action={() => context.close()} id="close-context-dialog" content="Close" />}
     </ul>;
 }
@@ -32,12 +33,12 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
         trackChildren: typeof data.content !== 'string'
     });
     const colors = {
-        primary: "active:bg-primary control-pointer:hover:bg-primary control-pointer:hover:text-primary-content focused:bg-primary focused:text-primary-content in-focused:bg-primary in-focused:text-primary-content",
-        secondary: "active:bg-secondary control-pointer:hover:bg-secondary control-pointer:hover:text-secondary-content focused:bg-secondary focused:text-secondary-content in-focused:bg-secondary in-focused:text-secondary-content",
-        accent: "active:bg-accent control-pointer:hover:bg-accent control-pointer:hover:text-accent-content focused:bg-accent focused:text-accent-content in-focused:bg-accent in-focused:text-accent-content",
-        info: "active:bg-info control-pointer:hover:bg-info control-pointer:hover:text-info-content focused:bg-info focused:text-info-content in-focused:bg-info in-focused:text-info-content",
-        warning: "active:bg-warning control-pointer:hover:bg-warning control-pointer:hover:text-warning-content focused:bg-warning focused:text-warning-content in-focused:bg-warning in-focused:text-warning-content",
-        error: "active:bg-error control-pointer:hover:bg-error control-pointer:hover:text-error-content focused:bg-error focused:text-error-content in-focused:bg-error in-focused:text-error-content"
+        primary: "active:bg-primary active:text-primary-content focusable-primary in-data-[selected=true]:bg-primary in-data-[selected=true]:text-primary-content",
+        secondary: "active:bg-secondary active:text-secondary-content focusable-secondary in-data-[selected=true]:bg-secondary in-data-[selected=true]:text-secondary-content",
+        accent: "active:bg-accent active:text-accent-content focusable-accent in-data-[selected=true]:bg-accent in-data-[selected=true]:text-accent-content",
+        info: "active:bg-info active:text-info-content focusable-info in-data-[selected=true]:bg-info in-data-[selected=true]:text-info-content",
+        warning: "active:bg-warning active:text-warning-content focusable-warning in-data-[selected=true]:bg-warning in-data-[selected=true]:text-warning-content",
+        error: "active:bg-error active:text-error-content focusable-error in-data-[selected=true]:bg-error in-data-[selected=true]:text-error-content"
     };
     if (data.shortcuts)
     {
@@ -45,13 +46,14 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     }
     return <li ref={ref}
         onClick={handleAction}
+        data-selected={data.selected}
         className={
-            twMerge("flex cursor-pointer sm:text-sm md:text-base")}>
+            twMerge("flex cursor-pointer sm:text-sm md:text-base group-focusable scroll-m-4")}>
         <FocusContext value={focusKey}>
-            <div className={twMerge("flex w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl transition-all gap-2 active:animate-scale in-focused:font-semibold",
+            <div className={twMerge("flex bg-base-200 in-data-[selected=true]:border-4 in-focused:border-4 border-base-300 w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl gap-2 in-focused:font-semibold focusable not-active:control-mouse:hover:bg-base-300 in-focused:z-100",
                 data.className,
                 colors[data.type],
-                "active:bg-base-content! active:text-base-300! active:transition-none")}>
+                "in-focused:bg-base-content in-focused:text-base-100")}>
                 {data.icon}
                 {data.content}
             </div>
@@ -65,6 +67,7 @@ export interface DialogEntry
     content: string | JSX.Element;
     icon?: string | JSX.Element;
     type: 'primary' | 'secondary' | 'accent' | 'info' | 'warning' | 'error';
+    selected?: boolean;
     action?: (ctx: { close: () => void, focus: (focusDetails?: FocusDetails | undefined) => void; }) => void;
     shortcuts?: Shortcut[];
 }

@@ -12,10 +12,5 @@ function RouteComponent ()
 {
     const { focus } = Route.useSearch();
 
-    return (
-        <div className="w-full h-full">
-            <CollectionsDetail focus={focus} id='all-games'
-            />
-        </div>
-    );
+    return <CollectionsDetail focus={focus} id='all-games' />;
 }

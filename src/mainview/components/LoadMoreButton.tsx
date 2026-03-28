@@ -1,6 +1,7 @@
 import { setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { FOCUS_KEYS } from "../scripts/types";
 import { useIntersectionObserver } from "usehooks-ts";
+import { useEffect } from "react";
 
 export default function LoadMoreButton (data: { isFetching: boolean; lastId?: FrontEndId; } & FocusParams & InteractParams)
 {
@@ -17,7 +18,11 @@ export default function LoadMoreButton (data: { isFetching: boolean; lastId?: Fr
         onEnterPress: handleAction
     });
 
+
+
     const { ref: intersct } = useIntersectionObserver({
+        initialIsIntersecting: true,
+        rootMargin: "20%",
         onChange: (isIntersecting, entry) =>
         {
             if (isIntersecting)

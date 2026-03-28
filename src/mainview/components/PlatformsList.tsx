@@ -36,7 +36,7 @@ export function PlatformsList (data: {
 
     const handleDefaultSelect = (source: string, id: string) =>
     {
-        navigate({ to: `/platform/${source}/${id}` });
+        navigate({ to: `/platform/$source/$id`, params: { source, id }, search: { countHint: platforms.find(p => p.id.id === id && p.id.source === source)?.game_count } });
     };
 
     const platformsMapped = useMemo(() => platforms.sort((a, b) => a.updated_at.getTime() - b.updated_at.getTime())

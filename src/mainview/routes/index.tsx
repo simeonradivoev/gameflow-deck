@@ -15,7 +15,7 @@ import
 {
   createFileRoute,
 } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import
 {
   FocusContext,
@@ -44,6 +44,7 @@ import { mobileCheck, useDragScroll } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import Carousel from "../components/Carousel";
 import { closeMutation } from "@queries/system";
+import { gameQuery } from "../scripts/queries/romm";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -101,6 +102,7 @@ function HomeList (data: {
   selectedFilter: string;
 })
 {
+  const queryClient = useQueryClient();
   const [initFocus, setInitFocus] = useState(false);
   const bg = useContext(AnimatedBackgroundContext);
   const { } = Route.useSearch;
@@ -125,28 +127,20 @@ function HomeList (data: {
     Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
   };
 
-  const handleCollectionSelect = (id: string) =>
-  {
-    Router.navigate({ to: `/collection/${id}` });
-  };
-
-  const handlePlatformSelect = (source: string, id: string) =>
-  {
-    Router.navigate({ to: `/platform/${source}/${id}` });
-  };
-
   let activeList: JSX.Element;
   switch (data.selectedFilter)
   {
     case 'consoles':
       activeList = <>
-        <PlatformsList saveChildFocus="session" onSelect={handlePlatformSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />
-        <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
+        <Suspense key={data.selectedFilter} fallback={<LoadingCardList id={`card-list-${data.selectedFilter}`} className="*:aspect-8/10! md:py-12" placeholderCount={8} />}>
+          <PlatformsList saveChildFocus="session" onFocus={handleNodeFocus} className="animate-slide-up" key="consoles-list" id="consoles-list" setBackground={bg.setBackground} />
+          <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
+        </Suspense>
       </>;
       break;
     case 'collections':
       activeList = <>
-        <CollectionList saveChildFocus="session" onSelect={handleCollectionSelect} onFocus={handleNodeFocus} className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />
+        <CollectionList saveChildFocus="session" onFocus={handleNodeFocus} className="animate-slide-up" key="collections-list" id="collections-list" setBackground={bg.setBackground} />
         <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
       </>;
       break;
@@ -155,12 +149,17 @@ function HomeList (data: {
         <GameList
           onGameSelect={handleGameSelect}
           saveChildFocus="session"
-          onFocus={handleNodeFocus}
+          onFocus={(l, n, d) =>
+          {
+            const [source, id] = l.split('@');
+            queryClient.prefetchQuery(gameQuery(source, id));
+            handleNodeFocus(l, n, d);
+          }}
           className="animate-slide-up"
           key="games-list"
           id="games-list"
           setBackground={bg.setBackground}
-          filters={{ limit: 12 }}
+          filters={{ limit: 12, orderBy: 'activity' }}
           finalElement={<ShowAllGamesCard />}
         />
         <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
@@ -201,7 +200,7 @@ function HomeList (data: {
       }}>
         <div className="landscape:flex landscape:px-16 portrait:min-h-fit portrait:h-fit portrait:pb-32 portrait:w-full landscape:h-full landscape:items-center">
           <ErrorBoundary fallback={<HomeListError focused={focused} />}>
-            <Suspense key={data.selectedFilter} fallback={<LoadingCardList placeholderCount={8} />}>
+            <Suspense key={data.selectedFilter} fallback={<LoadingCardList id={`card-list-${data.selectedFilter}`} placeholderCount={8} />}>
               {activeList}
               <SaveScroll id={`card-list-${data.selectedFilter}`} ref={ref} />
             </Suspense>
@@ -223,6 +222,7 @@ function MainMenu ()
       ref={ref}
       save-child-focus="session"
       className="flex items-center gap-y-1 sm:portrait:bg-base-100 sm:portrait:p-2 sm:portrait:rounded-full sm:gap-1 md:gap-3"
+      style={{ viewTransitionName: "main-menu" }}
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon

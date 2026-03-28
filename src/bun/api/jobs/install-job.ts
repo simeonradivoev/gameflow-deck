@@ -5,15 +5,17 @@ import fs from 'node:fs/promises';
 import * as schema from "@schema/app";
 import * as emulatorSchema from "@schema/emulators";
 import path from 'node:path';
-import { getPlatformApiPlatformsIdGet, getRomApiRomsIdGet, PlatformSchema } from "@clients/romm";
-import { config, db, emulatorsDb, events } from "../app";
+import { config, db, emulatorsDb, events, plugins } from "../app";
 import { extractStoreGameSourceId, getStoreGameFromId } from "../store/services/gamesService";
 import * as igdb from 'ts-igdb-client';
 import secrets from "../secrets";
-import { hashFile, simulateProgress } from "@/bun/utils";
+import { simulateProgress } from "@/bun/utils";
 import { Downloader } from "@/bun/utils/downloader";
 import _7z from '7zip-min';
 import z from "zod";
+import { checkFiles } from "../games/services/utils";
+import { ensureDir } from "fs-extra";
+import { getAuthToken } from "@/clients/romm/core/auth.gen";
 
 interface JobConfig
 {
@@ -30,16 +32,14 @@ export class InstallJob implements IJob<never, InstallJobStates>
     static dataSchema = z.never();
     public gameId: string;
     public source: string;
-    public sourceId: string;
     public config?: JobConfig;
 
     public group = InstallJob.id;
 
-    constructor(id: string, source: string, sourceId: string, config?: JobConfig)
+    constructor(id: string, source: string, config?: JobConfig)
     {
         this.gameId = id;
         this.config = config;
-        this.sourceId = sourceId;
         this.source = source;
     }
 
@@ -49,102 +49,53 @@ export class InstallJob implements IJob<never, InstallJobStates>
         fs.mkdir(config.get('downloadPath'), { recursive: true });
 
         const downloadPath = config.get('downloadPath');
-
-        let files: {
-            url: URL,
-            file_path: string;
-            file_name: string;
-            size?: number;
-        }[] = [];
-        let screenshotUrls: string[];
-        let coverUrl: string;
-        let rommPlatform: PlatformSchema | undefined;
-        let slug: string | null;
-        let path_fs: string | undefined;
-        let summary: string | null;
-        let name: string | null;
-        let last_played: Date | null;
-        let igdb_id: number | null;
-        let ra_id: number | null;
-        let source_id: string;
-        let system_slug: string;
-        let extract_path: string;
-        let metadata: any | undefined;
+        let info: DownloadInfo | undefined;
 
         switch (this.source)
         {
-            case 'romm':
-
-                const rom = (await getRomApiRomsIdGet({ path: { id: Number(this.gameId) }, throwOnError: true })).data;
-                rommPlatform = (await getPlatformApiPlatformsIdGet({ path: { id: rom.platform_id }, throwOnError: true })).data;
-
-                const rommAddress = config.get('rommAddress');
-                coverUrl = `${rommAddress}${rom.path_cover_large}`;
-                screenshotUrls = rom.merged_screenshots.map(s => `${config.get('rommAddress')}${s}`);
-                last_played = rom.rom_user.last_played ? new Date(rom.rom_user.last_played) : null;
-                igdb_id = rom.igdb_id;
-                ra_id = rom.ra_id;
-                summary = rom.summary;
-                name = rom.name;
-                path_fs = path.join(rom.fs_path, rom.fs_name);
-                source_id = String(rom.id);
-                slug = rom.slug;
-                system_slug = rommPlatform.slug;
-                extract_path = '';
-                metadata = rom.metadatum;
-
-                const rommFiles = await Promise.all(rom.files.map(async f =>
-                {
-                    const localPath = path.join(config.get('downloadPath'), f.full_path);
-                    if (f.md5_hash && await fs.exists(localPath))
-                    {
-                        const existingHash = await hashFile(localPath, 'sha1');
-                        if (existingHash === f.md5_hash)
-                        {
-                            console.log("File Already Present: ", f.full_path);
-                            return undefined;
-                        }
-
-                        console.warn("File ", f.full_path, 'with hash', existingHash, 'has different hash than', f.sha1_hash);
-                    }
-
-                    return {
-                        url: new URL(`${config.get('rommAddress')}/api/romsfiles/${f.id}/content/${f.file_name}`),
-                        file_name: f.file_name,
-                        file_path: path.join(config.get('downloadPath'), f.file_path),
-                        size: f.file_size_bytes
-                    };
-                }));
-
-                files.push(...rommFiles.filter(f => f !== undefined));
-                break;
             case 'store':
                 const game = await getStoreGameFromId(this.gameId);
                 const gameId = extractStoreGameSourceId(this.gameId);
-                coverUrl = game.pictures.titlescreens[0];
-                screenshotUrls = game.pictures.screenshots;
-                files.push({ url: new URL(game.file), file_path: `roms/${game.system}`, file_name: path.basename(decodeURI(game.file)) });
-                slug = this.gameId;
-                source_id = this.gameId;
-                name = game.title;
-                summary = game.description;
-                system_slug = gameId.system;
-                extract_path = path.join('roms', gameId.system);
+                info = {
+                    coverUrl: game.pictures.titlescreens[0],
+                    screenshotUrls: game.pictures.screenshots,
+                    files: [{
+                        url: new URL(game.file),
+                        file_path: `roms/${game.system}`,
+                        file_name: path.basename(decodeURI(game.file)),
+                        size: 0
+                    }],
+                    slug: this.gameId,
+                    source_id: this.gameId,
+                    name: game.title,
+                    summary: game.description,
+                    system_slug: gameId.system,
+                    extract_path: path.join('roms', gameId.system),
+                };
 
                 break;
             default:
-                throw new Error("Unsupported source");
+                info = await plugins.hooks.games.fetchDownloads.promise({ source: this.source, id: this.gameId });
+                break;
         }
+
+        if (!info) throw new Error(`Could not find downloader for source ${this.source}`);
+
+        const files = await checkFiles(info.files, !!info.extract_path);
 
         if (this.config?.dryRun !== true)
         {
-            if (this.config?.dryDownload !== true)
+            if (this.config?.dryDownload !== true && files.some(f => !f.exists || !f.matches))
             {
+                const headers: Record<string, string> = {};
+                if (info.auth)
+                    headers['Authorization'] = info.auth;
                 const downloader = new Downloader(`game-${this.source}-${this.gameId}`,
-                    files,
+                    files.filter(f => !f.exists || !f.matches),
                     config.get('downloadPath'),
                     {
                         signal: cx.abortSignal,
+                        headers,
                         onProgress (stats)
                         {
                             cx.setProgress(stats.progress, 'download');
@@ -152,21 +103,21 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     });
 
                 const downloadedFiles = await downloader.start();
-                if (extract_path && downloadedFiles)
+                if (info.extract_path && downloadedFiles)
                 {
                     for (const path of downloadedFiles)
                     {
-                        await _7z.unpack(path, extract_path);
+                        await _7z.unpack(path, info.extract_path);
                     }
                 }
             }
 
-            if (this.config?.dryDownload === true)
+            if (this.config?.dryDownload === true && info.extract_path)
             {
-                await mkdir(path.join(downloadPath, extract_path), { recursive: true });
+                await ensureDir(path.join(downloadPath, info.extract_path));
             }
 
-            const coverResponse = await fetch(coverUrl);
+            const coverResponse = await fetch(info.coverUrl);
             const cover = Buffer.from(await coverResponse.arrayBuffer());
 
             if (cx.abortSignal.aborted) return;
@@ -174,18 +125,18 @@ export class InstallJob implements IJob<never, InstallJobStates>
             await db.transaction(async (tx) =>
             {
                 // Search for existing platform
-                const platformSearch = [eq(schema.platforms.slug, system_slug)];
-                const esPlatformSearch = [eq(emulatorSchema.systemMappings.system, system_slug)];
+                const platformSearch = [eq(schema.platforms.slug, info.system_slug)];
+                const esPlatformSearch = [eq(emulatorSchema.systemMappings.system, info.system_slug)];
 
-                if (rommPlatform)
+                if (info.platform)
                 {
-                    if (rommPlatform.igdb_id) platformSearch.push(eq(schema.platforms.igdb_id, rommPlatform.igdb_id));
-                    if (rommPlatform.igdb_slug) platformSearch.push(eq(schema.platforms.igdb_slug, rommPlatform.igdb_slug));
-                    if (rommPlatform.ra_id) platformSearch.push(eq(schema.platforms.ra_id, rommPlatform.ra_id));
-                    if (rommPlatform.moby_id) platformSearch.push(eq(schema.platforms.moby_id, rommPlatform.moby_id));
+                    if (info.platform.igdb_id) platformSearch.push(eq(schema.platforms.igdb_id, info.platform.igdb_id));
+                    if (info.platform.igdb_slug) platformSearch.push(eq(schema.platforms.igdb_slug, info.platform.igdb_slug));
+                    if (info.platform.ra_id) platformSearch.push(eq(schema.platforms.ra_id, info.platform.ra_id));
+                    if (info.platform.moby_id) platformSearch.push(eq(schema.platforms.moby_id, info.platform.moby_id));
 
                     esPlatformSearch.push(eq(emulatorSchema.systemMappings.source, 'romm'));
-                    esPlatformSearch.push(eq(emulatorSchema.systemMappings.sourceSlug, rommPlatform.slug));
+                    esPlatformSearch.push(eq(emulatorSchema.systemMappings.sourceSlug, info.platform.slug));
                 }
 
                 const esPlatform = await emulatorsDb.query.systemMappings.findFirst({
@@ -201,9 +152,9 @@ export class InstallJob implements IJob<never, InstallJobStates>
                 if (!existingPlatform)
                 {
                     // TODO: use something else than the romm demo as CDN
-                    const platformCover = await fetch(`https://demo.romm.app/assets/platforms/${system_slug}.svg`);
+                    const platformCover = await fetch(`https://demo.romm.app/assets/platforms/${info.system_slug}.svg`);
 
-                    if (!esPlatform && !rommPlatform)
+                    if (!esPlatform && !info.platform)
                     {
                         // go to unknown platform
                         existingPlatform = await tx.query.platforms.findFirst({ where: eq(schema.platforms.slug, "unknown") });
@@ -223,14 +174,14 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     {
                         // Create new local platform
                         const platform: typeof schema.platforms.$inferInsert = {
-                            slug: rommPlatform?.slug ?? esPlatform?.system.name ?? '',
-                            igdb_id: rommPlatform?.igdb_id,
-                            igdb_slug: rommPlatform?.igdb_slug,
-                            ra_id: rommPlatform?.ra_id,
+                            slug: info.platform?.slug ?? esPlatform?.system.name ?? '',
+                            igdb_id: info.platform?.igdb_id,
+                            igdb_slug: info.platform?.igdb_slug,
+                            ra_id: info.platform?.ra_id,
                             cover: Buffer.from(await platformCover.arrayBuffer()),
                             cover_type: platformCover.headers.get('content-type'),
-                            name: rommPlatform?.name ?? esPlatform?.system.fullname ?? '',
-                            family_name: rommPlatform?.family_name,
+                            name: info.platform?.name ?? esPlatform?.system.fullname ?? '',
+                            family_name: info.platform?.family_name,
                             es_slug: esPlatform?.system.name ?? undefined
                         };
 
@@ -246,38 +197,38 @@ export class InstallJob implements IJob<never, InstallJobStates>
 
                 // create the rom
                 const game: typeof schema.games.$inferInsert = {
-                    source_id,
+                    source_id: info.source_id,
                     source: this.source,
-                    slug,
-                    path_fs,
-                    last_played: last_played,
+                    slug: info.slug,
+                    path_fs: info.path_fs,
+                    last_played: info.last_played,
                     platform_id: platformId,
-                    igdb_id: igdb_id,
-                    ra_id: ra_id,
-                    summary: summary,
-                    name,
+                    igdb_id: info.igdb_id,
+                    ra_id: info.ra_id,
+                    summary: info.summary,
+                    name: info.name,
                     cover,
                     cover_type: coverResponse.headers.get('content-type'),
-                    metadata
+                    metadata: info.metadata
                 };
 
                 const [{ id }] = await tx.insert(schema.games).values(game).returning({ id: schema.games.id });
 
-                if (screenshotUrls.length <= 0 && process.env.TWITCH_CLIENT_ID)
+                if (info.screenshotUrls.length <= 0 && process.env.TWITCH_CLIENT_ID)
                 {
                     const access_token = await secrets.get({ service: 'gamflow_twitch', name: 'access_token' });
                     if (access_token)
                     {
                         const client = igdb.igdb(process.env.TWITCH_CLIENT_ID, access_token);
 
-                        const { data } = await client.request('artworks').pipe(igdb.fields(['game', 'url']), igdb.where('game', '=', igdb_id)).execute();
+                        const { data } = await client.request('artworks').pipe(igdb.fields(['game', 'url']), igdb.where('game', '=', info.igdb_id)).execute();
 
-                        screenshotUrls.push(...data.filter(s => s.url).map(s => s.url!));
+                        info.screenshotUrls.push(...data.filter(s => s.url).map(s => s.url!));
                     }
                 }
 
                 // pre-fetch screenshots
-                const screenshots = await Promise.all(screenshotUrls.map(s => fetch(s)));
+                const screenshots = await Promise.all(info.screenshotUrls.map(s => fetch(s)));
 
                 if (screenshots.length > 0)
                 {
@@ -300,6 +251,6 @@ export class InstallJob implements IJob<never, InstallJobStates>
         }
 
 
-        events.emit('notification', { message: `${name}: Installed`, type: 'success', duration: 8000 });
+        events.emit('notification', { message: `${info.name}: Installed`, type: 'success', duration: 8000 });
     }
 }

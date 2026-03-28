@@ -11,7 +11,7 @@ import Shortcuts from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
-import { ChevronDown, Cpu, Download, Gamepad2, Info, Settings, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
+import { ChevronDown, Cpu, Download, Gamepad2, Info, Puzzle, Settings, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
 import { ContextList, DialogEntry, useContextDialog } from "@/mainview/components/ContextDialog";
 import { RPC_URL } from "@/shared/constants";
 import Screenshots from "@/mainview/components/Screenshots";
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/store/details/emulator/$id')({
     async loader (ctx)
     {
         ctx.context.queryClient.prefetchQuery(storeEmulatorDetailsQuery(ctx.params.id));
-        ctx.context.queryClient.prefetchQuery(storeEmulatorsRecommendedQuery);
+        ctx.context.queryClient.prefetchQuery(storeEmulatorsRecommendedQuery(ctx.params.id));
         ctx.context.queryClient.prefetchQuery(gamesRecommendedBasedOnEmulatorQuery(ctx.params.id));
     }
 });
@@ -208,7 +208,7 @@ function TitleArea (data: {
             }
         };
         installButtonContent = <><span className="loading loading-spinner loading-lg"></span>{installState ? status.install[installState] : biosDownloadState ? status.bios[biosDownloadState] : undefined}</>;
-    } else if (data.emulator.validSource)
+    } else if (data.emulator.validSources.some(s => s.exists))
     {
         installButtonContent = <><Settings /> Options</>;
     } else if (data.emulator.downloads.length > 0)
@@ -235,10 +235,10 @@ function TitleArea (data: {
             <div className="flex flex-col grow gap-1 sm:portrait:items-center md:items-start">
                 <h1 className="text-4xl font-semibold text-shadow-md">{data.emulator?.name ?? <div className="skeleton h-10 w-84" />}</h1>
                 <div className="flex gap-2">
-                    {data.emulator?.systems.map(({ id, name, icon }) =>
+                    {data.emulator?.systems.map(({ id, name, iconUrl }) =>
                     {
                         return <div key={id} className="flex gap-1 items-center text-base-content/35 mt-0.5">
-                            {!!icon && <img className="size-6 p-1 bg-base-200 rounded-full" src={`${RPC_URL(__HOST__)}${icon}`} />}
+                            {!!iconUrl && <img className="size-6 p-1 bg-base-200 rounded-full" src={`${RPC_URL(__HOST__)}${iconUrl}`} />}
                             <p className="text-nowrap text-ellipsis overflow-hidden dark:text-shadow-lg">{name}</p>
                         </div>;
                     }) ?? <><div className="skeleton h-4 w-48" /><div className="skeleton h-4 w-32" /></>}
@@ -249,7 +249,7 @@ function TitleArea (data: {
                     {!!data.emulator?.bios?.[0] && <div className="tooltip" data-tip="Has BIOS">
                         <div className="flex items-center justify-center bg-base-200 p-2 rounded-full"><Cpu className="size-5" /></div>
                     </div>}
-                    {data.emulator && !!data.emulator.integration && data.emulator.validSource?.type === 'store' && <div className="tooltip" data-tip="Has Integration">
+                    {data.emulator && !!data.emulator.integration && data.emulator.validSources.some(s => s.type === 'store') && <div className="tooltip" data-tip="Has Integration">
                         <div className="bg-base-200 rounded-full p-2"><WandSparkles className="size-5" /></div>
                     </div>}
                 </div>
@@ -296,7 +296,7 @@ export function RouteComponent ()
     });
 
     const { data: emulator, isPending: isEmulatorPending } = useQuery(storeEmulatorDetailsQuery(id));
-    const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery);
+    const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery(id));
     const { data: recommendedGames } = useQuery(gamesRecommendedBasedOnEmulatorQuery(id));
 
     useShortcuts(focusKey, () => [{
@@ -323,14 +323,19 @@ export function RouteComponent ()
         if (emulator.keywords)
             stats.push({ label: "Tags", content: emulator.keywords });
         stats.push({ label: "Systems", content: emulator.systems.map(s => s.name) });
-        stats.push(...emulator.sources.flatMap(s => [{ label: "Source", content: s.type, icon: emulatorStatusIcons[s.type] }, { label: "Location", content: s.binPath }]));
+        stats.push(...emulator.sources.flatMap(s => [{
+            label: "Source", content: <div className="flex flex-wrap gap-1 p-1">
+                <div className="flex gap-1 flex-1">{emulatorStatusIcons[s.type]}{s.type}:</div>
+                <div className="grow text-base-content/40">{s.binPath}</div>
+            </div>
+        }]));
         if (emulator.bios)
             stats.push({
                 label: "Bios", content: emulator.bios && emulator.bios.length > 0 ? emulator.bios : <div className="text-warning font-semibold">Missing</div>
             });
         if (emulator.integration)
         {
-            stats.push({ label: "Integration", content: `${emulator.integration.name} (${emulator.integration.version})` });
+            stats.push({ label: "Integration", icon: <Puzzle />, content: `${emulator.integration.name} (${emulator.integration.version})` });
         }
     }
 

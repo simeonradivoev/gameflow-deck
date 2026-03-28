@@ -27,8 +27,9 @@ export default function Details (data: {
     const { ref, focusKey } = useFocusable({
         focusKey: 'main-details',
         onFocus: (l, p, d) => scrollIntoViewHandler({ block: 'end', behavior: 'smooth' })(focusKey, ref.current, d),
-        preferredChildFocusKey: "play-btn",
-        saveLastFocusedChild: false
+        preferredChildFocusKey: "actions",
+        saveLastFocusedChild: false,
+        forceFocus: true
     });
 
     const platformCoverImg = data.game?.path_platform_cover ? new URL(`${RPC_URL(__HOST__)}${data.game?.path_platform_cover}`) : undefined;
@@ -87,7 +88,7 @@ export default function Details (data: {
                             <div className="skeleton h-4 w-[80%]"></div>
                         </div>}
                     </div>
-                    {!!data.game && <ActionButtons source={data.source} id={data.id} game={data.game} key="actions" />}
+                    <ActionButtons source={data.source} id={data.id} game={data.game} key="actions" />
                 </div>
             </section>
         </FocusContext>

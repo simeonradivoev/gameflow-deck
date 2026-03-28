@@ -1,8 +1,7 @@
 import Elysia, { status } from "elysia";
-import { config, events, jar, taskQueue } from "./app";
+import { config, events, jar, plugins, taskQueue } from "./app";
 import z from "zod";
-import { client } from "@clients/romm/client.gen";
-import { loginApiLoginPost, logoutApiLogoutPost } from "@clients/romm";
+import { getCurrentUserApiUsersMeGet, tokenApiTokenPost, UserSchema } from "@clients/romm";
 import secrets from '../api/secrets';
 import { LoginJob } from "./jobs/login-job";
 import TwitchLoginJob from "./jobs/twitch-login-job";
@@ -42,6 +41,8 @@ export default new Elysia()
         await secrets.delete({ service: 'gamflow_twitch', name: 'access_token' });
         await secrets.delete({ service: 'gamflow_twitch', name: 'refresh_token' });
         await secrets.delete({ service: 'gamflow_twitch', name: 'expires_in' });
+
+        await plugins.hooks.auth.loginComplete.promise({ service: 'twitch' });
 
         return status(res.status, res.statusText);
     })
@@ -93,6 +94,8 @@ export default new Elysia()
             await secrets.set({ service: 'gamflow_twitch', name: 'refresh_token', value: data.refresh_token });
             await secrets.set({ service: 'gamflow_twitch', name: 'expires_in', value: new Date(new Date().getTime() + data.expires_in).toString() });
 
+            await plugins.hooks.auth.loginComplete.promise({ service: 'twitch' });
+
             events.emit('notification', { message: "Twitch Refresh Successful", type: 'success' });
 
             const res = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${data.access_token}` } });
@@ -104,7 +107,7 @@ export default new Elysia()
 
         return status(400, res.statusText);
     })
-    .post('/login/romm', async () =>
+    .post('/login/romm/qr', async () =>
     {
         if (taskQueue.hasActiveOfType(LoginJob))
         {
@@ -113,117 +116,87 @@ export default new Elysia()
 
         return taskQueue.enqueue(LoginJob.id, new LoginJob());
     })
-    .post('/login', async ({ body }) => tryLoginAndSave(body), { body: z.object({ host: z.url(), username: z.string(), password: z.string() }) })
-    .get('/login', async () =>
+    .get('/user/romm', async () =>
     {
-        const credentials = await secrets.get({ service: 'gameflow', name: 'romm' });
-        return { hasPassword: !!credentials };
-    }, { response: z.object({ hasPassword: z.boolean() }) })
-    .post('/logout', async () =>
+        const data = await getCurrentUserApiUsersMeGet();
+        if (data.error) return status("Internal Server Error", data.response.statusText);
+        return data.data as UserSchema;
+    })
+    .post('/login/romm', async ({ body }) => tryLoginAndSave(body), { body: z.object({ host: z.url(), username: z.string(), password: z.string() }) })
+    .get('/login/romm', async () =>
     {
-        await secrets.delete({ service: 'gameflow', name: 'romm' });
-        await logout();
-        const rommAddress = config.get('rommAddress');
-        if (rommAddress)
+        const access_token = await secrets.get({ service: 'gameflow', name: 'romm_access_token' });
+        if (!access_token)
         {
-            const cookies = await jar.getCookies(rommAddress);
-            cookies.map(c => jar.store.removeCookie(c.domain, c.path, c.key));
+            return { hasLogin: false };
         }
+
+        const expires_in = await secrets.get({ service: 'gameflow', name: "romm_expires_in" });
+        if (expires_in)
+        {
+            const date = new Date(expires_in);
+            if (date > new Date())
+            {
+                return { hasLogin: true };
+            }
+        }
+
+        const refresh_token = await secrets.get({ service: 'gameflow', name: "romm_refresh_token" });
+        if (!refresh_token)
+        {
+            return { hasLogin: false };
+        }
+
+        const refreshResponse = await tokenApiTokenPost({ body: { grant_type: "refresh_token", refresh_token: refresh_token } });
+
+        if (refreshResponse.response.ok && refreshResponse.data)
+        {
+            await secrets.set({ service: 'gameflow', name: 'romm_access_token', value: refreshResponse.data.access_token });
+            if (refreshResponse.data.refresh_token)
+                await secrets.set({ service: 'gameflow', name: 'romm_refresh_token', value: refreshResponse.data.refresh_token });
+            await secrets.set({ service: 'gameflow', name: 'romm_expires_in', value: new Date(new Date().getTime() + refreshResponse.data.expires * 1000).toString() });
+
+            await plugins.hooks.auth.loginComplete.promise({ service: 'romm' });
+
+            events.emit('notification', { message: "Romm Refresh Successful", type: 'success' });
+            return { hasLogin: true };
+        }
+
+        return status(refreshResponse.response.status, refreshResponse.response.statusText) as any;
+    },
+        { response: z.object({ hasLogin: z.boolean() }) })
+    .post('/logout/romm', async () =>
+    {
+        await secrets.delete({ service: 'gameflow', name: 'romm_access_token' });
+        await secrets.delete({ service: 'gameflow', name: 'romm_refresh_token' });
+        await secrets.delete({ service: 'gameflow', name: 'romm_expires_in' });
         return status(200);
     }, { response: z.any() });
 
-async function updateClient ()
-{
-    client.setConfig({
-        baseUrl: config.get('rommAddress'), headers: {
-            cookie: await jar.getCookieString(config.get('rommAddress') ?? '')
-        }
-    });
-}
+
 
 export async function tryLoginAndSave ({ host, username, password }: { host: string, username: string, password: string; })
 {
-    if (config.has('rommAddress') && config.has('rommUser'))
+    const response = await tokenApiTokenPost({
+        body: {
+            password,
+            username,
+            scope: 'me.read roms.read platforms.read assets.read firmware.read roms.user.read collections.read me.write roms.user.write'
+        }, baseUrl: host
+    });
+
+    if (response.response.ok && response.data)
     {
-        await logout();
-        const oldRommAddress = config.get('rommAddress');
-        if (oldRommAddress)
+        await secrets.set({ service: 'gameflow', name: 'romm_access_token', value: response.data.access_token });
+        await secrets.set({ service: 'gameflow', name: 'romm_expires_in', value: new Date(new Date().getTime() + response.data.expires * 1000).toString() });
+        if (response.data.refresh_token)
         {
-            const cookies = await jar.getCookies(oldRommAddress);
-            await Promise.all(cookies.map(c => jar.store.removeCookie(c.domain, c.path, c.key)));
+            await secrets.set({ service: 'gameflow', name: 'romm_refresh_token', value: response.data.refresh_token });
         }
-    }
 
-    const response = await login({ rommAddress: host, rommUser: username, rommPassword: password });
-    if (response?.code === 200)
-    {
         config.set('rommAddress', host);
-        config.set('rommUser', username);
-
-        await secrets.set({ service: 'gameflow', name: 'romm', value: password });
+        await plugins.hooks.auth.loginComplete.promise({ service: 'twitch' });
     }
 
     return response;
 }
-
-export async function logout ()
-{
-    if (!config.has('rommAddress'))
-    {
-        return;
-    }
-    const rommAddress = config.get('rommAddress');
-    if (rommAddress)
-    {
-        console.log("Logging Out of ROMM");
-        try
-        {
-            await logoutApiLogoutPost({
-                baseUrl: rommAddress, headers: {
-                    'cookie': await jar.getCookieString(rommAddress)
-                }
-            });
-            await jar.store.removeCookie(new URL(rommAddress).host, null, "romm_session");
-        } catch (error)
-        {
-            console.error("Failed to logout of ROMM ", error);
-        }
-    }
-}
-
-export async function login (data?: { rommAddress?: string, rommUser?: string, rommPassword?: string; })
-{
-    const address = data?.rommAddress ?? config.get('rommAddress');
-    const user = data?.rommUser ?? config.get('rommUser');
-    const password = data?.rommPassword ?? await secrets.get({ service: 'gameflow', name: "romm" });
-
-    if (!address || !user)
-    {
-        console.warn("Romm not setup");
-        return status(404);
-    }
-    const rommAddress = config.get('rommAddress');
-    const rommUser = config.get('rommUser');
-    if (rommAddress && rommUser)
-    {
-        console.log("Logging In to ROMM");
-        if (password === null)
-        {
-            return status(404, "No Found Password");
-        }
-
-        const loginResponse = await loginApiLoginPost({ baseUrl: rommAddress, auth: `${rommUser}:${password}` });
-        if (loginResponse.response.status === 200)
-        {
-            loginResponse.response.headers.getSetCookie().map(c => jar.setCookie(c, rommAddress));
-            await updateClient();
-            return status(200, loginResponse.response.statusText);
-        } else
-        {
-            console.error("Could not Login to Romm: ", loginResponse.response.statusText);
-            return status(loginResponse.response.status, loginResponse.response.statusText);
-        }
-
-    }
-}
-

@@ -4,9 +4,10 @@ import { config, jar } from "./app";
 import games from "./games/games";
 import platforms from "./games/platforms";
 import auth from "./auth";
+import collections from "./games/collections";
 
 export default new Elysia({ prefix: "/api/romm" })
-    .use([games, platforms, auth])
+    .use([games, platforms, collections, auth])
     .all("/*", async ({ request, set }) =>
     {
         set.headers["cross-origin-resource-policy"] = 'cross-origin';

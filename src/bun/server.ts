@@ -3,7 +3,6 @@ import { host } from "./utils/host";
 import { appPath } from "./utils";
 import Elysia from "elysia";
 import cors from "@elysiajs/cors";
-import staticPlugin from "@elysiajs/static";
 
 export function RunBunServer ()
 {
@@ -23,16 +22,13 @@ export function RunBunServer ()
     {
       return Bun.file(appPath('./dist/emulatorjs/index.html'));
     })
-    .use(staticPlugin({
-      indexHTML: false,
-      assets: appPath("./dist"),
-      prefix: "/",
-      alwaysStatic: true
-    }));
+    .get("/*", ({ params }) => Bun.file(appPath(`./dist/${params["*"]}`)));
 
   return new Promise<typeof server>((resolve) =>
   {
-    server.onStart(() => resolve(server))
-      .listen({ port: SERVER_PORT, hostname: host, development: true }, console.log);
+    server.listen({ port: SERVER_PORT, hostname: host, development: true }, async ({ hostname, port }) =>
+    {
+      resolve(server);
+    });
   });
 }

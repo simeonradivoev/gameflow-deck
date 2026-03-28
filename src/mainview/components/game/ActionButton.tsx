@@ -22,7 +22,7 @@ export default function ActionButton (data: {
         primary: "bg-primary text-primary-content focused:bg-base-content focused:text-base-300 focusable focusable-primary",
         base: " text-base-content border-dashed border-base-content/20 border-2 focused:bg-base-content focused:text-base-300 focusable focusable-primary",
         accent: "bg-accent text-accent-content focusable focusable-primary focusable:bg-base-content focusable:text-base-300",
-        error: "bg-error text-error-content focused:bg-error focused:text-error-content",
+        error: "bg-error text-error-content focused:bg-error focused:text-error-content focusable focusable-primary",
     };
     return (
         <div className="tooltip tooltip-accent tooltip-right" data-tip={data.tooltip}>

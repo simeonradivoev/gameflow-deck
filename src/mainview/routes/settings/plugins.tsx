@@ -48,7 +48,9 @@ function RouteComponent ()
         {
             return <>
                 <div className="divider">{source === 'builtin' ? "Built In" : "Store"}</div>
-                {plugins.map(p => <Plugin key={p.name} plugin={p} setEnabled={(v) => pluginMutation.mutate({ id: p.name, enabled: v })} />)}
+                <div className='flex flex-col gap-2'>
+                    {plugins.map(p => <Plugin key={p.name} plugin={p} setEnabled={(v) => pluginMutation.mutate({ id: p.name, enabled: v })} />)}
+                </div>
             </>;
         })}
     </>;

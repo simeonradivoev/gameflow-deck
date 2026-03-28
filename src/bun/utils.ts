@@ -74,17 +74,20 @@ export async function openExternal (target: string)
     }
 }
 
-export function hashFile (path: string, algorithm: "sha1" | "md5"): Promise<string>
+export async function hashFile (path: string, algorithm: Bun.SupportedCryptoAlgorithms)
 {
-    return new Promise((resolve, reject) =>
-    {
-        const hash = createHash(algorithm);
-        const stream = createReadStream(path);
+    const hasher = new Bun.CryptoHasher(algorithm);
+    const stream = Bun.file(path).stream();
+    const reader = stream.getReader();
 
-        stream.on("data", (data) => hash.update(data));
-        stream.on("end", () => resolve(hash.digest("hex")));
-        stream.on("error", reject);
-    });
+    while (true)
+    {
+        const { done, value } = await reader.read();
+        if (done) break;
+        hasher.update(value);
+    }
+
+    return hasher.digest('hex');
 }
 
 export class SeededRandom
@@ -120,17 +123,18 @@ export function toggleElementInConfig<T> (id: KeysWithValueAssignableTo<Settings
     if (enabled)
     {
         const index = disabled.indexOf(element);
-        if (index < 0)
-        {
-            config.set('disabledPlugins', disabled.concat(element));
-        }
-    } else
-    {
-        const index = disabled.indexOf(element);
         if (index >= 0)
         {
             config.set('disabledPlugins', disabled.toSpliced(index, 1));
         }
+    } else
+    {
+        const index = disabled.indexOf(element);
+        if (index < 0)
+        {
+            config.set('disabledPlugins', disabled.concat(element));
+        }
+
     }
 }
 

@@ -45,7 +45,7 @@ export function StoreEmulatorCard (data: {
             ref={ref}
             role="button"
             tabIndex={0}
-            data-installed={!!data.emulator.validSource}
+            data-installed={data.emulator.validSources.some(s => s.exists)}
             onClick={isTouch ? handleSelect : undefined}
             className={twMerge("relative focusable focusable-info bg-base-100 rounded-4xl transition-shadow focused:not-control-mouse:animate-scale-small shadow-lg border border-base-content/10 active:ring-4 active:ring-base-content active:transition-none", data.className)}
         >
@@ -62,10 +62,10 @@ export function StoreEmulatorCard (data: {
                         <div>
                             <p className="font-bold text-base-content text-xl leading-snug in-data-[installed=true]:text-success">{data.emulator.name}</p>
                             <ul className="flex flex-wrap gap-1">
-                                {data.emulator.systems.map(({ id, name, icon }) =>
+                                {data.emulator.systems.map(({ id, name, iconUrl }) =>
                                 {
                                     return <div key={id} className="flex gap-1 items-center text-base-content/35 mt-0.5">
-                                        {!!icon && <img draggable={false} className="size-6 p-1 bg-base-200 rounded-full" src={`${RPC_URL(__HOST__)}${icon}`} />}
+                                        {!!iconUrl && <img draggable={false} className="size-6 p-1 bg-base-200 rounded-full" src={`${RPC_URL(__HOST__)}${iconUrl}`} />}
                                         <p className="text-nowrap text-ellipsis overflow-hidden">{name}</p>
                                     </div>;
                                 })}
@@ -75,17 +75,19 @@ export function StoreEmulatorCard (data: {
                 </div>
 
                 <div className="flex gap-1 mt-1 h-10 items-center">
-                    {!!data.emulator.integration && data.emulator.validSource?.type === 'store' && <div className="tooltip tooltip-primary" data-tip="Has Integration">
+                    {!!data.emulator.integration && data.emulator.validSources.some(s => s.type === 'store') && <div className="tooltip tooltip-primary" data-tip="Has Integration">
                         <div className="bg-primary text-primary-content rounded-full p-1"><WandSparkles /></div>
                     </div>}
-                    {!!data.emulator.validSource && <div className="tooltip" data-tip={data.emulator.validSource.type}>
-                        <div data-source={data.emulator.validSource?.type} className="flex items-center justify-center rounded-full p-1 size-8 bg-warning text-warning-content data-[source=store]:bg-success data-[source=store]:text-success-content">
-                            {emulatorStatusIcons[data.emulator.validSource?.type ?? '']}
-                        </div>
-                    </div>}
+                    {data.emulator.validSources.slice(0, 3).map(s =>
+                    {
+                        return <div className="tooltip" data-tip={s.type}>
+                            <div data-source={s.type} className="flex items-center justify-center rounded-full p-1 size-8 bg-warning text-warning-content data-[source=store]:bg-success data-[source=store]:text-success-content">
+                                {emulatorStatusIcons[s.type]}
+                            </div>
+                        </div>;
+                    })}
                     {isMouse && <>
                         <Button onAction={handleSelect} style="base" className="grow text-base-content/40" id={`${data.emulator.name}-details`} >Details<ChevronRight /></Button>
-                        <Button className="bg-transparent border-none shadow-none w-6 p-0" id={`${data.emulator.name}-options`} ><EllipsisVertical /></Button>
                     </>}
 
                 </div>

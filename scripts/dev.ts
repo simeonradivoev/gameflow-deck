@@ -12,7 +12,7 @@ let retries = 0;
 
 function spawnServer ()
 {
-    return Bun.spawn(["bun", '--watch', '--install=fallback', '--smol', "run", "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
+    return Bun.spawn(["bun", '--watch', '--install=fallback', "run", "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
         env: {
             ...process.env,
             HEADLESS: "true",

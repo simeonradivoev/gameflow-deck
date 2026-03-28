@@ -48,7 +48,12 @@ export const store = new Elysia({ prefix: '/api/store' })
 
         if (query.missing)
         {
-            frontEndEmulators = frontEndEmulators.filter(e => !e.validSource);
+            frontEndEmulators = frontEndEmulators.filter(e =>
+            {
+                if (e.validSources.some(s => s.exists)) return false;
+                if (query.related && e.name === query.related) return false;
+                return true;
+            });
         }
 
         if (query.orderBy === 'importance')
@@ -72,7 +77,8 @@ export const store = new Elysia({ prefix: '/api/store' })
             query: z.object({
                 limit: z.coerce.number().optional(),
                 missing: z.stringbool().optional().describe("Show Only Non Installed emulators"),
-                orderBy: z.enum(['name', 'recently_updated', 'importance']).optional()
+                orderBy: z.enum(['name', 'recently_updated', 'importance']).optional(),
+                related: z.string().optional()
             })
         })
     .get('/games/featured', async () =>
@@ -112,7 +118,6 @@ export const store = new Elysia({ prefix: '/api/store' })
 
         const emulatorScreenshotsPath = path.join(getStoreFolder(), "media", "screenshots", id);
         const screenshots = await fs.exists(emulatorScreenshotsPath) ? await fs.readdir(emulatorScreenshotsPath) : [];
-        const validExec = execPaths.find(p => p.exists);
         const biosDirPath = path.join(config.get('downloadPath'), 'bios', id);
         const biosFiles = await fs.exists(biosDirPath) ? await fs.readdir(biosDirPath) : [];
 
@@ -120,7 +125,7 @@ export const store = new Elysia({ prefix: '/api/store' })
             name: emulatorPackage.name,
             description: emulatorPackage.description,
             systems,
-            validSource: validExec,
+            validSources: execPaths,
             screenshots: screenshots.map(s => `/api/store/screenshot/emulator/${id}/${s}`),
             gameCount: 0,
             homepage: emulatorPackage.homepage,

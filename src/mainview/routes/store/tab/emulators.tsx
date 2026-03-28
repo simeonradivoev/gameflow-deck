@@ -49,7 +49,11 @@ function RouteComponent ()
               id={data.name}
               key={data.name}
               emulator={data}
-              onFocus={({ node, details }) => { node.scrollIntoView({ behavior: details.instant ? 'instant' : 'smooth', block: 'center' }); }}
+              onFocus={({ id, node, details }) =>
+              {
+                node.scrollIntoView({ behavior: details.instant ? 'instant' : 'smooth', block: 'center' });
+                storeContext.prefetchDetails('emulator', 'store', id);
+              }}
               onSelect={(id, focus) => storeContext.showDetails('emulator', 'store', id, focus)}
             />
           )) ?? Array.from({ length: 10 }).map((_, i) => <div key={i} className="skeleton rounded-3xl" />)}

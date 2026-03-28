@@ -1,12 +1,13 @@
 import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { Gamepad2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import FrontEndGameCard from '@/mainview/components/FrontEndGameCard';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import LoadMoreButton from '@/mainview/components/LoadMoreButton';
 import { storeGamesInfiniteQuery } from '@queries/store';
+import { StoreContext } from '@/mainview/scripts/contexts';
 
 export const Route = createFileRoute('/store/tab/games')({
   component: RouteComponent
@@ -18,6 +19,7 @@ function RouteComponent ()
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "main-area", preferredChildFocusKey: focus });
 
   const { data, fetchNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(storeGamesInfiniteQuery);
+  const storeContext = useContext(StoreContext);
 
   useEffect(() =>
   {
@@ -45,7 +47,11 @@ function RouteComponent ()
         </div>
         <div className="grid grid-cols-[repeat(auto-fill,18rem)] auto-rows-[21rem] py-2 md:px-4 gap-4 justify-center-safe">
           {data?.pages.flatMap((page) => (
-            page.data.map((g, i) => <FrontEndGameCard onFocus={handleFocus} key={g.id.id} game={g} index={i} />))
+            page.data.map((g, i) => <FrontEndGameCard onFocus={(k, n, d) =>
+            {
+              storeContext.prefetchDetails('game', g.id.source, g.id.id);
+              handleFocus(k, n, d);
+            }} key={g.id.id} game={g} index={i} />))
           ) ?? Array.from({ length: 20 }).map((_, i) => <div key={i} className="flex flex-col gap-4">
             <div className="skeleton grow w-full"></div>
             <div className="skeleton h-4 w-[80%]"></div>

@@ -13,7 +13,6 @@ import { client } from "@clients/romm/client.gen";
 import * as schema from "@schema/app";
 import cacheSchema from "@schema/cache";
 import * as emulatorSchema from "@schema/emulators";
-import { login, logout } from "./auth";
 import os from 'node:os';
 import EventEmitter from "node:events";
 import { appPath } from "../utils";
@@ -63,7 +62,6 @@ const emulatorsSqlite = new Database(appPath(`./vendors/es-de/emulators.${os.pla
 export const emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
 export const taskQueue = new TaskQueue();
 config.onDidChange('rommAddress', v => client.setConfig({ baseUrl: v }));
-await login();
 export const plugins = new PluginManager();
 registerPlugins(plugins);
 export const events = new EventEmitter<AppEventMap>();
@@ -74,7 +72,6 @@ export async function cleanup ()
 {
     await taskQueue.close();
     sqlite.close();
-    await logout();
     emulatorsSqlite.close();
 }
 

@@ -3,9 +3,8 @@ import { IJob, JobContext } from "../task-queue";
 import { ActiveGameSchema, ActiveGameType } from "@/bun/types/typesc.schema";
 import { db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { spawn } from 'node:child_process';
-import { updateRomUserApiRomsIdPropsPut } from '@/clients/romm';
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">
 {
@@ -38,7 +37,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
         const commandArgs = await plugins.hooks.games.emulatorLaunch.promise({
             autoValidCommand: this.validCommand,
-            game: { source: this.gameSource, sourceId: this.gameSourceId, id: this.gameId }
+            game: { source: this.gameSource, id: this.gameId }
         });
         const command = commandArgs ? this.validCommand.metadata.emulatorBin ?? this.validCommand.command : this.validCommand.command;
 
@@ -68,19 +67,22 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 command: this.validCommand
             };
 
-            function updateRommProps (id: number)
+            const updatePlayed = async (source: string, id: string) =>
             {
-                updateRomUserApiRomsIdPropsPut({ path: { id }, body: { update_last_played: true } });
-                events.emit('notification', { message: "Updated Last Played", type: 'success' });
-            }
+                await db.update(appSchema.games).set({ last_played: new Date() }).where(eq(appSchema.games.id, this.gameId));
+                await plugins.hooks.games.updatePlayed.promise({ source, id }).then(v =>
+                {
+                    if (v) events.emit('notification', { message: "Updated Last Played", type: 'success' });
+                });
+            };
 
-            if (this.gameSource === 'romm') 
+            if (this.gameSource !== 'local') 
             {
-                updateRommProps(Number(this.gameSourceId));
+                updatePlayed(this.gameSource, this.gameSourceId);
             }
-            else if (localGame?.source === 'romm' && localGame.source_id)
+            else if (localGame?.source && localGame?.source !== 'local' && localGame.source_id)
             {
-                updateRommProps(Number(localGame.source_id));
+                updatePlayed(localGame.source, localGame.source_id);
             }
         });
 

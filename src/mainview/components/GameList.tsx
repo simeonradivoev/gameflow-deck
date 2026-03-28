@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
-import { GameListFilterType, RPC_URL } from "@shared/constants";
+import { DefaultRommStaleTime, GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
 import { HardDrive } from "lucide-react";
 import { JSX, useContext } from "react";
@@ -24,7 +24,7 @@ export interface GameListParams
 
 export function GameList (data: GameListParams)
 {
-    const games = useSuspenseQuery(allGamesQuery(data.filters));
+    const games = useSuspenseQuery({ ...allGamesQuery(data.filters), staleTime: DefaultRommStaleTime });
     const navigator = useNavigate();
     const blur = useLocalSetting('backgroundBlur');
     const backgroundContext = useContext(AnimatedBackgroundContext);
@@ -80,7 +80,7 @@ export function GameList (data: GameListParams)
                             platformUrl.searchParams.set('width', "64");
 
                             return {
-                                id: `game-${g.id.source}-${g.id.id}`,
+                                id: `${g.id.source}@${g.id.id}`,
                                 focusKey: g.slug ?? `game-${g.id}`,
                                 title: g.name ?? "",
                                 subtitle: (

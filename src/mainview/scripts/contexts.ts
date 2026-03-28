@@ -1,8 +1,10 @@
+import { SystemInfoType } from "@/shared/constants";
 import { FocusDetails } from "@noriginmedia/norigin-spatial-navigation";
 import { createContext } from "react";
 
 export const StoreContext = createContext({} as {
     showDetails: (type: 'emulator' | 'game', source: string, id: string, focusSource: string) => void;
+    prefetchDetails: (type: 'emulator' | 'game', source: string, id: string) => void;
     forceFocus?: string;
 });
 
@@ -31,6 +33,8 @@ export const FilePickerContext = createContext<{
     drives: Drive[],
     activeDrive: Drive | undefined;
 }>({} as any);
+
+export const SystemInfoContext = createContext({} as SystemInfoType | undefined);
 
 export const GameDetailsContext = createContext<{
     update: () => void;

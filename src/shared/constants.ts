@@ -49,9 +49,11 @@ export const GameListFilterSchema = z.object({
     platform_slug: z.string().optional(),
     platform_id: z.coerce.number().optional(),
     collection_id: z.coerce.number().optional(),
+    collection_source: z.string().optional(),
     limit: z.coerce.number().optional(),
     offset: z.coerce.number().optional(),
     source: z.string().optional(),
+    orderBy: z.literal(['added', 'activity', 'name']).optional()
 });
 
 export const RommLoginDataSchema = z.object({ hostname: z.url(), username: z.string(), password: z.string() });
@@ -106,6 +108,18 @@ export const EmulatorPackageSchema = z.object({
     bios: z.literal(["required", "optional"]).optional()
 });
 
+export const SystemInfoSchema = z.object({
+    battery: z.object({
+        percent: z.number(),
+        isCharging: z.boolean(),
+        acConnected: z.boolean(),
+        hasBattery: z.boolean()
+
+    }),
+    wifiConnections: z.array(z.object({ signalLevel: z.number() })),
+    bluetoothDevices: z.array(z.object({ connected: z.boolean() }))
+});
+
 export const GithubReleaseSchema = z.object({
     assets: z.array(z.object({
         name: z.string(),
@@ -119,3 +133,4 @@ export type StoreGameType = z.infer<typeof StoreGameSchema>;
 export type SettingsType = z.infer<typeof SettingsSchema>;
 export type LocalSettingsType = z.infer<typeof LocalSettingsSchema>;
 export const PlatformSchema = z.object({ slug: z.string() });
+export type SystemInfoType = z.infer<typeof SystemInfoSchema>;

@@ -1,14 +1,13 @@
 import Elysia, { status } from "elysia";
-import { config, db, emulatorsDb, taskQueue } from "../app";
+import { config, db, emulatorsDb, plugins, taskQueue } from "../app";
 import { and, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import z from "zod";
 import * as schema from "@schema/app";
 import fs from "node:fs/promises";
 import { GameListFilterSchema, SERVER_URL } from "@shared/constants";
-import { getPlatformsApiPlatformsGet, getRomsApiRomsGet } from "@clients/romm";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
-import { convertLocalToFrontend, convertRomToFrontend, convertStoreToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
+import { convertLocalToFrontend, convertStoreToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
 import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
 import { getEmulatorsForSystem, launchCommand } from "./services/launchGameService";
@@ -19,7 +18,6 @@ import webp from "@jimp/wasm-webp";
 import * as emulatorSchema from '@schema/emulators';
 import { buildStoreFrontendEmulatorSystems, getShuffledStoreGames, getStoreEmulatorPackage, getStoreGameFromPath, getStoreGameManifest } from "../store/services/gamesService";
 import { convertStoreEmulatorToFrontend } from "../store/services/emulatorsService";
-import { CACHE_KEYS, getOrCached } from "../cache";
 import { host } from "@/bun/utils/host";
 import { LaunchGameJob } from "../jobs/launch-game-job";
 
@@ -34,7 +32,7 @@ async function processImage (img: string | Buffer | ArrayBuffer, { blur, width, 
 
     try
     {
-        if ((blur && !noBlur) || width || height)
+        if ((blur && !noBlur))
         {
             const jimp = await Jimp.read(img);
 
@@ -50,7 +48,7 @@ async function processImage (img: string | Buffer | ArrayBuffer, { blur, width, 
             {
                 jimp.resize({ w: width, h: height });
             }
-            return jimp.getBuffer('image/webp');
+            return jimp.getBuffer('image/png');
         }
     } catch (e)
     {
@@ -174,6 +172,17 @@ export default new Elysia()
             if (query.platform_slug)
             {
                 where.push(eq(schema.platforms.slug, query.platform_slug));
+            } else if (query.platform_id && query.platform_source === 'local')
+            {
+                where.push(eq(schema.platforms.id, query.platform_id));
+            }
+            else if (query.platform_id && query.platform_source)
+            {
+                const platform = await plugins.hooks.games.platformLookup.promise({ source: query.platform_source, id: String(query.platform_id) });
+                if (platform)
+                {
+                    where.push(eq(schema.platforms.slug, platform?.slug));
+                }
             }
 
             if (query.source)
@@ -190,35 +199,52 @@ export default new Elysia()
                 .leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id))
                 .leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id))
                 .groupBy(schema.games.id)
-                .offset(query.offset ?? 0)
-                .limit(query.limit ?? 50)
                 .where(and(...where));
 
             localGamesSet = new Set(localGames.filter(g => !!g.source_id && !!g.source).map(g => `${g.source}@${g.source_id}`));
 
             if (!query.collection_id)
             {
-                games.push(...localGames.map(g =>
+                games.push(...localGames.slice(query.offset, query.limit ? query.offset ?? 0 + query.limit : undefined).map(g =>
                 {
                     return convertLocalToFrontend(g);
                 }));
-            }
 
-            if (((!query.platform_source || query.platform_source === 'romm') || !!query.collection_id) && (!query.source || query.source === 'romm'))
+                const remoteGames: FrontEndGameType[] = [];
+                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
+                games.push(...remoteGames.filter(g => !localGamesSet?.has(`${g.id.source}@${g.id.id}`)));
+            } else
             {
-                const rommGames = await getRomsApiRomsGet({
-                    query: {
-                        platform_ids: query.platform_id ? [query.platform_id] : undefined,
-                        collection_id: query.collection_id,
-                        limit: query.limit,
-                        offset: query.offset
-                    }, throwOnError: true
-                });
-                games.push(...rommGames.data.items.filter(g => !localGamesSet?.has(`romm@${g.id}`)).map(g =>
+                const remoteGames: FrontEndGameType[] = [];
+                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
+                games.push(...remoteGames.map(g =>
                 {
-                    return convertRomToFrontend(g);
+                    if (localGamesSet?.has(`${g.id.source}@${g.id.id}`))
+                    {
+                        return convertLocalToFrontend(localGames.find(l => l.source === g.id.source && l.source_id === g.id.id)!);
+                    } else
+                    {
+                        return g;
+                    }
                 }));
             }
+        }
+
+        if (query.orderBy)
+        {
+            switch (query.orderBy)
+            {
+                case 'added':
+                    games.sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime());
+                    break;
+                case 'activity':
+                    games.sort((a, b) => Math.max(b.updated_at.getTime(), b.last_played?.getTime() ?? 0) - Math.max(a.updated_at.getTime(), a.last_played?.getTime() ?? 0));
+                    break;
+                case 'name':
+                    games.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+                    break;
+            }
+
         }
 
         return { games };
@@ -274,7 +300,7 @@ export default new Elysia()
                         {
                             return {
                                 name: 'EMULATORJS',
-                                validSource: { binPath: SERVER_URL(host), type: 'embedded', exists: true },
+                                validSources: [{ binPath: SERVER_URL(host), type: 'embedded', exists: true }],
                                 logo: `/api/romm/image?url=${encodeURIComponent('https://emulatorjs.org/logo/EmulatorJS.png')}`,
                                 systems: [],
                                 gameCount: 0
@@ -286,7 +312,8 @@ export default new Elysia()
                                 name: name,
                                 logo: "",
                                 systems: [],
-                                gameCount: 0
+                                gameCount: 0,
+                                validSources: []
                             } satisfies FrontEndGameTypeDetailedEmulator;
                         }
 
@@ -323,7 +350,7 @@ export default new Elysia()
         {
             if (source === 'romm' || source === 'store')
             {
-                taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source, id, { dryRun: true }));
+                taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source));
                 return status(200);
             }
 
@@ -338,7 +365,7 @@ export default new Elysia()
     })
     .delete('/game/:source/:id/install', async ({ params: { id, source } }) =>
     {
-        const job = taskQueue.findJob(`install-rom-${source}-${id}`, InstallJob);
+        const job = taskQueue.findJob(InstallJob.query({ source, id }), InstallJob);
         if (job)
         {
             job.abort('cancel');
@@ -408,7 +435,7 @@ export default new Elysia()
         if (!emulator) return status("Not Found");
         const systems = await buildStoreFrontendEmulatorSystems(emulator);
         const systemsIdSet = new Set(systems.map(s => s.id));
-        const systemsRommSlugSet = new Set(systems.filter(s => s.romm_slug).map(s => s.romm_slug!));
+
 
         const games: FrontEndGameType[] = [];
 
@@ -431,31 +458,9 @@ export default new Elysia()
             return convertLocalToFrontend(g);
         }).slice(0, 3));
 
-        const rommPlatforms = await getOrCached(CACHE_KEYS.ROM_PLATFORMS, () => getPlatformsApiPlatformsGet({ throwOnError: true }), { expireMs: 60 * 60 * 1000 }).then(d => d.data).catch(e => console.error(e));
-
-        if (rommPlatforms)
-        {
-            const platformIds = rommPlatforms.filter(p => systemsRommSlugSet.has(p.slug)).map(s => s.id);
-            if (platformIds.length > 0)
-            {
-                const rommGames = await getRomsApiRomsGet({
-                    query: {
-                        platform_ids: platformIds
-                    }
-                });
-
-                let gamesPerSystem = Math.round(3 / systemsRommSlugSet.size);
-
-                for (const slug of systemsRommSlugSet)
-                {
-                    const systemRommGames = rommGames.data?.items.filter(g => !localGamesSet?.has(`romm@${g.id}`) && slug === g.platform_slug).map(g =>
-                    {
-                        return convertRomToFrontend(g);
-                    }).slice(0, gamesPerSystem) ?? [];
-                    games.push(...systemRommGames);
-                }
-            }
-        }
+        const remoteGames: FrontEndGameType[] = [];
+        await plugins.hooks.games.fetchRecommendedGamesForEmulator.promise({ emulator, systems, games: remoteGames });
+        games.push(...remoteGames.filter(g => !localGamesSet?.has(`${g.id.source}@${g.id.id}`)));
 
         const gamesManifest = await getStoreGameManifest();
         const storeGames = await Promise.all(gamesManifest
@@ -502,20 +507,6 @@ export default new Elysia()
 
         games.push(...localGames.map(g => ({ ...convertLocalToFrontend(g), metadata: g.metadata })));
 
-        const rommPlatforms = await getOrCached(CACHE_KEYS.ROM_PLATFORMS, () => getPlatformsApiPlatformsGet({ throwOnError: true }), { expireMs: 60 * 60 * 1000 }).then(d => d.data).catch(e => console.error(e));
-        if (rommPlatforms)
-        {
-            const rommPlatform = rommPlatforms.find(p => p.slug === sourceData.platform_slug);
-            if (rommPlatform)
-            {
-                const rommGames = await getRomsApiRomsGet({ query: { genres: sourceData.genres, genres_logic: 'any' } });
-                if (rommGames.data)
-                {
-                    games.push(...rommGames.data.items.filter(g => !localGamesSourceSet.has(`romm@${g.id}`)).map(g => ({ ...convertRomToFrontend(g), metadata: g.metadatum })));
-                }
-            }
-        }
-
         const shuffledGames = await getShuffledStoreGames();
         const storeGames = await Promise.all(shuffledGames
             .filter(g =>
@@ -545,6 +536,13 @@ export default new Elysia()
         {
             games.push(...storeGames.slice(0, 3));
         }
+
+        const remoteGames: (FrontEndGameType & { metadata?: any; })[] = [];
+        plugins.hooks.games.fetchRecommendedGamesForGame.promise({
+            game: sourceData, games: remoteGames
+        });
+
+        games.push(...remoteGames.filter(g => !localGamesSourceSet.has(`${g.id.source}@${g.id.id}`)));
 
         const random = new SeededRandom(Math.round(new Date().getTime() / 1000 / 60 / 60));
 

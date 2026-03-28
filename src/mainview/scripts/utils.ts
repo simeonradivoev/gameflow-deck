@@ -1,22 +1,9 @@
 import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
-import { doesFocusableExist, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { jobsApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";
 import { Router } from "..";
-import Elysia from "elysia";
-import { Prettify } from "elysia/types";
-import z from "zod";
-
-export function selfFocusSmart (shouldFocus: boolean, focusSelf: () => void)
-{
-  if (shouldFocus && (!getCurrentFocusKey() || !doesFocusableExist(getCurrentFocusKey())))
-  {
-    console.log("Self Focus");
-    focusSelf();
-  }
-}
 
 export type ScrollSaveParams = {
   id: string;
