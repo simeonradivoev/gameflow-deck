@@ -50,7 +50,7 @@ if (process.env.HEADLESS)
   });
 } else
 {
-  await init(app.events, Bun.env.FORCE_BROWSER === "true", {
+  await init(app.events, process.env.FORCE_BROWSER === "true", {
     configPath: dirname(app.config.path),
     windowPosition: app.config.get('windowPosition'),
     windowSize: app.config.get('windowSize'),

@@ -95,8 +95,9 @@ await Bun.build({
                 await fs.cp('./drizzle', `${buildSubDir}/drizzle`, { recursive: true });
                 await fs.cp(`./vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, `${buildSubDir}/vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, { recursive: true });
                 await fs.cp(path.join(`node_modules/webview-bun/build/`, webviewLib), path.join(buildSubDir, webviewLib));
-                await fs.cp(`node_modules/@kmamal/sdl/dist`, buildSubDir, { recursive: true, errorOnExist: false });
                 await fs.cp(`node_modules/7zip-bin/${zipNodePath}/${process.arch}`, buildSubDir, { recursive: true, errorOnExist: false });
+                if (await fs.exists('bin/chromium'))
+                    await fs.cp('bin/chromium', `${buildSubDir}/bin/chromium`, { recursive: true, errorOnExist: false });
             });
         },
     }]

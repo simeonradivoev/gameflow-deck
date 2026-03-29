@@ -22,7 +22,7 @@ import UpdateStoreJob from "./jobs/update-store";
 import { getStoreFolder } from "./store/services/gamesService";
 import { PluginManager } from "./plugins/plugin-manager";
 import registerPlugins from "./plugins/register-plugins";
-import controls from '../controls';
+import controls from './controls/controls';
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,

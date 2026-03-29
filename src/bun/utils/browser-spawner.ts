@@ -3,7 +3,7 @@ import { ChildProcessWithoutNullStreams } from "node:child_process";
 import os from 'node:os';
 
 export type RunBrowserType = "chrome" | "chromium" | "firefox" | "edge";
-export type RunBrowserSource = "running" | "system" | "flatpak";
+export type RunBrowserSource = "running" | "system" | "flatpak" | "bundled";
 
 /**
  * Options for spawning a browser process.

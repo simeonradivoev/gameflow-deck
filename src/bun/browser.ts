@@ -2,7 +2,7 @@ import { killBrowser, spawnBrowser } from './utils/browser-spawner';
 import { BrowserParams, BuildParams } from './utils/browser-params';
 import os from 'node:os';
 import { EventEmitter } from 'node:stream';
-import { dlopen, FFIType } from "bun:ffi";
+import { dlopen, FFIType, Pointer } from "bun:ffi";
 
 export default async function init (events: EventEmitter, forceBrowser: boolean, params: BrowserParams)
 {
@@ -17,6 +17,29 @@ export default async function init (events: EventEmitter, forceBrowser: boolean,
         } catch (error)
         {
             await runBrowser(events, params);
+        }
+    }
+}
+
+function focusWindow (id: Pointer)
+{
+    if (process.platform === 'win32')
+    {
+        const user32 = dlopen("user32.dll", {
+            SetForegroundWindow: { args: [FFIType.ptr], returns: FFIType.bool },
+            ShowWindow: { args: [FFIType.ptr, FFIType.i32], returns: FFIType.bool },
+            BringWindowToTop: { args: [FFIType.ptr], returns: FFIType.bool },
+            keybd_event: { args: [FFIType.u8, FFIType.u8, FFIType.u32, FFIType.ptr], returns: FFIType.void },
+        });
+
+        const SW_RESTORE = 9;
+
+        if (id)
+        {
+            user32.symbols.ShowWindow(id, SW_RESTORE);
+            user32.symbols.keybd_event(0, 0, 0, null); // fake input event
+            user32.symbols.BringWindowToTop(id);
+            user32.symbols.SetForegroundWindow(id);
         }
     }
 }
@@ -73,25 +96,7 @@ async function runWebview (events: EventEmitter, params: BrowserParams)
         events.on('exitapp', handleExit);
         events.on('focus', () =>
         {
-            if (process.platform === 'win32')
-            {
-                const user32 = dlopen("user32.dll", {
-                    SetForegroundWindow: { args: [FFIType.ptr], returns: FFIType.bool },
-                    ShowWindow: { args: [FFIType.ptr, FFIType.i32], returns: FFIType.bool },
-                    BringWindowToTop: { args: [FFIType.ptr], returns: FFIType.bool },
-                    keybd_event: { args: [FFIType.u8, FFIType.u8, FFIType.u32, FFIType.ptr], returns: FFIType.void },
-                });
-
-                const SW_RESTORE = 9;
-
-                if (pointer)
-                {
-                    user32.symbols.ShowWindow(pointer, SW_RESTORE);
-                    user32.symbols.keybd_event(0, 0, 0, null); // fake input event
-                    user32.symbols.BringWindowToTop(pointer);
-                    user32.symbols.SetForegroundWindow(pointer);
-                }
-            }
+            focusWindow(pointer);
         });
     });
 }

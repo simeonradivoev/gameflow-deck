@@ -38,11 +38,6 @@
       "label": "Start Dev (Hot Reload)",
       "type": "shell",
       "command": "bun run dev:hmr",
-      "options": {
-        "env": {
-          "FORCE_BROWSER": "false"
-        }
-      },
       "isBackground": true,
       "problemMatcher": [],
       "presentation": {

@@ -39,7 +39,8 @@
     "build:dev:appimage": "bun run build && bun run ./scripts/build-appimage.ts",
     "version:generate": "standard-version --sign",
     "package:Linux": "bun run build:prod:appimage",
-    "package:Windows": "bun run build:prod"
+    "package:Windows": "bun run build:prod",
+    "download:chromium": "bun scripts/download-chromium.ts --out=./bin/chromium"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",
@@ -47,7 +48,6 @@
     "@elysiajs/cors": "^1.4.1",
     "@elysiajs/eden": "^1.4.6",
     "@jimp/wasm-webp": "^1.6.0",
-    "@kmamal/sdl": "^0.11.13",
     "cheerio": "^1.2.0",
     "conf": "^15.0.2",
     "drizzle-orm": "^0.45.1",

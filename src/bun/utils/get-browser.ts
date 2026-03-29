@@ -1,9 +1,10 @@
 import { spawnSync } from "bun";
 import { platform } from "node:os";
 import { RunBrowserType } from "./browser-spawner";
+import path from 'node:path';
 
 export type GetBrowserType = "chrome" | "chromium" | "firefox";
-export type GetBrowserSource = "running" | "system" | "flatpak";
+export type GetBrowserSource = "running" | "system" | "flatpak" | "bundled";
 
 /**
  * Browser discovery priority configuration
@@ -12,6 +13,7 @@ interface BrowserPriorityConfig
 {
   /** Include currently running browser processes in search */
   includeRunning?: boolean;
+  includeBundled?: boolean;
   /** Browser types to search for, in priority order */
   browserOrder?: GetBrowserType[];
   /** Include system default browser on Windows */
@@ -31,6 +33,27 @@ interface BrowserResult
   type: GetBrowserType;
   /** Source of discovery (running process, system installation, or flatpak) */
   source: GetBrowserSource;
+}
+
+const PLATFORM_MAP: Record<string, string> = {
+  linux: "linux",
+  win32: "windows",
+  darwin: 'macos'
+};
+
+const ARCH_MAP: Record<string, Record<string, string>> = {
+  linux: { x64: "x86_64", arm64: "arm64" },
+  darwin: { x64: "x86_64", arm64: "arm64" },
+  win32: { x64: "x64", arm64: "arm64" },
+};
+
+/** The expected binary path per platform after extraction */
+function getBundledBinaryPath (outDir: string, version: string, platform: string, arch: string): string
+{
+  const subFolder = `ungoogled-chromium_${version}_${PLATFORM_MAP[platform]}_${ARCH_MAP[platform][arch]}`;
+  if (platform === "linux") return path.join(outDir, subFolder, "chrome");
+  if (platform === "darwin") return path.join(outDir, "Chromium.app");
+  return path.join(outDir, subFolder, "chrome.exe");
 }
 
 /**
@@ -63,12 +86,24 @@ export async function getBrowserPath (config?: BrowserPriorityConfig): Promise<B
   // Default configuration
   const {
     includeRunning = true,
+    includeBundled = true,
     browserOrder = ["firefox", "chrome", "chromium"],
     includeSystemDefault = true,
     includeFlatpak = true
   } = config || {};
 
   const currentPlatform = platform();
+
+  // Check bundled
+  if (includeBundled)
+  {
+    const getVerstion = await Bun.file('./bin/chromium/.chromium-version').text();
+    const binPath = getBundledBinaryPath("./bin/chromium", getVerstion, process.platform, process.arch);
+    if (await Bun.file(binPath).exists())
+    {
+      return { path: binPath, type: "chromium", source: "bundled" };
+    }
+  }
 
   // 1. Check for currently running browser process
   if (includeRunning)
