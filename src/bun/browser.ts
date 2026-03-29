@@ -2,6 +2,7 @@ import { killBrowser, spawnBrowser } from './utils/browser-spawner';
 import { BrowserParams, BuildParams } from './utils/browser-params';
 import os from 'node:os';
 import { EventEmitter } from 'node:stream';
+import { dlopen, FFIType } from "bun:ffi";
 
 export default async function init (events: EventEmitter, forceBrowser: boolean, params: BrowserParams)
 {
@@ -31,8 +32,6 @@ async function runWebview (events: EventEmitter, params: BrowserParams)
         config.WINDOW_HEIGHT = String(params.windowSize?.height);
     }
     const webviewWorker = new Worker(webviewPath, {
-        smol: true,
-        ref: false,
         env: {
             ...config,
             ...process.env as any
@@ -41,13 +40,14 @@ async function runWebview (events: EventEmitter, params: BrowserParams)
 
     return new Promise((resolve, reject) =>
     {
-
         const handleExit = () =>
         {
             resolve(true);
             console.log("Terminating Webview Worker");
             webviewWorker.terminate();
         };
+
+        let pointer: any = undefined;
 
         webviewWorker.addEventListener('error', e =>
         {
@@ -64,10 +64,35 @@ async function runWebview (events: EventEmitter, params: BrowserParams)
             {
                 console.log("Webview Destroyed");
                 resolve(true);
+            } else if (e.data.type === 'pointer')
+            {
+                pointer = e.data.data;
             }
         });
 
         events.on('exitapp', handleExit);
+        events.on('focus', () =>
+        {
+            if (process.platform === 'win32')
+            {
+                const user32 = dlopen("user32.dll", {
+                    SetForegroundWindow: { args: [FFIType.ptr], returns: FFIType.bool },
+                    ShowWindow: { args: [FFIType.ptr, FFIType.i32], returns: FFIType.bool },
+                    BringWindowToTop: { args: [FFIType.ptr], returns: FFIType.bool },
+                    keybd_event: { args: [FFIType.u8, FFIType.u8, FFIType.u32, FFIType.ptr], returns: FFIType.void },
+                });
+
+                const SW_RESTORE = 9;
+
+                if (pointer)
+                {
+                    user32.symbols.ShowWindow(pointer, SW_RESTORE);
+                    user32.symbols.keybd_event(0, 0, 0, null); // fake input event
+                    user32.symbols.BringWindowToTop(pointer);
+                    user32.symbols.SetForegroundWindow(pointer);
+                }
+            }
+        });
     });
 }
 

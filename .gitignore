@@ -27,3 +27,5 @@ downloads
 .flatpak-builder
 gameflow-deck.code-workspace
 .env.local
+src/tests/mock-roms/db.sqlite
+src/tests/mock-config

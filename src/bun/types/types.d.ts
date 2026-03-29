@@ -28,4 +28,5 @@ declare interface AppEventMap
 {
     exitapp: [];
     notification: [FrontendNotification];
+    focus: [];
 }

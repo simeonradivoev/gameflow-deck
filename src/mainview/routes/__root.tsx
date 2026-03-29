@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { SystemInfoContext } from "../scripts/contexts";
 import { SystemInfoType } from "@/shared/constants";
 import { systemApi } from "../scripts/clientApi";
+import AppCommunication from "../components/AppCommunication";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
@@ -34,23 +35,11 @@ function RootComponent ()
 
   }, [theme]);
 
-  const [systemInfo, setSystemInfo] = useState<SystemInfoType | undefined>();
-  useEffect(() =>
-  {
-    const sub = systemApi.api.system.info.system.subscribe();
-    sub.subscribe(({ data }) =>
-    {
-      setSystemInfo(data);
-    });
-
-    document.documentElement.dataset.loaded = "true";
-  }, []);
-
   return (
     <div data-device={isMobile ? 'mobile' : ''} data-active-control={control} className="w-screen h-screen overflow-hidden">
-      <SystemInfoContext value={systemInfo}>
+      <AppCommunication>
         <Outlet />
-      </SystemInfoContext>
+      </AppCommunication>
       <Notifications />
       <Toaster containerStyle={{ viewTimelineName: 'toasters', viewTransitionName: 'notifications' }} />
       {/*import.meta.env.DEV && !isMobile &&

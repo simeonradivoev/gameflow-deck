@@ -22,10 +22,12 @@ import UpdateStoreJob from "./jobs/update-store";
 import { getStoreFolder } from "./store/services/gamesService";
 import { PluginManager } from "./plugins/plugin-manager";
 import registerPlugins from "./plugins/register-plugins";
+import controls from '../controls';
 
 export const config = new Conf<SettingsType>({
     projectName: projectPackage.name,
     projectSuffix: 'bun',
+    cwd: process.env.CONFIG_CWD,
     schema: Object.fromEntries(Object.entries(SettingsSchema.shape).map(([key, schema]) => [key, schema.toJSONSchema() as any])) as any,
     defaults: SettingsSchema.parse({
         downloadPath: path.join(os.homedir(), "gameflow"),
@@ -35,6 +37,7 @@ export const config = new Conf<SettingsType>({
 export const customEmulators = new Conf<Record<string, string>>({
     projectName: projectPackage.name,
     projectSuffix: 'bun',
+    cwd: process.env.CONFIG_CWD,
     configName: 'custom-emulators',
     rootSchema: {
         "type": "object",
@@ -67,6 +70,7 @@ registerPlugins(plugins);
 export const events = new EventEmitter<AppEventMap>();
 config.onDidChange('downloadPath', () => reloadDatabase());
 taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
+await controls();
 
 export async function cleanup ()
 {

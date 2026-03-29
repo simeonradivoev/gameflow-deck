@@ -73,10 +73,6 @@ export async function getEmulatorsForSystem (systemSlug: string)
 export async function getValidLaunchCommands (data: {
     systemSlug: string;
     gamePath: string;
-    customEmulatorConfig: {
-        get: (id: string) => string | undefined,
-        has: (id: string) => boolean,
-    };
 }): Promise<CommandEntry[]>
 {
 

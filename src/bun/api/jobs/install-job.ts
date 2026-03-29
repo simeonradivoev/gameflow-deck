@@ -1,5 +1,4 @@
 import { IJob, JobContext } from "../task-queue";
-import { mkdir } from 'node:fs/promises';
 import { and, eq, or } from 'drizzle-orm';
 import fs from 'node:fs/promises';
 import * as schema from "@schema/app";
@@ -11,11 +10,10 @@ import * as igdb from 'ts-igdb-client';
 import secrets from "../secrets";
 import { simulateProgress } from "@/bun/utils";
 import { Downloader } from "@/bun/utils/downloader";
-import _7z from '7zip-min';
+import Seven from 'node-7z';
 import z from "zod";
 import { checkFiles } from "../games/services/utils";
 import { ensureDir } from "fs-extra";
-import { getAuthToken } from "@/clients/romm/core/auth.gen";
 
 interface JobConfig
 {
@@ -105,9 +103,19 @@ export class InstallJob implements IJob<never, InstallJobStates>
                 const downloadedFiles = await downloader.start();
                 if (info.extract_path && downloadedFiles)
                 {
+                    let progress = 0;
+                    const progressDelta = 1 / downloadedFiles.length;
                     for (const path of downloadedFiles)
                     {
-                        await _7z.unpack(path, info.extract_path);
+                        const extractPath = info.extract_path;
+                        await new Promise((resolve, reject) =>
+                        {
+                            const seven = Seven.extractFull(path, extractPath, { $bin: process.env.ZIP7_PATH, $progress: true });
+                            seven.on('progress', p => cx.setProgress(progress + p.percent * progressDelta, "extract"));
+                            seven.on('error', e => reject(e));
+                            seven.on('end', () => resolve(true));
+                        });
+                        progress += progressDelta * 100;
                     }
                 }
             }

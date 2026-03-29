@@ -1,19 +1,25 @@
 import { expect, test } from 'bun:test';
+import { resolve } from 'node:path';
+import './preload';
 
 test("uses custom emulator", async () =>
 {
-    const { getValidLaunchCommands: getLaunchCommands } = await import('../bun/api/games/services/launchGameService');
+    const { customEmulators } = await import('@/bun/api/app');
+    customEmulators.set('PCSX2', resolve("./src/tests/mock-roms/mock-emulator.exe"));
+
+    const { getValidLaunchCommands: getLaunchCommands } = await import('@/bun/api/games/services/launchGameService');
     const commands = await getLaunchCommands({
         systemSlug: 'ps2',
-        gamePath: './src/tests/mock-roms/mock-rom.iso',
-        customEmulatorConfig: new Map([['PCSX2', "./src/tests/mock-roms/pcsx2.exe"]])
+        gamePath: './mock-rom.iso'
     });
 
     expect(commands)
         .toSatisfy((d) =>
-            !!d?.find(c =>
-                c?.command.includes("./src/tests/mock-roms/mock-rom.iso") &&
-                c.command.includes("./src/tests/mock-roms/pcsx2.exe")
-            )
-        );
+        {
+            const validCommand = d.find(c =>
+                c?.command.includes("mock-rom.iso") &&
+                c.command.includes("mock-emulator.exe")
+            );
+            return !!validCommand;
+        });
 });

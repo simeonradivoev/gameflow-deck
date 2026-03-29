@@ -26,13 +26,30 @@ if (process.env.TARGET)
     compileOption.target = process.env.TARGET as any;
 }
 
-let webviewLib = "libwebview.dll";
-if (process.platform === 'linux' && system.arch === 'x64')
-    webviewLib = "libwebview-x64.so";
-if (process.platform === 'linux' && system.arch === 'arm64')
-    webviewLib = "libwebview-arm64.so";
-if (process.platform === 'darwin')
-    webviewLib = "libwebview-arm64.dylib";
+
+let zip: string | undefined;
+let zipNodePath: string | undefined;
+let webviewLib: string | undefined;
+switch (process.platform)
+{
+    case "win32":
+        zip = "7za.exe";
+        zipNodePath = "win";
+        webviewLib = `libwebview.dll`;
+        break;
+    case "linux":
+        zip = "7za";
+        zipNodePath = 'linux';
+        webviewLib = `libwebview-${system.arch}.so`;
+        break;
+    case "darwin":
+        zip = "7za";
+        zipNodePath = 'mac';
+        webviewLib = `libwebview-${system.arch}.dylib`;
+        break;
+}
+
+if (!webviewLib) throw new Error("Could not find webviewlib");
 
 let webviewLibPath = '.';
 if (process.env.APPIMAGE === "true")
@@ -47,6 +64,7 @@ await Bun.build({
     define: {
         "process.env.IS_BINARY": "true",
         "process.env.WEBVIEW_PATH": `${webviewLibPath}/${webviewLib}`,
+        "process.env.ZIP7_PATH": `"${zip}"`
     },
     minify: process.env.NODE_ENV !== 'development',
     sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : "linked",
@@ -77,6 +95,8 @@ await Bun.build({
                 await fs.cp('./drizzle', `${buildSubDir}/drizzle`, { recursive: true });
                 await fs.cp(`./vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, `${buildSubDir}/vendors/es-de/emulators.${system.platform}.${system.arch}.sqlite`, { recursive: true });
                 await fs.cp(path.join(`node_modules/webview-bun/build/`, webviewLib), path.join(buildSubDir, webviewLib));
+                await fs.cp(`node_modules/@kmamal/sdl/dist`, buildSubDir, { recursive: true, errorOnExist: false });
+                await fs.cp(`node_modules/7zip-bin/${zipNodePath}/${process.arch}`, buildSubDir, { recursive: true, errorOnExist: false });
             });
         },
     }]

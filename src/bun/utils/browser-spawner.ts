@@ -1,4 +1,5 @@
 import { $, type Subprocess } from "bun";
+import { ChildProcessWithoutNullStreams } from "node:child_process";
 import os from 'node:os';
 
 export type RunBrowserType = "chrome" | "chromium" | "firefox" | "edge";
@@ -163,7 +164,7 @@ export async function spawnBrowser ({
     return processSub;
 }
 
-export async function killBrowser (browser: Subprocess)
+export async function killBrowser (browser: Subprocess | ChildProcessWithoutNullStreams)
 {
     if (os.platform() === 'linux')
     {

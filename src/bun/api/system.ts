@@ -62,33 +62,46 @@ export const system = new Elysia({ prefix: '/api/system' })
         return new Response(buildNotificationsStream());
     })
     .ws('/info/system', {
-        response: SystemInfoSchema,
+        response: z.discriminatedUnion('type', [
+            z.object({ type: z.literal('info'), data: SystemInfoSchema }),
+            z.object({ type: z.literal('focus') })
+        ]),
         async open (ws)
         {
             const battery = await si.battery();
             const wifi = await si.wifiConnections();
             const bluetooth = await si.bluetoothDevices();
             ws.send({
-                battery: battery,
-                wifiConnections: wifi,
-                bluetoothDevices: bluetooth
+                type: 'info',
+                data: {
+                    battery: battery,
+                    wifiConnections: wifi,
+                    bluetoothDevices: bluetooth
+                }
             }, true);
 
+            const handleFocus = () => ws.send({ type: 'focus' });
+            events.on('focus', handleFocus);
+            (ws.data as any).dispose = [() => events.removeListener('focus', handleFocus)];
             (ws.data as any).observer = setInterval(async () =>
             {
                 const battery = await si.battery();
                 const wifi = await si.wifiConnections();
                 const bluetooth = await si.bluetoothDevices();
                 ws.send({
-                    battery: battery,
-                    wifiConnections: wifi,
-                    bluetoothDevices: bluetooth
+                    type: 'info',
+                    data: {
+                        battery: battery,
+                        wifiConnections: wifi,
+                        bluetoothDevices: bluetooth
+                    }
                 }, true);
             }, 1000 * 30);
         },
         close (ws)
         {
             clearInterval((ws.data as any).observer);
+            (ws.data as any).dispose.forEach((dispose: any) => dispose());
         }
     })
     .get('/drives', async () =>

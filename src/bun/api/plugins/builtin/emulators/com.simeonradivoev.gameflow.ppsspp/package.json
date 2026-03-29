@@ -1,0 +1,14 @@
+{
+    "name": "com.simeonradivoev.gameflow.ppsspp",
+    "displayName": "PPSSPP Integration",
+    "version": "0.0.1",
+    "description": "PPSSPP Emulator Integration",
+    "main": "./ppsspp.ts",
+    "icon": "https://www.ppsspp.org/static/img/platform/ppsspp-icon.png",
+    "keywords": [
+        "integration",
+        "emulator",
+        "psp",
+        "ppsspp"
+    ]
+}

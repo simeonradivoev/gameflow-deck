@@ -6,7 +6,7 @@ import { Glob } from "bun";
 import { config } from "../app";
 import path from 'node:path';
 import { getOrCachedGithubRelease } from "../cache";
-import _7z from '7zip-min';
+import Seven from 'node-7z';
 import fs from "node:fs/promises";
 import { Downloader } from "@/bun/utils/downloader";
 import { move } from "fs-extra";
@@ -85,7 +85,13 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
                     if (await downloader.start() && destinationPaths[0])
                     {
                         let destinationPath = destinationPaths[0];
-                        await _7z.unpack(destinationPath, emulatorsFolder);
+                        await new Promise((resolve, reject) =>
+                        {
+                            const seven = Seven.extractFull(destinationPath, emulatorsFolder, { $bin: process.env.ZIP7_PATH, $progress: true });
+                            seven.on('progress', p => context.setProgress(p.percent, "extract"));
+                            seven.on('error', e => reject(e));
+                            seven.on('end', () => resolve(true));
+                        });
                         await fs.rm(destinationPath, { recursive: true });
 
                         // check if 1 root folder we need to get rid of

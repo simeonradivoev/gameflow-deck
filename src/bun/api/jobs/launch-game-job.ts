@@ -4,7 +4,8 @@ import { ActiveGameSchema, ActiveGameType } from "@/bun/types/typesc.schema";
 import { db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq, sql } from "drizzle-orm";
-import { spawn } from 'node:child_process';
+import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
+import { killBrowser } from "@/bun/utils/browser-spawner";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">
 {
@@ -39,26 +40,42 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
             autoValidCommand: this.validCommand,
             game: { source: this.gameSource, id: this.gameId }
         });
-        const command = commandArgs ? this.validCommand.metadata.emulatorBin ?? this.validCommand.command : this.validCommand.command;
 
         await new Promise((resolve, reject) =>
         {
-            const game = spawn(command, commandArgs, {
-                shell: true,
-                cwd: this.validCommand.startDir,
-                signal: context.abortSignal
-            });
+            let game: Bun.Subprocess;
+            if (!commandArgs)
+            {
+                game = Bun.spawn(this.validCommand.command.split(' '), {
+                    cwd: this.validCommand.startDir,
+                    windowsVerbatimArguments: true,
+                    signal: context.abortSignal
+                });
 
-            game.stdout.on('data', data => console.log(data));
-            game.on('close', (code) =>
+                game.exited.then(resolve).catch(e =>
+                {
+                    console.error(e);
+                    reject(e);
+                });
+            }
+            else if (this.validCommand.metadata.emulatorBin)
             {
-                resolve(code);
-            });
-            game.on('error', e =>
+                game = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs], {
+                    cwd: this.validCommand.startDir,
+                    windowsVerbatimArguments: true,
+                    signal: context.abortSignal
+                });
+
+                game.exited.then(resolve).catch(e =>
+                {
+                    console.error(e);
+                    reject(e);
+                });
+            } else
             {
-                console.error(e);
-                reject(e);
-            });
+                reject(new Error("No Emulator Bin"));
+                return;
+            }
 
             this.activeGame = {
                 process: game,

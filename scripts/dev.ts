@@ -2,6 +2,8 @@ import EventEmitter from "events";
 import browser from '../src/bun/browser';
 import { tmpdir } from "os";
 import path from "path";
+import { createInterface } from "readline";
+import { Readable } from "stream";
 const events = new EventEmitter();
 const abortController = new AbortController();
 
@@ -12,23 +14,16 @@ let retries = 0;
 
 function spawnServer ()
 {
-    return Bun.spawn(["bun", '--watch', '--install=fallback', "run", "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
+    const s = Bun.spawn(["bun", '--watch', '--install=fallback', "run", "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
         env: {
             ...process.env,
             HEADLESS: "true",
         },
-        stdout: "inherit",
+        stdout: "pipe",
         stderr: "inherit",
         stdin: "pipe",
         signal: abortController.signal,
         killSignal: 'SIGUSR1',
-        ipc (message, subprocess, handle)
-        {
-            if (message.type === 'exitapp')
-            {
-                events.emit('exitapp');
-            }
-        },
         onExit (subprocess, exitCode, signalCode)
         {
             if (exitCode === 1 && retries <= 3)
@@ -42,6 +37,18 @@ function spawnServer ()
 
         }
     });
+    const rl = createInterface({ input: Readable.fromWeb(s.stdout as any) });
+    rl.on('line', e =>
+    {
+        if (e === 'focus')
+        {
+            events.emit('focus');
+        } else
+        {
+            console.log(e);
+        }
+    });
+    return s;
 }
 
 function spawnBrowser ()

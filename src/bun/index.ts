@@ -38,11 +38,15 @@ if (process.env.HEADLESS)
     }
   });
 
-  // Called by user
+  // Using stdout for communication as ipc doesn't seem to work with dev.ts script
   app.events.on('exitapp', () =>
   {
-    process.send?.({ type: 'exitapp' });
+    process.stdout.write('exitapp\n');
     cleanup();
+  });
+  app.events.on('focus', () =>
+  {
+    process.stdout.write("focus\n");
   });
 } else
 {
