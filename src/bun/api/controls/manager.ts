@@ -1,19 +1,23 @@
 import { Gamepad } from "./gamepad";
 import { platform } from "os";
+import { Keybaord } from "./keyboard";
 
 export class GamepadManager
 {
     private gamepads: Gamepad[] = [];
+    private keyboard: Keybaord;
     private scanInterval: any;
 
     constructor()
     {
         this.scanGamepads();
+        this.keyboard = new Keybaord();
+        this.keyboard.init();
         // scan every second for new/disconnected devices
-        this.scanInterval = setInterval(() => this.scanGamepads(), 1000);
+        this.scanInterval = setInterval(async () => this.scanGamepads(), 1000);
     }
 
-    private scanGamepads ()
+    private async scanGamepads ()
     {
         const max = platform() === "win32" ? 4 : 8; // max controllers
         for (let i = 0; i < max; i++)
@@ -23,6 +27,7 @@ export class GamepadManager
                 try
                 {
                     const pad = new Gamepad(i);
+                    await pad.init();
                     if (pad.update())
                     {
                         this.gamepads[i] = pad;
@@ -40,6 +45,11 @@ export class GamepadManager
                 }
             }
         }
+    }
+
+    getKeyboard ()
+    {
+        return this.keyboard;
     }
 
     getGamepads ()

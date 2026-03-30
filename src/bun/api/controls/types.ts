@@ -5,6 +5,21 @@ export type ButtonName =
     | "START" | "SELECT"
     | "L3" | "R3";
 
+export type KeyCode =
+    | "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight"
+    | "KeyW" | "KeyA" | "KeyS" | "KeyD"
+    | "Enter" | "Escape" | "Space" | "End" | "LeftShift" | "RightShift" | "LeftControl" | "RightControl" | "LeftAlt" | "RightAlt";
+
+export interface KeyboardState
+{
+    keys: Record<KeyCode, boolean>;
+}
+
+export interface IKeyboardBackend
+{
+    update (): KeyboardState;
+}
+
 export interface Stick
 {
     x: number; // -1 → 1

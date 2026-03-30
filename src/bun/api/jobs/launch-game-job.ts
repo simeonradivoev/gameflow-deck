@@ -70,7 +70,6 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 // We have full control over launching integrated emulators better to use bun spawn
                 const bunGame = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs], {
                     cwd: this.validCommand.startDir,
-                    windowsVerbatimArguments: true,
                     signal: context.abortSignal
                 });
 
