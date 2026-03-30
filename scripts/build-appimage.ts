@@ -4,17 +4,12 @@ import fs from 'node:fs/promises';
 import { appBuilderPath, } from 'app-builder-bin';
 import path from 'node:path';
 import { ensureDir } from "fs-extra";
-import { rmdir } from "node:fs";
 
-// ─────────────────────────────────────────────
-// CONFIGURE THESE FOR YOUR APP
-// ─────────────────────────────────────────────
 const APP_DIR = process.env.BUILD_DIR ?? `./build/${process.platform}`;
 const BINARY_NAME = pkg.bin;
 const ICON = "./src/mainview/public/256x256.png";
 const DESKTOP = "./flatpak/com.simeonradivoev.gameflow-deck.desktop";
 const TMP_FOLDER = ".";
-// ─────────────────────────────────────────────
 
 const APP_NAME = pkg.displayName ?? pkg.name;
 const APP_ID = pkg.name;
@@ -30,6 +25,7 @@ await ensureDir("build");
 await fs.cp(`${APP_DIR}/.`, path.join(APPDIR, `usr`, 'share'), { recursive: true });
 await fs.rename(path.join(APPDIR, `usr`, 'share', BINARY_NAME), path.join(APPDIR, `usr`, 'bin', BINARY_NAME));
 await fs.rename(path.join(APPDIR, `usr`, 'share', `libwebview-${process.arch}.so`), path.join(APPDIR, `usr`, 'lib', `libwebview-${process.arch}.so`));
+await fs.rename(path.join(APPDIR, `usr`, 'share', `7za`), path.join(APPDIR, `usr`, 'bin', `7za`));
 
 await fs.writeFile(path.join(APPDIR, `${APP_ID}.desktop`), `[Desktop Entry]
 Version=${pkg.version}
@@ -94,4 +90,4 @@ await fs.rm(APPDIR, { recursive: true, force: true });
 await fs.rm(STAGE, { recursive: true, force: true });
 if (code !== 0) process.exit(code);
 
-console.log(`\n✅ Done!`);
+console.log(`\n Done!`);

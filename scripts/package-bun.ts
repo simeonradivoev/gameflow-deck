@@ -26,8 +26,8 @@ if (process.env.TARGET)
     compileOption.target = process.env.TARGET as any;
 }
 
-
 let zip: string | undefined;
+let zipPath: string = '';
 let zipNodePath: string | undefined;
 let webviewLib: string | undefined;
 switch (process.platform)
@@ -53,7 +53,10 @@ if (!webviewLib) throw new Error("Could not find webviewlib");
 
 let webviewLibPath = '.';
 if (process.env.APPIMAGE === "true")
+{
     webviewLibPath = `./usr/lib`;
+    zipPath = './usr/bin';
+}
 
 await Bun.build({
     entrypoints: ["./src/bun/index.ts", `./src/bun/webview/${system.platform}.ts`],
