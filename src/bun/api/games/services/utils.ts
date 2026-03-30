@@ -222,7 +222,7 @@ export async function checkFiles (files: DownloadFileEntry[], isArchive: boolean
     {
         // file is either zip or doesn't support sha checking 
         if (!f.sha1 || isArchive) return { ...f, exists: false, matches: false } satisfies LocalDownloadFileEntry;
-        const localPath = path.join(f.file_path, f.file_name);
+        const localPath = path.join(config.get('downloadPath'), f.file_path, f.file_name);
         if (await fs.exists(localPath))
         {
             if (f.size && f.size !== (await fs.stat(localPath)).size)

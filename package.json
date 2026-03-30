@@ -15,8 +15,8 @@
   "scripts": {
     "dev": "NODE_ENV=development bun run build:vite && conc 'bun run ./scripts/dev.ts'",
     "dev:hmr": "PUBLIC_ACCESS=true conc -k 'bun run hmr' 'bun run ./scripts/dev.ts'",
-    "dev:bun:hmr": "PUBLIC_ACCESS=true NODE_ENV=development conc 'bun run hmr' 'bun run --watch ./src/bun/index.ts",
-    "dev:bun": "NODE_ENV=development bun run build:vite && conc 'bun run ./src/bun/index.ts",
+    "dev:bun:hmr": "PUBLIC_ACCESS=true NODE_ENV=development conc 'bun run hmr' 'bun run --watch ./src/bun/index.ts'",
+    "dev:bun": "NODE_ENV=development bun run build:vite && conc 'bun run ./src/bun/index.ts'",
     "build:vite": "bun run --bun vite build",
     "build:prod:vite": "NODE_ENV=production bun run build:vite",
     "build:dev:vite": "NODE_ENV=development bun run build:vite",

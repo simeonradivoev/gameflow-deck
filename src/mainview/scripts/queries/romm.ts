@@ -1,8 +1,8 @@
 import { DefaultRommStaleTime, GameListFilterType, RommLoginDataSchema } from "@/shared/constants";
 import { rommApi, settingsApi } from "../clientApi";
-import { mutationOptions, queryOptions } from "@tanstack/react-query";
+import { mutationOptions, QueryFilters, queryOptions } from "@tanstack/react-query";
 import z from "zod";
-import { getCollectionApiCollectionsIdGetOptions, getCollectionsApiCollectionsGetOptions, getCurrentUserApiUsersMeGetOptions, statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
+import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
 
 export const allGamesQuery = (filter?: GameListFilterType) => queryOptions({
     queryKey: ['games', filter ?? 'all'],
@@ -146,4 +146,12 @@ export const gamesRecommendedBasedOnGameQuery = (source: string, id: string) => 
         if (error) throw error;
         return data;
     }
+});
+export const gameInvalidationQuery = (source: string, id: string): QueryFilters => ({
+    predicate (query)
+    {
+        if (query.queryKey[0] === 'games') return true;
+        if (query.queryKey.includes(source) && query.queryKey.includes(id)) return true;
+        return false;
+    },
 });

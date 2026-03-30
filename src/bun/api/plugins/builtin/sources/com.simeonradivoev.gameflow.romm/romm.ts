@@ -184,7 +184,7 @@ export default class RommIntegration implements PluginType
                 const file: DownloadFileEntry = {
                     url: new URL(`${config.get('rommAddress')}/api/romsfiles/${f.id}/content/${f.file_name}`),
                     file_name: f.file_name,
-                    file_path: path.join(config.get('downloadPath'), f.file_path),
+                    file_path: f.file_path,
                     size: f.file_size_bytes,
                     sha1: f.sha1_hash ?? undefined
                 };

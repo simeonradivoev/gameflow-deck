@@ -8,6 +8,7 @@ import configControlsFilePathLinux from './linux/controls.ini' with { type: 'fil
 import path from "node:path";
 import Mustache from "mustache";
 import { ensureDir } from "fs-extra";
+import { homedir } from "node:os";
 
 export default class PCSX2Integration implements PluginType
 {
@@ -38,13 +39,29 @@ export default class PCSX2Integration implements PluginType
                         break;
                 }
 
+                let ppssppPath = '';
+                if (process.platform === 'win32')
+                {
+                    ppssppPath = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'memstick', 'PSP', 'SYSTEM');
+                } else
+                {
+                    //TODO: Use way to set custom memstick path when they support it
+                    ensureDir(path.join(homedir(), '.config', 'ppsspp'));
+                    ppssppPath = path.join(homedir(), '.config', 'ppsspp', 'PSP', 'SYSTEM');
+                }
+
+                ensureDir(ppssppPath);
+
+                if (confPath)
+                {
+                    const configFileContents = await Bun.file(confPath).text();
+                    await Bun.write(path.join(ppssppPath, 'ppsspp.ini'), Mustache.render(configFileContents, {}));
+                }
+
                 if (controlsPath)
                 {
-                    const configFileContents = await Bun.file(controlsPath).text();
                     const controlsFileContents = await Bun.file(controlsPath).text();
-                    ensureDir(path.join(ctx.autoValidCommand.metadata.emulatorDir, 'memstick', 'PSP', 'SYSTEM'));
-                    await Bun.write(path.join(ctx.autoValidCommand.metadata.emulatorDir, 'memstick', 'PSP', 'SYSTEM', 'ppsspp.ini'), Mustache.render(configFileContents, {}));
-                    await Bun.write(path.join(ctx.autoValidCommand.metadata.emulatorDir, 'memstick', 'PSP', 'SYSTEM', 'controls.ini'), Mustache.render(controlsFileContents, {}));
+                    await Bun.write(path.join(ppssppPath, 'controls.ini'), Mustache.render(controlsFileContents, {}));
                 }
 
                 return args;

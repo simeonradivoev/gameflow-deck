@@ -67,9 +67,12 @@ function spawnBrowser ()
 }
 
 let server = spawnServer();
-spawnBrowser()?.then(async e =>
+if (!process.env.HEADLESS)
 {
-    console.log("Sending exit Signal to server");
-    await server.stdin.write('shutdown\n');
-    await server.stdin.flush();
-});
+    spawnBrowser()?.then(async e =>
+    {
+        console.log("Sending exit Signal to server");
+        await server.stdin.write('shutdown\n');
+        await server.stdin.flush();
+    });
+}

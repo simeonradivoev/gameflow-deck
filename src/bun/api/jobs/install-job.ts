@@ -31,7 +31,8 @@ export class InstallJob implements IJob<never, InstallJobStates>
     public gameId: string;
     public source: string;
     public config?: JobConfig;
-
+    // The local game ID of newly created entry, if successful
+    public localGameId?: number;
     public group = InstallJob.id;
 
     constructor(id: string, source: string, config?: JobConfig)
@@ -252,6 +253,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     })));
                 }
 
+                this.localGameId = id;
             });
         } else
         {

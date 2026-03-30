@@ -1,32 +1,38 @@
 // ./gamepad/index.ts
 
-import { platform } from "os";
-import { GamepadWindows } from "./windows";
-import { GamepadLinux } from "./linux";
+
 import type { IGamepadBackend, GamepadState } from "./types";
 
 export class Gamepad
 {
-    private backend: IGamepadBackend;
+    private index: number;
+    private backend: IGamepadBackend | undefined;
 
     constructor(index = 0)
     {
-        if (platform() === "win32")
+        this.index = index;
+    }
+
+    async init ()
+    {
+        if (process.platform === "win32")
         {
-            this.backend = new GamepadWindows(index);
+            const { GamepadWindows } = await import("./windows");
+            this.backend = new GamepadWindows(this.index);
         } else
         {
-            this.backend = new GamepadLinux(index);
+            const { GamepadLinux } = await import("./linux");
+            this.backend = new GamepadLinux(this.index);
         }
     }
 
     update (): GamepadState | null
     {
-        return this.backend.update();
+        return this.backend?.update() ?? null;
     }
 
     close ()
     {
-        this.backend.close?.();
+        this.backend?.close?.();
     }
 }

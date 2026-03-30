@@ -50,7 +50,7 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
             {
                 try
                 {
-                    const commands = await getValidLaunchCommands({ systemSlug: esPlatform.system, customEmulatorConfig: customEmulators, gamePath: localGame.path_fs });
+                    const commands = await getValidLaunchCommands({ systemSlug: esPlatform.system, gamePath: localGame.path_fs });
 
                     if (cores[esPlatform.system])
                     {
@@ -103,7 +103,8 @@ export default function buildStatusResponse ()
         response: z.discriminatedUnion('status', [
             z.object({ status: z.literal('error'), error: z.unknown() }),
             z.object({ status: z.literal('installed'), commands: z.array(z.any()), details: z.string().optional() }),
-            z.object({ status: z.literal(['refresh', 'queued']) }),
+            z.object({ status: z.literal('refresh'), localId: z.number().optional() }),
+            z.object({ status: z.literal(['queued']) }),
             z.object({ status: z.literal('playing'), details: z.string() }),
             z.object({ status: z.literal('install'), details: z.string() }),
             z.object({ status: z.literal('present'), details: z.string() }),
@@ -241,7 +242,7 @@ export default function buildStatusResponse ()
             {
                 if (data.id === installJobId)
                 {
-                    ws.send({ status: 'refresh' });
+                    ws.send({ status: 'refresh', localId: (data.job.job as InstallJob).localGameId });
                 } else if (data.job.job instanceof LaunchGameJob)
                 {
                     handleActiveExit({});

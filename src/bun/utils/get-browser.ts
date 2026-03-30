@@ -97,12 +97,17 @@ export async function getBrowserPath (config?: BrowserPriorityConfig): Promise<B
   // Check bundled
   if (includeBundled)
   {
-    const getVerstion = await Bun.file('./bin/chromium/.chromium-version').text();
-    const binPath = getBundledBinaryPath("./bin/chromium", getVerstion, process.platform, process.arch);
-    if (await Bun.file(binPath).exists())
+    const versionFile = Bun.file('./bin/chromium/.chromium-version');
+    if (await versionFile.exists())
     {
-      return { path: binPath, type: "chromium", source: "bundled" };
+      const getVerstion = await versionFile.text();
+      const binPath = getBundledBinaryPath("./bin/chromium", getVerstion, process.platform, process.arch);
+      if (await Bun.file(binPath).exists())
+      {
+        return { path: binPath, type: "chromium", source: "bundled" };
+      }
     }
+
   }
 
   // 1. Check for currently running browser process

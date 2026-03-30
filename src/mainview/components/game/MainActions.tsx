@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { useLocalStorage } from "usehooks-ts";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
 import { Clock, Download, EllipsisVertical, Import, PackageOpen, Play, TriangleAlert } from "lucide-react";
-import { installMutation, playMutation } from "@/mainview/scripts/queries/romm";
+import { gameInvalidationQuery, installMutation, playMutation } from "@/mainview/scripts/queries/romm";
 import ActionButton from "./ActionButton";
 
 export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
@@ -53,8 +53,17 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
 
             if (e.data.status === 'refresh')
             {
-                queryClient.invalidateQueries({ queryKey: ['game', data.id] });
-                Router.navigate({ to: '/game/$source/$id', params: { id: data.id, source: data.source }, replace: true });
+                const localId = e.data.localId;
+                queryClient.refetchQueries(gameInvalidationQuery(localId ? 'local' : data.source, localId ? String(localId) : data.id)).then(() =>
+                {
+                    if (localId)
+                    {
+                        Router.navigate({ to: '/game/$source/$id', params: { id: String(localId), source: 'local' }, replace: true });
+                    } else
+                    {
+                        Router.navigate({ to: '/game/$source/$id', params: { id: data.id, source: data.source }, replace: true });
+                    }
+                });
             } else if (e.data.status === 'error')
             {
                 const errorMessage = getErrorMessage(e.data.error);
@@ -171,12 +180,13 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
     }
 
     const { dialog: allCommandDialog, setOpen: showAllCommands } = useContextDialog('all-commands-dialog', {
-        content: <ContextList options={validCommands.map(c =>
+        content: <ContextList options={validCommands.map((c, i) =>
         {
             const commands: DialogEntry = {
                 id: String(c.id),
                 content: c.label ?? "",
                 type: 'primary',
+                selected: preferredCommand !== undefined ? preferredCommand === c.id : i === 0,
                 action (ctx)
                 {
                     setPreferredCommand(c.id);

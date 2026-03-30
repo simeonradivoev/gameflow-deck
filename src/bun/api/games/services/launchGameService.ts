@@ -1,13 +1,15 @@
 import path from 'node:path';
-import { which } from 'bun';
+import { Glob, which } from 'bun';
 import fs from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import * as schema from '@schema/emulators';
 import { eq } from 'drizzle-orm';
 import { config, customEmulators, emulatorsDb, taskQueue } from '../../app';
-import os from 'node:os';
+import os, { platform } from 'node:os';
 import { cores } from '../../emulatorjs/emulatorjs';
 import { LaunchGameJob } from '../../jobs/launch-game-job';
+import { EmulatorPackageType } from '@/shared/constants';
+import { getStoreEmulatorPackage, getStoreFolder } from '../../store/services/gamesService';
 
 export const varRegex = /%([^%]+)%/g;
 export const assignRegex = /(%\w+%)=(\S+) /g;
@@ -129,10 +131,22 @@ export async function getValidLaunchCommands (data: {
 
     function escapeWindowsArg (arg: string): string
     {
-        return `"${arg
-            .replace(/(\\*)"/g, '$1$1\\"')  // escape quotes
-            .replace(/(\\*)$/, '$1$1')      // escape trailing backslashes
-            }"`;
+        if (process.platform === 'win32')
+        {
+            return `"${arg
+                .replace(/(\\*)"/g, '$1$1\\"')  // escape quotes
+                .replace(/(\\*)$/, '$1$1')      // escape trailing backslashes
+                }"`;
+        } else
+        {
+            if (arg.includes(' '))
+            {
+                return `"${arg}"`;
+            } else
+            {
+                return arg;
+            }
+        }
     }
 
     const formattedCommands = await Promise.all(system.commands
@@ -196,7 +210,10 @@ export async function getValidLaunchCommands (data: {
                     return [
                         [value, validExec ? validExec.binPath : undefined] as [string, string | undefined],
                         [`%EMUSOURCE%`, validExec?.type] as [string, string | undefined],
-                        ['%EMUDIR%', validExec?.rootPath ?? (validExec ? escapeWindowsArg(path.dirname(validExec.binPath)) : undefined)] as [string, string | undefined]];
+                        ['%EMUDIR%', validExec?.rootPath ?? (validExec ? escapeWindowsArg(path.dirname(validExec.binPath)) : undefined)] as [string, string | undefined],
+                        ['%EMUDIRRAW%', validExec?.rootPath ?? (validExec ? path.dirname(validExec.binPath) : undefined)] as [string, string | undefined]
+                    ];
+
                 }
 
                 const key = value[0].substring(1, value.length - 1);
@@ -233,9 +250,9 @@ export async function getValidLaunchCommands (data: {
                 valid: !invalid, emulator,
                 emulatorSource: vars['%EMUSOURCE%'] as any,
                 metadata: {
-                    romPath: staticVars['%ROM%'],
+                    romPath: validFiles[0],
                     emulatorBin: varList.flatMap(l => l).find(v => v[0].includes('%EMULATOR_'))?.[1],
-                    emulatorDir: vars['%EMUDIR%']
+                    emulatorDir: vars['%EMUDIRRAW%']
                 }
             } satisfies CommandEntry;
         }));
@@ -253,7 +270,7 @@ export async function findExecsByName (emulatorName: string)
     return findExecs(emulatorName, emulator);
 }
 
-export function findStoreEmulatorExec (id: string, emulator?: { systempath: string[]; }): EmulatorSourceEntryType | undefined
+export async function findStoreEmulatorExec (id: string, emulator?: { systempath: string[]; }): Promise<EmulatorSourceEntryType | undefined>
 {
     const storeEmulatorFolder = path.join(config.get('downloadPath'), 'emulators', id);
     const storeExecName = emulator?.systempath.find(name => existsSync(path.join(storeEmulatorFolder, name)));
@@ -261,6 +278,30 @@ export function findStoreEmulatorExec (id: string, emulator?: { systempath: stri
     {
         return { binPath: path.join(storeEmulatorFolder, storeExecName), rootPath: storeEmulatorFolder, exists: true, type: "store" };
     }
+
+    const storeEmulator = await getStoreEmulatorPackage(id);
+    if (storeEmulator?.downloads)
+    {
+        const storeExecName = (await Promise.all(storeEmulator.downloads[`${process.platform}:${process.arch}`].map(async dl =>
+        {
+            // glob file search causes issues so do manual search
+            const glob = new Glob(dl.pattern);
+            if (await fs.exists(storeEmulatorFolder))
+            {
+                const files = (await fs.readdir(storeEmulatorFolder))
+                    .filter(f => glob.match(f));
+                return files.map(f => path.join(storeEmulatorFolder, f));
+            }
+            return [];
+
+        }))).flatMap(f => f);
+
+        if (storeExecName.length > 0)
+        {
+            return { binPath: storeExecName[0], rootPath: storeEmulatorFolder, exists: true, type: 'store' };
+        }
+    }
+
 
     return undefined;
 }
@@ -276,7 +317,7 @@ export async function findExecs (id: string, emulator?: { winregistrypath: strin
 
     if (emulator && emulator.systempath.length > 0)
     {
-        const storePath = findStoreEmulatorExec(id, emulator);
+        const storePath = await findStoreEmulatorExec(id, emulator);
         if (storePath) execs.push(storePath);
     }
 

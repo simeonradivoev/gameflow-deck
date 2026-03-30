@@ -1,9 +1,8 @@
 import { $, sleep } from 'bun';
 import path from 'node:path';
-import { createHash } from "node:crypto";
-import { createReadStream } from "node:fs";
 import { SettingsType } from '@/shared/constants';
 import { config } from './api/app';
+import fs from 'node:fs/promises';
 
 export function checkRunning (pid: number)
 {
@@ -145,5 +144,32 @@ export async function simulateProgress (setProgress: (p: number) => void, signal
         setProgress(i * 10);
         if (signal && signal.aborted) return;
         await sleep(1000);
+    }
+}
+
+export async function moveAllFiles (srcDir: string, destDir: string)
+{
+    await fs.mkdir(destDir, { recursive: true });
+
+    const entries = await fs.readdir(srcDir);
+    for (const entry of entries)
+    {
+        const srcPath = path.join(srcDir, entry);
+        const destPath = path.join(destDir, entry);
+
+        const stats = await fs.stat(srcPath);
+        if (stats.isDirectory())
+        {
+            await moveAllFiles(srcPath, destPath);
+            await fs.rmdir(srcPath); // remove empty directory
+        } else
+        {
+            await fs.rename(srcPath, destPath).catch(async () =>
+            {
+                // fallback to copy+delete if rename fails
+                await fs.copyFile(srcPath, destPath);
+                await fs.unlink(srcPath);
+            });
+        }
     }
 }

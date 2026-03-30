@@ -7,17 +7,22 @@ import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts"
 import { ContextDialogContext } from "../scripts/contexts";
 import { FOCUS_KEYS } from "../scripts/types";
 
-export function ContextList (data: { options?: DialogEntry[]; className?: string; showCloseButton?: boolean; })
+export function ContextList (data: {
+    options?: DialogEntry[];
+    className?: string;
+    showCloseButton?: boolean;
+    disableCloseButton?: boolean;
+})
 {
     const context = useContext(ContextDialogContext);
     return <ul className={twMerge("list gap-1", data.className)}>
         {data.options?.map(o => <OptionElement className="list-row" key={o.id} {...o} />)}
         <div className="divider m-0 "></div>
-        {data.showCloseButton !== false && <OptionElement className="list-row" type='accent' icon={<X />} action={() => context.close()} id="close-context-dialog" content="Close" />}
+        {data.showCloseButton !== false && <OptionElement disabled={data.disableCloseButton} className="list-row" type='accent' icon={<X />} action={() => context.close()} id="close-context-dialog" content="Close" />}
     </ul>;
 }
 
-export function OptionElement (data: DialogEntry & { onFocus?: () => void; className?: string; })
+export function OptionElement (data: DialogEntry & { onFocus?: () => void; className?: string; disabled?: boolean; })
 {
     const context = useContext(ContextDialogContext);
     const handleFocus = () =>
@@ -25,7 +30,11 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
         (ref.current as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         data.onFocus?.();
     };
-    const handleAction = data.action ? () => data.action?.({ close: context.close, focus: focusSelf }) : undefined;
+    const handleAction = () =>
+    {
+        if (data.disabled === true) return;
+        data.action?.({ close: context.close, focus: focusSelf });
+    };
     const { ref, focusSelf, focusKey } = useFocusable({
         focusKey: FOCUS_KEYS.CONTEXT_DIALOG_OPTION(context.id, data.id),
         onEnterPress: data.shortcuts ? undefined : handleAction,
@@ -47,6 +56,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     return <li ref={ref}
         onClick={handleAction}
         data-selected={data.selected}
+        aria-disabled={data.disabled}
         className={
             twMerge("flex cursor-pointer sm:text-sm md:text-base group-focusable scroll-m-4")}>
         <FocusContext value={focusKey}>
@@ -72,12 +82,13 @@ export interface DialogEntry
     shortcuts?: Shortcut[];
 }
 
-export function useContextDialog (id: string, data: { content?: JSX.Element; className?: string; preferredChildFocusKey?: string; onClose?: () => void; })
+export function useContextDialog (id: string, data: { content?: JSX.Element; className?: string; preferredChildFocusKey?: string; onClose?: () => void; canClose?: boolean; })
 {
     const [open, setOpen] = useState(false);
     const [sourceFocusKey, setSourceFocusKey] = useState<string | undefined>(undefined);
     const handleClose = (value: boolean, newSourceFocusKey?: string) =>
     {
+        if (data.canClose === false) return;
         if (value === open) return;
         if (value)
         {

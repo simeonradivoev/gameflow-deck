@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 
 import { createWriteStream } from "node:fs";
 import { config, jar } from "../api/app";
+import { moveAllFiles } from "../utils";
 
 export interface ProgressStats
 {
@@ -207,7 +208,7 @@ export class Downloader
             });
         }
 
-        await move(this.tmpPath, this.downloadPath, { overwrite: true });
+        await moveAllFiles(this.tmpPath, this.downloadPath);
         if (await fs.exists(this.tmpPath))
             await fs.rm(this.tmpPath, { recursive: true });
         await fs.rm(this.tmpPathMeta);

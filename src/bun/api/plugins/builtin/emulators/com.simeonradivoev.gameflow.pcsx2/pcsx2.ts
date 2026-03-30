@@ -41,7 +41,13 @@ export default class PCSX2Integration implements PluginType
 
                 await Promise.all(Object.values(view).map(p => ensureDir(p)));
 
-                await Bun.write(path.join(ctx.autoValidCommand.metadata.emulatorDir, 'inis', 'PCSX2.ini'), Mustache.render(configFileContents, view));
+                let pscx2Path = '';
+                if (process.platform === 'win32')
+                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'inis');
+                else
+                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, "PCSX2", 'inis');
+
+                await Bun.write(path.join(pscx2Path, 'PCSX2.ini'), Mustache.render(configFileContents, view));
 
                 return args;
             }

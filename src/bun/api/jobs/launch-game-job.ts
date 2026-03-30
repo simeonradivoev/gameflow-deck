@@ -5,7 +5,6 @@ import { db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq, sql } from "drizzle-orm";
 import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
-import { killBrowser } from "@/bun/utils/browser-spawner";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">
 {
@@ -43,34 +42,44 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
         await new Promise((resolve, reject) =>
         {
-            let game: Bun.Subprocess;
+            let game: any;
             if (!commandArgs)
             {
-                game = Bun.spawn(this.validCommand.command.split(' '), {
+                // ES-DE commands require shell execution. Some emulators fail otherwise.
+                const spawnGame = spawn(this.validCommand.command, {
+                    shell: true,
                     cwd: this.validCommand.startDir,
-                    windowsVerbatimArguments: true,
                     signal: context.abortSignal
                 });
 
-                game.exited.then(resolve).catch(e =>
+                spawnGame.stdout.on('data', data => console.log(data));
+                spawnGame.on('close', (code) =>
+                {
+                    resolve(code);
+                });
+                spawnGame.on('error', e =>
                 {
                     console.error(e);
                     reject(e);
                 });
+
+                game = spawnGame;
             }
             else if (this.validCommand.metadata.emulatorBin)
             {
-                game = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs], {
+                // We have full control over launching integrated emulators better to use bun spawn
+                const bunGame = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs], {
                     cwd: this.validCommand.startDir,
                     windowsVerbatimArguments: true,
                     signal: context.abortSignal
                 });
 
-                game.exited.then(resolve).catch(e =>
+                bunGame.exited.then(resolve).catch(e =>
                 {
                     console.error(e);
                     reject(e);
                 });
+                game = bunGame;
             } else
             {
                 reject(new Error("No Emulator Bin"));

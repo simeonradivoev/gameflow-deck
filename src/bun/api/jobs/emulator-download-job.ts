@@ -9,7 +9,7 @@ import { getOrCachedGithubRelease } from "../cache";
 import Seven from 'node-7z';
 import fs from "node:fs/promises";
 import { Downloader } from "@/bun/utils/downloader";
-import { move } from "fs-extra";
+import { ensureDir, move } from "fs-extra";
 import { simulateProgress } from "@/bun/utils";
 
 type EmulatorDownloadStates = "download" | "extract";
@@ -82,7 +82,7 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
             {
                 if (isArchive)
                 {
-                    if (await downloader.start() && destinationPaths[0])
+                    if (destinationPaths[0])
                     {
                         let destinationPath = destinationPaths[0];
                         await new Promise((resolve, reject) =>
@@ -107,6 +107,13 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
                                 await move(tmpEmulatorsFolder, emulatorsFolder, { overwrite: true });
                             }
                         }
+                    }
+                } else
+                {
+                    await ensureDir(emulatorsFolder);
+                    for (const destPath of destinationPaths)
+                    {
+                        await fs.rename(destPath, path.join(emulatorsFolder, path.basename(destPath)));
                     }
                 }
             }
