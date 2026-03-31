@@ -42,7 +42,7 @@ export async function RunAPIServer ()
         apiServer: api,
         async cleanup ()
         {
-            await api.stop();
+            await api.stop(true);
         }
     };
 }

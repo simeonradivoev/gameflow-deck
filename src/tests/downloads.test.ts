@@ -136,6 +136,12 @@ describe("Download Tests", () =>
                         type: "direct",
                         url: `${server.url.href}download/zip_file_with_single_file.zip?root=test`
                     }
+                ],
+                "win32:x64": [
+                    {
+                        type: "direct",
+                        url: `${server.url.href}download/zip_file_with_single_file.zip?root=test`
+                    }
                 ]
             },
             keywords: [

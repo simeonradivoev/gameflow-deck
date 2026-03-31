@@ -41,8 +41,8 @@ export let taskQueue: TaskQueue;
 export let plugins: PluginManager;
 export let events: EventEmitter<AppEventMap>;
 let controlsHandle: { cleanup: () => void; };
-let api: any;
-let bunServer: { stop: () => void; } | undefined;
+let api: { cleanup: () => Promise<void>; };
+let bunServer: { cleanup: () => Promise<void>; } | undefined;
 
 export async function load ()
 {
@@ -97,13 +97,16 @@ export async function load ()
 export async function cleanup ()
 {
     console.log("Cleaning Up");
-    bunServer?.stop();
-    await api.apiServer.stop(true);
+    await bunServer?.cleanup();
     await api.cleanup();
     await taskQueue.close();
+    await plugins.cleanup();
     controlsHandle.cleanup();
-    sqlite.close();
+    cacheSqlite.close();
     emulatorsSqlite.close();
+    sqlite.close();
+    config._closeWatcher();
+    customEmulators._closeWatcher();
     console.log("Finished Cleaning Up");
 }
 
@@ -117,7 +120,7 @@ export async function reloadDatabase ()
     db = drizzle(sqlite, { schema });
     cache = drizzle(cacheSqlite, { schema: cacheSchema });
     migrate(db!, { migrationsFolder: appPath("./drizzle") });
-    cache.run(`
+    await cache.run(`
         CREATE TABLE IF NOT EXISTS item_cache (
             key TEXT PRIMARY KEY,
             data TEXT NOT NULL,

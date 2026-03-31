@@ -14,6 +14,7 @@ import Seven from 'node-7z';
 import z from "zod";
 import { checkFiles } from "../games/services/utils";
 import { ensureDir } from "fs-extra";
+import { path7za } from "7zip-bin";
 
 interface JobConfig
 {
@@ -45,7 +46,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
     public async start (cx: JobContext<InstallJob, never, InstallJobStates>)
     {
         cx.setProgress(0, 'download');
-        fs.mkdir(config.get('downloadPath'), { recursive: true });
+        await fs.mkdir(config.get('downloadPath'), { recursive: true });
 
         const downloadPath = config.get('downloadPath');
         let info: DownloadInfo | undefined;
@@ -111,7 +112,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
                         const extractPath = path.join(config.get('downloadPath'), info.extract_path);
                         await new Promise((resolve, reject) =>
                         {
-                            const seven = Seven.extractFull(filePath, extractPath, { $bin: process.env.ZIP7_PATH, $progress: true });
+                            const seven = Seven.extractFull(filePath, extractPath, { $bin: process.env.ZIP7_PATH ?? path7za, $progress: true });
                             seven.on('progress', p =>
                             {
                                 cx.setProgress(progress + p.percent * progressDelta, "extract");

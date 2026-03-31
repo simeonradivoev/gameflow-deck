@@ -4,7 +4,7 @@ import { appPath } from "./utils";
 import Elysia from "elysia";
 import cors from "@elysiajs/cors";
 
-export function RunBunServer ()
+export async function RunBunServer ()
 {
   console.log("Launching Server on port ", SERVER_PORT);
   const server = new Elysia()
@@ -24,11 +24,21 @@ export function RunBunServer ()
     })
     .get("/*", ({ params }) => Bun.file(appPath(`./dist/${params["*"]}`)));
 
-  return new Promise<typeof server>((resolve) =>
+
+  await new Promise<typeof server>((resolve) =>
   {
     server.listen({ port: SERVER_PORT, hostname: host, development: true }, async ({ hostname, port }) =>
     {
       resolve(server);
     });
   });
+
+  await server.modules;
+
+  return {
+    cleanup: async () =>
+    {
+      await server.stop(true);
+    }
+  };
 }

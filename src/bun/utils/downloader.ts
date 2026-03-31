@@ -191,6 +191,7 @@ export class Downloader
                         return;
                     }
 
+                    reader.cancel();
                     console.log("Aborting Download: ", this.signal.reason);
                     break;
                 }
@@ -203,7 +204,8 @@ export class Downloader
 
             await new Promise((resolve, reject) =>
             {
-                stream.end(() => resolve(undefined));
+                stream.end();
+                stream.on("close", () => resolve(false));
                 stream.on("error", reject);
             });
         }

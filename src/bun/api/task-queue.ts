@@ -105,7 +105,7 @@ export class TaskQueue
     {
         this.queue = [];
         this.activeQueue.forEach(c => c.abort());
-        return Promise.all(this.activeQueue.map(c => c.promise));
+        return Promise.all(this.activeQueue.map(c => c.promise.promise));
     }
 }
 

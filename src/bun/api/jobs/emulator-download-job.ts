@@ -11,6 +11,7 @@ import fs from "node:fs/promises";
 import { Downloader } from "@/bun/utils/downloader";
 import { ensureDir, move } from "fs-extra";
 import { simulateProgress } from "@/bun/utils";
+import { path7za } from "7zip-bin";
 
 type EmulatorDownloadStates = "download" | "extract";
 
@@ -97,7 +98,7 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
                         let destinationPath = destinationPaths[0];
                         await new Promise((resolve, reject) =>
                         {
-                            const seven = Seven.extractFull(destinationPath, emulatorsFolder, { $bin: process.env.ZIP7_PATH, $progress: true });
+                            const seven = Seven.extractFull(destinationPath, emulatorsFolder, { $bin: process.env.ZIP7_PATH ?? path7za, $progress: true, noRootDuplication: true });
                             seven.on('progress', p => context.setProgress(p.percent, "extract"));
                             seven.on('error', e => reject(e));
                             seven.on('end', () => resolve(true));
