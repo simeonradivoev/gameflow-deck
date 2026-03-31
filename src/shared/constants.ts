@@ -100,7 +100,7 @@ export const EmulatorPackageSchema = z.object({
     keywords: z.array(z.string()).optional(),
     downloads: z.record(z.string(), z.array(z.discriminatedUnion('type', [
         z.object({
-            type: z.literal('github'),
+            type: z.literal(['github', 'gitlab']),
             pattern: z.string(),
             path: z.string()
         }),
