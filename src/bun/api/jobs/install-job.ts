@@ -106,15 +106,23 @@ export class InstallJob implements IJob<never, InstallJobStates>
                 {
                     let progress = 0;
                     const progressDelta = 1 / downloadedFiles.length;
-                    for (const path of downloadedFiles)
+                    for (const filePath of downloadedFiles)
                     {
-                        const extractPath = info.extract_path;
+                        const extractPath = path.join(config.get('downloadPath'), info.extract_path);
                         await new Promise((resolve, reject) =>
                         {
-                            const seven = Seven.extractFull(path, extractPath, { $bin: process.env.ZIP7_PATH, $progress: true });
-                            seven.on('progress', p => cx.setProgress(progress + p.percent * progressDelta, "extract"));
+                            const seven = Seven.extractFull(filePath, extractPath, { $bin: process.env.ZIP7_PATH, $progress: true });
+                            seven.on('progress', p =>
+                            {
+                                cx.setProgress(progress + p.percent * progressDelta, "extract");
+                            });
+
                             seven.on('error', e => reject(e));
-                            seven.on('end', () => resolve(true));
+                            seven.on('end', async () =>
+                            {
+                                await fs.rm(filePath);
+                                resolve(true);
+                            });
                         });
                         progress += progressDelta * 100;
                     }

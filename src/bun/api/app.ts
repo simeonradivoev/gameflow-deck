@@ -5,7 +5,7 @@ import { CookieJar } from 'tough-cookie';
 import FileCookieStore from 'tough-cookie-file-store';
 import path from 'node:path';
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import Conf from "conf";
 import projectPackage from '~/package.json';
 import { SettingsSchema, SettingsType } from "@shared/constants";
@@ -23,60 +23,88 @@ import { getStoreFolder } from "./store/services/gamesService";
 import { PluginManager } from "./plugins/plugin-manager";
 import registerPlugins from "./plugins/register-plugins";
 import controls from './controls/controls';
+import { RunAPIServer } from "./rpc";
+import { RunBunServer } from "../server";
 
-export const config = new Conf<SettingsType>({
-    projectName: projectPackage.name,
-    projectSuffix: 'bun',
-    cwd: process.env.CONFIG_CWD,
-    schema: Object.fromEntries(Object.entries(SettingsSchema.shape).map(([key, schema]) => [key, schema.toJSONSchema() as any])) as any,
-    defaults: SettingsSchema.parse({
-        downloadPath: path.join(os.homedir(), "gameflow"),
-        windowSize: { width: 1280, height: 800 }
-    }),
-});
-export const customEmulators = new Conf<Record<string, string>>({
-    projectName: projectPackage.name,
-    projectSuffix: 'bun',
-    cwd: process.env.CONFIG_CWD,
-    configName: 'custom-emulators',
-    rootSchema: {
-        "type": "object",
-        "additionalProperties": {
-            "type": "string"
-        }
-    }
-});
-
-console.log("Config Path Located At: ", config.path);
-console.log("Custom Emulator Paths Located At: ", customEmulators.path);
-console.log("App Directory is ", process.env.APPDIR);
-console.log("Store Directory is ", getStoreFolder());
-
-const fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path), 'cookies.json'));
-console.log("Cookie Jar Path Located At: ", fileCookieStore.filePath);
-export const jar = new CookieJar(fileCookieStore);
+export let config: Conf<SettingsType>;
+export let customEmulators: Conf<Record<string, string>>;
+export let fileCookieStore: FileCookieStore;
+export let jar: CookieJar;
 let sqlite: Database;
-export const cachePath = path.join(os.tmpdir(), 'gameflow', 'cache.sqlite');
+export let cachePath: string;
 let cacheSqlite: Database;
 export let db: DrizzleSqliteDODatabase<typeof schema>;
 export let cache: DrizzleSqliteDODatabase<typeof cacheSchema>;
-await reloadDatabase();
-const emulatorsSqlite = new Database(appPath(`./vendors/es-de/emulators.${os.platform()}.${os.arch()}.sqlite`), { readonly: true });
-export const emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
-export const taskQueue = new TaskQueue();
-config.onDidChange('rommAddress', v => client.setConfig({ baseUrl: v }));
-export const plugins = new PluginManager();
-registerPlugins(plugins);
-export const events = new EventEmitter<AppEventMap>();
-config.onDidChange('downloadPath', () => reloadDatabase());
-taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
-await controls();
+let emulatorsSqlite: Database;
+export let emulatorsDb: BunSQLiteDatabase<typeof emulatorSchema> & { $client: Database; };
+export let taskQueue: TaskQueue;
+export let plugins: PluginManager;
+export let events: EventEmitter<AppEventMap>;
+let controlsHandle: { cleanup: () => void; };
+let api: any;
+let bunServer: { stop: () => void; } | undefined;
+
+export async function load ()
+{
+    config = new Conf<SettingsType>({
+        projectName: projectPackage.name,
+        projectSuffix: 'bun',
+        cwd: process.env.CONFIG_CWD,
+        schema: Object.fromEntries(Object.entries(SettingsSchema.shape).map(([key, schema]) => [key, schema.toJSONSchema() as any])) as any,
+        defaults: SettingsSchema.parse({
+            downloadPath: process.env.DEFAULT_DOWNLOAD_PATH ?? path.join(os.homedir(), "gameflow"),
+            windowSize: { width: 1280, height: 800 }
+        }),
+    });
+    customEmulators = new Conf<Record<string, string>>({
+        projectName: projectPackage.name,
+        projectSuffix: 'bun',
+        cwd: process.env.CONFIG_CWD,
+        configName: 'custom-emulators',
+        rootSchema: {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        }
+    });
+
+    console.log("Config Path Located At: ", config.path);
+    console.log("Custom Emulator Paths Located At: ", customEmulators.path);
+    console.log("App Directory is ", process.env.APPDIR);
+    console.log("Store Directory is ", getStoreFolder());
+
+    cachePath = path.join(os.tmpdir(), 'gameflow', 'cache.sqlite');
+    fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path), 'cookies.json'));
+    console.log("Cookie Jar Path Located At: ", fileCookieStore.filePath);
+    jar = new CookieJar(fileCookieStore);
+    taskQueue = new TaskQueue();
+    events = new EventEmitter<AppEventMap>();
+    emulatorsSqlite = new Database(appPath(`./vendors/es-de/emulators.${os.platform()}.${os.arch()}.sqlite`), { readonly: true });
+    emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
+    await reloadDatabase();
+    plugins = new PluginManager();
+    await registerPlugins(plugins);
+    api = await RunAPIServer();
+    controlsHandle = await controls();
+    if (!process.env.PUBLIC_ACCESS) bunServer = await RunBunServer();
+
+    config.onDidChange('downloadPath', () => reloadDatabase());
+    config.onDidChange('rommAddress', v => client.setConfig({ baseUrl: v }));
+    taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
+}
 
 export async function cleanup ()
 {
+    console.log("Cleaning Up");
+    bunServer?.stop();
+    await api.apiServer.stop(true);
+    await api.cleanup();
     await taskQueue.close();
+    controlsHandle.cleanup();
     sqlite.close();
     emulatorsSqlite.close();
+    console.log("Finished Cleaning Up");
 }
 
 export async function reloadDatabase ()

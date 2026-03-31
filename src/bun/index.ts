@@ -1,29 +1,17 @@
-import { RunBunServer } from './server';
-import { RunAPIServer } from './api/rpc';
+
 import * as app from './api/app';
 import init from './browser';
 import { dirname } from 'pathe';
 import { createInterface } from 'readline';
 import { isSteamDeckGameMode } from './utils';
 
-const api = RunAPIServer();
-let bunServer: { stop: () => void; } | undefined;
-
-if (!process.env.PUBLIC_ACCESS)
-{
-  bunServer = await RunBunServer();
-}
-
 async function cleanup ()
 {
-  console.log("Cleaning Up");
   await app.cleanup();
-  bunServer?.stop();
-  await api.apiServer.stop(true);
-  await api.cleanup();
-  console.log("Finished Cleaning Up");
   process.exit(0);
 }
+
+await app.load();
 
 if (process.env.HEADLESS)
 {

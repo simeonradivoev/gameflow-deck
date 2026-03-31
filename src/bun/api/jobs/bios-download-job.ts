@@ -22,7 +22,7 @@ export class BiosDownloadJob implements IJob<z.infer<typeof BiosDownloadJob.data
         this.dryRun = init?.dryRun ?? false;
     }
 
-    async start (context: JobContext<IJob<never, "download">, never, "download">)
+    async start (context: JobContext<IJob<z.infer<typeof BiosDownloadJob.dataSchema>, "download">, z.infer<typeof BiosDownloadJob.dataSchema>, "download">)
     {
         const emulator = await getStoreEmulatorPackage(this.emulator);
         if (!emulator) throw new Error("Could Not Find Emulator");

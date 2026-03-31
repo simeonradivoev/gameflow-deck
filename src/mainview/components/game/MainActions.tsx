@@ -161,9 +161,9 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         }
         mainButton = <ActionButton
             key={status ?? 'unknown'}
-            disabled={installMut.isPending}
             onAction={() =>
             {
+                if (installMut.isPending) return;
                 switch (status)
                 {
                     case 'present':

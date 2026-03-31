@@ -98,12 +98,17 @@ export const EmulatorPackageSchema = z.object({
     type: z.enum(['emulator']),
     os: z.array(z.enum(['darwin', 'linux', 'win32', 'android'])),
     keywords: z.array(z.string()).optional(),
-    downloads: z.record(z.string(), z.array(z.object({
-        type: z.string(),
-        url: z.url().optional(),
-        pattern: z.string(),
-        path: z.string().optional()
-    }))).optional(),
+    downloads: z.record(z.string(), z.array(z.discriminatedUnion('type', [
+        z.object({
+            type: z.literal('github'),
+            pattern: z.string(),
+            path: z.string()
+        }),
+        z.object({
+            type: z.literal('direct'),
+            url: z.url(),
+        })
+    ]))).optional(),
     systems: z.array(z.string()),
     bios: z.literal(["required", "optional"]).optional()
 });

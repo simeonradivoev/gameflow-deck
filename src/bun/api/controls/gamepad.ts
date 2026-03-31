@@ -19,10 +19,6 @@ export class Gamepad
         {
             const { GamepadWindows } = await import("./windows");
             this.backend = new GamepadWindows(this.index);
-        } else
-        {
-            const { GamepadLinux } = await import("./linux");
-            this.backend = new GamepadLinux(this.index);
         }
     }
 

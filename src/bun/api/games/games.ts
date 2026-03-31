@@ -348,13 +348,7 @@ export default new Elysia()
     {
         if (!taskQueue.findJob(InstallJob.query({ source, id }), InstallJob))
         {
-            if (source === 'romm' || source === 'store')
-            {
-                taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source));
-                return status(200);
-            }
-
-            return status('Not Implemented');
+            return taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source));
         } else
         {
             return status('Not Implemented');

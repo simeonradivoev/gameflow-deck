@@ -1,5 +1,5 @@
 import { Treaty, treaty } from "@elysiajs/eden";
-import { JobsAPIType, PluginsAPIType, RommAPIType, SettingsAPIType, StoreAPIType, SystemAPIType } from "../../bun/api/rpc";
+import type { JobsAPIType, PluginsAPIType, RommAPIType, SettingsAPIType, StoreAPIType, SystemAPIType } from "../../bun/api/rpc";
 import { RPC_URL } from "../../shared/constants";
 
 const options: Treaty.Config = {

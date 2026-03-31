@@ -25,7 +25,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
         this.gameSourceId = sourceId;
     }
 
-    async start (context: JobContext<IJob<ActiveGameType, "playing">, ActiveGameType, "playing">)
+    async start (context: JobContext<IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">, z.infer<typeof LaunchGameJob.dataSchema>, "playing">)
     {
         const localGame = await db.query.games.findFirst({
             where: eq(appSchema.games.id, this.gameId), columns: {

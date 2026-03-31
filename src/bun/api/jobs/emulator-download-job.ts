@@ -40,24 +40,26 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
         if (!validDownloads) throw new Error(`Now downloads in ${this.emulatorPackage.name} for platform ${process.platform}:${process.arch}`);
 
         const validDownload = validDownloads.find(d => d.type === this.downloadSource);
-        if (!validDownload || !validDownload.path) throw new Error(`Download type ${this.downloadSource} not found`);
+        if (!validDownload) throw new Error(`Download type ${this.downloadSource} not found`);
 
-        console.log("Trying To Download from ", `https://api.github.com/repos/${validDownload.path}/releases/latest`);
-        const latestRelease = await getOrCachedGithubRelease(validDownload.path);
-        const glob = new Glob(validDownload.pattern);
-        const validAsset = latestRelease.assets.find(a => glob.match(a.name));
-        if (!validAsset) throw new Error("Could Not Find Valid Asset");
-        const downloadUrl = validAsset.browser_download_url;
-        const emulatorsFolder = path.join(config.get('downloadPath'), "emulators", this.emulator);
-
-        const isArchive = validAsset.content_type === 'application/x-7z-compressed' || validAsset.name.endsWith('.7z') || validAsset.content_type === 'application/zip' || validAsset.name.endsWith('.zip');
-
-        const isAppImage = validAsset.name.endsWith(".AppImage");
-
-        if (!isArchive && !isAppImage)
+        let downloadUrl: URL;
+        if (validDownload.type === 'github')
         {
-            throw new Error("Invalid Download Type");
+            console.log("Trying To Download from ", `https://api.github.com/repos/${validDownload.path}/releases/latest`);
+            const latestRelease = await getOrCachedGithubRelease(validDownload.path);
+            const glob = new Glob(validDownload.pattern);
+            const validAsset = latestRelease.assets.find(a => glob.match(a.name));
+            if (!validAsset) throw new Error("Could Not Find Valid Asset");
+            downloadUrl = new URL(validAsset.browser_download_url);
+        } else if (validDownload.type === 'direct')
+        {
+            downloadUrl = new URL(validDownload.url);
+        } else
+        {
+            throw new Error("Download Type Unsupported");
         }
+
+        const emulatorsFolder = path.join(config.get('downloadPath'), "emulators", this.emulator);
 
         if (this.dryRun)
         {
@@ -67,7 +69,7 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
         {
             const tmpFolder = path.join(config.get("downloadPath"), ".tmp");
             const downloader = new Downloader(this.emulator,
-                [{ url: new URL(downloadUrl), file_name: path.basename(downloadUrl), file_path: this.emulator }],
+                [{ url: new URL(downloadUrl), file_name: path.basename(downloadUrl.pathname), file_path: this.emulator }],
                 tmpFolder,
                 {
                     signal: context.abortSignal,
@@ -80,6 +82,14 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
             const destinationPaths = await downloader.start();
             if (destinationPaths)
             {
+                const isArchive = destinationPaths[0].endsWith('.7z') || destinationPaths[0].endsWith('.zip');
+                const isAppImage = destinationPaths[0].endsWith(".AppImage");
+
+                if (!isArchive && !isAppImage)
+                {
+                    throw new Error("Invalid Download Type");
+                }
+
                 if (isArchive)
                 {
                     if (destinationPaths[0])

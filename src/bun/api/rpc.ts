@@ -9,7 +9,7 @@ import { host } from "../utils/host";
 import { jobs } from "./jobs/jobs";
 import plugins from "./plugins/plugins";
 
-const api = new Elysia({ serve: {} })
+const api = new Elysia()
     .use([cors(), clients, settings, system, store, jobs, plugins]);
 
 export type RommAPIType = typeof clients;
@@ -19,18 +19,30 @@ export type StoreAPIType = typeof store;
 export type JobsAPIType = typeof jobs;
 export type PluginsAPIType = typeof plugins;
 
-export function RunAPIServer ()
+export async function RunAPIServer ()
 {
-    console.log("Launching API Server on port ", RPC_PORT);
-    return {
-        apiServer: api.listen({
+    await new Promise<void>((resolve, reject) =>
+    {
+        const timeout = setTimeout(() => reject(new Error("Server startup timed out")), 5000);
+
+        api.listen({
             port: RPC_PORT,
-            hostname: host,
+            ...(host && host !== 'localhost' && { hostname: host }),
             development: process.env.NODE_ENV === 'development'
-        }),
+        }, s =>
+        {
+            clearTimeout(timeout);
+            console.log("Launching API Server on", s.url.href);
+            resolve();
+        });
+    });
+
+    await api.modules;
+    return {
+        apiServer: api,
         async cleanup ()
         {
-
+            await api.stop();
         }
     };
 }

@@ -10,7 +10,6 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import { RefObject, useEffect, useState } from "react";
 import { focusQueue, Router } from "..";
-import { scrollIntoViewHandler } from "./utils";
 
 init({
   shouldFocusDOMNode: false,

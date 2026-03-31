@@ -22,7 +22,7 @@ export default async function Initialize ()
         }
     }
 
-    setInterval(() =>
+    const loop = setInterval(() =>
     {
         for (const pad of manager.getGamepads())
         {
@@ -56,4 +56,11 @@ export default async function Initialize ()
             endPressed = false;
         }
     }, 100);
+
+    return {
+        cleanup: () =>
+        {
+            clearInterval(loop);
+        }
+    };
 }

@@ -109,8 +109,9 @@ export const installMutation = (source: string, id: string) => mutationOptions({
     mutationKey: ['install', source, id],
     mutationFn: async () =>
     {
-        const { error } = await rommApi.api.romm.game({ source })({ id }).install.post();
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).install.post();
         if (error) throw error;
+        return data;
     }
 });
 export const cancelInstallMutation = (source: string, id: string) => mutationOptions({
