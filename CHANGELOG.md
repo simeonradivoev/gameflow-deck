@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.2.1...v1.3.0) (2026-03-31)
+
+
+### Features
+
+* Implemented emulator installation ([3750e9e](https://github.com/simeonradivoev/gameflow-deck/commit/3750e9ed8fc1c0919aade9e45a0189838f12b16d))
+* moved to npm package for the store ([91ee719](https://github.com/simeonradivoev/gameflow-deck/commit/91ee7196332313518324cf7195f64d0e92b2cc8b))
+
+
+### Bug Fixes
+
+* Added keyboard focus shortcut ([b4e9112](https://github.com/simeonradivoev/gameflow-deck/commit/b4e911298935483bec7e315d2eebee47562bd448))
+* ditched sdl and moved to xinput for windows for less ram usage ([dc0f2d1](https://github.com/simeonradivoev/gameflow-deck/commit/dc0f2d150a37bebefa76988f98d8766f530f44b4))
+* Fixed browser referencing main and getting called twice when in dev mode ([7c10f4e](https://github.com/simeonradivoev/gameflow-deck/commit/7c10f4e4c2b4996e784be051132233a854270250))
+* Fixed romm login, now uses token ([816d50a](https://github.com/simeonradivoev/gameflow-deck/commit/816d50ae4d61723e67a0980ca310561ead661a68))
+* Issues with launching and installation on the steam deck ([ccc5a05](https://github.com/simeonradivoev/gameflow-deck/commit/ccc5a05ed7010adea77eea9190f3149b67702b39))
+* Manual checking for system info to fix bug in library ([a7eb655](https://github.com/simeonradivoev/gameflow-deck/commit/a7eb655a48c6976baa18bb4cde96c989ce8cd375))
+* missing gitlab as download type ([bb8f716](https://github.com/simeonradivoev/gameflow-deck/commit/bb8f7162018f7a320be76128d09da82ccac1a896))
+* switched to node-7z ([90d6711](https://github.com/simeonradivoev/gameflow-deck/commit/90d67119355baa64bd992c9d4e9d11036706bbc9))
+
 ### [1.2.1](https://github.com/simeonradivoev/gameflow-deck/compare/v1.2.0...v1.2.1) (2026-03-15)
 
 
