@@ -14,6 +14,7 @@ import
 import
 {
   createFileRoute,
+  useRouter,
 } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import
@@ -37,7 +38,6 @@ import Shortcuts from "../components/Shortcuts";
 import { PlatformsList } from "../components/PlatformsList";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
 import z from "zod";
-import { Router } from "..";
 import CollectionList from "../components/CollectionList";
 import { zodValidator } from '@tanstack/zod-adapter';
 import { mobileCheck, useDragScroll } from "../scripts/utils";
@@ -45,6 +45,7 @@ import { AnimatedBackgroundContext } from "../scripts/contexts";
 import Carousel from "../components/Carousel";
 import { closeMutation } from "@queries/system";
 import { gameQuery } from "../scripts/queries/romm";
+import { oneShot } from "../scripts/audio/audio";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -90,9 +91,10 @@ function HomeListError (data: { focused: boolean; })
 
 function ShowAllGamesCard ()
 {
+  const router = useRouter();
   const handleNavigate = () =>
   {
-    Router.navigate({ to: '/games', viewTransition: { types: ['zoom-in'] } });
+    router.navigate({ to: '/games', viewTransition: { types: ['zoom-in'] } });
   };
   const { ref } = useFocusable({ focusKey: 'all-games-btn', onEnterPress: handleNavigate });
   return <div ref={ref} onClick={handleNavigate} className="flex focusable focusable-primary justify-center items-center bg-base-300/80 rounded-3xl font-semibold w-(--game-card-width) h-(--game-card-height) focusable-hover cursor-pointer">All Games</div>;
@@ -102,6 +104,7 @@ function HomeList (data: {
   selectedFilter: string;
 })
 {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [initFocus, setInitFocus] = useState(false);
   const bg = useContext(AnimatedBackgroundContext);
@@ -124,7 +127,7 @@ function HomeList (data: {
 
   function handleGameSelect (id: FrontEndId, source: string | null, sourceId: string | null)
   {
-    Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
+    router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
   };
 
   let activeList: JSX.Element;
@@ -213,9 +216,11 @@ function HomeList (data: {
 
 function MainMenu ()
 {
+  const router = useRouter();
   const { ref, focusKey } = useFocusable({
     focusKey: `main-menu`,
     trackChildren: true,
+    focusBoundaryDirections: ['up', 'down']
   });
   return (
     <ul
@@ -226,13 +231,13 @@ function MainMenu ()
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon
-          action={() => Router.navigate({ to: "/games" })}
+          action={() => router.navigate({ to: "/games" })}
           icon={<Gamepad2 />}
           label="Home"
           type="secondary"
         />
         <CircleIcon icon={<MessageSquare />} label="News" />
-        <CircleIcon type="info" icon={<Store />} action={() => Router.navigate({ to: "/store/tab" })} label="Shop" />
+        <CircleIcon type="info" icon={<Store />} action={() => router.navigate({ to: "/store/tab" })} label="Shop" />
         <CircleIcon icon={<Image />} label="Album" />
         <CircleIcon
           icon={<Gamepad2 />}
@@ -241,7 +246,7 @@ function MainMenu ()
         <CircleIcon
           action={() =>
           {
-            Router.navigate({ to: '/settings/accounts' });
+            router.navigate({ to: '/settings/accounts' });
           }}
           icon={<Settings />}
           label="Settings"
@@ -259,11 +264,16 @@ function CircleIcon (data: {
   icon?: JSX.Element;
 })
 {
+  const handleAction = () =>
+  {
+    data.action?.();
+    oneShot('click');
+  };
   const { ref, focusKey } = useFocusable({
-    focusKey: `navigation-icon-${data.label}`,
-    onEnterPress: data.action,
+    focusKey: `menu-navigation-icon-${data.label}`,
+    onEnterPress: handleAction,
   });
-  useShortcuts(focusKey, () => [{ label: data.label, action: (e) => data.action?.(), button: GamePadButtonCode.A }]);
+  useShortcuts(focusKey, () => [{ label: data.label, action: handleAction, button: GamePadButtonCode.A }]);
   const typeClasses = {
     secondary: "bg-secondary text-secondary-content",
     accent: "bg-accent text-accent-content",
@@ -273,7 +283,8 @@ function CircleIcon (data: {
   return (
     <li
       ref={ref}
-      onClick={data.action}
+      data-sound-category={"menu"}
+      onClick={handleAction}
       className={twMerge(
         `portrait:sm:size-12 sm:w-14 sm:h-10 menu-icon text-base-300 md:w-20 md:h-20 rounded-full flex items-center justify-center drop-shadow-lg cursor-pointer transition-all focusable focusable-primary focused:drop-shadow-2xl focused:animate-scale focusable-hover bg-base-content border-6 md:border-12 border-base-content focused:border-0 hover:border-0 z-1 active:border-0 active:bg-base-300 active:text-base-content active:transition-none`, typeClasses[data.type ?? 'none'])}
     >
@@ -287,7 +298,7 @@ export default function ConsoleHomeUI ()
   const { filter } = Route.useSearch();
 
   const close = useMutation(closeMutation);
-
+  const router = useRouter();
   const { ref, focusKey } = useFocusable({
     forceFocus: true,
     autoRestoreFocus: false,
@@ -296,7 +307,7 @@ export default function ConsoleHomeUI ()
     preferredChildFocusKey: `home-list`,
   });
 
-  const setFilter = (filter: string) => Router.navigate({ to: '/', search: { filter }, viewTransition: false, replace: true });
+  const setFilter = (filter: string) => router.navigate({ to: '/', search: { filter }, viewTransition: false, replace: true });
 
   const { shortcuts } = useShortcutContext();
   const headerButtons: HeaderButton[] = [];

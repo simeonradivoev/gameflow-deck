@@ -16,6 +16,25 @@ declare global
       "save-scroll"?: boolean;
     }
   }
+
+  module "@noriginmedia/norigin-spatial-navigation" {
+    declare interface FocusDetails
+    {
+      instant?: boolean;
+      sound?: string;
+    }
+  }
+}
+
+declare interface FocusEventDetails
+{
+  focusKey: string;
+  instant?: boolean;
+  sound?: string;
+  nativeEvent?: any;
+  event?: Event;
+  node: HTMLElement | undefined;
+  focusKeyChanged: boolean;
 }
 
 declare interface FocusParams

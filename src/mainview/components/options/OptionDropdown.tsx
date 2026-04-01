@@ -4,6 +4,7 @@ import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { ContextDialog, ContextList, DialogEntry } from "../ContextDialog";
 import { ChevronDown } from "lucide-react";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
+import { oneShot } from "@/mainview/scripts/audio/audio";
 
 export function OptionDropdown (data: {
     name: string;
@@ -23,6 +24,7 @@ export function OptionDropdown (data: {
     const handlePress = () =>
     {
         setOpen(true);
+        oneShot('click');
     };
     const handleClose = () => setOpen(false);
     const { ref } = useFocusable({
@@ -33,11 +35,7 @@ export function OptionDropdown (data: {
         <>
             <label ref={ref} className={twMerge("flex group-focusable items-center gap-3 rounded-full sm:flex-2 md:flex-1 divide-accent")}>
                 {!!data.icon && <span className={"text-base-content/80 is-focused:text-primary-content"}>{data.icon}</span>}
-                <button onClick={() =>
-                {
-                    console.log("Open");
-                    setOpen(true);
-                }} className={'flex items-center justify-center border h-10 border-base-content/30 px-4 py-2 rounded-full cursor-pointer grow not-in-focused:bg-base-200 focusable focusable-accent hover:border-base-content hover:bg-base-content hover:text-base-300'}>{data.value}<ChevronDown /></button>
+                <button onClick={handlePress} className={'flex items-center justify-center border h-10 border-base-content/30 px-4 py-2 rounded-full cursor-pointer grow not-in-focused:bg-base-200 focusable focusable-accent hover:border-base-content hover:bg-base-content hover:text-base-300 active:bg-primary active:text-primary-content active:border-0'}>{data.value}<ChevronDown /></button>
             </label>
             {open && <ContextDialog id={`${data.name}-context`} preferredChildFocusKey={FOCUS_KEYS.CONTEXT_DIALOG_OPTION(`${data.name}-context`, String(data.values.indexOf(data.value ?? '')))} open={true} close={handleClose}>
                 <ContextList options={data.values.map((v, i) => ({

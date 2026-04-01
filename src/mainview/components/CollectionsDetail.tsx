@@ -1,18 +1,18 @@
-import { AnimatedBackground } from './AnimatedBackground';
-import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { HeaderUI, StickyHeaderUI } from './Header';
+import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { StickyHeaderUI } from './Header';
 import { GameList } from './GameList';
 import { Search, Settings2 } from 'lucide-react';
-import { JSX, Suspense, useEffect } from 'react';
+import { JSX, Suspense } from 'react';
 import Shortcuts from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
 import { GameListFilterType } from '@/shared/constants';
 import { GameCardFocusHandler } from './CardElement';
-import { HandleGoBack, useStickyDataAttr } from '../scripts/utils';
+import { HandleGoBack } from '../scripts/utils';
 import LoadingCardList from './LoadingCardList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gameQuery } from '../scripts/queries/romm';
+import { useRouter } from '@tanstack/react-router';
 
 export interface CollectionsDetailParams
 {
@@ -29,6 +29,7 @@ export interface CollectionsDetailParams
 
 export function CollectionsDetail (data: CollectionsDetailParams)
 {
+    const router = useRouter();
     const builtData = useQuery({
         queryKey: ['filter', data.id], queryFn: async () =>
         {
@@ -42,7 +43,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
         preferredChildFocusKey: `${focusKey}-list`
     });
 
-    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router) }], [router]);
     const { shortcuts } = useShortcutContext();
 
     const handleScroll: GameCardFocusHandler = (cardId, node, details) =>

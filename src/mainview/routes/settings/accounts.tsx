@@ -171,7 +171,7 @@ function RouteComponent ()
   {
     if (focus)
     {
-      focusSelf();
+      focusSelf({ instant: true });
     }
   }, [focus]);
 

@@ -1,19 +1,20 @@
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Home, TriangleAlert } from "lucide-react";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
-import { Router } from "..";
 import Shortcuts from "./Shortcuts";
 import { Button } from "./options/Button";
 import { useEffect } from "react";
+import { useRouter } from "@tanstack/react-router";
 
 export default function NotFound ()
 {
     const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "not-found" });
-    const handleReturn = () => Router.navigate({ to: '/', viewTransition: { types: ['zoom-in'] } });
+    const router = useRouter();
+    const handleReturn = () => router.navigate({ to: '/', viewTransition: { types: ['zoom-in'] } });
     useShortcuts(focusKey, () => [{ label: "Return Home", button: GamePadButtonCode.B, action: handleReturn }]);
     const { shortcuts } = useShortcutContext();
 
-    useEffect(() => { focusSelf(); }, []);
+    useEffect(() => { focusSelf({ instant: true }); }, []);
 
     return <div ref={ref} className="absolute flex flex-col justify-center items-center w-full h-full gap-4">
         <FocusContext value={focusKey}>

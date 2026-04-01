@@ -1,9 +1,8 @@
 import { RPC_URL, SERVER_URL } from '@/shared/constants';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
 import { RefObject, useEffect, useRef, useState } from 'react';
-import { Router } from '..';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { ButtonStyle } from '../components/options/Button';
 import { DoorOpen, RefreshCw, Undo } from 'lucide-react';
@@ -57,7 +56,7 @@ function Overlay (data: {
     {
         if (data.open)
         {
-            focusSelf();
+            focusSelf({ instant: true });
         }
     }, [data.open]);
 
@@ -122,6 +121,7 @@ function Frame (data: { ref: RefObject<HTMLIFrameElement | null>; })
 
 function RouteComponent ()
 {
+    const router = useRouter();
     const { ref, focusSelf, focusKey } = useFocusable({
         focusKey: 'emulatorjs',
         preferredChildFocusKey: 'frame',
@@ -133,7 +133,7 @@ function RouteComponent ()
 
     function HandleGoBack ()
     {
-        Router.navigate({ to: '/game/$source/$id', params: { source, id }, replace: true });
+        router.navigate({ to: '/game/$source/$id', params: { source, id }, replace: true });
     }
 
     useEventListener('message', e =>
@@ -173,7 +173,7 @@ function RouteComponent ()
     };
     useEffect(() => setPaused(overlayOpen), [overlayOpen]);
     const { shortcuts } = useShortcutContext();
-    useEffect(() => { if (!overlayOpen) focusSelf(); }, [overlayOpen]);
+    useEffect(() => { if (!overlayOpen) focusSelf({ instant: true }); }, [overlayOpen]);
     function handleClose ()
     {
         setOverlayOpen(false);

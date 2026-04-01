@@ -1,5 +1,5 @@
 import { doesFocusableExist, FocusDetails, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
 export function AutoFocus (data: {
     parentKey?: string;
@@ -8,7 +8,7 @@ export function AutoFocus (data: {
     delay?: number;
 })
 {
-    useEffect(() =>
+    useLayoutEffect(() =>
     {
         let delayTimeout: number | undefined;
 

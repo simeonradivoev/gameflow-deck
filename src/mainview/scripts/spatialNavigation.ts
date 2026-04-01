@@ -1,6 +1,5 @@
 import
 {
-  FocusDetails,
   getCurrentFocusKey,
   init,
   SpatialNavigation,
@@ -9,7 +8,7 @@ import
   UseFocusableResult,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { RefObject, useEffect, useState } from "react";
-import { focusQueue, Router } from "..";
+import { focusQueue } from "../App";
 
 init({
   shouldFocusDOMNode: false,
@@ -97,13 +96,21 @@ SpatialNavigation.updateLayout = (focusKey) =>
 SpatialNavigation.setFocus = (newFocusKey, focusDetails) =>
 {
   setFocus(newFocusKey, focusDetails);
-  dispatchFocusedEvent(new CustomEvent<FocusDetails>('focuschanged', { bubbles: true, detail: focusDetails }));
 };
 
 SpatialNavigation.setCurrentFocusedKey = (newFocusKey, focusDetails) =>
 {
+  const details: FocusEventDetails = {
+    ...focusDetails,
+    focusKey: newFocusKey,
+    focusKeyChanged: newFocusKey !== getCurrentFocusKey(),
+    node: GetFocusedElement(newFocusKey)
+  };
   setCurrentFocusedKey(newFocusKey, focusDetails);
-  window.dispatchEvent(new CustomEvent<FocusDetails>('focuschanged', { bubbles: true, detail: focusDetails }));
+  window.dispatchEvent(new CustomEvent<FocusEventDetails>('focuschanged', {
+    bubbles: true,
+    detail: details
+  }));
 };
 
 SpatialNavigation.updateFocusable = (key, data) =>

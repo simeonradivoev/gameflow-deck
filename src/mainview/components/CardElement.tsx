@@ -3,6 +3,7 @@ import classNames from "classnames";
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
 import useActiveControl from "../scripts/gamepads";
+import { oneShot } from "../scripts/audio/audio";
 
 export function GameCardSkeleton ()
 {
@@ -38,10 +39,15 @@ export interface GameCardParams
 
 export default function CardElement (data: GameCardParams & InteractParams)
 {
+  const handleAction = () =>
+  {
+    data.onAction?.();
+    oneShot('click');
+  };
   const { ref, focused, focusSelf } = useFocusable({
     focusKey: data.focusKey,
     onFocus: (l, p, details) => data.onFocus?.(data.id, ref.current as any, details),
-    onEnterPress: () => data.onAction?.(),
+    onEnterPress: handleAction,
     onBlur: () => data.onBlur?.(data.id),
   });
   const { isPointer } = useActiveControl();
@@ -57,11 +63,10 @@ export default function CardElement (data: GameCardParams & InteractParams)
         scrollSnapAlign: isPointer ? "center" : "none"
       }}
       onFocus={focusSelf}
-      onDoubleClick={e => data.onAction?.(e.nativeEvent)}
       onClick={() =>
       {
         focusSelf();
-        data.onAction?.();
+        handleAction();
       }}
       className={twMerge(
         "relative game-card light:bg-base-100 dark:bg-base-300 flex flex-col z-5 overflow-hidden transition-all duration-200 not-mobile:drop-shadow-lg cursor-pointer focusable focusable-primary focusable-hover select-none focused focused:not-control-mouse:animate-wiggle focused:not-control-mouse:bg-base-content focused:not-control-mouse:text-base-300 focused:not-control-mouse:drop-shadow-lg focused:not-control-mouse:drop-shadow-black/30 focused:not-control-mouse:scale-102 focused:not-control-mouse:z-10 group control-mouse:hover:bg-base-200 h-full [--tw-border-style:inset] border-2 border-base-content/5 backdrop-opacity-0 active:bg-base-content! active:text-base-100 active:transition-none",

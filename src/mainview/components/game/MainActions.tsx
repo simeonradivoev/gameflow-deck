@@ -1,4 +1,3 @@
-import { Router } from "@/mainview";
 import { rommApi } from "@/mainview/scripts/clientApi";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { JSX, useEffect, useRef, useState } from "react";
@@ -9,10 +8,12 @@ import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
 import { Clock, Download, EllipsisVertical, Import, PackageOpen, Play, TriangleAlert } from "lucide-react";
 import { gameInvalidationQuery, installMutation, playMutation } from "@/mainview/scripts/queries/romm";
 import ActionButton from "./ActionButton";
+import { useRouter } from "@tanstack/react-router";
 
 export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {
     const installMut = useMutation(installMutation(data.source, data.id));
+    const router = useRouter();
     const playMut = useMutation({
         ...playMutation, onError (error)
         {
@@ -20,7 +21,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         },
         onSuccess (data, { source, id }, onMutateResult, context)
         {
-            Router.navigate({ to: '/launcher/$source/$id', params: { source: source, id: id }, replace: true });
+            router.navigate({ to: '/launcher/$source/$id', params: { source: source, id: id }, replace: true });
         },
     });
     const ws = useRef<{ send: (data: string) => void; }>(undefined);
@@ -58,10 +59,10 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
                 {
                     if (localId)
                     {
-                        Router.navigate({ to: '/game/$source/$id', params: { id: String(localId), source: 'local' }, replace: true });
+                        router.navigate({ to: '/game/$source/$id', params: { id: String(localId), source: 'local' }, replace: true });
                     } else
                     {
-                        Router.navigate({ to: '/game/$source/$id', params: { id: data.id, source: data.source }, replace: true });
+                        router.navigate({ to: '/game/$source/$id', params: { id: data.id, source: data.source }, replace: true });
                     }
                 });
             } else if (e.data.status === 'error')
@@ -78,7 +79,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
             sub.close();
             ws.current = undefined;
         };
-    }, [data.source, data.id]);
+    }, [data.source, data.id, router]);
 
     let progressIcon: JSX.Element | undefined = undefined;
     switch (status)
@@ -107,7 +108,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         if (cmd.emulator === 'EMULATORJS')
         {
             const params = new URLSearchParams(cmd.command);
-            Router.navigate({ to: '/embedded/$source/$id', params: { source: data.source, id: data.id }, search: Object.fromEntries(params.entries()), replace: true });
+            router.navigate({ to: '/embedded/$source/$id', params: { source: data.source, id: data.id }, search: Object.fromEntries(params.entries()), replace: true });
         } else
         {
             playMut.mutate({ source: data.source, id: data.id, command_id: cmd.id });
@@ -142,7 +143,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
             {
                 if (status === 'missing-emulator')
                 {
-                    Router.navigate({ to: '/settings/directories' });
+                    router.navigate({ to: '/settings/directories' });
                 }
             }}
             id="mainAction">

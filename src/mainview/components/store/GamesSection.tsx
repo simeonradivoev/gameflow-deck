@@ -30,7 +30,7 @@ export function GamesSection (data: {
     useEffect(() =>
     {
         if (focused)
-            focusSelf();
+            focusSelf({ instant: true });
     }, [!!data.games]);
 
     return (

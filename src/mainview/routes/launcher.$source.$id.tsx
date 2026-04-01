@@ -1,7 +1,6 @@
 import { AnimatedBackground } from '@/mainview/components/AnimatedBackground';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import DotsLoading from '../components/backgrounds/dots';
-import { Router } from '..';
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
@@ -16,9 +15,10 @@ export const Route = createFileRoute('/launcher/$source/$id')({
 
 function RouteComponent ()
 {
+  const router = useRouter();
   function HandleGoBack ()
   {
-    Router.navigate({ to: '/game/$source/$id', viewTransition: { types: ['zoom-out'] }, params: { source, id }, replace: true });
+    router.navigate({ to: '/game/$source/$id', viewTransition: { types: ['zoom-out'] }, params: { source, id }, replace: true });
   }
 
   const { source, id } = Route.useParams();

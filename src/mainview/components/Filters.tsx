@@ -8,6 +8,7 @@ import SvgIcon from "./SvgIcon";
 import { twMerge } from "tailwind-merge";
 import { useEffect } from "react";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
+import { oneShot } from "../scripts/audio/audio";
 
 function FilterCat (
   data: {
@@ -19,7 +20,10 @@ function FilterCat (
 {
   const { ref, focusSelf } = useFocusable({
     focusKey: data.id,
-    onFocus: (l, p, details) => data.onFocus?.(data.id, ref.current, details),
+    onFocus: (l, p, details) =>
+    {
+      data.onFocus?.(data.id, ref.current, details);
+    },
     onEnterPress: data.onAction
   });
 
@@ -27,7 +31,8 @@ function FilterCat (
     <li
       aria-selected={data.active}
       ref={ref}
-      onClick={focusSelf}
+      onClick={e => focusSelf({ event: e.nativeEvent })}
+      data-sound-category={data.active ? undefined : "filter"}
       className={"sm:text-sm sm:px-2 flex md:px-4 items-center justify-center rounded-full transition-all md:text-lg focusable focusable-primary hover:not-focused:not-aria-selected:bg-base-content/40 not-focused:cursor-pointer aria-selected:bg-base-content aria-selected:text-base-300 aria-selected:drop-shadow aria-selected:cursor-default active:bg-accent! active:text-accent-content! active:ring-offset-7 active:ring-offset-base-content select-none gap-1"}
     >
       {data.icon ? <><div className="sm:portrait:px-2">{data.icon}</div><div className="sm:portrait:hidden md:inline">{data.children ?? data.label}</div></> : <div>{data.children ?? data.label}</div>}
@@ -68,6 +73,10 @@ export function FilterUI (data: {
           if (!data.options[newFilter].selected)
           {
             data.setSelected(newFilter);
+            oneShot('selectFilter');
+          } else
+          {
+            oneShot('invalidNavigation');
           }
         },
         button: GamePadButtonCode.R1
@@ -80,7 +89,13 @@ export function FilterUI (data: {
           const selectedFilterIndex = Math.max(0, filterIndex - 1,);
           const newFilter = filterKeys[selectedFilterIndex];
           if (!data.options[newFilter].selected)
+          {
             data.setSelected(newFilter);
+            oneShot('selectFilter');
+          } else
+          {
+            oneShot('invalidNavigation');
+          }
         },
         button: GamePadButtonCode.L1
       }], [data.options]);
@@ -90,7 +105,7 @@ export function FilterUI (data: {
   {
     if (hasFocusedChild)
     {
-      setFocus(`${data.id}-${defaultFocus}`);
+      setFocus(`${data.id}-${defaultFocus}`, { instant: true });
     }
   }, [hasFocusedChild, defaultFocus, data.id]);
 

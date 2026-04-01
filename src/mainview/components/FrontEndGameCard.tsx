@@ -1,15 +1,16 @@
 import { RPC_URL } from "@/shared/constants";
 import CardElement from "./CardElement";
-import { Router } from "..";
 import { FileQuestion, HardDrive, Store } from "lucide-react";
 import { JSX } from "react";
 import { FOCUS_KEYS } from "../scripts/types";
+import { useRouter } from "@tanstack/react-router";
 
 export default function FrontEndGameCard (data: { index: number, game: FrontEndGameType; showSource?: boolean; } & FocusParams & InteractParams)
 {
+    const router = useRouter();
     function handleDefaultSelect (id: FrontEndId, source: string | null, sourceId: string | null)
     {
-        Router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
+        router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
     };
 
     const platformUrl = new URL(`${RPC_URL(__HOST__)}${data.game.path_platform_cover}`);

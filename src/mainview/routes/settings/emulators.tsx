@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { OptionSpace } from '../../components/options/OptionSpace';
 import { OptionInput } from '../../components/options/OptionInput';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -19,7 +19,6 @@ import Carousel from '@/mainview/components/Carousel';
 import { FOCUS_KEYS } from '@/mainview/scripts/types';
 import { scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from '@/mainview/scripts/utils';
 import { SettingsOption } from '@/mainview/components/options/SettingsOption';
-import { Router } from '@/mainview';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -76,7 +75,7 @@ function NewEmulatorPath (data: { addOverride: (emulator: string) => void; isAdd
   const handleCloseContext = () =>
   {
     setNewEmulatorTypeOpen(false);
-    setFocus('emulator');
+    setFocus('emulator', { instant: true });
   };
 
 
@@ -123,7 +122,7 @@ function EmulatorPath (data: { id: string; })
   const handleCloseSearch = () =>
   {
     setIsSearching(false);
-    setFocus(`search-${data.id}`);
+    setFocus(`search-${data.id}`, { instant: true });
   };
 
   const handleSelectPath = (path: string) =>
@@ -192,6 +191,7 @@ function EmulatorBadge (data: {
   addOverride: (emulator: string) => void;
 } & FocusParams)
 {
+  const router = useRouter();
   const { focusKey, ref, focused } = useFocusable({
     focusKey: FOCUS_KEYS.EMULATOR_CARD(data.emulator.name),
     onFocus (l, p, details) { data.onFocus?.(focusKey, ref.current, details); }
@@ -212,12 +212,12 @@ function EmulatorBadge (data: {
         label: "Visit Store",
         action ()
         {
-          Router.navigate({ to: '/store/details/emulator/$id', params: { id: data.emulator.name } });
+          router.navigate({ to: '/store/details/emulator/$id', params: { id: data.emulator.name } });
         },
       });
     }
     return shortcuts;
-  }, [data.addOverride]);
+  }, [data.addOverride, router]);
 
 
   let statusIcon = <SearchAlert className={data.emulator.isCritical ? 'text-warning' : 'text-base-content/40'} />;
@@ -255,7 +255,7 @@ function EmulatorBadge (data: {
           case 'store':
             icon = <Store />;
             className = "hover:bg-base-content hover:text-base-100 cursor-pointer bg-accent text-accent-content";
-            action = () => { Router.navigate({ to: '/store/details/emulator/$id', params: { id: data.emulator.name } }); };
+            action = () => { router.navigate({ to: '/store/details/emulator/$id', params: { id: data.emulator.name } }); };
             break;
           case 'embedded':
             icon = <Plug />;

@@ -13,6 +13,7 @@ export default function LoadMoreButton (data: { isFetching: boolean; lastId?: Fr
     };
 
     const { ref, focusKey, focused } = useFocusable({
+        focusable: !data.isFetching,
         focusKey: 'load-more-btn',
         onFocus: (_l, _p, details) => data.onFocus?.(focusKey, ref.current, details),
         onEnterPress: handleAction

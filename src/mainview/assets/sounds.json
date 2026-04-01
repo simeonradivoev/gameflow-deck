@@ -1,0 +1,304 @@
+{
+  "sprite": {
+    "Classic UI SFX - Chords #1": [
+      0,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #10": [
+      6000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #11": [
+      12000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #12": [
+      18000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #13": [
+      24000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #14": [
+      30000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #15": [
+      36000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #16": [
+      42000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #17": [
+      48000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #18": [
+      54000,
+      4005.215419501134
+    ],
+    "Classic UI SFX - Chords #19": [
+      60000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #2": [
+      66000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #20": [
+      72000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #3": [
+      78000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #4": [
+      84000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #5": [
+      90000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #6": [
+      96000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #7": [
+      102000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #8": [
+      108000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Chords #9": [
+      114000,
+      4005.215419501127
+    ],
+    "Classic UI SFX - Short - High #1": [
+      120000,
+      2546.893424036284
+    ],
+    "Classic UI SFX - Short - High #10": [
+      124000,
+      2552.0861678004535
+    ],
+    "Classic UI SFX - Short - High #11": [
+      128000,
+      2927.0975056689394
+    ],
+    "Classic UI SFX - Short - High #12": [
+      132000,
+      2927.0975056689394
+    ],
+    "Classic UI SFX - Short - High #13": [
+      136000,
+      3000
+    ],
+    "Classic UI SFX - Short - High #14": [
+      140000,
+      2802.0861678004394
+    ],
+    "Classic UI SFX - Short - High #15": [
+      144000,
+      2723.9455782312803
+    ],
+    "Classic UI SFX - Short - High #16": [
+      148000,
+      2927.0975056689394
+    ],
+    "Classic UI SFX - Short - High #17": [
+      152000,
+      2880.226757369627
+    ],
+    "Classic UI SFX - Short - High #18": [
+      156000,
+      2359.387755102034
+    ],
+    "Classic UI SFX - Short - High #19": [
+      160000,
+      3052.0861678004394
+    ],
+    "Classic UI SFX - Short - High #2": [
+      165000,
+      2843.7641723355964
+    ],
+    "Classic UI SFX - Short - High #20": [
+      169000,
+      2015.6462585034092
+    ],
+    "Classic UI SFX - Short - High #21": [
+      173000,
+      2005.215419501127
+    ],
+    "Classic UI SFX - Short - High #22": [
+      177000,
+      2489.5918367346894
+    ],
+    "Classic UI SFX - Short - High #23": [
+      181000,
+      2458.3446712018144
+    ],
+    "Classic UI SFX - Short - High #24": [
+      185000,
+      2093.7641723355964
+    ],
+    "Classic UI SFX - Short - High #25": [
+      189000,
+      2005.215419501127
+    ],
+    "Classic UI SFX - Short - High #3": [
+      193000,
+      2864.6031746031613
+    ],
+    "Classic UI SFX - Short - High #4": [
+      197000,
+      3031.2698412698464
+    ],
+    "Classic UI SFX - Short - High #5": [
+      202000,
+      2598.9795918367236
+    ],
+    "Classic UI SFX - Short - High #6": [
+      206000,
+      2427.0975056689394
+    ],
+    "Classic UI SFX - Short - High #7": [
+      210000,
+      2468.752834467125
+    ],
+    "Classic UI SFX - Short - High #8": [
+      214000,
+      2916.666666666657
+    ],
+    "Classic UI SFX - Short - High #9": [
+      218000,
+      2250
+    ],
+    "Classic UI SFX - Short - Low #1": [
+      222000,
+      2010.4308390022538
+    ],
+    "Classic UI SFX - Short - Low #10": [
+      226000,
+      3020.8390022675644
+    ],
+    "Classic UI SFX - Short - Low #11": [
+      231000,
+      2458.3446712018144
+    ],
+    "Classic UI SFX - Short - Low #12": [
+      235000,
+      2901.0430839002197
+    ],
+    "Classic UI SFX - Short - Low #13": [
+      239000,
+      2843.7641723355964
+    ],
+    "Classic UI SFX - Short - Low #14": [
+      243000,
+      3135.4195011337824
+    ],
+    "Classic UI SFX - Short - Low #15": [
+      248000,
+      2703.1292517006877
+    ],
+    "Classic UI SFX - Short - Low #16": [
+      252000,
+      2875.011337868472
+    ],
+    "Classic UI SFX - Short - Low #17": [
+      256000,
+      2927.0975056689394
+    ],
+    "Classic UI SFX - Short - Low #18": [
+      260000,
+      3057.2789115646515
+    ],
+    "Classic UI SFX - Short - Low #19": [
+      265000,
+      2473.9455782312803
+    ],
+    "Classic UI SFX - Short - Low #2": [
+      269000,
+      2583.3333333333144
+    ],
+    "Classic UI SFX - Short - Low #20": [
+      273000,
+      2515.646258503409
+    ],
+    "Classic UI SFX - Short - Low #21": [
+      277000,
+      2604.172335600879
+    ],
+    "Classic UI SFX - Short - Low #22": [
+      281000,
+      3031.2698412698182
+    ],
+    "Classic UI SFX - Short - Low #23": [
+      286000,
+      2937.50566893425
+    ],
+    "Classic UI SFX - Short - Low #24": [
+      290000,
+      2609.387755102034
+    ],
+    "Classic UI SFX - Short - Low #25": [
+      294000,
+      2625.0113378685
+    ],
+    "Classic UI SFX - Short - Low #3": [
+      298000,
+      2828.140589569159
+    ],
+    "Classic UI SFX - Short - Low #4": [
+      302000,
+      2614.6031746031895
+    ],
+    "Classic UI SFX - Short - Low #5": [
+      306000,
+      3161.4739229024735
+    ],
+    "Classic UI SFX - Short - Low #6": [
+      311000,
+      2333.3333333333144
+    ],
+    "Classic UI SFX - Short - Low #7": [
+      315000,
+      2536.4625850340303
+    ],
+    "Classic UI SFX - Short - Low #8": [
+      319000,
+      2630.2267573695985
+    ],
+    "Classic UI SFX - Short - Low #9": [
+      323000,
+      2697.936507936504
+    ],
+    "UI_Single_Set 16_01": [
+      327000,
+      309.5918367346826
+    ],
+    "UI_Single_Set 16_02": [
+      329000,
+      309.5918367346826
+    ],
+    "UI_Single_Set 16_03": [
+      331000,
+      309.5918367346826
+    ],
+    "UI_TwoNote_Set 15_01": [
+      333000,
+      335.2380952380827
+    ],
+    "UI_TwoNote_Set 15_02": [
+      335000,
+      309.5918367346826
+    ]
+  }
+}

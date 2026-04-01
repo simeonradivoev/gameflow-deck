@@ -8,6 +8,7 @@ import
   Outlet,
   createFileRoute,
   useMatch,
+  useRouter,
 } from "@tanstack/react-router";
 import { ViewTransitionOptions } from "@tanstack/router-core";
 import classNames from "classnames";
@@ -21,20 +22,24 @@ import
   MonitorCog,
   Puzzle,
 } from "lucide-react";
-import { JSX, useEffect } from "react";
+import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
 import z from "zod";
 import { SettingsSchema } from "../../../shared/constants";
-import { Router } from "../..";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Shortcuts from "@/mainview/components/Shortcuts";
 import { HandleGoBack } from "@/mainview/scripts/utils";
+import { AutoFocus } from "@/mainview/components/AutoFocus";
+import { oneShot } from "@/mainview/scripts/audio/audio";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
   validateSearch: z.object({
     focus: z.keyof(SettingsSchema).optional()
-  })
+  }),
+  staticData: {
+    enterSound: 'openSettings'
+  }
 });
 
 function MenuItem (data: {
@@ -48,17 +53,18 @@ function MenuItem (data: {
   label: string;
 })
 {
+  const router = useRouter();
   const acitve = !!useMatch({ from: data.route as any, shouldThrow: false });;
   const handleNonFocusSelect = () =>
   {
     if (data.return)
     {
-      HandleGoBack();
+      HandleGoBack(router);
     } else if (!acitve)
     {
-      Router.navigate({ to: data.route, viewTransition: { types: ['slide-up'] }, replace: true });
+      router.navigate({ to: data.route, viewTransition: { types: ['slide-up'] }, replace: true });
     }
-
+    oneShot('click');
   };
   const { ref, focusSelf } = useFocusable({
     focusKey: `menu-item-${data.route}`,
@@ -67,7 +73,7 @@ function MenuItem (data: {
     {
       if (data.focusSelect && !acitve)
       {
-        Router.navigate({ to: data.route, viewTransition: { types: ['slide-up'] }, replace: true });
+        router.navigate({ to: data.route, viewTransition: { types: ['slide-up'] }, replace: true });
       }
       (ref.current as HTMLElement).scrollIntoView({ inline: 'center' });
     },
@@ -81,6 +87,7 @@ function MenuItem (data: {
     <li
       ref={ref}
       key={data.route}
+      data-sound-category={"menu"}
       onClick={data.focusSelect ? focusSelf : handleNonFocusSelect}
       onFocus={focusSelf}
       className={twMerge("flex group-focusable cursor-pointer", data.className)}
@@ -167,17 +174,13 @@ function SettingsMenu (data: {})
 
 export function SettingsUI ()
 {
+  const router = useRouter();
   const { ref, focusKey, focusSelf } = useFocusable({
     focusKey: "settings-page-layout",
     preferredChildFocusKey: 'settings-menu'
   });
 
-  useEffect(() =>
-  {
-    focusSelf();
-  }, []);
-
-  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router) }], [router]);
   const { shortcuts } = useShortcutContext();
 
   return (
@@ -196,6 +199,7 @@ export function SettingsUI ()
           <Shortcuts shortcuts={shortcuts} />
         </div>
       </div>
+      <AutoFocus focus={focusSelf} />
     </FocusContext.Provider>
   );
 }

@@ -2,6 +2,7 @@ import { getCurrentFocusKey, navigateByDirection } from "@noriginmedia/norigin-s
 import { GetFocusedElement } from "./spatialNavigation";
 import { useEffect, useState } from "react";
 import { mobileCheck } from "./utils";
+import { oneShot } from "./audio/audio";
 
 let loopStarted = false;
 let isTouching = false;
@@ -104,7 +105,10 @@ function throttleNav (key: string, dir: string, event: Event)
     const speed = Math.max(maxSpeed - (maxSpeed - minSpeed) * (acceleration / 6), minSpeed);
     if ((currentDate.getTime() - (lastTime ?? 0) > speed))
     {
+        const currentFocusKey = getCurrentFocusKey();
         navigateByDirection(dir, { event });
+        if (currentFocusKey === getCurrentFocusKey())
+            oneShot('invalidNavigation');
         throttleMap.set(key, currentDate.getTime());
         throttleAcceleration.set(key, acceleration + 1);
         return true;

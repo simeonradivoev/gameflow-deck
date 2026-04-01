@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { CardList, GameMetaExtra } from "./CardList";
 import { GameCardFocusHandler } from "./CardElement";
 import { getCollectionsQuery } from "@queries/romm";
-import { Router } from "..";
+import { useRouter } from "@tanstack/react-router";
 
 export default function CollectionList (data: {
     id: string,
@@ -14,12 +14,13 @@ export default function CollectionList (data: {
     saveChildFocus?: 'session' | 'local';
 })
 {
+    const router = useRouter();
     const { data: collections } = useSuspenseQuery(getCollectionsQuery);
 
     const handleDefaultSelect = (gameId: string) =>
     {
         const [source, id] = gameId.split('@');
-        Router.navigate({
+        router.navigate({
             to: `/collection/$source/$id`,
             params: { source, id },
             search: { countHint: collections.find(c => c.id.id === id && c.id.source === source)?.game_count }

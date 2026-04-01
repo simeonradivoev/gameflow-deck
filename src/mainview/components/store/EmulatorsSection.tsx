@@ -8,12 +8,12 @@ import { ChevronRight, Joystick } from "lucide-react";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { scrollIntoNearestParent, useDragScroll } from "@/mainview/scripts/utils";
 import FocusDots from "../FocusDots";
-import { Router } from "@/mainview";
 import { StoreEmulatorCard } from "./StoreEmulatorCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import Carousel from "../Carousel";
+import { useRouter } from "@tanstack/react-router";
 
-function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (details: { node: HTMLElement, instant: boolean; }) => void; })
+function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (details: { node: HTMLElement, instant?: boolean; }) => void; })
 {
     const { ref, focusKey } = useFocusable({
         focusKey: data.id,
@@ -39,6 +39,7 @@ export function EmulatorsSection (data: {
     header?: any;
 } & FocusParams)
 {
+    const router = useRouter();
     const { ref, focusKey } = useFocusable({
         focusKey: FOCUS_KEYS.EMULATOR_SECTION(data.id),
         trackChildren: true,
@@ -68,7 +69,7 @@ export function EmulatorsSection (data: {
                             scrollIntoNearestParent(node, { behavior: details.instant ? 'instant' : 'smooth' });
                         }} />
                     )) ?? Array.from({ length: 8 }).map((_, i) => <div key={i} className="skeleton h-38 w-full rounded-4xl" />)}
-                    <SeeAllCard id={`${FOCUS_KEYS.EMULATOR_SECTION}-see-all`} onAction={() => Router.navigate({ to: '/store/tab/emulators', viewTransition: { types: ['zoom-in'] } })} onFocus={({ node, instant }) => scrollIntoNearestParent(node, { behavior: instant ? 'instant' : 'smooth' })} />
+                    <SeeAllCard id={`${FOCUS_KEYS.EMULATOR_SECTION}-see-all`} onAction={() => router.navigate({ to: '/store/tab/emulators', viewTransition: { types: ['zoom-in'] } })} onFocus={({ node, instant }) => scrollIntoNearestParent(node, { behavior: instant ? 'instant' : 'smooth' })} />
                 </Carousel>
 
             </section>

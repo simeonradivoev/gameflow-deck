@@ -1,4 +1,4 @@
-import { Router } from '@/mainview';
+import { AutoFocus } from '@/mainview/components/AutoFocus';
 import { FilterUI } from '@/mainview/components/Filters';
 import { HeaderUI } from '@/mainview/components/Header';
 import Shortcuts from '@/mainview/components/Shortcuts';
@@ -6,19 +6,21 @@ import { StoreContext } from '@/mainview/scripts/contexts';
 import { gameQuery } from '@/mainview/scripts/queries/romm';
 import { storeEmulatorDetailsQuery } from '@/mainview/scripts/queries/store';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '@/mainview/scripts/shortcuts';
-import { mobileCheck, useStickyDataAttr } from '@/mainview/scripts/utils';
+import { HandleGoBack, mobileCheck, useStickyDataAttr } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMatchRoute } from '@tanstack/react-router';
+import { useMatchRoute, useRouter } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
-import { Settings } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import z from 'zod';
 
 export const Route = createFileRoute('/store/tab')({
   component: RouteComponent,
-  validateSearch: zodValidator(z.object({ focus: z.string().optional() }))
+  validateSearch: zodValidator(z.object({ focus: z.string().optional() })),
+  staticData: {
+    enterSound: 'openStore'
+  }
 });
 
 function useIsSettings (subPath: string)
@@ -33,6 +35,7 @@ function useIsSettings (subPath: string)
 
 function TopArea (data: { filters: Record<string, FilterOption>; })
 {
+  const router = useRouter();
   const { ref, focusKey } = useFocusable({
     focusKey: 'top-area',
     preferredChildFocusKey: `store-tabs`,
@@ -44,13 +47,13 @@ function TopArea (data: { filters: Record<string, FilterOption>; })
 
   useShortcuts("STORE_ROOT", () => [{
     label: "Return",
-    action: () => Router.navigate({ to: '/', viewTransition: { types: ['zoom-out'] } }),
+    action: () => HandleGoBack(router),
     button: GamePadButtonCode.B
-  }], []);
+  }], [router]);
 
   const handleNavigate = (s: string) =>
   {
-    Router.navigate({ to: `/store/tab/${s === 'home' ? '' : s}`, viewTransition: { types: ['slide-up'] }, replace: true });
+    router.navigate({ to: `/store/tab/${s === 'home' ? '' : s}`, viewTransition: { types: ['slide-up'] }, replace: true });
   };
 
   return <div ref={ref}>
@@ -76,6 +79,7 @@ function StoreOutlet ()
 function RouteComponent ()
 {
   // Root spatial nav container
+  const router = useRouter();
   const { ref, focusKey, focusSelf } = useFocusable({
     focusKey: "STORE_ROOT",
     preferredChildFocusKey: 'top-area',
@@ -93,25 +97,16 @@ function RouteComponent ()
   const { shortcuts } = useShortcutContext();
   const { focus } = Route.useSearch();
 
-  useEffect(() =>
-  {
-    if (!focus)
-    {
-      focusSelf();
-    }
-  }, []);
-
   const handleDetails = (type: string, source: string, id: string, focus: string) =>
   {
     if (type === 'emulator')
     {
-      Router.navigate({ to: '/store/details/emulator/$id', params: { id } });
+      router.navigate({ to: '/store/details/emulator/$id', params: { id } });
     }
     else if (type === 'game')
     {
-      Router.navigate({ to: '/game/$source/$id', params: { source: source, id: id } });
+      router.navigate({ to: '/game/$source/$id', params: { source: source, id: id } });
     }
-
   };
 
   const handlePrefetch = (type: string, source: string, id: string) =>
@@ -150,5 +145,6 @@ function RouteComponent ()
         </div>
       </FocusContext.Provider>
     </StoreContext>
+    <AutoFocus focus={focusSelf} />
   </div >;
 }

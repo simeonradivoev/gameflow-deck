@@ -40,7 +40,8 @@
     "version:generate": "standard-version --sign",
     "package:Linux": "bun run build:prod:appimage",
     "package:Windows": "bun run build:prod",
-    "download:chromium": "bun scripts/download-chromium.ts --out=./bin/chromium"
+    "download:chromium": "bun scripts/download-chromium.ts --out=./bin/chromium",
+    "build:audiosprites": "bun ./scripts/generate-audio-sprites.ts"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",
@@ -88,6 +89,7 @@
     "@tanstack/router-plugin": "^1.157.16",
     "@tanstack/zod-adapter": "^1.162.4",
     "@types/adm-zip": "^0.5.8",
+    "@types/audiosprite": "^0.7.3",
     "@types/bun": "latest",
     "@types/fs-extra": "^11.0.4",
     "@types/howler": "^2.2.12",
@@ -101,6 +103,7 @@
     "adm-zip": "^0.5.16",
     "animate.css": "^4.1.1",
     "app-builder-bin": "^5.0.0-alpha.13",
+    "audiosprite": "^0.7.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "classnames": "^2.5.1",
     "concurrently": "^9.2.1",

@@ -19,6 +19,7 @@ function RouteComponent ()
       <LocalOption id="backgroundBlur" label="Background Blur" type='checkbox'></LocalOption>
       <LocalOption id="backgroundAnimation" label="Background Animation" type='checkbox'></LocalOption>
       <LocalOption id="theme" label="Theme" type='dropdown' values={['dark', 'light', 'auto']}></LocalOption>
+      <LocalOption id='soundEffects' label="Sounds" type='checkbox'></LocalOption>
     </FocusContext>
   </ul>;
 }

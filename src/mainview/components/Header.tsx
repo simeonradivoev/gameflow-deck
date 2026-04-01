@@ -14,7 +14,6 @@ import
   Bell,
   Bluetooth,
   Clock,
-  Plug,
   Settings,
   Wifi,
   WifiHigh,
@@ -23,17 +22,15 @@ import
 } from "lucide-react";
 import { RoundButton } from "./RoundButton";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { RPC_URL, SystemInfoType } from "../../shared/constants";
 import { JSX, RefObject, useContext, useEffect, useRef, useState } from "react";
-import { systemApi } from "../scripts/clientApi";
-import { Router } from "..";
 import { useStickyDataAttr } from "../scripts/utils";
 import { twMerge } from "tailwind-merge";
 import { TwitchIcon } from "../scripts/brandIcons";
-import { rommLoggedInQuery, rommUserQuery } from "../scripts/queries/romm";
+import { rommLoggedInQuery } from "../scripts/queries/romm";
 import { twitchLoginVerificationQuery } from "../scripts/queries/settings";
-import { da } from "zod/v4/locales";
 import { SystemInfoContext } from "../scripts/contexts";
+import { useRouter } from "@tanstack/react-router";
+import { oneShot } from "../scripts/audio/audio";
 
 function HeaderAvatar (data: {
   id: string;
@@ -206,19 +203,23 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
     placeholderData: keepPreviousData
   });
 
-  const { ref } = useFocusable({ focusKey: 'accounts' });
+  const handleSelect = () =>
+  {
+    router.navigate({ to: '/settings/accounts' });
+    oneShot('click');
+  };
+  const { ref } = useFocusable({
+    focusKey: 'accounts', onEnterPress: handleSelect
+  });
 
   const accounts: HeaderAccount[] = [];
   if (data.accounts) accounts.push(...data.accounts);
+  const router = useRouter();
 
   if (rommUser.data?.hasLogin || rommUser.isError)
   {
     accounts.push({
       id: 'romm', preview: `https://romm.app/_ipx/q_80/images/blocks/logos/romm.svg`,
-      action: () =>
-      {
-        Router.navigate({ to: '/settings/accounts', search: { focus: 'rommAddress' } });
-      },
       className: rommUser.data?.hasLogin && !rommUser.isError ? undefined : "border-error",
       type: 'secondary'
     });
@@ -228,15 +229,11 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
   {
     accounts.push({
       id: 'twitch', preview: TwitchIcon,
-      action: () =>
-      {
-        Router.navigate({ to: '/settings/accounts', search: { focus: 'rommAddress' } });
-      },
       type: 'secondary'
     });
   }
 
-  return <div ref={ref} className="avatar-group cursor-pointer -space-x-6 w-fit flex items-center gap-2 drop-shadow-sm overflow-visible rounded-3xl focusable focusable-hover ">
+  return <div onClick={handleSelect} ref={ref} style={{ viewTimelineName: "header-accounts" }} className="avatar-group cursor-pointer -space-x-6 w-fit flex items-center gap-2 drop-shadow-sm overflow-visible rounded-3xl focusable focusable-hover ">
     {accounts?.map(a => <HeaderAvatar
       key={`header-avatar-${a.id}`}
       id={`account-${a.id}`}
@@ -285,9 +282,10 @@ interface HeaderUIParams
 export function HeaderUI (data: HeaderUIParams)
 {
   const { ref, focusKey } = useFocusable({ focusKey: "header-elements", focusable: data.focusable, preferredChildFocusKey: data.preferredChildFocusKey });
+  const router = useRouter();
   const goToSettings = () =>
   {
-    Router.navigate({ to: '/settings/accounts' });
+    router.navigate({ to: '/settings/accounts' });
   };
   return (
     <FocusContext.Provider value={focusKey}>
@@ -296,7 +294,7 @@ export function HeaderUI (data: HeaderUIParams)
         className="flex items-center justify-between text-base-content"
         style={{ viewTimelineName: 'header' }}
       >
-        <HeaderAccounts accounts={data.accounts} />
+        <HeaderAccounts key={"header-accounts"} accounts={data.accounts} />
         {data.title}
         <HeaderStatusBar key={"header-status-bar"} buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "settings", action: goToSettings, external: true }]} />
       </header>

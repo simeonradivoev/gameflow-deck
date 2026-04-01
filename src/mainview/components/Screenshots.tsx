@@ -83,7 +83,7 @@ export default function Screenshots (data: { screenshots?: string[]; className?:
             const closest = findClosestElementToCenter(scrollRef.current);
             if (!closest) return;
             const closestIndex = Array.from(scrollRef.current.children).indexOf(closest);
-            setFocus(`screenshot-${closestIndex}`);
+            setFocus(`screenshot-${closestIndex}`, { instant: true });
         }
     }, [focused, hasFocusedChild, scrollRef.current]);
 

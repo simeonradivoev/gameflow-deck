@@ -4,9 +4,8 @@ import
     useFocusable,
     FocusContext,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
-import { Router } from "@/mainview";
 import Shortcuts from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { systemApi } from "@/mainview/scripts/clientApi";
@@ -18,7 +17,7 @@ import Screenshots from "@/mainview/components/Screenshots";
 import { StickyHeaderUI } from "@/mainview/components/Header";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EmulatorsSection } from "@/mainview/components/store/EmulatorsSection";
-import { HandleGoBack, scrollIntoViewHandler, useJobStatus } from "@/mainview/scripts/utils";
+import { HandleGoBack, scrollIntoViewHandler, useJobStatus, useOnNavigateBack } from "@/mainview/scripts/utils";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "react-error-boundary";
 import { emulatorStatusIcons } from "@/mainview/components/store/StoreEmulatorCard";
@@ -27,6 +26,7 @@ import { GamesSection } from "@/mainview/components/store/GamesSection";
 import { deleteBiosMutation, downloadBiosMutation, installEmulatorMutation, storeEmulatorDeleteMutation, storeEmulatorDetailsQuery, storeEmulatorsRecommendedQuery } from "@queries/store";
 import { gamesRecommendedBasedOnEmulatorQuery } from "@queries/romm";
 import FocusTooltip from "@/mainview/components/FocusTooltip";
+import { AutoFocus } from "@/mainview/components/AutoFocus";
 
 export const Route = createFileRoute('/store/details/emulator/$id')({
     component: RouteComponent,
@@ -35,6 +35,10 @@ export const Route = createFileRoute('/store/details/emulator/$id')({
         ctx.context.queryClient.prefetchQuery(storeEmulatorDetailsQuery(ctx.params.id));
         ctx.context.queryClient.prefetchQuery(storeEmulatorsRecommendedQuery(ctx.params.id));
         ctx.context.queryClient.prefetchQuery(gamesRecommendedBasedOnEmulatorQuery(ctx.params.id));
+    },
+    staticData: {
+        enterSound: "openDetails",
+        goBackSound: "returnDetails"
     }
 });
 
@@ -288,7 +292,7 @@ function Description (data: { emulator?: FrontEndEmulatorDetailed; })
 export function RouteComponent ()
 {
     const { id } = Route.useParams();
-
+    const router = useRouter();
     const { ref, focusKey, focusSelf } = useFocusable({
         focusKey: `GAME_DETAIL_${id}`,
         trackChildren: true,
@@ -301,21 +305,15 @@ export function RouteComponent ()
 
     useShortcuts(focusKey, () => [{
         label: "Return",
-        action: HandleGoBack,
+        action: () => HandleGoBack(router),
         button: GamePadButtonCode.B
-    }]);
+    }], [router]);
 
     const installMutation = useMutation({
         ...installEmulatorMutation(id), onSuccess: (data, variables, onMutateResult, context) => context.client.refetchQueries(storeEmulatorDetailsQuery(id)),
     });
 
-    useEffect(() =>
-    {
-        focusSelf();
-    }, []);
-
     const { shortcuts } = useShortcutContext();
-
 
     const stats: StatEntry[] = [];
     if (emulator)
@@ -341,6 +339,7 @@ export function RouteComponent ()
 
     return (
         <AnimatedBackground ref={ref} className="" scrolling>
+            <AutoFocus focus={focusSelf} />
             <FocusContext.Provider value={focusKey}>
                 <StickyHeaderUI ref={ref} />
                 <div className="flex flex-col z-10">
@@ -370,7 +369,7 @@ export function RouteComponent ()
                             onFocus={scrollIntoViewHandler({ block: 'center' })}
                             onSelect={(id, focus) =>
                             {
-                                Router.navigate({
+                                router.navigate({
                                     to: '/store/details/emulator/$id', params: { id }
                                 });
                             }}
@@ -386,7 +385,7 @@ export function RouteComponent ()
                         </div>
                         <GamesSection showSources={true} onFocus={scrollIntoViewHandler({ behavior: 'smooth', block: 'center' })} onSelect={(id) =>
                         {
-                            Router.navigate({
+                            router.navigate({
                                 to: '/game/$source/$id', params: { id: id.id, source: id.source }
                             });
                         }} games={recommendedGames} /></div>}

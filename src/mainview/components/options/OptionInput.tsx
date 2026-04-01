@@ -4,6 +4,7 @@ import { useOptionContext } from "./OptionSpace";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { systemApi } from "../../scripts/clientApi";
 import { CheckIcon, X } from "lucide-react";
+import { oneShot } from "@/mainview/scripts/audio/audio";
 
 export function OptionInput (data: {
     name: string;
@@ -27,6 +28,7 @@ export function OptionInput (data: {
         {
             inputRef.current?.focus();
         }
+        oneShot('click');
     };
     const { ref } = useFocusable({
         focusKey: data.name, onEnterPress: handlePress
@@ -79,12 +81,14 @@ export function OptionInput (data: {
                     name={data.name}
                     checked={Boolean(data.value)}
                     type={data.type}
+                    onClick={() => { oneShot("click"); }}
                     autoComplete={data.autocomplete}
                     onFocus={handleFocus}
                     placeholder={data.placeholder}
                     onChange={e => data.onChange?.(e.target.checked)}
                     onBlur={data.onBlur}
                     className={twMerge(
+                        "active:bg-base-content rounded-full",
                         data.className
                     )}
                 />

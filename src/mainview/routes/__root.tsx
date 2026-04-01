@@ -4,10 +4,7 @@ import Notifications from "../components/Notifications";
 import { Toaster } from "react-hot-toast";
 import { mobileCheck, useLocalSetting } from "../scripts/utils";
 import useActiveControl from "../scripts/gamepads";
-import { useEffect, useState } from "react";
-import { SystemInfoContext } from "../scripts/contexts";
-import { SystemInfoType } from "@/shared/constants";
-import { systemApi } from "../scripts/clientApi";
+import { useEffect } from "react";
 import AppCommunication from "../components/AppCommunication";
 
 export const Route = createRootRouteWithContext<RouterContext>()({

@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts";
 import { ContextDialogContext } from "../scripts/contexts";
 import { FOCUS_KEYS } from "../scripts/types";
+import { oneShot } from "../scripts/audio/audio";
 
 export function ContextList (data: {
     options?: DialogEntry[];
@@ -34,6 +35,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     {
         if (data.disabled === true) return;
         data.action?.({ close: context.close, focus: focusSelf });
+        oneShot('click');
     };
     const { ref, focusSelf, focusKey } = useFocusable({
         focusKey: FOCUS_KEYS.CONTEXT_DIALOG_OPTION(context.id, data.id),
@@ -57,6 +59,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
         onClick={handleAction}
         data-selected={data.selected}
         aria-disabled={data.disabled}
+        data-sound-category={"menu"}
         className={
             twMerge("flex cursor-pointer sm:text-sm md:text-base group-focusable scroll-m-4")}>
         <FocusContext value={focusKey}>
@@ -100,10 +103,10 @@ export function useContextDialog (id: string, data: { content?: JSX.Element; cla
             data.onClose?.();
             if (newSourceFocusKey)
             {
-                setFocus(newSourceFocusKey);
+                setFocus(newSourceFocusKey, { instant: true });
             } else if (sourceFocusKey)
             {
-                setFocus(sourceFocusKey);
+                setFocus(sourceFocusKey, { instant: true });
             }
         }
 
@@ -137,12 +140,14 @@ export function ContextDialog (data: {
     const handleClose = () =>
     {
         data.close(false);
+        oneShot('closeContext');
     };
     useEffect(() =>
     {
         if (data.open)
         {
-            focusSelf();
+            focusSelf({ instant: true });
+            oneShot('openContext');
         }
     }, [data.open]);
 

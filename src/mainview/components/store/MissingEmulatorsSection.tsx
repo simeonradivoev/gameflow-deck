@@ -9,6 +9,7 @@ import { ChevronRight, CircleQuestionMark, SearchAlert } from "lucide-react";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { RPC_URL } from "@/shared/constants";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
+import { oneShot } from "@/mainview/scripts/audio/audio";
 
 // ── Single missing-emulator card ───────────────────────────────────────────
 interface MissingCardProps
@@ -19,7 +20,11 @@ interface MissingCardProps
 
 function MissingCard ({ emulator: em, onSelect }: MissingCardProps)
 {
-    const handleSelect = () => onSelect?.(em.name, focusKey);
+    const handleSelect = () =>
+    {
+        onSelect?.(em.name, focusKey);
+        oneShot('click');
+    };
 
     const { ref, focusKey } = useFocusable({
         focusKey: FOCUS_KEYS.MISSING_CARD(em.name),

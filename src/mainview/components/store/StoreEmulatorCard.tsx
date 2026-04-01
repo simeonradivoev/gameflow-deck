@@ -9,6 +9,7 @@ import { BadgeCheck, ChevronRight, EllipsisVertical, FileQuestion, IceCream2, Pa
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import { FlatpackIcon } from "@/mainview/scripts/brandIcons";
 import { JSX } from "react";
+import { oneShot } from "@/mainview/scripts/audio/audio";
 
 export const emulatorStatusIcons: Record<string, JSX.Element> = {
     store: <Store />,
@@ -26,7 +27,11 @@ export function StoreEmulatorCard (data: {
     className?: string;
 })
 {
-    const handleSelect = () => data.onSelect?.(data.emulator.name, focusKey);
+    const handleSelect = () =>
+    {
+        data.onSelect?.(data.emulator.name, focusKey);
+        oneShot('click');
+    };
 
     const { ref, focusKey } = useFocusable({
         focusKey: FOCUS_KEYS.EMULATOR_CARD(data.id),
@@ -45,6 +50,7 @@ export function StoreEmulatorCard (data: {
             ref={ref}
             role="button"
             tabIndex={0}
+            data-sound-category="emulator"
             data-installed={data.emulator.validSources.some(s => s.exists)}
             onClick={isTouch ? handleSelect : undefined}
             className={twMerge("relative focusable focusable-info bg-base-100 rounded-4xl transition-shadow focused:not-control-mouse:animate-scale-small shadow-lg border border-base-content/10 active:ring-4 active:ring-base-content active:transition-none", data.className)}
@@ -87,7 +93,7 @@ export function StoreEmulatorCard (data: {
                         </div>;
                     })}
                     {isMouse && <>
-                        <Button onAction={handleSelect} style="base" className="grow text-base-content/40" id={`${data.emulator.name}-details`} >Details<ChevronRight /></Button>
+                        <Button onAction={e => data.onSelect?.(data.emulator.name, focusKey)} style="base" className="grow text-base-content/40" id={`${data.emulator.name}-details`} >Details<ChevronRight /></Button>
                     </>}
 
                 </div>

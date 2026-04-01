@@ -1,16 +1,15 @@
-import { createFileRoute, ErrorComponentProps } from "@tanstack/react-router";
+import { createFileRoute, ErrorComponentProps, useRouter, useRouterState } from "@tanstack/react-router";
 import { RPC_URL } from "@shared/constants";
 import { useEffect, useRef, useState } from "react";
-import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { Calendar, Clock, Folder, Gamepad2, Image, Info, Store, TriangleAlert, Trophy } from "lucide-react";
+import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { Calendar, Folder, Gamepad2, Image, Info, TriangleAlert, Trophy } from "lucide-react";
 import { HeaderUI } from "../../components/Header";
 import { AnimatedBackground } from "../../components/AnimatedBackground";
 import { useQuery } from "@tanstack/react-query";
-import { Router } from "../..";
 import Shortcuts from "../../components/Shortcuts";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Screenshots from "@/mainview/components/Screenshots";
-import { HandleGoBack, scrollIntoViewHandler, useStickyDataAttr } from "@/mainview/scripts/utils";
+import { HandleGoBack, scrollIntoViewHandler, useOnNavigateBack, useStickyDataAttr } from "@/mainview/scripts/utils";
 import { FilterUI } from "@/mainview/components/Filters";
 import StatList, { StatEntry } from "@/mainview/components/StatList";
 import { useIntersectionObserver, useLocalStorage } from "usehooks-ts";
@@ -21,7 +20,7 @@ import Achievements from "@/mainview/components/game/Achievements";
 import { GameDetailsContext } from "@/mainview/scripts/contexts";
 import { gameQuery, gamesRecommendedBasedOnGameQuery } from "@queries/romm";
 import { GamesSection } from "@/mainview/components/store/GamesSection";
-import Details, { DetailElement } from "@/mainview/components/game/Details";
+import Details from "@/mainview/components/game/Details";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 
 export const Route = createFileRoute("/game/$source/$id")({
@@ -31,7 +30,11 @@ export const Route = createFileRoute("/game/$source/$id")({
   },
   component: RouteComponent,
   errorComponent: Error,
-  validateSearch: zodValidator(z.object({ focus: z.string().optional() }))
+  validateSearch: zodValidator(z.object({ focus: z.string().optional() })),
+  staticData: {
+    enterSound: 'openDetails',
+    goBackSound: "returnDetails"
+  },
 });
 
 function useDetailsSection ()
@@ -45,10 +48,6 @@ function Error (data: ErrorComponentProps)
 
   useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
   const { shortcuts } = useShortcutContext();
-  useEffect(() =>
-  {
-    focusSelf();
-  }, []);
 
   return <AnimatedBackground ref={ref} backgroundKey="game-details">
     <div className="relative z-10 h-full">
@@ -68,6 +67,7 @@ function Error (data: ErrorComponentProps)
         </div>
       </FocusContext>
     </div>
+    <AutoFocus force focus={focusSelf} />
   </AnimatedBackground>;
 }
 
@@ -139,10 +139,10 @@ function Divider (data: { rootFocusKey: string; showShortcuts: boolean; game: Fr
 
 function RouteComponent ()
 {
+  const router = useRouter();
   const [recommendedGamesVisible, setRecommendedGamesVisible] = useState(false);
   const { source, id } = Route.useParams();
   const { data } = useQuery(gameQuery(source, id));
-  const { focus } = Route.useSearch();
   const [, setUpdate] = useState(0);
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details", preferredChildFocusKey: "main-details", forceFocus: true });
   const headerRef = useRef(null);
@@ -150,7 +150,12 @@ function RouteComponent ()
   const backgroundImage = data ? new URL(`${RPC_URL(__HOST__)}${data.path_cover}`) : undefined;
   const { data: recommendedGames } = useQuery({ ...gamesRecommendedBasedOnGameQuery(data?.id.source ?? source, data?.id.id ?? id), enabled: !!data && recommendedGamesVisible });
 
-  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+  useShortcuts(focusKey, () => [{
+    label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router)
+  }], [router]);
+
+  useOnNavigateBack((s) => s.sound = 'returnDetails');
+
   const { shortcuts } = useShortcutContext();
 
   useStickyDataAttr(headerRef, sentinelRef, ref);
@@ -190,7 +195,7 @@ function RouteComponent ()
                 onFocus={scrollIntoViewHandler({ block: 'center' })}
                 onSelect={(id, focus) =>
                 {
-                  Router.navigate({ to: '/store/details/emulator/$id', params: { id } });
+                  router.navigate({ to: '/store/details/emulator/$id', params: { id } });
                 }}
                 emulators={recommendedEmulators} />}
 
@@ -206,7 +211,7 @@ function RouteComponent ()
                 </div>
                 <GamesSection ref={intersct} showSources onSelect={(id, focus) =>
                 {
-                  Router.navigate({ to: '/game/$source/$id', params: { id: id.id, source: id.source } });
+                  router.navigate({ to: '/game/$source/$id', params: { id: id.id, source: id.source } });
                 }} onFocus={scrollIntoViewHandler({ block: 'center', inline: 'nearest' })} games={recommendedGames} />
               </div>
             </div>

@@ -7,6 +7,7 @@ import
 import classNames from "classnames";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { CSSProperties } from "react";
+import { oneShot } from "@/mainview/scripts/audio/audio";
 
 export type ButtonStyle = 'base' | 'accent' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error';
 
@@ -35,9 +36,14 @@ export function Button (data: {
     tooltipType?: "base" | "accent" | "error";
 } & InteractParams & FocusParams)
 {
+    const handleAction = (e?: any) =>
+    {
+        data.onAction?.(e);
+        oneShot('click');
+    };
     const { ref, focused, focusKey } = useFocusable({
         focusKey: data.id,
-        onEnterPress: data.onAction,
+        onEnterPress: () => handleAction(),
         onFocus: (_l, _p, details) => data.onFocus?.(focusKey, ref.current, details),
         focusable: !data.disabled
     });
@@ -49,7 +55,7 @@ export function Button (data: {
 
     return <button
         ref={ref}
-        onClick={e => data.onAction?.(e.nativeEvent)}
+        onClick={handleAction}
         disabled={data.disabled}
         data-tooltip={data.tooltip}
         data-tooltip_type={data.tooltipType}

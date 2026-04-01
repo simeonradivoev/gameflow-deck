@@ -80,7 +80,7 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
     const handleCloseSeatch = () =>
     {
         setIsBrowsing(false);
-        setFocus(`${data.id}-browse`);
+        setFocus(`${data.id}-browse`, { instant: true });
     };
 
     const handleInputBlur = () =>

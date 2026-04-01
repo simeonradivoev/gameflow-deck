@@ -90,3 +90,9 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 - [elysia](https://elysiajs.com/) for the APIs
 - [webview](https://github.com/webview/webview) for launching existing system webviews instead of full browser if possible.
 - [emulatorjs](https://emulatorjs.org/) for playing lots of roms inside the app without having to deal with external emulators
+
+### Credits
+
+- UI Sounds
+  - [CC BY 4.0 - Credit: JC Sounds](https://opengameart.org/content/jc-sounds-ui-utility-pack-vol-1)
+  - [Sounds by: Chhoff](https://chhoffmusic.itch.io/classic-ui-sfx)

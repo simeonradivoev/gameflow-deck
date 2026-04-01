@@ -9,8 +9,7 @@ import MainActions from "./MainActions";
 import ActionButton from "./ActionButton";
 import { useLocalStorage } from "usehooks-ts";
 import FocusTooltip from "../FocusTooltip";
-import { Router } from "@/mainview";
-import { useBlocker } from "@tanstack/react-router";
+import { useBlocker, useRouter } from "@tanstack/react-router";
 
 function AchievementsInfo (data: { game: FrontEndGameTypeDetailed; } & InteractParams)
 {
@@ -35,11 +34,12 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
     const [, setDetailsSection] = useLocalStorage('details-section', 'screenshots');
 
     const { ref, focusKey, hasFocusedChild } = useFocusable({ focusKey: 'actions', forceFocus: true, trackChildren: true, preferredChildFocusKey: 'mainAction' });
+    const router = useRouter();
     const deleteMutation = useMutation({
         ...deleteGameMutation({ id: data.id, source: data.source }),
         onSuccess: (d, v, r, ctx) =>
         {
-            ctx.client.invalidateQueries(gameInvalidationQuery(data.id, data.source)).then(() => Router.history.back());
+            ctx.client.invalidateQueries(gameInvalidationQuery(data.id, data.source)).then(() => router.history.back());
         },
         onError (error)
         {
