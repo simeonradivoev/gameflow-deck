@@ -1,0 +1,15 @@
+{
+    "name": "com.simeonradivoev.gameflow.dolphin",
+    "displayName": "DOLPHIN Integration",
+    "version": "0.0.1",
+    "description": "DOLPHIN Emulator Integration",
+    "main": "./dolphin.ts",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/5/53/Dolphin_Emulator_Logo_Refresh.svg",
+    "keywords": [
+        "integration",
+        "emulator",
+        "wiiu",
+        "gc",
+        "dolphin"
+    ]
+}

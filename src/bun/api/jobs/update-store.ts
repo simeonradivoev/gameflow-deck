@@ -30,7 +30,7 @@ export default class UpdateStoreJob implements IJob<never, never>
         await ensureDir(storeFolder);
 
         console.log("Updating Store");
-        const proc = Bun.spawn([process.execPath, "add", `${this.packageName}@${this.storeVersion}`, "--production", "--registry", this.registry.href], {
+        const proc = Bun.spawn([process.execPath, "install", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
             cwd: storeFolder,
             stdout: 'pipe',
             stderr: 'pipe',

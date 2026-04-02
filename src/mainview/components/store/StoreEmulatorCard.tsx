@@ -81,8 +81,8 @@ export function StoreEmulatorCard (data: {
                 </div>
 
                 <div className="flex gap-1 mt-1 h-10 items-center">
-                    {!!data.emulator.integration && data.emulator.validSources.some(s => s.type === 'store') && <div className="tooltip tooltip-primary" data-tip="Has Integration">
-                        <div className="bg-primary text-primary-content rounded-full p-1"><WandSparkles /></div>
+                    {!!data.emulator.integration && <div aria-disabled={!data.emulator.integration.possible} className="tooltip not-aria-disabled:tooltip-primary" data-tip={data.emulator.integration.possible ? "Has Integration" : "Can Integrate"}>
+                        <div className="bg-primary in-aria-disabled:bg-base-200 text-primary-content rounded-full p-1.5"><WandSparkles className="size-5" /></div>
                     </div>}
                     {data.emulator.validSources.slice(0, 3).map(s =>
                     {

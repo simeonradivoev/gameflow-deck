@@ -12,6 +12,7 @@ import { Downloader } from "@/bun/utils/downloader";
 import { ensureDir, move } from "fs-extra";
 import { simulateProgress } from "@/bun/utils";
 import { path7za } from "7zip-bin";
+import { getScoopPackage } from "../store/services/emulatorsService";
 
 type EmulatorDownloadStates = "download" | "extract";
 
@@ -55,6 +56,34 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
         } else if (validDownload.type === 'direct')
         {
             downloadUrl = new URL(validDownload.url);
+        } else if (validDownload.type === 'scoop')
+        {
+            const data = await getScoopPackage(this.emulator, validDownload.url);
+            let scoopDownload: URL | undefined;
+            if (data)
+            {
+                if (data.url)
+                {
+                    scoopDownload = new URL(data.url);
+                } else if (data.architecture)
+                {
+                    if (process.arch === 'x64' && data.architecture["64bit"])
+                    {
+                        scoopDownload = new URL(data.architecture["64bit"].url);
+                    } else if (process.arch === "arm64" && data.architecture["arm64"])
+                    {
+                        scoopDownload = new URL(data.architecture["arm64"].url);
+                    }
+                }
+            }
+
+            if (scoopDownload)
+            {
+                downloadUrl = scoopDownload;
+            } else
+            {
+                throw new Error("Could not find scoop download");
+            }
         } else
         {
             throw new Error("Download Type Unsupported");

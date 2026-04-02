@@ -20,6 +20,7 @@ export async function getOrCached<T> (key: string, getter: () => Promise<T>, opt
     }
 
     const data = await getter();
+    if (data === undefined) return data;
 
     const expire_at = options?.expireMs ? new Date(updated_at.getTime() + options.expireMs) : new Date(updated_at.getTime() + 24 * 60 * 60 * 1000);
 

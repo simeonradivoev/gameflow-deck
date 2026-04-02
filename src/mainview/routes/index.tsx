@@ -315,8 +315,8 @@ export default function ConsoleHomeUI ()
     headerButtons.push({ id: "fullscreen", icon: <Maximize />, action: handleFullscreen });
   headerButtons.push(
     { id: "search-header-button", icon: <Search /> },
-    { id: "power-button", icon: <Power />, external: true, action: () => close.mutate() },
-    { id: "settings-header-button", icon: <Settings />, external: true, action: () => Router.navigate({ to: "/settings/accounts" }) }
+    { id: "power-button", icon: <Power />, external: true, action: () => close.mutate(), className: "focusable-error!" },
+    { id: "settings-header-button", icon: <Settings />, external: true, action: () => router.navigate({ to: "/settings/accounts" }) }
   );
 
   return (

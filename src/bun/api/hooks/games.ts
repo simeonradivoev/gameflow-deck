@@ -18,6 +18,14 @@ export class GameHooks
             id: number;
         };
     }], string[] | undefined>(['ctx']);
+    /**
+     * Is the given emulator for the given command supported 
+     * @returns The possible value is if it can support it but not right now. To show grayed out icon.
+    */
+    emulatorLaunchSupport = new SyncBailHook<[ctx: {
+        emulator: string;
+        source?: EmulatorSourceEntryType;
+    }], { id: string; possible: boolean; } | undefined>(['ctx']);
     /** 
      * Fetches and returns a list of games converted to frontend.
      * @param ctx.localGameIds This is local game ids in the format '<source>@<sourceId>'

@@ -108,10 +108,20 @@ export const EmulatorPackageSchema = z.object({
         z.object({
             type: z.literal('direct'),
             url: z.url(),
+        }),
+        z.object({
+            type: z.literal('scoop'),
+            url: z.url(),
         })
     ]))).optional(),
     systems: z.array(z.string()),
     bios: z.literal(["required", "optional"]).optional()
+});
+
+export const ScoopPackageSchema = z.object({
+    version: z.string(),
+    url: z.url().optional(),
+    architecture: z.record(z.string(), z.object({ url: z.url(), hash: z.string().optional() })).optional()
 });
 
 export const SystemInfoSchema = z.object({

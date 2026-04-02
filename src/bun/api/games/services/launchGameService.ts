@@ -10,6 +10,8 @@ import { cores } from '../../emulatorjs/emulatorjs';
 import { LaunchGameJob } from '../../jobs/launch-game-job';
 import { EmulatorPackageType } from '@/shared/constants';
 import { getStoreEmulatorPackage, getStoreFolder } from '../../store/services/gamesService';
+import { getOrCached } from '../../cache';
+import { getScoopPackage } from '../../store/services/emulatorsService';
 
 export const varRegex = /%([^%]+)%/g;
 export const assignRegex = /(%\w+%)=(\S+) /g;
@@ -285,11 +287,27 @@ export async function findStoreEmulatorExec (id: string, emulator?: { systempath
         const storeExecName = (await Promise.all(storeEmulator.downloads[`${process.platform}:${process.arch}`].map(async dl =>
         {
             // glob file search causes issues so do manual search
-            const glob = new Glob(dl.pattern);
             if (await fs.exists(storeEmulatorFolder))
             {
+                const glob = (dl as any).pattern ? new Glob((dl as any).pattern) : undefined;
+                let bin: string | undefined = (dl as any).bin;
+                if (!bin && dl.type === 'scoop')
+                {
+                    const data = await getScoopPackage(id, dl.url);
+
+                    if (data)
+                    {
+                        bin = data.bin;
+                    }
+                }
+
                 const files = (await fs.readdir(storeEmulatorFolder))
-                    .filter(f => glob.match(f));
+                    .filter(f =>
+                    {
+                        if (glob && glob.match(f)) return true;
+                        if (bin && f === bin) return true;
+                    });
+
                 return files.map(f => path.join(storeEmulatorFolder, f));
             }
             return [];

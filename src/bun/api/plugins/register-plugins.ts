@@ -2,6 +2,7 @@ import { PluginManager } from "./plugin-manager";
 
 import pcsx2 from './builtin/emulators/com.simeonradivoev.gameflow.pcsx2/package.json';
 import ppsspp from './builtin/emulators/com.simeonradivoev.gameflow.ppsspp/package.json';
+import dolphin from './builtin/emulators/com.simeonradivoev.gameflow.dolphin/package.json';
 import romm from './builtin/sources/com.simeonradivoev.gameflow.romm/package.json';
 import { PluginDescriptionSchema, PluginDescriptionType, PluginSchema } from "@/bun/types/typesc.schema";
 
@@ -11,6 +12,7 @@ export default async function register (pluginManager: PluginManager)
     const plugins: (PluginDescriptionType & { main: string; load: () => Promise<any>; })[] = [
         { ...pcsx2, load: () => import('./builtin/emulators/com.simeonradivoev.gameflow.pcsx2/pcsx2') },
         { ...ppsspp, load: () => import('./builtin/emulators/com.simeonradivoev.gameflow.ppsspp/ppsspp') },
+        { ...dolphin, load: () => import('./builtin/emulators/com.simeonradivoev.gameflow.dolphin/dolphin') },
         { ...romm, load: () => import('./builtin/sources/com.simeonradivoev.gameflow.romm/romm') },
     ];
 

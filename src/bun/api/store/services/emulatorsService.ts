@@ -1,8 +1,9 @@
-import { EmulatorPackageType } from "@/shared/constants";
+import { EmulatorPackageType, ScoopPackageSchema } from "@/shared/constants";
 import { emulatorsDb, plugins } from "../../app";
 import * as emulatorSchema from '@schema/emulators';
 import { findExecs } from "../../games/services/launchGameService";
 import { eq } from "drizzle-orm";
+import { getOrCached } from "../../cache";
 
 export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageType, gameCount: number, systems: EmulatorSystem[])
 {
@@ -21,16 +22,32 @@ export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageT
         systems,
         gameCount,
         validSources: execPaths,
-        integration: findEmulatorPluginIntegration(emulator.name)
+        integration: findEmulatorPluginIntegration(emulator.name, execPaths)
     };
 
     return em;
 }
 
-export function findEmulatorPluginIntegration (name: string)
+export function findEmulatorPluginIntegration (name: string, validSources: (EmulatorSourceEntryType | undefined)[])
 {
-    const lowerCaseName = name.toLowerCase();
-    const integration = Object.entries(plugins.plugins).find(p => p[1].description.keywords?.includes(lowerCaseName));
-    if (!integration) return undefined;
-    return { name: integration[0], version: integration[1].description.version };
+    const hasSupport = validSources.concat(undefined).map(s => plugins.hooks.games.emulatorLaunchSupport.call({ emulator: name, source: s })).filter(s => !!s);
+
+    if (hasSupport.length <= 0) return undefined;
+    return { name: hasSupport[0].id, version: plugins.plugins[hasSupport[0].id]?.description.version, possible: hasSupport.some(s => s.possible) };
+}
+
+export async function getScoopPackage (id: string, url: string)
+{
+    const data = await getOrCached(`scoop-dl-${id}`, async () =>
+    {
+        const res = await fetch(url);
+        if (res.ok)
+        {
+            return ScoopPackageSchema.parseAsync(await res.json());
+        }
+        console.error(res.statusText);
+        return undefined;
+    });
+
+    return data;
 }

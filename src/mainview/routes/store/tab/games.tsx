@@ -8,9 +8,11 @@ import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import LoadMoreButton from '@/mainview/components/LoadMoreButton';
 import { storeGamesInfiniteQuery } from '@queries/store';
 import { StoreContext } from '@/mainview/scripts/contexts';
+import InvalidStoreError from '@/mainview/components/store/InvalidStoreError';
 
 export const Route = createFileRoute('/store/tab/games')({
-  component: RouteComponent
+  component: RouteComponent,
+  errorComponent: InvalidStoreError
 });
 
 function RouteComponent ()

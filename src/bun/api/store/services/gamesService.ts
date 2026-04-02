@@ -101,14 +101,7 @@ export async function getAllStoreEmulatorPackages ()
     const emulators = await fs.readdir(emulatorsBucket);
     const emulatorsRawData = await Promise.all(emulators.map(e => fs.readFile(path.join(emulatorsBucket, e), 'utf-8')));
 
-    const emulatesParsed = emulatorsRawData.map(d => EmulatorPackageSchema.safeParse(JSON.parse(d))).filter(e =>
-    {
-        if (e.error)
-        {
-            console.error(e.error);
-        }
-        return e.data;
-    }).map(e => e.data!);
+    const emulatesParsed = emulatorsRawData.map(d => EmulatorPackageSchema.parse(JSON.parse(d)));
 
     return emulatesParsed;
 }

@@ -1,7 +1,7 @@
 
 
-import { createFileRoute, useSearch } from '@tanstack/react-router';
-import { Joystick } from 'lucide-react';
+import { createFileRoute, ErrorComponentProps, useSearch } from '@tanstack/react-router';
+import { Joystick, TriangleAlert } from 'lucide-react';
 import { useContext, useEffect } from 'react';
 import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { StoreEmulatorCard } from '@/mainview/components/store/StoreEmulatorCard';
@@ -9,9 +9,11 @@ import { StoreContext } from '@/mainview/scripts/contexts';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { useQuery } from '@tanstack/react-query';
 import { storeEmulatorsQuery } from '@queries/store';
+import InvalidStoreError from '@/mainview/components/store/InvalidStoreError';
 
 export const Route = createFileRoute('/store/tab/emulators')({
   component: RouteComponent,
+  errorComponent: InvalidStoreError
 });
 
 function RouteComponent ()
@@ -22,7 +24,7 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
   const storeContext = useContext(StoreContext);
-  const { data: emulators } = useQuery(storeEmulatorsQuery);
+  const { data: emulators } = useQuery({ ...storeEmulatorsQuery, retry: false, throwOnError: true });
 
   useEffect(() =>
   {

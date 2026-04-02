@@ -14,6 +14,15 @@ export default class PCSX2Integration implements PluginType
 {
     load (ctx: PluginContextType)
     {
+
+        ctx.hooks.games.emulatorLaunchSupport.tap(desc.name, (ctx) =>
+        {
+            if (ctx.emulator === 'PPSSPP')
+            {
+                return { id: desc.name, possible: ctx.source?.type === 'store' };
+            }
+        });
+
         ctx.hooks.games.emulatorLaunch.tapPromise(desc.name, async (ctx) =>
         {
             if (ctx.autoValidCommand.emulator === 'PPSSPP' && ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir)

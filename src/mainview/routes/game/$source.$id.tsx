@@ -3,7 +3,7 @@ import { RPC_URL } from "@shared/constants";
 import { useEffect, useRef, useState } from "react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Calendar, Folder, Gamepad2, Image, Info, TriangleAlert, Trophy } from "lucide-react";
-import { HeaderUI } from "../../components/Header";
+import { HeaderUI, StickyHeaderUI } from "../../components/Header";
 import { AnimatedBackground } from "../../components/AnimatedBackground";
 import { useQuery } from "@tanstack/react-query";
 import Shortcuts from "../../components/Shortcuts";
@@ -146,7 +146,6 @@ function RouteComponent ()
   const [, setUpdate] = useState(0);
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details", preferredChildFocusKey: "main-details", forceFocus: true });
   const headerRef = useRef(null);
-  const sentinelRef = useRef(null);
   const backgroundImage = data ? new URL(`${RPC_URL(__HOST__)}${data.path_cover}`) : undefined;
   const { data: recommendedGames } = useQuery({ ...gamesRecommendedBasedOnGameQuery(data?.id.source ?? source, data?.id.id ?? id), enabled: !!data && recommendedGamesVisible });
 
@@ -158,7 +157,6 @@ function RouteComponent ()
 
   const { shortcuts } = useShortcutContext();
 
-  useStickyDataAttr(headerRef, sentinelRef, ref);
   const recommendedEmulators = data?.emulators?.filter(e => e.validSources.some(em => em.exists));
 
   const { ref: intersct } = useIntersectionObserver({
@@ -176,10 +174,7 @@ function RouteComponent ()
       }} >
         <div className="z-10">
           <FocusContext value={focusKey}>
-            <div ref={sentinelRef} className="h-0" />
-            <div ref={headerRef} className="sticky group top-0 bg-base-100/40 group p-2 z-15 transition-colors data-stuck:backdrop-blur-3xl">
-              <HeaderUI />
-            </div>
+            <StickyHeaderUI ref={headerRef} className="not-data-stuck:bg-base-200/40" />
             <div className="flex flex-col h-[calc(100vh-12rem)] overflow-hidden bg-linear-to-t from-base-100 to-base-100/40">
               <Details game={data} id={id} source={source} />
             </div>

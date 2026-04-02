@@ -18,7 +18,8 @@ declare interface FrontEndEmulator
     validSources: EmulatorSourceEntryType[];
     integration?: {
         name: string;
-        version: string;
+        version?: string;
+        possible: boolean;
     };
 }
 

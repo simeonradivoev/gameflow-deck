@@ -6,7 +6,7 @@ export const storeEmulatorsQuery = queryOptions({
     queryKey: ['store-emulators'], queryFn: async () =>
     {
         const { data, error } = await storeApi.api.store.emulators.get();
-        if (error) throw error;
+        if (error) throw new Error(JSON.stringify(error.value));
         return data;
     }
 });

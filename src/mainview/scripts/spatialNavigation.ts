@@ -107,7 +107,7 @@ SpatialNavigation.setCurrentFocusedKey = (newFocusKey, focusDetails) =>
     node: GetFocusedElement(newFocusKey)
   };
   setCurrentFocusedKey(newFocusKey, focusDetails);
-  window.dispatchEvent(new CustomEvent<FocusEventDetails>('focuschanged', {
+  (GetFocusedElement(newFocusKey) ?? window).dispatchEvent(new CustomEvent<FocusEventDetails>('focuschanged', {
     bubbles: true,
     detail: details
   }));

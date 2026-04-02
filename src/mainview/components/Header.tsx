@@ -70,6 +70,7 @@ export interface HeaderButton
   icon: JSX.Element;
   external?: boolean;
   action?: () => void;
+  className?: string;
 }
 
 export interface HeaderAccount
@@ -247,25 +248,28 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 
 export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElements?: JSX.Element[] | JSX.Element; })
 {
-  return <div className="flex items-center sm:gap-1 md:gap-2 text drop-shadow-sm">
-    <div className="flex sm:gap-2 md:gap-5 items-center" style={{ viewTransitionName: 'status-bar-icons' }}>
-      <ClockStatus />
-      <WiFiStatus />
-      <BluetoothStatus />
-      <NotificationStatus />
-      <BatteryStatus />
-    </div>
-    {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}
-    <div className="flex gap-2">
-      {data.buttonElements ?? data.buttons?.map(b => <RoundButton
-        key={b.id}
-        className="header-icon sm:size-10 md:size-14"
-        id={b.id}
-        external={b.external}
-        cssStyle={{ viewTransitionName: `header-button-${b.id}` }}
-        onAction={b.action}
-      >{b.icon}</RoundButton>)}
-    </div>
+  const { ref, focusKey } = useFocusable({ focusKey: 'header-status-bar' });
+  return <div ref={ref} className="flex items-center sm:gap-1 md:gap-2 text drop-shadow-sm">
+    <FocusContext value={focusKey}>
+      <div className="flex sm:gap-2 md:gap-5 items-center" style={{ viewTransitionName: 'status-bar-icons' }}>
+        <ClockStatus />
+        <WiFiStatus />
+        <BluetoothStatus />
+        <NotificationStatus />
+        <BatteryStatus />
+      </div>
+      {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}
+      <div className="flex gap-2">
+        {data.buttonElements ?? data.buttons?.map(b => <RoundButton
+          key={b.id}
+          className={twMerge("header-icon sm:size-10 md:size-14", b.className)}
+          id={b.id}
+          external={b.external}
+          cssStyle={{ viewTransitionName: `header-button-${b.id}` }}
+          onAction={b.action}
+        >{b.icon}</RoundButton>)}
+      </div>
+    </FocusContext>
   </div>;
 }
 
@@ -296,13 +300,13 @@ export function HeaderUI (data: HeaderUIParams)
       >
         <HeaderAccounts key={"header-accounts"} accounts={data.accounts} />
         {data.title}
-        <HeaderStatusBar key={"header-status-bar"} buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "settings", action: goToSettings, external: true }]} />
+        <HeaderStatusBar key={"header-status-bar"} buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "header-settings-btn", action: goToSettings, external: true }]} />
       </header>
     </FocusContext.Provider>
   );
 }
 
-export function StickyHeaderUI (data: { ref: RefObject<any>; } & HeaderUIParams)
+export function StickyHeaderUI (data: { ref: RefObject<any>; className?: string; } & HeaderUIParams)
 {
   const [isStuck, setIsStuck] = useState(false);
   const headerRef = useRef(null);
@@ -311,7 +315,7 @@ export function StickyHeaderUI (data: { ref: RefObject<any>; } & HeaderUIParams)
 
   return <>
     <div ref={sentinelRef} className="h-0" />
-    <div ref={headerRef} className='sticky not-mobile:data-stuck:backdrop-blur-xl transition-all top-0 px-2 p-2 not-data-stuck:bg-base-200 mobile:bg-base-300 z-15'>
+    <div ref={headerRef} className={twMerge('sticky not-mobile:data-stuck:backdrop-blur-xl transition-all top-0 px-2 p-2 not-data-stuck:bg-base-200 mobile:bg-base-300 z-15', data.className)}>
       <HeaderUI focusable={!isStuck} {...data} />
     </div>
   </>;
