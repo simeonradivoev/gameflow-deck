@@ -1,5 +1,5 @@
 import { EmulatorPackageType, GameListFilterType } from '@/shared/constants';
-import { SyncBailHook, AsyncSeriesHook, SyncWaterfallHook, AsyncSeriesBailHook, AsyncHook, AsyncParallelHook, SyncHook, AsyncSeriesWaterfallHook } from 'tapable';
+import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfallHook } from 'tapable';
 
 export class GameHooks
 {
@@ -13,6 +13,7 @@ export class GameHooks
          */
     emulatorLaunch = new AsyncSeriesBailHook<[ctx: {
         autoValidCommand: CommandEntry;
+        dryRun: boolean,
         game: {
             source: string;
             id: number;
@@ -20,12 +21,13 @@ export class GameHooks
     }], string[] | undefined>(['ctx']);
     /**
      * Is the given emulator for the given command supported 
-     * @returns The possible value is if it can support it but not right now. To show grayed out icon.
+     * @returns The current support level. Partial means it can affect some functionality. Full means fully integrated for example with portable ones where you can control all aspects.
+     * 
     */
     emulatorLaunchSupport = new SyncBailHook<[ctx: {
         emulator: string;
         source?: EmulatorSourceEntryType;
-    }], { id: string; possible: boolean; } | undefined>(['ctx']);
+    }], EmulatorSupport | undefined>(['ctx']);
     /** 
      * Fetches and returns a list of games converted to frontend.
      * @param ctx.localGameIds This is local game ids in the format '<source>@<sourceId>'

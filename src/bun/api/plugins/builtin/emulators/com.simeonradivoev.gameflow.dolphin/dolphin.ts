@@ -11,7 +11,12 @@ export default class DOLPHINIntegration implements PluginType
         ctx.hooks.games.emulatorLaunchSupport.tap(desc.name, (ctx) =>
         {
             if (ctx.emulator === 'DOLPHIN')
-                return { id: desc.name, possible: !!ctx.source };
+                return { id: desc.name, supportLevel: "full", capabilities: ["batch", "config", "fullscreen", "resolution", "saves", "states"] };
+        });
+
+        ctx.hooks.emulators.emulatorPostInstall.tapPromise(desc.name, async (ctx) =>
+        {
+            await Bun.write(path.join(ctx.path, "portable.txt"), "");
         });
 
         ctx.hooks.games.emulatorLaunch.tapPromise(desc.name, async (ctx) =>

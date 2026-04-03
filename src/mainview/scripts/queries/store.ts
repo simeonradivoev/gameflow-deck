@@ -64,9 +64,9 @@ export const storeGetStatsQuery = queryOptions({
 });
 export const installEmulatorMutation = (id: string) => mutationOptions({
     mutationKey: ['install', 'emulator', id],
-    mutationFn: async (source: string) =>
+    mutationFn: async (ctx: { source: string, isUpdate: boolean; }) =>
     {
-        const { data, error } = await storeApi.api.store.install.emulator({ id })({ source }).post();
+        const { data, error } = await storeApi.api.store.install.emulator({ id })({ source: ctx.source }).post({ isUpdate: ctx.isUpdate });
         if (error) throw error;
         return data;
     }
@@ -84,5 +84,13 @@ export const deleteBiosMutation = mutationOptions({
     {
         const { error } = await storeApi.api.store.bios({ id }).delete();
         if (error) throw error;
+    }
+});
+export const getUpdateInfoForEmulator = (id: string) => queryOptions({
+    queryKey: ['emulator', 'update'], queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.emulator({ id }).update.get();
+        if (error) throw error;
+        return data;
     }
 });

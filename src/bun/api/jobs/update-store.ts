@@ -29,8 +29,8 @@ export default class UpdateStoreJob implements IJob<never, never>
         const storeFolder = getStoreRootFolder();
         await ensureDir(storeFolder);
 
-        console.log("Updating Store");
-        const proc = Bun.spawn([process.execPath, "install", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
+        console.log("Adding Store Package");
+        let proc = Bun.spawn([process.execPath, "add", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
             cwd: storeFolder,
             stdout: 'pipe',
             stderr: 'pipe',
@@ -40,9 +40,27 @@ export default class UpdateStoreJob implements IJob<never, never>
             }
         });
 
-        const stdout = await new Response(proc.stdout).text();
+        let stdout = await new Response(proc.stdout).text();
         console.log(stdout);
-        const stderr = await new Response(proc.stderr).text();
+        let stderr = await new Response(proc.stderr).text();
+        if (stderr)
+            console.error(stderr);
+        await proc.exited;
+
+        console.log("Updating Store Package");
+        proc = Bun.spawn([process.execPath, "update", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
+            cwd: storeFolder,
+            stdout: 'pipe',
+            stderr: 'pipe',
+            env: {
+                BUN_BE_BUN: "1",
+                BUN_INSTALL_CACHE_DIR: tempCache
+            }
+        });
+
+        stdout = await new Response(proc.stdout).text();
+        console.log(stdout);
+        stderr = await new Response(proc.stderr).text();
         if (stderr)
             console.error(stderr);
         await proc.exited;

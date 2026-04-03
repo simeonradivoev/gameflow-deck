@@ -15,13 +15,26 @@ export default class PCSX2Integration implements PluginType
         {
             if (ctx.emulator === 'PCSX2')
             {
-                return { id: desc.name, possible: ctx.source?.type === 'store' };
+                const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen", "saves", "states"];
+
+                if (ctx.source?.type === 'store')
+                {
+                    return {
+                        id: desc.name,
+                        supportLevel: "full",
+                        capabilities: [...baseCapabilities, "resolution", "config"]
+                    };
+                }
+                else
+                {
+                    return { id: desc.name, supportLevel: "partial", capabilities: [...baseCapabilities] };
+                }
             }
         });
 
         ctx.hooks.games.emulatorLaunch.tapPromise(desc.name, async (ctx) =>
         {
-            if (ctx.autoValidCommand.emulator === 'PCSX2' && ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir)
+            if (ctx.autoValidCommand.emulator === 'PCSX2' && ctx.autoValidCommand.metadata.emulatorDir)
             {
                 const args = ["-batch"];
                 if (config.get('launchInFullscreen'))
@@ -30,32 +43,35 @@ export default class PCSX2Integration implements PluginType
                 }
                 args.push(...["-bigpicture", "-portable", "--", ctx.autoValidCommand.metadata.romPath]);
 
-                const configFileContents = await Bun.file(configFile).text();
+                if (ctx.autoValidCommand.emulatorSource === 'store' && !ctx.dryRun)
+                {
+                    const configFileContents = await Bun.file(configFile).text();
 
-                const biosFolder = path.join(config.get('downloadPath'), "bios", 'PCSX2');
-                const storageFolder = path.join(config.get('downloadPath'), "storage", 'PCSX2');
-                const savesFolder = path.join(config.get('downloadPath'), "saves", 'PCSX2');
+                    const biosFolder = path.join(config.get('downloadPath'), "bios", 'PCSX2');
+                    const storageFolder = path.join(config.get('downloadPath'), "storage", 'PCSX2');
+                    const savesFolder = path.join(config.get('downloadPath'), "saves", 'PCSX2');
 
-                const view = {
-                    BIOS_PATH: biosFolder,
-                    SNAPSHOTS_PATH: path.join(storageFolder, 'snaps'),
-                    SAVE_STATES_PATH: path.join(savesFolder, 'states'),
-                    MEMORY_CARDS_PATH: path.join(savesFolder, 'saves'),
-                    CACHE_PATH: path.join(storageFolder, 'cache'),
-                    COVERS_PATH: path.join(storageFolder, 'covers'),
-                    TEXTURES_PATH: path.join(storageFolder, 'textures'),
-                    RECURSIVE_PATHS: path.join(config.get('downloadPath'), 'roms', 'PS2'),
-                };
+                    const view = {
+                        BIOS_PATH: biosFolder,
+                        SNAPSHOTS_PATH: path.join(storageFolder, 'snaps'),
+                        SAVE_STATES_PATH: path.join(savesFolder, 'states'),
+                        MEMORY_CARDS_PATH: path.join(savesFolder, 'saves'),
+                        CACHE_PATH: path.join(storageFolder, 'cache'),
+                        COVERS_PATH: path.join(storageFolder, 'covers'),
+                        TEXTURES_PATH: path.join(storageFolder, 'textures'),
+                        RECURSIVE_PATHS: path.join(config.get('downloadPath'), 'roms', 'PS2'),
+                    };
 
-                await Promise.all(Object.values(view).map(p => ensureDir(p)));
+                    await Promise.all(Object.values(view).map(p => ensureDir(p)));
 
-                let pscx2Path = '';
-                if (process.platform === 'win32')
-                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'inis');
-                else
-                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, "PCSX2", 'inis');
+                    let pscx2Path = '';
+                    if (process.platform === 'win32')
+                        pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'inis');
+                    else
+                        pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, "PCSX2", 'inis');
 
-                await Bun.write(path.join(pscx2Path, 'PCSX2.ini'), Mustache.render(configFileContents, view));
+                    await Bun.write(path.join(pscx2Path, 'PCSX2.ini'), Mustache.render(configFileContents, view));
+                }
 
                 return args;
             }

@@ -11,7 +11,7 @@ import { LaunchGameJob } from '../../jobs/launch-game-job';
 import { EmulatorPackageType } from '@/shared/constants';
 import { getStoreEmulatorPackage, getStoreFolder } from '../../store/services/gamesService';
 import { getOrCached } from '../../cache';
-import { getScoopPackage } from '../../store/services/emulatorsService';
+import { getOrCachedScoopPackage } from '../../store/services/emulatorsService';
 
 export const varRegex = /%([^%]+)%/g;
 export const assignRegex = /(%\w+%)=(\S+) /g;
@@ -293,7 +293,7 @@ export async function findStoreEmulatorExec (id: string, emulator?: { systempath
                 let bin: string | undefined = (dl as any).bin;
                 if (!bin && dl.type === 'scoop')
                 {
-                    const data = await getScoopPackage(id, dl.url);
+                    const data = await getOrCachedScoopPackage(id, dl.url);
 
                     if (data)
                     {

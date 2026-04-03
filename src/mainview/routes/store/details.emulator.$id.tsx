@@ -10,7 +10,7 @@ import Shortcuts from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
-import { ChevronDown, Cpu, Download, Gamepad2, Info, Puzzle, Settings, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
+import { ChevronDown, CircleFadingArrowUp, Cpu, Download, Gamepad2, Info, Puzzle, Settings, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
 import { ContextList, DialogEntry, useContextDialog } from "@/mainview/components/ContextDialog";
 import { RPC_URL } from "@/shared/constants";
 import Screenshots from "@/mainview/components/Screenshots";
@@ -59,6 +59,7 @@ function HomePageLink (data: { homepage?: string; })
 function TitleArea (data: {
     emulator?: FrontEndEmulatorDetailed;
     onInstall: (source: string) => void;
+    onUpdate: (source: string) => void;
 })
 {
     const queryClient = useQueryClient();
@@ -70,6 +71,7 @@ function TitleArea (data: {
         },
     });
     const downloadBios = useMutation(downloadBiosMutation(data.emulator?.name ?? ''));
+    const updateToVersion = data.emulator?.downloads.find(d => d.version === data.emulator!.storeDownloadInfo?.type)?.version ?? data.emulator?.downloads[0]?.version;
     const deleteBios = useMutation({
         ...deleteBiosMutation,
         onSuccess (data, variables, onMutateResult, context)
@@ -122,7 +124,7 @@ function TitleArea (data: {
     const isInstalling = !!installJob || !!biosInstallJob;
 
     const options: DialogEntry[] = [];
-    const installedFromStore = !!data.emulator?.sources.find(s => s.type === 'store' && s.exists);
+    const installedFromStore = !!data.emulator?.validSources.find(s => s.type === 'store' && s.exists);
     if (data.emulator)
     {
         if (!isInstalling && !installedFromStore)
@@ -155,6 +157,22 @@ function TitleArea (data: {
                 id: "delete"
             });
 
+            if ((!data.emulator.storeDownloadInfo || data.emulator.storeDownloadInfo.hasUpdate))
+            {
+                options.push({
+                    content: `Update ${data.emulator.storeDownloadInfo?.type}: ${data.emulator.storeDownloadInfo?.version ?? "Unknown"} > ${updateToVersion}`,
+                    type: 'warning',
+                    icon: <CircleFadingArrowUp />,
+                    action (ctx)
+                    {
+                        const source = data.emulator?.storeDownloadInfo?.type ?? data.emulator?.downloads[0]?.type;
+                        if (source) data.onUpdate(source);
+                        ctx.close();
+                    },
+                    id: 'update'
+                });
+            }
+
             if (!data.emulator.bios || data.emulator.bios.length <= 0)
             {
                 options.push({
@@ -183,7 +201,6 @@ function TitleArea (data: {
                     id: "download-bios"
                 });
             }
-
         }
     }
 
@@ -253,13 +270,16 @@ function TitleArea (data: {
                     {!!data.emulator?.bios?.[0] && <div className="tooltip" data-tip="Has BIOS">
                         <div className="flex items-center justify-center bg-base-200 p-2 rounded-full"><Cpu className="size-5" /></div>
                     </div>}
-                    {data.emulator && !!data.emulator.integration && data.emulator.validSources.some(s => s.type === 'store') && <div className="tooltip" data-tip="Has Integration">
+                    {data.emulator && data.emulator.integrations.length > 0 && <div className="tooltip" data-tip="Has Integration">
                         <div className="bg-base-200 rounded-full p-2"><WandSparkles className="size-5" /></div>
                     </div>}
                 </div>
             </div>
             <div className="flex relative sm:portrait:grow md:grow-0 justify-center gap-4 items-center">
                 <FocusTooltip visible={hasFocusedChild} parentRef={ref} />
+                {(data.emulator?.storeDownloadInfo?.hasUpdate || !data.emulator?.storeDownloadInfo) && installedFromStore && !!updateToVersion && <div className="tooltip tooltip-warning" data-tip="Update Available">
+                    <Button id="update-warning-bt" tooltipType="warning" tooltip="Update Available" style="warning" className="rounded-full size-14 focusable focusable-warning shadow-lg" onAction={() => setOpen(true, 'update-warning-bt')}><CircleFadingArrowUp /></Button>
+                </div>}
                 {(!data.emulator?.bios || data.emulator.bios.length <= 0) && (data.emulator?.biosRequirement === 'required') && installedFromStore && <div className="tooltip tooltip-error" data-tip="Missing BIOS">
                     <Button id="bios-warning-bt" tooltipType="error" tooltip="Missing BIOS" style="error" className="rounded-full size-14 focusable focusable-error shadow-lg" onAction={() => setOpen(true, 'bios-warning-bt')}><TriangleAlert /></Button>
                 </div>}
@@ -310,7 +330,8 @@ export function RouteComponent ()
     }], [router]);
 
     const installMutation = useMutation({
-        ...installEmulatorMutation(id), onSuccess: (data, variables, onMutateResult, context) => context.client.refetchQueries(storeEmulatorDetailsQuery(id)),
+        ...installEmulatorMutation(id),
+        onSuccess: (data, variables, onMutateResult, context) => context.client.refetchQueries(storeEmulatorDetailsQuery(id)),
     });
 
     const { shortcuts } = useShortcutContext();
@@ -320,21 +341,33 @@ export function RouteComponent ()
     {
         if (emulator.keywords)
             stats.push({ label: "Tags", content: emulator.keywords });
+        if (emulator.storeDownloadInfo)
+            stats.push({ label: "Version", content: `${emulator.storeDownloadInfo.version ?? "Unknown"} (${emulator.storeDownloadInfo.type})` });
         stats.push({ label: "Systems", content: emulator.systems.map(s => s.name) });
-        stats.push(...emulator.sources.flatMap(s => [{
-            label: "Source", content: <div className="flex flex-wrap gap-1 p-1">
-                <div className="flex gap-1 flex-1">{emulatorStatusIcons[s.type]}{s.type}:</div>
-                <div className="grow text-base-content/40">{s.binPath}</div>
+        stats.push(...emulator.validSources.flatMap(s => [{
+            label: "Source", content: <div className="flex flex-col grow">
+                <div className="flex grow flex-wrap justify-between gap-1">
+                    <div className="flex gap-1">{emulatorStatusIcons[s.type]}{s.type}</div>
+                    <div className="text-base-content/40">{s.binPath}</div>
+                </div>
+                {emulator.integrations.some(i => i.source?.type === s.type) && <div className="divider m-0"></div>}
+                {emulator.integrations.filter(i => i.source?.type === s.type).map(i =>
+                {
+                    return <div key={i.id} className="flex flex-wrap justify-between gap-1">
+                        <div className="flex gap-2">
+                            <Puzzle />
+                            <div>{i.id}</div>
+                        </div>
+                        <div className="text-base-content/40">{`${i.capabilities?.join(", ")}`}</div>
+                    </div>;
+                })}
             </div>
         }]));
         if (emulator.bios)
             stats.push({
                 label: "Bios", content: emulator.bios && emulator.bios.length > 0 ? emulator.bios : <div className="text-warning font-semibold">Missing</div>
             });
-        if (emulator.integration)
-        {
-            stats.push({ label: "Integration", icon: <Puzzle />, content: `${emulator.integration.name} (${emulator.integration.version})` });
-        }
+
     }
 
     return (
@@ -344,7 +377,7 @@ export function RouteComponent ()
                 <StickyHeaderUI ref={ref} />
                 <div className="flex flex-col z-10">
                     <div className="w-full sm:px-8 md:px-16 pb-8 pt-12">
-                        <TitleArea emulator={emulator} onInstall={installMutation.mutate} />
+                        <TitleArea emulator={emulator} onInstall={s => installMutation.mutate({ source: s, isUpdate: false })} onUpdate={s => installMutation.mutate({ source: s, isUpdate: true })} />
 
                         <div className='mobile:hidden left-0 top-0 absolute bg-gradient'></div>
                         <div className='mobile:hidden left-0 top-0 absolute bg-noise'></div>

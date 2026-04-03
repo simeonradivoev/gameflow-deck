@@ -3,17 +3,16 @@ import Elysia, { status } from "elysia";
 import { config, db, taskQueue } from "../app";
 import path from "node:path";
 import fs from 'node:fs/promises';
-import { StoreGameSchema } from "@/shared/constants";
+import { EmulatorDownloadInfoSchema, StoreGameSchema } from "@/shared/constants";
 import { findExecsByName } from "../games/services/launchGameService";
 import * as appSchema from '@schema/app';
 import z from "zod";
 import { convertLocalToFrontendDetailed, convertStoreToFrontendDetailed, getLocalGameMatch } from "../games/services/utils";
 import { getPlatformsApiPlatformsGet } from "@/clients/romm";
-import { CACHE_KEYS, getOrCached, getOrCachedGithubRelease } from "../cache";
+import { CACHE_KEYS, getOrCached } from "../cache";
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "./services/gamesService";
 import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
-import { Glob } from "bun";
-import { convertStoreEmulatorToFrontend, findEmulatorPluginIntegration } from "./services/emulatorsService";
+import { convertStoreEmulatorToFrontend, findEmulatorPluginIntegration, getEmulatorDownload, getExistingStoreEmulatorDownload } from "./services/emulatorsService";
 import { BiosDownloadJob } from "../jobs/bios-download-job";
 
 export const store = new Elysia({ prefix: '/api/store' })
@@ -107,6 +106,15 @@ export const store = new Elysia({ prefix: '/api/store' })
         return Bun.file(path.join(getStoreFolder(), "media", "screenshots", id, name));
     },
         { params: z.object({ id: z.string(), name: z.string() }) })
+    .get('/emulator/:id/update', async ({ params: { id } }) =>
+    {
+        const emulatorPackage = await getStoreEmulatorPackage(id);
+        const downloadInfo = await getExistingStoreEmulatorDownload(emulatorPackage!);
+        return downloadInfo;
+    },
+        {
+            response: z.union([z.intersection(EmulatorDownloadInfoSchema, z.object({ hasUpdate: z.boolean() })), z.undefined()])
+        })
     .get('/emulator/:id', async ({ params: { id } }) =>
     {
         const emulatorPackage = await getStoreEmulatorPackage(id);
@@ -120,6 +128,7 @@ export const store = new Elysia({ prefix: '/api/store' })
         const screenshots = await fs.exists(emulatorScreenshotsPath) ? await fs.readdir(emulatorScreenshotsPath) : [];
         const biosDirPath = path.join(config.get('downloadPath'), 'bios', id);
         const biosFiles = await fs.exists(biosDirPath) ? await fs.readdir(biosDirPath) : [];
+        const storeDownloadInfo = await getExistingStoreEmulatorDownload(emulatorPackage);
 
         const emulator: FrontEndEmulatorDetailed = {
             name: emulatorPackage.name,
@@ -129,38 +138,31 @@ export const store = new Elysia({ prefix: '/api/store' })
             screenshots: screenshots.map(s => `/api/store/screenshot/emulator/${id}/${s}`),
             gameCount: 0,
             homepage: emulatorPackage.homepage,
-            downloads: await Promise.all(emulatorPackage.downloads?.[`${process.platform}:${process.arch}`].map(async d =>
+            downloads: (await Promise.all(emulatorPackage.downloads?.[`${process.platform}:${process.arch}`].map(async d =>
             {
-                if (d.type === 'github' && d.path)
-                {
-                    const release = await getOrCachedGithubRelease(d.path);
-                    const glob = new Glob(d.pattern);
-                    const download: FrontEndEmulatorDetailedDownload = {
-                        name: d.type,
-                        type: release.assets.find(a => glob.match(a.name))?.content_type
-                    };
-                    return download;
-                };
-
-                return { name: d.type, type: "Unknown" };
-            }) ?? []),
+                const download = await getEmulatorDownload(emulatorPackage, d.type).catch(e => undefined);
+                return download?.info;
+            }) ?? [])).filter(d => !!d).map(d => ({ name: d.type, type: d.type, version: d.version })),
             logo: emulatorPackage.logo,
-            sources: execPaths,
             biosRequirement: emulatorPackage.bios,
             bios: biosFiles,
-            integration: findEmulatorPluginIntegration(emulatorPackage.name, execPaths)
+            integrations: findEmulatorPluginIntegration(emulatorPackage.name, execPaths),
+            storeDownloadInfo: storeDownloadInfo,
+            hasUpdate: storeDownloadInfo?.hasUpdate ?? null
         };
 
         return emulator;
     }, { params: z.object({ id: z.string() }) })
-    .post('/install/emulator/:id/:source', async ({ params: { source, id } }) =>
+    .post('/install/emulator/:id/:source', async ({ params: { source, id }, body: { isUpdate } }) =>
     {
         if (taskQueue.hasActiveOfType(EmulatorDownloadJob))
         {
             return status("Conflict", "Installation already running");
         }
-        const job = new EmulatorDownloadJob(id, source);
+        const job = new EmulatorDownloadJob(id, source, { isUpdate });
         return taskQueue.enqueue(EmulatorDownloadJob.id, job);
+    }, {
+        body: z.object({ isUpdate: z.boolean().optional() })
     })
     .delete('/emulator/:id', async ({ params: { id } }) =>
     {

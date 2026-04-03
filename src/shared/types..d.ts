@@ -16,11 +16,7 @@ declare interface FrontEndEmulator
     description?: string;
     gameCount: number;
     validSources: EmulatorSourceEntryType[];
-    integration?: {
-        name: string;
-        version?: string;
-        possible: boolean;
-    };
+    integrations: EmulatorSupport[];
 }
 
 declare interface EmulatorSystem { id: string, romm_slug?: string, name: string, iconUrl: string; }
@@ -29,6 +25,7 @@ declare interface FrontEndEmulatorDetailedDownload
 {
     name: string;
     type: string | undefined;
+    version?: string;
 }
 
 declare interface FrontEndEmulatorDetailed extends FrontEndEmulator
@@ -38,9 +35,9 @@ declare interface FrontEndEmulatorDetailed extends FrontEndEmulator
     downloads: FrontEndEmulatorDetailedDownload[];
     keywords?: string[];
     screenshots: string[];
-    sources: EmulatorSourceEntryType[];
     biosRequirement?: "required" | "optional";
     bios?: string[];
+    storeDownloadInfo?: { hasUpdate: boolean; version?: string, type: string; };
 }
 
 declare interface FrontEndGameTypeDetailedAchievement
@@ -265,4 +262,14 @@ declare interface FrontEndCollection
     description: string;
     path_platform_cover: string | null;
     game_count: number;
+}
+
+declare type EmulatorCapabilities = "saves" | "fullscreen" | "resolution" | "batch" | "states" | "config";
+
+declare interface EmulatorSupport
+{
+    id: string;
+    source?: EmulatorSourceEntryType;
+    supportLevel?: "partial" | "full";
+    capabilities?: EmulatorCapabilities[];
 }

@@ -33,7 +33,7 @@ export function Button (data: {
     focusClassName?: string;
     cssStyle?: CSSProperties;
     tooltip?: string;
-    tooltipType?: "base" | "accent" | "error";
+    tooltipType?: "base" | "accent" | "error" | "warning";
 } & InteractParams & FocusParams)
 {
     const handleAction = (e?: any) =>
@@ -58,7 +58,7 @@ export function Button (data: {
         onClick={handleAction}
         disabled={data.disabled}
         data-tooltip={data.tooltip}
-        data-tooltip_type={data.tooltipType}
+        data-tooltip-type={data.tooltipType}
         style={data.cssStyle}
         className={twMerge("flex items-center justify-center px-4 py-2 disabled:bg-base-200/40 disabled:text-base-content/40 not-disabled:cursor-pointer rounded-3xl md:text-lg not-control-mouse:focused:drop-shadow-lg border border-base-content/5 not-control-mouse:focused:bg-base-content not-control-mouse:focused:text-base-100 control-mouse:hover:not-disabled:bg-base-content control-mouse:hover:not-disabled:text-base-100 active:not-disabled:transition-none active:not-disabled:ring-offset-4",
             styles[data.style ?? 'base'],

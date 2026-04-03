@@ -303,7 +303,8 @@ export default new Elysia()
                                 validSources: [{ binPath: SERVER_URL(host), type: 'embedded', exists: true }],
                                 logo: `/api/romm/image?url=${encodeURIComponent('https://emulatorjs.org/logo/EmulatorJS.png')}`,
                                 systems: [],
-                                gameCount: 0
+                                gameCount: 0,
+                                integrations: []
                             } satisfies FrontEndGameTypeDetailedEmulator;
                         }
                         else
@@ -313,7 +314,8 @@ export default new Elysia()
                                 logo: "",
                                 systems: [],
                                 gameCount: 0,
-                                validSources: []
+                                validSources: [],
+                                integrations: []
                             } satisfies FrontEndGameTypeDetailedEmulator;
                         }
 

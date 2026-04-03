@@ -7,6 +7,7 @@ import { cores } from '../emulatorjs/emulatorjs';
 import { SERVER_URL } from '@/shared/constants';
 import { findExecsByName } from '../games/services/launchGameService';
 import { host } from '@/bun/utils/host';
+import { findEmulatorPluginIntegration } from '../store/services/emulatorsService';
 
 /** 
  * Get emulators based on local games. Only the ones we probably need. 
@@ -73,7 +74,8 @@ export async function getRelevantEmulators ()
             systems: systems.map(s => platformLookup.get(s)).filter(s => !!s).map(e => ({ iconUrl: `/api/romm/image/romm/assets/platforms/${e.es_slug}.svg`, name: e.platform_name ?? 'Unknown', id: e.es_slug ?? '' })),
             gameCount: 0,
             isCritical: false,
-            validSources: execPaths
+            validSources: execPaths,
+            integrations: findEmulatorPluginIntegration(emulator, execPaths)
         };
 
         return em;
@@ -86,7 +88,8 @@ export async function getRelevantEmulators ()
         systems: [],
         gameCount: 0,
         isCritical: false,
-        description: "Embedded Emulator. Uses Retroarch Cores"
+        description: "Embedded Emulator. Uses Retroarch Cores",
+        integrations: []
     });
 
     return finalEmulators.map(e =>

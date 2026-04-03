@@ -12,7 +12,7 @@ export default function FocusTooltip (data: { parentRef: RefObject<any>; visible
     {
         const dataTooltip = e.getAttribute('data-tooltip');
         setHoverText(dataTooltip ?? undefined);
-        setHoverTextType(e.getAttribute('data-tooltip_type') ?? 'accent');
+        setHoverTextType(e.getAttribute('data-tooltip-type') ?? 'accent');
     };
 
     const { isPointer } = useActiveControl();
@@ -29,7 +29,10 @@ export default function FocusTooltip (data: { parentRef: RefObject<any>; visible
     const tooltipStyles = {
         base: 'bg-base-100 text-base-content',
         accent: 'bg-accent text-accent-content',
-        error: 'bg-error text-error-content'
+        error: 'bg-error text-error-content',
+        warning: 'bg-warning text-warning-content',
+        info: 'bg-info text-info-content',
+        success: 'bg-success text-success-content'
     };
 
     return !!hoverText && (data.visible ?? true) && !isPointer && <p className={twMerge("flex sm:hidden md:inline py-1 md:py-2 md:px-4 rounded-4xl text-wrap wrap-anywhere text-base", (tooltipStyles as any)[hoverTextType])}>{hoverText}</p>;

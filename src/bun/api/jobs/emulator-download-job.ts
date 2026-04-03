@@ -2,17 +2,15 @@ import { EmulatorPackageType } from "@/shared/constants";
 import { getStoreEmulatorPackage } from "../store/services/gamesService";
 import { IJob, JobContext } from "../task-queue";
 import z from "zod";
-import { Glob } from "bun";
-import { config } from "../app";
+import { config, plugins } from "../app";
 import path from 'node:path';
-import { getOrCachedGithubRelease } from "../cache";
 import Seven from 'node-7z';
 import fs from "node:fs/promises";
 import { Downloader } from "@/bun/utils/downloader";
 import { ensureDir, move } from "fs-extra";
 import { simulateProgress } from "@/bun/utils";
 import { path7za } from "7zip-bin";
-import { getScoopPackage } from "../store/services/emulatorsService";
+import { getEmulatorDownload, getEmulatorPath } from "../store/services/emulatorsService";
 
 type EmulatorDownloadStates = "download" | "extract";
 
@@ -23,73 +21,24 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
     emulator: string;
     downloadSource: string;
     emulatorPackage?: EmulatorPackageType;
-    dryRun?: boolean;
+    dryRun: boolean;
+    isUpdate: boolean;
 
-    constructor(emulator: string, downloadSource: string, init?: { dryRun?: boolean; })
+    constructor(emulator: string, downloadSource: string, init?: { dryRun?: boolean; isUpdate?: boolean; })
     {
         this.emulator = emulator;
         this.downloadSource = downloadSource;
         this.dryRun = init?.dryRun ?? false;
+        this.isUpdate = init?.isUpdate ?? false;
     }
 
     async start (context: JobContext<EmulatorDownloadJob, z.infer<typeof EmulatorDownloadJob.dataSchema>, EmulatorDownloadStates>)
     {
         this.emulatorPackage = await getStoreEmulatorPackage(this.emulator);
         if (!this.emulatorPackage) throw new Error("Emulator not found");
-        if (!this.emulatorPackage.downloads) throw new Error("Emulator has no downloads");
+        const { url, info } = await getEmulatorDownload(this.emulatorPackage, this.downloadSource);
 
-        const validDownloads = this.emulatorPackage.downloads[`${process.platform}:${process.arch}`];
-        if (!validDownloads) throw new Error(`Now downloads in ${this.emulatorPackage.name} for platform ${process.platform}:${process.arch}`);
-
-        const validDownload = validDownloads.find(d => d.type === this.downloadSource);
-        if (!validDownload) throw new Error(`Download type ${this.downloadSource} not found`);
-
-        let downloadUrl: URL;
-        if (validDownload.type === 'github')
-        {
-            console.log("Trying To Download from ", `https://api.github.com/repos/${validDownload.path}/releases/latest`);
-            const latestRelease = await getOrCachedGithubRelease(validDownload.path);
-            const glob = new Glob(validDownload.pattern);
-            const validAsset = latestRelease.assets.find(a => glob.match(a.name));
-            if (!validAsset) throw new Error("Could Not Find Valid Asset");
-            downloadUrl = new URL(validAsset.browser_download_url);
-        } else if (validDownload.type === 'direct')
-        {
-            downloadUrl = new URL(validDownload.url);
-        } else if (validDownload.type === 'scoop')
-        {
-            const data = await getScoopPackage(this.emulator, validDownload.url);
-            let scoopDownload: URL | undefined;
-            if (data)
-            {
-                if (data.url)
-                {
-                    scoopDownload = new URL(data.url);
-                } else if (data.architecture)
-                {
-                    if (process.arch === 'x64' && data.architecture["64bit"])
-                    {
-                        scoopDownload = new URL(data.architecture["64bit"].url);
-                    } else if (process.arch === "arm64" && data.architecture["arm64"])
-                    {
-                        scoopDownload = new URL(data.architecture["arm64"].url);
-                    }
-                }
-            }
-
-            if (scoopDownload)
-            {
-                downloadUrl = scoopDownload;
-            } else
-            {
-                throw new Error("Could not find scoop download");
-            }
-        } else
-        {
-            throw new Error("Download Type Unsupported");
-        }
-
-        const emulatorsFolder = path.join(config.get('downloadPath'), "emulators", this.emulator);
+        const emulatorsFolder = getEmulatorPath(this.emulator);
 
         if (this.dryRun)
         {
@@ -99,7 +48,7 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
         {
             const tmpFolder = path.join(config.get("downloadPath"), ".tmp");
             const downloader = new Downloader(this.emulator,
-                [{ url: new URL(downloadUrl), file_name: path.basename(downloadUrl.pathname), file_path: this.emulator }],
+                [{ url, file_name: path.basename(url.pathname), file_path: this.emulator }],
                 tmpFolder,
                 {
                     signal: context.abortSignal,
@@ -156,6 +105,16 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
                         await fs.rename(destPath, path.join(emulatorsFolder, path.basename(destPath)));
                     }
                 }
+
+                await plugins.hooks.emulators.emulatorPostInstall.promise({
+                    emulator: this.emulator,
+                    emulatorPackage: this.emulatorPackage,
+                    path: emulatorsFolder,
+                    info,
+                    update: this.isUpdate
+                });
+
+                await Bun.write(`${emulatorsFolder}.json`, JSON.stringify(info, null, 3));
             }
         }
 

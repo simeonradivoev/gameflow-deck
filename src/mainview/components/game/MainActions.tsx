@@ -137,7 +137,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         mainButton = <ActionButton
             key="error"
             tooltip={error}
-            tooltip_type="error"
+            tooltip-type="error"
             type='error'
             onAction={() =>
             {

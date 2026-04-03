@@ -121,7 +121,13 @@ export const EmulatorPackageSchema = z.object({
 export const ScoopPackageSchema = z.object({
     version: z.string(),
     url: z.url().optional(),
-    architecture: z.record(z.string(), z.object({ url: z.url(), hash: z.string().optional() })).optional()
+    description: z.string(),
+    bin: z.string().optional(),
+    architecture: z.record(z.string(), z.object({
+        url: z.url(),
+        hash: z.string().optional(),
+        extract_dir: z.string().optional()
+    })).optional()
 });
 
 export const SystemInfoSchema = z.object({
@@ -137,11 +143,24 @@ export const SystemInfoSchema = z.object({
 });
 
 export const GithubReleaseSchema = z.object({
+    id: z.number(),
+    tag_name: z.string().optional(),
+    url: z.url(),
+    body: z.string(),
     assets: z.array(z.object({
         name: z.string(),
         browser_download_url: z.url(),
         content_type: z.string().optional()
     }))
+});
+
+export const EmulatorDownloadInfoSchema = z.object({
+    id: z.string(),
+    version: z.string().optional(),
+    url: z.url().optional(),
+    description: z.string().optional(),
+    downloadDate: z.coerce.date(),
+    type: z.string()
 });
 
 export type EmulatorPackageType = z.infer<typeof EmulatorPackageSchema>;
@@ -150,3 +169,4 @@ export type SettingsType = z.infer<typeof SettingsSchema>;
 export type LocalSettingsType = z.infer<typeof LocalSettingsSchema>;
 export const PlatformSchema = z.object({ slug: z.string() });
 export type SystemInfoType = z.infer<typeof SystemInfoSchema>;
+export type EmulatorDownloadInfoType = z.infer<typeof EmulatorDownloadInfoSchema>;
