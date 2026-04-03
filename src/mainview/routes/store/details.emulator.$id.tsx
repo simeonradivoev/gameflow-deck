@@ -246,7 +246,7 @@ function TitleArea (data: {
 
     const handleOptionsOpen = () =>
     {
-        if (isInstalling || !data.emulator || data.emulator.downloads.length <= 0) return false;
+        if (isInstalling || !data.emulator) return false;
         setOpen(true, 'install-btn');
     };
 
