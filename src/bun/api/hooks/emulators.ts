@@ -1,5 +1,15 @@
 import { EmulatorDownloadInfoType, EmulatorPackageType } from "@/shared/constants";
 import { AsyncSeriesBailHook, AsyncSeriesHook } from "tapable";
+import { any } from "zod";
+
+interface EmulatorPostInstallContext
+{
+    emulator: string;
+    emulatorPackage?: EmulatorPackageType;
+    path: string;
+    update: boolean;
+    info: EmulatorDownloadInfoType;
+}
 
 export class EmulatorHooks
 {
@@ -12,11 +22,24 @@ export class EmulatorHooks
     /** 
      * Triggered when emulator is downloaded or updated
      */
-    emulatorPostInstall = new AsyncSeriesHook<[ctx: {
-        emulator: string;
-        emulatorPackage?: EmulatorPackageType;
-        path: string;
-        update: boolean;
-        info: EmulatorDownloadInfoType;
-    }]>(['ctx']);
+    emulatorPostInstall = new AsyncSeriesHook<[ctx: EmulatorPostInstallContext], { emulator: string; }>(['ctx']);
+
+    constructor()
+    {
+        this.emulatorPostInstall.intercept({
+            register (tap)
+            {
+                return {
+                    ...tap,
+                    fn: async (ctx: EmulatorPostInstallContext, ...rest: any[]) =>
+                    {
+                        if (ctx.emulator === tap.emulator)
+                        {
+                            tap.fn(ctx, ...rest);
+                        }
+                    }
+                };
+            },
+        });
+    }
 }

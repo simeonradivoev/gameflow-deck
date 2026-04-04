@@ -32,6 +32,7 @@ function registerJob<
                 data: _job.dataSchema
             }),
             z.object({ type: z.literal(['completed', 'ended']), data: _job.dataSchema }),
+            z.object({ type: z.literal('waiting') }),
             z.object({ type: z.literal('error'), error: z.string() })
         ]),
         open (ws)
@@ -41,6 +42,9 @@ function registerJob<
             if (job)
             {
                 ws.send({ type: 'data', state: job.state, progress: job.progress, data: job.job.exposeData?.() });
+            } else
+            {
+                ws.send({ type: 'waiting' });
             }
 
             (ws.data as any).cleanup = [
@@ -97,10 +101,10 @@ function registerJob<
 }
 
 export const jobs = new Elysia({ prefix: '/api/jobs' })
+    .use(registerJob(LaunchGameJob))
     .use(registerJob(LoginJob))
     .use(registerJob(TwitchLoginJob))
     .use(registerJob(UpdateStoreJob))
-    .use(registerJob(LaunchGameJob))
     .use(registerJob(BiosDownloadJob))
     .use(registerJob(InstallJob))
     .use(registerJob(EmulatorDownloadJob));

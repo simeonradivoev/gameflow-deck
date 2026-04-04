@@ -46,7 +46,8 @@ function Error (data: ErrorComponentProps)
 {
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details-error", preferredChildFocusKey: "main-details" });
 
-  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
+  const router = useRouter();
+  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router) }]);
   const { shortcuts } = useShortcutContext();
 
   return <AnimatedBackground ref={ref} backgroundKey="game-details">

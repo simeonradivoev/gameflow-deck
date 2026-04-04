@@ -1,6 +1,6 @@
 import { RPC_URL, } from "@shared/constants";
 import { config, customEmulators, db, emulatorsDb, plugins, taskQueue } from "../../app";
-import { getValidLaunchCommands } from "./launchGameService";
+import { findExecs, getValidLaunchCommands } from "./launchGameService";
 import * as emulatorSchema from '@schema/emulators';
 import { and, eq } from "drizzle-orm";
 import { getErrorMessage, hashFile } from "@/bun/utils";
@@ -26,7 +26,7 @@ class CommandSearchError extends Error
 export async function getLocalGame (source: string, id: string)
 {
     const localGame = await db.query.games.findFirst({
-        columns: { id: true, path_fs: true },
+        columns: { id: true, path_fs: true, source: true, source_id: true },
         where: getLocalGameMatch(id, source),
         with: {
             platform: { columns: { slug: true } }
@@ -36,8 +36,27 @@ export async function getLocalGame (source: string, id: string)
     return localGame;
 }
 
-export async function getValidLaunchCommandsForGame (source: string, id: string)
+export async function getValidLaunchCommandsForGame (source: string, id: string): Promise<{ commands: CommandEntry[], gameId: FrontEndId, source?: string, sourceId?: string; } | Error | undefined>
 {
+    if (source === 'emulator')
+    {
+        const esEmulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, id) });
+        const allExecs = await findExecs(id, esEmulator);
+        return {
+            commands: allExecs.map(exec => ({
+                command: exec.binPath,
+                id: exec.type,
+                emulator: id,
+                emulatorSource: exec.type,
+                metadata: {
+                    emulatorBin: exec.binPath,
+                    emulatorDir: exec.rootPath
+                },
+                valid: true
+            } satisfies CommandEntry)),
+            gameId: { source: "emulator", id: id }
+        };
+    }
     const localGame = await getLocalGame(source, id);
     if (localGame)
     {
@@ -70,7 +89,7 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
                     const validCommand = commands.find(c => c.valid);
                     if (validCommand)
                     {
-                        return { commands: commands.filter(c => c.valid), gameId: localGame.id, source: source, sourceId: id };
+                        return { commands: commands.filter(c => c.valid), gameId: { id: String(localGame.id), source: 'local' }, source: localGame.source ?? source, sourceId: String(localGame.source_id) ?? id };
                     }
                     else
                     {

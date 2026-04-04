@@ -4,40 +4,51 @@ import { ActiveGameSchema, ActiveGameType } from "@/bun/types/typesc.schema";
 import { db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq, sql } from "drizzle-orm";
-import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">
 {
     static id = "launch-game" as const;
-    static dataSchema = z.optional(ActiveGameSchema);
+    static dataSchema = z.nullable(ActiveGameSchema);
     group = "launch-game";
-    activeGame?: ActiveGameType;
-    gameId: number;
+    activeGame: ActiveGameType | null;
+    gameId: FrontEndId;
     validCommand: CommandEntry;
-    gameSource: string;
-    gameSourceId: string;
+    gameSource?: string;
+    gameSourceId?: string;
 
-    constructor(gameId: number, validCommand: CommandEntry, source: string, sourceId: string)
+    constructor(gameId: FrontEndId, validCommand: CommandEntry, source?: string, sourceId?: string)
     {
         this.gameId = gameId;
         this.validCommand = validCommand;
         this.gameSource = source;
         this.gameSourceId = sourceId;
+        this.activeGame = null;
     }
 
     async start (context: JobContext<IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">, z.infer<typeof LaunchGameJob.dataSchema>, "playing">)
     {
-        const localGame = await db.query.games.findFirst({
-            where: eq(appSchema.games.id, this.gameId), columns: {
-                name: true,
-                source_id: true,
-                source: true
-            }
-        });
+        let gameInfo: { name?: string, source_id?: string, source?: string; };
+        if (this.gameId.source === 'emulator')
+        {
+            gameInfo = { name: this.gameId.id };
+        } else
+        {
+            const localGame = await db.query.games.findFirst({
+                where: eq(appSchema.games.id, Number(this.gameId.id)), columns: {
+                    name: true,
+                    source_id: true,
+                    source: true
+                }
+            });
+            if (localGame)
+                gameInfo = { name: localGame.name ?? undefined, source_id: localGame.source_id ?? undefined, source: localGame.source ?? undefined };
+        }
 
         const commandArgs = await plugins.hooks.games.emulatorLaunch.promise({
             autoValidCommand: this.validCommand,
-            game: { source: this.gameSource, id: this.gameId }
+            game: { source: this.gameSource, sourceId: this.gameSourceId, id: this.gameId },
+            dryRun: false
         });
 
         await new Promise((resolve, reject) =>
@@ -70,10 +81,15 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 // We have full control over launching integrated emulators better to use bun spawn
                 const bunGame = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs], {
                     cwd: this.validCommand.startDir,
-                    signal: context.abortSignal
+                    signal: context.abortSignal,
                 });
 
-                bunGame.exited.then(resolve).catch(e =>
+                context.abortSignal.addEventListener('abort', reject);
+
+                bunGame.exited.then(e =>
+                {
+                    resolve(true);
+                }).catch(e =>
                 {
                     console.error(e);
                     reject(e);
@@ -87,28 +103,27 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
             this.activeGame = {
                 process: game,
-                name: localGame?.name ?? "Unknown",
+                name: gameInfo?.name ?? "Unknown",
                 gameId: this.gameId,
+                source: this.gameSource,
+                sourceId: this.gameSourceId,
                 command: this.validCommand
             };
 
-            const updatePlayed = async (source: string, id: string) =>
+            const updatePlayed = async (id: FrontEndId, source?: string, sourceId?: string) =>
             {
-                await db.update(appSchema.games).set({ last_played: new Date() }).where(eq(appSchema.games.id, this.gameId));
-                await plugins.hooks.games.updatePlayed.promise({ source, id }).then(v =>
+                if (this.gameId.source === 'local')
+                {
+                    await db.update(appSchema.games).set({ last_played: new Date() }).where(eq(appSchema.games.id, Number(this.gameId.id)));
+                }
+
+                await plugins.hooks.games.updatePlayed.promise({ source: source ?? id.source, id: sourceId ?? id.id }).then(v =>
                 {
                     if (v) events.emit('notification', { message: "Updated Last Played", type: 'success' });
                 });
             };
 
-            if (this.gameSource !== 'local') 
-            {
-                updatePlayed(this.gameSource, this.gameSourceId);
-            }
-            else if (localGame?.source && localGame?.source !== 'local' && localGame.source_id)
-            {
-                updatePlayed(localGame.source, localGame.source_id);
-            }
+            updatePlayed(this.gameId, this.gameSource, this.gameSourceId);
         });
 
         /* Old spawn lanching, cases issues, needs to be ran as shell

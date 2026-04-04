@@ -127,7 +127,7 @@ declare interface CommandEntry
     emulatorSource?: EmulatorSourceType;
     /** Metadata for the command */
     metadata: {
-        romPath: string;
+        romPath?: string;
         emulatorBin?: string;
         /** The root directory of the emulator */
         emulatorDir?: string;

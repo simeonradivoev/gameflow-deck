@@ -15,10 +15,11 @@ export class GameHooks
         autoValidCommand: CommandEntry;
         dryRun: boolean,
         game: {
-            source: string;
-            id: number;
+            source?: string;
+            sourceId?: string;
+            id: FrontEndId;
         };
-    }], string[] | undefined>(['ctx']);
+    }], string[] | undefined, { emulator: string; }>(['ctx']);
     /**
      * Is the given emulator for the given command supported 
      * @returns The current support level. Partial means it can affect some functionality. Full means fully integrated for example with portable ones where you can control all aspects.
@@ -27,7 +28,7 @@ export class GameHooks
     emulatorLaunchSupport = new SyncBailHook<[ctx: {
         emulator: string;
         source?: EmulatorSourceEntryType;
-    }], EmulatorSupport | undefined>(['ctx']);
+    }], EmulatorSupport | undefined, { emulator: string; }>(['ctx']);
     /** 
      * Fetches and returns a list of games converted to frontend.
      * @param ctx.localGameIds This is local game ids in the format '<source>@<sourceId>'
@@ -71,4 +72,38 @@ export class GameHooks
     updatePlayed = new AsyncSeriesWaterfallHook<[ctx: { source: string, id: string; }], boolean>(["ctx"]);
     fetchCollections = new AsyncSeriesHook<[ctx: { collections: FrontEndCollection[]; }]>(['ctx']);
     fetchCollection = new AsyncSeriesBailHook<[ctx: { source: string, id: string; }], FrontEndCollection | undefined>(['ctx']);
+
+    constructor()
+    {
+        this.emulatorLaunchSupport.intercept({
+            register (tap)
+            {
+                return {
+                    ...tap,
+                    fn: (e: any, ...rest: any[]) =>
+                    {
+                        if (e.emulator === tap.emulator)
+                        {
+                            return tap.fn(e, ...rest);
+                        }
+                    }
+                };
+            },
+        });
+        this.emulatorLaunch.intercept({
+            register (tap)
+            {
+                return {
+                    ...tap,
+                    fn: async (e: any, ...rest: any[]) =>
+                    {
+                        if ((e.autoValidCommand as CommandEntry).emulator === tap.emulator)
+                        {
+                            return tap.fn(e, ...rest);
+                        }
+                    }
+                };
+            },
+        });
+    }
 }

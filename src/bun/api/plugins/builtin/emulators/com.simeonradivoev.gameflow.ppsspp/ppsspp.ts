@@ -12,85 +12,86 @@ import { homedir } from "node:os";
 
 export default class PCSX2Integration implements PluginType
 {
+    emulator = "PPSSPP";
+
     load (ctx: PluginContextType)
     {
-        ctx.hooks.games.emulatorLaunchSupport.tap(desc.name, (ctx) =>
+        ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            if (ctx.emulator === 'PPSSPP')
+            const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen", "saves", "states"];
+
+            if (ctx.source?.type === 'store')
             {
-                const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen", "saves", "states"];
-
-                if (ctx.source?.type === 'store')
-                {
-                    return {
-                        id: desc.name,
-                        supportLevel: "full",
-                        capabilities: [...baseCapabilities, "resolution", "config"]
-                    };
-                }
-                else
-                {
-                    return { id: desc.name, supportLevel: "partial", capabilities: [...baseCapabilities] };
-                }
-
+                return {
+                    id: desc.name,
+                    supportLevel: "full",
+                    capabilities: [...baseCapabilities, "resolution", "config"]
+                };
+            }
+            else
+            {
+                return { id: desc.name, supportLevel: "partial", capabilities: [...baseCapabilities] };
             }
         });
 
-        ctx.hooks.games.emulatorLaunch.tapPromise(desc.name, async (ctx) =>
+        ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
         {
-            if (ctx.autoValidCommand.emulator === 'PPSSPP' && ctx.autoValidCommand.metadata.emulatorDir)
+            const args: string[] = [];
+            if (ctx.autoValidCommand.metadata.romPath)
             {
-                const args = [ctx.autoValidCommand.metadata.romPath, "--escape-exit", "--pause-menu-exit"];
-                if (config.get('launchInFullscreen'))
-                {
-                    args.push("--fullscreen");
-                }
-
-                if (ctx.autoValidCommand.emulatorSource === 'store' && !ctx.dryRun)
-                {
-                    let confPath: string | undefined = undefined;
-                    let controlsPath: string | undefined = undefined;
-
-                    switch (process.platform)
-                    {
-                        case "win32":
-                            confPath = configFilePathWin32;
-                            controlsPath = configControlsFilePathWin32;
-                            break;
-                        case 'linux':
-                            confPath = configFilePathLinux;
-                            controlsPath = configControlsFilePathLinux;
-                            break;
-                    }
-
-                    let ppssppPath = '';
-                    if (process.platform === 'win32')
-                    {
-                        ppssppPath = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'memstick', 'PSP', 'SYSTEM');
-                    } else
-                    {
-                        //TODO: Use way to set custom memstick path when they support it
-                        ensureDir(path.join(homedir(), '.config', 'ppsspp'));
-                        ppssppPath = path.join(homedir(), '.config', 'ppsspp', 'PSP', 'SYSTEM');
-                    }
-
-                    ensureDir(ppssppPath);
-
-                    if (confPath)
-                    {
-                        const configFileContents = await Bun.file(confPath).text();
-                        await Bun.write(path.join(ppssppPath, 'ppsspp.ini'), Mustache.render(configFileContents, {}));
-                    }
-
-                    if (controlsPath)
-                    {
-                        const controlsFileContents = await Bun.file(controlsPath).text();
-                        await Bun.write(path.join(ppssppPath, 'controls.ini'), Mustache.render(controlsFileContents, {}));
-                    }
-                }
-
-                return args;
+                args.push(ctx.autoValidCommand.metadata.romPath);
             }
+
+            args.push("--escape-exit", "--pause-menu-exit");
+            if (config.get('launchInFullscreen'))
+            {
+                args.push("--fullscreen");
+            }
+
+            if (ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir && !ctx.dryRun)
+            {
+                let confPath: string | undefined = undefined;
+                let controlsPath: string | undefined = undefined;
+
+                switch (process.platform)
+                {
+                    case "win32":
+                        confPath = configFilePathWin32;
+                        controlsPath = configControlsFilePathWin32;
+                        break;
+                    case 'linux':
+                        confPath = configFilePathLinux;
+                        controlsPath = configControlsFilePathLinux;
+                        break;
+                }
+
+                let ppssppPath = '';
+                if (process.platform === 'win32')
+                {
+                    ppssppPath = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'memstick', 'PSP', 'SYSTEM');
+                } else
+                {
+                    //TODO: Use way to set custom memstick path when they support it
+                    ensureDir(path.join(homedir(), '.config', 'ppsspp'));
+                    ppssppPath = path.join(homedir(), '.config', 'ppsspp', 'PSP', 'SYSTEM');
+                }
+
+                ensureDir(ppssppPath);
+
+                if (confPath)
+                {
+                    const configFileContents = await Bun.file(confPath).text();
+                    await Bun.write(path.join(ppssppPath, 'ppsspp.ini'), Mustache.render(configFileContents, {}));
+                }
+
+                if (controlsPath)
+                {
+                    const controlsFileContents = await Bun.file(controlsPath).text();
+                    await Bun.write(path.join(ppssppPath, 'controls.ini'), Mustache.render(controlsFileContents, {}));
+                }
+            }
+
+            return args;
         });
     }
 }

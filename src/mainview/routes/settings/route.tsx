@@ -116,7 +116,7 @@ function SettingsMenu (data: {})
   const { ref, focusKey } = useFocusable({
     focusable: true,
     focusKey: 'settings-menu',
-    preferredChildFocusKey: location.hash.replaceAll(/#|(\?.+)/g, '')
+    preferredChildFocusKey: `menu-item-${location.hash.replaceAll(/#|(\?.+)/g, '')}`
   });
 
   return <ul

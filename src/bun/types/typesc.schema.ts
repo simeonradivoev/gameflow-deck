@@ -28,7 +28,9 @@ export type PluginDescriptionType = z.infer<typeof PluginDescriptionSchema>;
 
 export const ActiveGameSchema = z.object({
     process: z.any().optional(),
-    gameId: z.number(),
+    gameId: z.object({ id: z.string(), source: z.string() }),
+    source: z.string().optional(),
+    sourceId: z.string().optional(),
     name: z.string(),
     command: z.object({ command: z.string(), startDir: z.string().optional() })
 });

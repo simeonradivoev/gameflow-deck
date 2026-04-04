@@ -389,7 +389,7 @@ export default new Elysia()
                     if (validCommand)
                     {
                         // launch command waits for the game to exit, we don't want that.
-                        await launchCommand(validCommand, source, id, validCommands.gameId);
+                        await launchCommand(validCommand, validCommands.gameId, validCommands.source, validCommands.sourceId);
                         return { type: 'application', command: null };
                     } else
                     {

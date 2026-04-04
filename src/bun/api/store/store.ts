@@ -147,8 +147,7 @@ export const store = new Elysia({ prefix: '/api/store' })
             biosRequirement: emulatorPackage.bios,
             bios: biosFiles,
             integrations: findEmulatorPluginIntegration(emulatorPackage.name, execPaths),
-            storeDownloadInfo: storeDownloadInfo,
-            hasUpdate: storeDownloadInfo?.hasUpdate ?? null
+            storeDownloadInfo: storeDownloadInfo
         };
 
         return emulator;

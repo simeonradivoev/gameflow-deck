@@ -3,7 +3,7 @@ import { RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { jobsApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";
-import { AnyRouter, Router, useRouter } from "@tanstack/react-router";
+import { AnyRouter, useRouter } from "@tanstack/react-router";
 import { soundMap } from "./audio/audio";
 
 export type ScrollSaveParams = {
@@ -267,6 +267,7 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
   init?: {
     query?: Record<string, any>,
     onProgress?: (process: number, data: ExtractField<JobResponse<JOB>, "data" | "started" | "progress" | "completed" | "ended", 'data'>) => void,
+    onWaiting?: () => void,
     onEnded?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
     onCompleted?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
     onError?: (error: string) => void;
@@ -305,6 +306,11 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
           setState(undefined);
           setData(undefined);
           init?.onCompleted?.(data.data as any);
+          break;
+        case 'waiting':
+          setState(undefined);
+          setData(undefined);
+          init?.onWaiting?.();
           break;
         default:
           setData(data.data as DataPayload);

@@ -4,11 +4,11 @@ import
     useFocusable,
     FocusContext,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Shortcuts from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
-import { systemApi } from "@/mainview/scripts/clientApi";
+import { rommApi, systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
 import { ChevronDown, CircleFadingArrowUp, Cpu, Download, Gamepad2, Info, Puzzle, Settings, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
 import { ContextList, DialogEntry, useContextDialog } from "@/mainview/components/ContextDialog";
@@ -62,6 +62,7 @@ function TitleArea (data: {
     onUpdate: (source: string) => void;
 })
 {
+    const navigation = useNavigate();
     const queryClient = useQueryClient();
     const deleteMutation = useMutation({
         ...storeEmulatorDeleteMutation,
@@ -202,6 +203,15 @@ function TitleArea (data: {
                 });
             }
         }
+
+        options.push(...data.emulator.validSources.filter(s => s.exists).map(s => ({
+            content: `Launch: ${s.type}`, type: 'primary', icon: emulatorStatusIcons[s.type], action (ctx)
+            {
+                if (!data.emulator) return;
+                rommApi.api.romm.game({ source: 'emulator' })({ id: data.emulator.name }).play.post({ command_id: s.type });
+                navigation({ to: '/launcher/$source/$id', params: { source: 'emulator', id: data.emulator.name } });
+            }, id: `open-${s.type}`
+        } satisfies DialogEntry)));
     }
 
     const { ref, focusKey, hasFocusedChild } = useFocusable({

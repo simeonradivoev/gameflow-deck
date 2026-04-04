@@ -5,22 +5,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import * as schema from '@schema/emulators';
 import { eq } from 'drizzle-orm';
 import { config, customEmulators, emulatorsDb, taskQueue } from '../../app';
-import os, { platform } from 'node:os';
+import os from 'node:os';
 import { cores } from '../../emulatorjs/emulatorjs';
 import { LaunchGameJob } from '../../jobs/launch-game-job';
-import { EmulatorPackageType } from '@/shared/constants';
-import { getStoreEmulatorPackage, getStoreFolder } from '../../store/services/gamesService';
-import { getOrCached } from '../../cache';
+import { getStoreEmulatorPackage } from '../../store/services/gamesService';
 import { getOrCachedScoopPackage } from '../../store/services/emulatorsService';
 
 export const varRegex = /%([^%]+)%/g;
 export const assignRegex = /(%\w+%)=(\S+) /g;
 
-export async function launchCommand (validCommand: CommandEntry, source: string, sourceId: string, id: number)
+export async function launchCommand (validCommand: CommandEntry, id: FrontEndId, source?: string, sourceId?: string)
 {
     if (taskQueue.hasActiveOfType(LaunchGameJob))
     {
-        throw new Error(`${id} currently running`);
+        throw new Error(`Game currently running`);
     }
 
     taskQueue.enqueue(LaunchGameJob.id, new LaunchGameJob(id, validCommand, source, sourceId));

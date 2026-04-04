@@ -1,8 +1,7 @@
-import { afterAll, beforeAll, beforeEach, afterEach } from 'bun:test';
+import { beforeAll, beforeEach, afterEach } from 'bun:test';
 import { resolve } from 'node:path';
 import * as app from '@/bun/api/app';
 import { remove } from 'fs-extra';
-import { spawnSync } from "child_process";
 
 export async function LoadApp ()
 {
