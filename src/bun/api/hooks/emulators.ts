@@ -1,6 +1,5 @@
 import { EmulatorDownloadInfoType, EmulatorPackageType } from "@/shared/constants";
 import { AsyncSeriesBailHook, AsyncSeriesHook } from "tapable";
-import { any } from "zod";
 
 interface EmulatorPostInstallContext
 {

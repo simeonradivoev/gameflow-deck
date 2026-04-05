@@ -10,7 +10,7 @@ import path, { dirname } from "node:path";
 import { DirSchema, SystemInfoSchema } from "@/shared/constants";
 import { getDevices, getDevicesCurated } from "./drives";
 import getFolderSize from "get-folder-size";
-import si, { battery } from 'systeminformation';
+import si from 'systeminformation';
 import { getStoreFolder } from "./store/services/gamesService";
 
 export const system = new Elysia({ prefix: '/api/system' })

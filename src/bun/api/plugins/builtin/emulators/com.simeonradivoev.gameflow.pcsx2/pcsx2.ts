@@ -1,5 +1,5 @@
 
-import { config, db } from "@/bun/api/app";
+import { config } from "@/bun/api/app";
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import configFile from './PCSX2.ini' with { type: 'file' };
 import Mustache from 'mustache';
@@ -59,7 +59,7 @@ export default class PCSX2Integration implements PluginType
                     "4k": 6,
                 };
 
-                const view = {
+                const paths = {
                     BIOS_PATH: biosFolder,
                     SNAPSHOTS_PATH: path.join(storageFolder, 'snaps'),
                     SAVE_STATES_PATH: path.join(savesFolder, 'states'),
@@ -68,12 +68,16 @@ export default class PCSX2Integration implements PluginType
                     COVERS_PATH: path.join(storageFolder, 'covers'),
                     TEXTURES_PATH: path.join(storageFolder, 'textures'),
                     RECURSIVE_PATHS: path.join(config.get('downloadPath'), 'roms', 'PS2'),
+                };
+
+                await Promise.all(Object.values(paths).map(p => ensureDir(p)));
+
+                const view = {
+                    ...paths,
                     ENABLE_WIDESCREEN: config.get('emulatorWidescreen'),
                     ASPECT_RATIO: config.get('emulatorWidescreen') ? "16:9" : "Auto 4:3/3:2",
                     UPSCALE_MULTIPLIER: resolutionMapping[config.get('emulatorResolution')] ?? 1
                 };
-
-                await Promise.all(Object.values(view).map(p => ensureDir(p)));
 
                 let pscx2Path = '';
                 if (process.platform === 'win32')

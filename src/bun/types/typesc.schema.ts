@@ -1,6 +1,5 @@
 import z from "zod";
 import { GameflowHooks } from "../api/hooks/app";
-import { ChildProcess } from "node:child_process";
 
 export const PluginContextSchema = z.object({
     hooks: z.instanceof(GameflowHooks)

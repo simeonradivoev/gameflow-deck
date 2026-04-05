@@ -7,7 +7,7 @@ import
 import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import classNames from "classnames";
-import { Key, Link, Lock, LogIn, LogOut, Save, ScanQrCode, Trash, User, X } from "lucide-react";
+import { Key, Link, Lock, LogIn, LogOut, ScanQrCode, User, X } from "lucide-react";
 import
 {
   useEffect,

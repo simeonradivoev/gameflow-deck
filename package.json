@@ -41,7 +41,8 @@
     "package:Linux": "bun run build:prod:appimage",
     "package:Windows": "bun run build:prod",
     "download:chromium": "bun scripts/download-chromium.ts --out=./bin/chromium",
-    "build:audiosprites": "bun ./scripts/generate-audio-sprites.ts"
+    "build:audiosprites": "bun ./scripts/generate-audio-sprites.ts",
+    "tsc": "tsc --noEmit"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",

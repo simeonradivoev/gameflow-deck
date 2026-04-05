@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import
 {
     useFocusable,
@@ -17,7 +17,7 @@ import Screenshots from "@/mainview/components/Screenshots";
 import { StickyHeaderUI } from "@/mainview/components/Header";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { EmulatorsSection } from "@/mainview/components/store/EmulatorsSection";
-import { HandleGoBack, scrollIntoViewHandler, useJobStatus, useOnNavigateBack } from "@/mainview/scripts/utils";
+import { HandleGoBack, scrollIntoViewHandler, useJobStatus } from "@/mainview/scripts/utils";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "react-error-boundary";
 import { emulatorStatusIcons } from "@/mainview/components/store/StoreEmulatorCard";

@@ -1,5 +1,5 @@
 import Elysia, { status } from "elysia";
-import { config, events, jar, plugins, taskQueue } from "./app";
+import { config, events, plugins, taskQueue } from "./app";
 import z from "zod";
 import { getCurrentUserApiUsersMeGet, tokenApiTokenPost, UserSchema } from "@clients/romm";
 import secrets from '../api/secrets';

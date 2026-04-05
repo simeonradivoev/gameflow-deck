@@ -1,8 +1,7 @@
-import { HTMLInputTypeAttribute, JSX, useCallback, useEffect, useState } from "react";
+import { JSX, useCallback, useEffect, useState } from "react";
 import { SettingsType } from "../../../shared/constants";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { OptionSpace } from "./OptionSpace";
-import { OptionInput } from "./OptionInput";
 import { getSettingQuery, setSettingMutation } from "@queries/settings";
 import { OptionDropdown } from "./OptionDropdown";
 

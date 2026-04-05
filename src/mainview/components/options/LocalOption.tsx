@@ -21,7 +21,6 @@ export function LocalOption (data: {
         <OptionSpace id={`${data.id}-space`} label={data.label}>
             {data.type === 'dropdown' && data.values && <OptionDropdown values={data.values} icon={data.icon}
                 name={data.id ?? ""}
-                type={data.type}
                 placeholder={data.placeholder}
                 defaultValue={localValue}
                 onChange={(v) =>

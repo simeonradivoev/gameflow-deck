@@ -1,4 +1,4 @@
-import { Ref, RefObject, useEffect, useState } from "react";
+import { RefObject, useState } from "react";
 import { useFocusEventListener } from "../scripts/spatialNavigation";
 import useActiveControl from "../scripts/gamepads";
 import { twMerge } from "tailwind-merge";

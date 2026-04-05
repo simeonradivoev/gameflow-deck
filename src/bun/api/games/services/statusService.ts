@@ -1,9 +1,9 @@
 import { RPC_URL, } from "@shared/constants";
-import { config, customEmulators, db, emulatorsDb, plugins, taskQueue } from "../../app";
+import { config, db, emulatorsDb, plugins, taskQueue } from "../../app";
 import { findExecs, getValidLaunchCommands } from "./launchGameService";
 import * as emulatorSchema from '@schema/emulators';
 import { and, eq } from "drizzle-orm";
-import { getErrorMessage, hashFile } from "@/bun/utils";
+import { getErrorMessage } from "@/bun/utils";
 import { checkFiles, getLocalGameMatch } from "./utils";
 import fs from 'node:fs/promises';
 import { getStoreGameFromId } from "../../store/services/gamesService";

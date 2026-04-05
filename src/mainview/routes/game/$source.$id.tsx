@@ -1,6 +1,6 @@
-import { createFileRoute, ErrorComponentProps, useRouter, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, ErrorComponentProps, useRouter } from "@tanstack/react-router";
 import { RPC_URL } from "@shared/constants";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Calendar, Folder, Gamepad2, Image, Info, TriangleAlert, Trophy } from "lucide-react";
 import { HeaderUI, StickyHeaderUI } from "../../components/Header";
@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import Shortcuts from "../../components/Shortcuts";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Screenshots from "@/mainview/components/Screenshots";
-import { HandleGoBack, scrollIntoViewHandler, useOnNavigateBack, useStickyDataAttr } from "@/mainview/scripts/utils";
+import { HandleGoBack, scrollIntoViewHandler, useOnNavigateBack } from "@/mainview/scripts/utils";
 import { FilterUI } from "@/mainview/components/Filters";
 import StatList, { StatEntry } from "@/mainview/components/StatList";
 import { useIntersectionObserver, useLocalStorage } from "usehooks-ts";

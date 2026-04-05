@@ -5,10 +5,9 @@ import { config, db, emulatorsDb, plugins } from "../../app";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@schema/app";
 import { StoreGameType } from "@shared/constants";
-import { DetailedRomSchema, getCurrentUserApiUsersMeGet, getRomApiRomsIdGet, SimpleRomSchema } from "@clients/romm";
 import * as emulatorSchema from "@schema/emulators";
 import { extractStoreGameSourceId, getStoreGame } from "../../store/services/gamesService";
-import { hashFile, isSteamDeck, isSteamDeckGameMode } from "@/bun/utils";
+import { hashFile } from "@/bun/utils";
 
 export async function calculateSize (installPath: string | null)
 {

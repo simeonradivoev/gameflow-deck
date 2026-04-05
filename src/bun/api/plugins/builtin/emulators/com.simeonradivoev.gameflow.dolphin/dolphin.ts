@@ -1,5 +1,5 @@
 
-import { config, db } from "@/bun/api/app";
+import { config } from "@/bun/api/app";
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import path from 'node:path';
 import desc from './package.json';

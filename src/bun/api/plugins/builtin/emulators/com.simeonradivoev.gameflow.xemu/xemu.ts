@@ -1,9 +1,7 @@
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
-import { GameflowHooks } from "@/bun/api/hooks/app";
 import { config } from "@/bun/api/app";
 import path from "node:path";
-import { ensureDir } from "fs-extra";
 import toml, { TomlTable } from 'smol-toml';
 import fs from 'node:fs/promises';
 import bin from './eeprom.bin' with { type: 'file' };

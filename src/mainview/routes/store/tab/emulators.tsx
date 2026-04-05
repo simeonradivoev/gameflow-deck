@@ -1,7 +1,7 @@
 
 
-import { createFileRoute, ErrorComponentProps, useSearch } from '@tanstack/react-router';
-import { Joystick, TriangleAlert } from 'lucide-react';
+import { createFileRoute, useSearch } from '@tanstack/react-router';
+import { Joystick } from 'lucide-react';
 import { useContext, useEffect } from 'react';
 import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { StoreEmulatorCard } from '@/mainview/components/store/StoreEmulatorCard';

@@ -95,7 +95,6 @@ function RouteComponent ()
   };
 
   const { shortcuts } = useShortcutContext();
-  const { focus } = Route.useSearch();
 
   const handleDetails = (type: string, source: string, id: string, focus: string) =>
   {

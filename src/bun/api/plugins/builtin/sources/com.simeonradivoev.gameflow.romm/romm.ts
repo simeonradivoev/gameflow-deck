@@ -138,8 +138,11 @@ export default class RommIntegration implements PluginType
                 });
                 games.push(...rommGames.data.items.map(g =>
                 {
-                    const game: FrontEndGameType & { igdb_id?: number; } = this.convertRomToFrontend(g);
-                    game.igdb_id = g.igdb_id ?? undefined;
+                    const game: FrontEndGameTypeWithIds = {
+                        ...this.convertRomToFrontend(g),
+                        igdb_id: g.igdb_id,
+                        ra_id: g.ra_id
+                    };
                     return game;
                 }));
             }

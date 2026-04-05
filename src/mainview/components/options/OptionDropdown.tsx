@@ -1,4 +1,4 @@
-import { FocusEventHandler, HTMLInputAutoCompleteAttribute, HTMLInputTypeAttribute, JSX, useState } from "react";
+import { FocusEventHandler, HTMLInputAutoCompleteAttribute, JSX, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { ContextDialog, ContextList, DialogEntry } from "../ContextDialog";

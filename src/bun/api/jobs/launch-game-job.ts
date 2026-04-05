@@ -1,11 +1,10 @@
 import z from "zod";
 import { IJob, JobContext } from "../task-queue";
 import { ActiveGameSchema, ActiveGameType } from "@/bun/types/typesc.schema";
-import { config, db, events, plugins } from "../app";
+import { db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { spawn } from 'node:child_process';
-import path from "node:path";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">
 {

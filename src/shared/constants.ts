@@ -1,6 +1,5 @@
 
 
-import { emulators } from '@/bun/api/schema/emulators';
 import { FocusDetails } from '@noriginmedia/norigin-spatial-navigation';
 import { JSX } from 'react';
 import * as z from 'zod';

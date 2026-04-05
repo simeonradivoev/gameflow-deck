@@ -1,11 +1,9 @@
 
 import { twMerge } from "tailwind-merge";
 import { RPC_URL } from "@/shared/constants";
-import { Button } from "../options/Button";
-import useActiveControl from "@/mainview/scripts/gamepads";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
-import { BadgeCheck, ChevronRight, CircleFadingArrowUp, EllipsisVertical, FileQuestion, IceCream2, Package, Sparkles, Store, WandSparkles } from "lucide-react";
+import { CircleFadingArrowUp, FileQuestion, IceCream2, Package, Store, WandSparkles } from "lucide-react";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import { FlatpackIcon } from "@/mainview/scripts/brandIcons";
 import { JSX } from "react";
