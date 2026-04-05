@@ -3,7 +3,7 @@ import desc from './package.json';
 import path from 'node:path';
 import { config } from "@/bun/api/app";
 
-export default class DOLPHINIntegration implements PluginType
+export default class CEMUIntegration implements PluginType
 {
     emulator = 'CEMU';
 
@@ -11,7 +11,7 @@ export default class DOLPHINIntegration implements PluginType
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "config", "fullscreen", "resolution", "saves", "states"] };
+            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "fullscreen", "saves", "states"] };
         });
 
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
@@ -20,7 +20,7 @@ export default class DOLPHINIntegration implements PluginType
 
             args.push(`--fullscreen=${config.get('launchInFullscreen') ? "True" : "False"}`);
 
-            const savesPath = path.join(config.get('downloadPath'), "saves", 'DOLPHIN');
+            const savesPath = path.join(config.get('downloadPath'), "saves", this.emulator);
 
             args.push(`--mlc=${savesPath}`);
 

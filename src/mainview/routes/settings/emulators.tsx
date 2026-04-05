@@ -8,7 +8,7 @@ import { Check, ChevronDown, FileQuestion, FolderSearch, Plug, SearchAlert, Stor
 import { ContextDialog, ContextList, DialogEntry, OptionElement } from '../../components/ContextDialog';
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
-import { RPC_URL } from '../../../shared/constants';
+import { RPC_URL, SettingsSchema } from '../../../shared/constants';
 import emulators from '@emulators';
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { GamePadButtonCode, Shortcut, useShortcuts } from '@/mainview/scripts/shortcuts';
@@ -19,6 +19,7 @@ import Carousel from '@/mainview/components/Carousel';
 import { FOCUS_KEYS } from '@/mainview/scripts/types';
 import { scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from '@/mainview/scripts/utils';
 import { SettingsOption } from '@/mainview/components/options/SettingsOption';
+import { SettingsDropdown } from '@/mainview/components/options/SettingsDropdown';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -328,6 +329,8 @@ function RouteComponent ()
       <EmulatorBadges addOverride={addOverrideMutation.mutate} onFocus={scrollIntoViewHandler({ block: 'center' })} />
       <div className="divider text-base-content/40">Preferences</div>
       <SettingsOption label="Launch In Fullscreen" id="launchInFullscreen" type="checkbox" />
+      <SettingsOption label="Widescreen" id="emulatorWidescreen" type="checkbox" />
+      <SettingsDropdown label='Resolution' id='emulatorResolution' values={SettingsSchema.shape.emulatorResolution.unwrap().options} />
       <div className="divider text-base-content/40">Overrides</div>
       <NewEmulatorPath isAddingOverride={addOverrideMutation.isPending} addOverride={addOverrideMutation.mutate} />
       {!!customEmulators && customEmulators.map((key) => <EmulatorPath key={key} id={key} />)}

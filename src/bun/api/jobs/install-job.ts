@@ -15,6 +15,7 @@ import z from "zod";
 import { checkFiles } from "../games/services/utils";
 import { ensureDir } from "fs-extra";
 import { path7za } from "7zip-bin";
+import slugify from 'slugify';
 
 interface JobConfig
 {
@@ -70,8 +71,8 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     name: game.title,
                     summary: game.description,
                     system_slug: gameId.system,
-                    path_fs: path.join('roms', gameId.system, game.title),
-                    extract_path: path.join('roms', gameId.system, game.title),
+                    path_fs: path.join('roms', gameId.system, slugify(game.title)),
+                    extract_path: '.',
                 };
 
                 break;
@@ -104,13 +105,17 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     });
 
                 const downloadedFiles = await downloader.start();
+                if (!downloadedFiles)
+                {
+                    return;
+                }
                 if (info.extract_path && downloadedFiles)
                 {
                     let progress = 0;
                     const progressDelta = 1 / downloadedFiles.length;
                     for (const filePath of downloadedFiles)
                     {
-                        const extractPath = path.join(config.get('downloadPath'), info.extract_path);
+                        const extractPath = path.join(config.get('downloadPath'), info.path_fs ?? '', info.extract_path);
                         await new Promise((resolve, reject) =>
                         {
                             const seven = Seven.extractFull(filePath, extractPath, { $bin: process.env.ZIP7_PATH ?? path7za, $progress: true });
@@ -119,7 +124,10 @@ export class InstallJob implements IJob<never, InstallJobStates>
                                 cx.setProgress(progress + p.percent * progressDelta, "extract");
                             });
 
-                            seven.on('error', e => reject(e));
+                            seven.on('error', e =>
+                            {
+                                reject(e);
+                            });
                             seven.on('end', async () =>
                             {
                                 await fs.rm(filePath);

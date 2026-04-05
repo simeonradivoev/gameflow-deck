@@ -1,0 +1,14 @@
+{
+    "name": "com.simeonradivoev.gameflow.xemu",
+    "displayName": "XEMU Integration",
+    "version": "0.0.1",
+    "description": "XEMU Emulator Integration",
+    "main": "./xemu.ts",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Xemu_logo_green.svg",
+    "keywords": [
+        "integration",
+        "emulator",
+        "xbox",
+        "xemu"
+    ]
+}

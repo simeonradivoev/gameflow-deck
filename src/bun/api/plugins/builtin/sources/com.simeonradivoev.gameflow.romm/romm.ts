@@ -2,7 +2,7 @@
 
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
-import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomsApiRomsGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
+import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomContentApiRomsIdContentFileNameGet, getRomsApiRomsGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
 import { config } from "@/bun/api/app";
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -138,7 +138,9 @@ export default class RommIntegration implements PluginType
                 });
                 games.push(...rommGames.data.items.map(g =>
                 {
-                    return this.convertRomToFrontend(g);
+                    const game: FrontEndGameType & { igdb_id?: number; } = this.convertRomToFrontend(g);
+                    game.igdb_id = g.igdb_id ?? undefined;
+                    return game;
                 }));
             }
         });
@@ -181,8 +183,9 @@ export default class RommIntegration implements PluginType
 
             const files = await Promise.all(rom.files.map(async f =>
             {
+                getRomContentApiRomsIdContentFileNameGet;
                 const file: DownloadFileEntry = {
-                    url: new URL(`${config.get('rommAddress')}/api/romsfiles/${f.id}/content/${f.file_name}`),
+                    url: new URL(`${config.get('rommAddress')}/api/roms/${f.id}/files/content/${f.file_name}`),
                     file_name: f.file_name,
                     file_path: f.file_path,
                     size: f.file_size_bytes,
@@ -198,8 +201,8 @@ export default class RommIntegration implements PluginType
                 const name = files[0].file_name.toLocaleLowerCase();
                 if (name.endsWith('.zip') || name.endsWith('.7z') || name.endsWith('.rar'))
                 {
-                    extract_path = rom.name ?? path.parse(name).name;
-                    path_fs = path.join(rom.fs_path, extract_path);
+                    extract_path = '.';
+                    path_fs = path.join(rom.fs_path, rom.slug ?? rom.fs_name_no_ext);
                 }
             }
 

@@ -22,7 +22,7 @@ export default class PCSX2Integration implements PluginType
                 return {
                     id: desc.name,
                     supportLevel: "full",
-                    capabilities: [...baseCapabilities, "resolution", "config"]
+                    capabilities: [...baseCapabilities, "config", "resolution"]
                 };
             }
             else
@@ -52,6 +52,12 @@ export default class PCSX2Integration implements PluginType
                 const biosFolder = path.join(config.get('downloadPath'), "bios", this.emulator);
                 const storageFolder = path.join(config.get('downloadPath'), "storage", this.emulator);
                 const savesFolder = path.join(config.get('downloadPath'), "saves", this.emulator);
+                const resolutionMapping = {
+                    "720p": 2,
+                    "1080p": 3,
+                    "1440p": 4,
+                    "4k": 6,
+                };
 
                 const view = {
                     BIOS_PATH: biosFolder,
@@ -62,6 +68,9 @@ export default class PCSX2Integration implements PluginType
                     COVERS_PATH: path.join(storageFolder, 'covers'),
                     TEXTURES_PATH: path.join(storageFolder, 'textures'),
                     RECURSIVE_PATHS: path.join(config.get('downloadPath'), 'roms', 'PS2'),
+                    ENABLE_WIDESCREEN: config.get('emulatorWidescreen'),
+                    ASPECT_RATIO: config.get('emulatorWidescreen') ? "16:9" : "Auto 4:3/3:2",
+                    UPSCALE_MULTIPLIER: resolutionMapping[config.get('emulatorResolution')] ?? 1
                 };
 
                 await Promise.all(Object.values(view).map(p => ensureDir(p)));

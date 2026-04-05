@@ -1,5 +1,6 @@
 
 
+import { emulators } from '@/bun/api/schema/emulators';
 import { FocusDetails } from '@noriginmedia/norigin-spatial-navigation';
 import { JSX } from 'react';
 import * as z from 'zod';
@@ -35,7 +36,9 @@ export const SettingsSchema = z.object({
     windowPosition: z.object({ x: z.number(), y: z.number() }).optional(),
     downloadPath: z.string(),
     launchInFullscreen: z.boolean().default(true),
-    disabledPlugins: z.array(z.string()).default([])
+    disabledPlugins: z.array(z.string()).default([]),
+    emulatorResolution: z.enum(['720p', '1080p', '1440p', '4k']).default('720p'),
+    emulatorWidescreen: z.boolean().default(true)
 });
 
 export const LocalSettingsSchema = z.object({

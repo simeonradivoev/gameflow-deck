@@ -10,12 +10,21 @@ import Mustache from "mustache";
 import { ensureDir } from "fs-extra";
 import { homedir } from "node:os";
 
-export default class PCSX2Integration implements PluginType
+export default class PPSSPPIntegration implements PluginType
 {
     emulator = "PPSSPP";
 
     load (ctx: PluginContextType)
     {
+        ctx.hooks.emulators.emulatorPostInstall.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
+        {
+            await Bun.write(path.join(ctx.path, "portable.txt"), "");
+            if (process.platform === 'win32')
+            {
+                await Bun.write(path.join(ctx.path, "installed.txt"), path.join(config.get('downloadPath'), 'saves', this.emulator));
+            }
+        });
+
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
             const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen", "saves", "states"];
@@ -25,7 +34,7 @@ export default class PCSX2Integration implements PluginType
                 return {
                     id: desc.name,
                     supportLevel: "full",
-                    capabilities: [...baseCapabilities, "resolution", "config"]
+                    capabilities: [...baseCapabilities, "config", "resolution"]
                 };
             }
             else
@@ -68,7 +77,7 @@ export default class PCSX2Integration implements PluginType
                 let ppssppPath = '';
                 if (process.platform === 'win32')
                 {
-                    ppssppPath = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'memstick', 'PSP', 'SYSTEM');
+                    ppssppPath = path.join(config.get('downloadPath'), 'saves', this.emulator, 'PSP', 'SYSTEM');
                 } else
                 {
                     //TODO: Use way to set custom memstick path when they support it
@@ -80,8 +89,17 @@ export default class PCSX2Integration implements PluginType
 
                 if (confPath)
                 {
+                    const resolutionMapping = {
+                        "720p": "2",
+                        "1080p": "4",
+                        "1440p": "6",
+                        "4k": "8"
+                    };
                     const configFileContents = await Bun.file(confPath).text();
-                    await Bun.write(path.join(ppssppPath, 'ppsspp.ini'), Mustache.render(configFileContents, {}));
+                    await Bun.write(path.join(ppssppPath, 'ppsspp.ini'), Mustache.render(configFileContents, {
+                        RESOLUTION: resolutionMapping[config.get('emulatorResolution')] ?? 0,
+                        FULLSCREEN: config.get('launchInFullscreen') ? "True" : "False"
+                    }));
                 }
 
                 if (controlsPath)

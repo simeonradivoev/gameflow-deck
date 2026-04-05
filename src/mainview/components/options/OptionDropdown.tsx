@@ -8,7 +8,6 @@ import { oneShot } from "@/mainview/scripts/audio/audio";
 
 export function OptionDropdown (data: {
     name: string;
-    type: HTMLInputTypeAttribute;
     className?: string;
     placeholder?: string;
     icon?: JSX.Element;

@@ -1,0 +1,15 @@
+{
+    "name": "com.simeonradivoev.gameflow.xenia",
+    "displayName": "XENIA Integration",
+    "version": "0.0.1",
+    "description": "XENIA Emulator Integration",
+    "main": "./xenia.ts",
+    "icon": "https://xenia.jp/images/logo-256x256.png",
+    "keywords": [
+        "integration",
+        "emulator",
+        "xbox360",
+        "xenia",
+        "xenia-edge"
+    ]
+}

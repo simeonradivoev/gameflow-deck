@@ -201,31 +201,68 @@ export default new Elysia()
                 .groupBy(schema.games.id)
                 .where(and(...where));
 
-            localGamesSet = new Set(localGames.filter(g => !!g.source_id && !!g.source).map(g => `${g.source}@${g.source_id}`));
+            localGamesSet = new Set(
+                localGames.filter(g => !!g.source_id && !!g.source).map(g => `${g.source}@${g.source_id}`)
+                    .concat(localGames.filter(g => !!g.igdb_id).map(g => `igdb@${g.igdb_id}`))
+            );
 
-            if (!query.collection_id)
+            function localGameExistsPredicate (game: { id: FrontEndId, igdb_id?: number | null, ra_id?: number | null; })
+            {
+                if (localGamesSet?.has(`${game.id.source}@${game.id.id}`)) return true;
+                if (game.igdb_id && localGamesSet?.has(`igdb@${game.igdb_id}`)) return true;
+                if (game.ra_id && localGamesSet?.has(`ra@${game.ra_id}`)) return true;
+                return false;
+            }
+
+            if (query.collection_id)
+            {
+                // Collections are just a remote thing for now.
+                const remoteGames: FrontEndGameTypeWithIds[] = [];
+                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
+                games.push(...remoteGames.map(g =>
+                {
+                    if (localGameExistsPredicate(g))
+                    {
+                        return convertLocalToFrontend(localGames.find(g => localGameExistsPredicate({ id: { id: g.source_id ?? '', source: g.source ?? '' }, igdb_id: g.igdb_id, ra_id: g.ra_id }))!);
+                    }
+                    else
+                    {
+                        return g;
+                    }
+                }));
+
+            } else
             {
                 games.push(...localGames.slice(query.offset, query.limit ? query.offset ?? 0 + query.limit : undefined).map(g =>
                 {
                     return convertLocalToFrontend(g);
                 }));
 
-                const remoteGames: FrontEndGameType[] = [];
+                const remoteGames: FrontEndGameTypeWithIds[] = [];
+                const remoteGameSet = new Set<string>();
                 await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
-                games.push(...remoteGames.filter(g => !localGamesSet?.has(`${g.id.source}@${g.id.id}`)));
-            } else
-            {
-                const remoteGames: FrontEndGameType[] = [];
-                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
-                games.push(...remoteGames.map(g =>
+                games.push(...remoteGames.filter(g =>
                 {
-                    if (localGamesSet?.has(`${g.id.source}@${g.id.id}`))
+                    if (localGameExistsPredicate(g))
                     {
-                        return convertLocalToFrontend(localGames.find(l => l.source === g.id.source && l.source_id === g.id.id)!);
-                    } else
-                    {
-                        return g;
+                        return false;
                     }
+
+                    if (g.igdb_id)
+                    {
+                        const igdbId = `igdb@${g.igdb_id}`;
+                        if (remoteGameSet.has(igdbId)) return false;
+                        remoteGameSet.add(igdbId);
+                    }
+
+                    if (g.ra_id)
+                    {
+                        const raId = `ra@${g.ra_id}`;
+                        if (remoteGameSet.has(raId)) return false;
+                        remoteGameSet.add(raId);
+                    }
+
+                    return true;
                 }));
             }
         }

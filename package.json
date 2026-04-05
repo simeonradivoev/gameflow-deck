@@ -64,6 +64,8 @@
     "node-stream-zip": "^1.15.0",
     "open": "^11.0.0",
     "pathe": "^2.0.3",
+    "slugify": "^1.6.9",
+    "smol-toml": "^1.6.1",
     "systeminformation": "^5.31.5",
     "tapable": "^2.3.0",
     "tough-cookie": "^6.0.0",

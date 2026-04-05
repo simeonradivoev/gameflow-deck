@@ -105,7 +105,7 @@ export class TaskQueue
     {
         this.queue = [];
         this.activeQueue.forEach(c => c.abort());
-        return Promise.all(this.activeQueue.map(c => c.promise.promise));
+        return Promise.all(this.activeQueue.map(c => c.promise.promise.catch(e => console.error("Error During Task Queue Closing"))));
     }
 }
 
@@ -212,10 +212,15 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
         {
             this.events.emit('started', { id: this.m_id, job: this });
             await this.m_job.start(this);
-            this.completed = true;
-            this.events.emit('completed', { id: this.m_id, job: this });
-            this.m_promise.resolve(this.m_job.exposeData?.());
-
+            if (!this.abortSignal.aborted)
+            {
+                this.completed = true;
+                this.events.emit('completed', { id: this.m_id, job: this });
+                this.m_promise.resolve(this.m_job.exposeData?.());
+            } else
+            {
+                this.m_promise.resolve(undefined);
+            }
         } catch (error)
         {
             if (error !== 'cancel')
@@ -225,7 +230,7 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
 
             this.events.emit('error', { id: this.m_id, job: this, error });
             this.error = error;
-            this.m_promise.reject(error);
+            this.m_promise.resolve(undefined);
         } finally
         {
             this.running = false;

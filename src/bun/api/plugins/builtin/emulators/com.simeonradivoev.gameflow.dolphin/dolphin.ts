@@ -13,7 +13,7 @@ export default class DOLPHINIntegration implements PluginType
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "config", "fullscreen", "resolution", "saves", "states"] };
+            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "config", "resolution", "fullscreen", "states"] };
         });
 
         ctx.hooks.emulators.emulatorPostInstall.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
@@ -34,6 +34,17 @@ export default class DOLPHINIntegration implements PluginType
             args.push(`--config=Dolphin.Interface.ConfirmStop=False`);
             args.push(`--config=Dolphin.Interface.SkipNKitWarning=True`);
             args.push(`--config=Dolphin.Analytics.PermissionAsked=True`);
+
+            const resolution = config.get('emulatorResolution');
+            const resolutionMapping = {
+                "720p": 2,
+                "1080p": 3,
+                "1440p": 4,
+                "4k": 6
+            };
+            args.push(`--config=GFX.Settings.InternalResolution=${resolutionMapping[resolution] ?? 1}`);
+            args.push(`--config=GFX.Settings.wideScreenHack=${config.get('emulatorWidescreen') ? "True" : "False"}`);
+            args.push(`--config=GFX.Settings.AspectRatio=${config.get('emulatorWidescreen') ? "1" : "0"}`);
 
             const savesPath = path.join(config.get('downloadPath'), "saves", this.emulator);
 

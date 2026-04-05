@@ -153,6 +153,12 @@ declare interface FrontEndPlatformType
     paths_screenshots: string[];
 }
 
+declare interface FrontEndGameTypeWithIds extends FrontEndGameType
+{
+    igdb_id: number | null;
+    ra_id: number | null;
+}
+
 declare interface FrontEndGameType
 {
     platform_display_name: string | null,
