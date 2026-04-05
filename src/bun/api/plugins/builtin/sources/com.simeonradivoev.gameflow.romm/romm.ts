@@ -191,6 +191,18 @@ export default class RommIntegration implements PluginType
                 return file;
             }));
 
+            let extract_path: string | undefined = undefined;
+            let path_fs = path.join(rom.fs_path, rom.fs_name);
+            if (files.length === 1)
+            {
+                const name = files[0].file_name.toLocaleLowerCase();
+                if (name.endsWith('.zip') || name.endsWith('.7z') || name.endsWith('.rar'))
+                {
+                    extract_path = rom.name ?? path.parse(name).name;
+                    path_fs = path.join(rom.fs_path, extract_path);
+                }
+            }
+
             const info: DownloadInfo = {
                 platform: {
                     slug: rommPlatform.slug,
@@ -204,13 +216,14 @@ export default class RommIntegration implements PluginType
                 ra_id: rom.ra_id ?? undefined,
                 summary: rom.summary ?? undefined,
                 name: rom.name ?? "Unknown",
-                path_fs: path.join(rom.fs_path, rom.fs_name),
+                path_fs,
                 source_id: String(rom.id),
                 slug: rom.slug ?? undefined,
                 system_slug: rommPlatform.slug,
                 metadata: rom.metadatum,
                 files,
-                auth: await this.getAuthToken()
+                auth: await this.getAuthToken(),
+                extract_path
             };
 
             return info;

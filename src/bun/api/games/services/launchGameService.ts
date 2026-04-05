@@ -67,6 +67,70 @@ export async function getEmulatorsForSystem (systemSlug: string)
     return Array.from(emulators);
 }
 
+export async function getRomFilePaths (gamePath: string, systemSlug?: string)
+{
+    if (!existsSync(gamePath))
+    {
+        throw new Error(`Provided rom path is missing: '${gamePath}'`);
+    }
+
+    const gamePathStat = await fs.stat(gamePath);
+    const validFiles: string[] = [];
+
+    if (gamePathStat.isDirectory())
+    {
+        if (!systemSlug) throw new Error("Needs system to find valid file");
+
+        const system = await emulatorsDb.query.systems.findFirst({
+            with: { commands: true },
+            where: eq(schema.systems.name, systemSlug)
+        });
+
+        if (!system)
+        {
+            throw new Error(`Could not find system '${systemSlug}'`);
+        }
+
+        const extensionList = system.extension.join(',');
+
+        for await (const file of fs.glob(path.join(gamePath, `/**/*.{${extensionList}}`)))
+        {
+            validFiles.push(file);
+        }
+
+        if (validFiles.length <= 0)
+        {
+            throw new Error(`Could not find valid rom file. Must be a file that ends in '${extensionList}'`);
+        }
+    } else if (systemSlug)
+    {
+        const system = await emulatorsDb.query.systems.findFirst({
+            with: { commands: true },
+            where: eq(schema.systems.name, systemSlug)
+        });
+
+        if (!system)
+        {
+            throw new Error(`Could not find system '${systemSlug}'`);
+        }
+
+        if (system.extension.some(e => gamePath.toLocaleLowerCase().endsWith(e.toLocaleLowerCase())))
+        {
+            validFiles.push(gamePath);
+        }
+        else
+        {
+            const extensionList = system.extension.join(',');
+            throw new Error(`Invalid Rom File. Must be a file that ends in '${extensionList}'`);
+        }
+    } else
+    {
+        validFiles.push(gamePath);
+    }
+
+    return validFiles;
+}
+
 /**
  * 
  * @param data Uses es-de system slug
@@ -96,38 +160,7 @@ export async function getValidLaunchCommands (data: {
     const downloadPath = config.get('downloadPath');
     const gamePath = path.join(downloadPath, data.gamePath);
 
-    const validFiles: string[] = [];
-    if (!existsSync(gamePath))
-    {
-        throw new Error(`Provided rom path is missing: '${gamePath}'`);
-    }
-
-    const gamePathStat = await fs.stat(gamePath);
-
-    const extensionList = system.extension.join(',');
-
-    if (gamePathStat.isDirectory())
-    {
-        for await (const file of fs.glob(path.join(gamePath, `/**/*.{${extensionList}}`)))
-        {
-            validFiles.push(file);
-        }
-
-        if (validFiles.length <= 0)
-        {
-            throw new Error(`Could not find valid rom file. Must be a file that ends in '${extensionList}'`);
-        }
-    } else
-    {
-        if (system.extension.some(e => gamePath.toLocaleLowerCase().endsWith(e.toLocaleLowerCase())))
-        {
-            validFiles.push(gamePath);
-        }
-        else
-        {
-            throw new Error(`Invalid Rom File. Must be a file that ends in '${extensionList}'`);
-        }
-    }
+    const validFiles: string[] = await getRomFilePaths(gamePath, data.systemSlug);
 
     function escapeWindowsArg (arg: string): string
     {

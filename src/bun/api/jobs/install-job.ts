@@ -70,7 +70,8 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     name: game.title,
                     summary: game.description,
                     system_slug: gameId.system,
-                    extract_path: path.join('roms', gameId.system),
+                    path_fs: path.join('roms', gameId.system, game.title),
+                    extract_path: path.join('roms', gameId.system, game.title),
                 };
 
                 break;
@@ -218,7 +219,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     source_id: info.source_id,
                     source: this.source,
                     slug: info.slug,
-                    path_fs: info.path_fs,
+                    path_fs: info.path_fs ?? (info.extract_path ? path.join(downloadPath, info.extract_path) : undefined),
                     last_played: info.last_played,
                     platform_id: platformId,
                     igdb_id: info.igdb_id,

@@ -10,7 +10,7 @@ import path from "node:path";
 import { convertLocalToFrontend, convertStoreToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
 import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
-import { getEmulatorsForSystem, launchCommand } from "./services/launchGameService";
+import { getEmulatorsForSystem, getRomFilePaths, launchCommand } from "./services/launchGameService";
 import { getErrorMessage, SeededRandom } from "@/bun/utils";
 import { defaultFormats, defaultPlugins } from 'jimp';
 import { createJimp } from "@jimp/core";
@@ -255,7 +255,8 @@ export default new Elysia()
     {
         const localGame = await db.query.games.findFirst({
             where: getLocalGameMatch(id, source),
-            columns: { path_fs: true }
+            columns: { path_fs: true },
+            with: { platform: { columns: { es_slug: true } } }
         });
 
         if (!localGame?.path_fs)
@@ -265,13 +266,15 @@ export default new Elysia()
 
         const downloadPath = config.get('downloadPath');
         const path_fs = path.join(downloadPath, localGame.path_fs);
-        const stats = await fs.stat(path_fs);
-        if (stats.isDirectory())
+
+        const filesPaths = await getRomFilePaths(path_fs, localGame.platform.es_slug ?? undefined);
+
+        if (filesPaths.length <= 0)
         {
-            return status("Not Found", "Rom is a folder");
+            throw new Error("No Valid Roms Found");
         }
 
-        return Bun.file(path_fs);
+        return Bun.file(filesPaths[0]);
     }, {
         params: z.object({ source: z.string(), id: z.string() })
     })

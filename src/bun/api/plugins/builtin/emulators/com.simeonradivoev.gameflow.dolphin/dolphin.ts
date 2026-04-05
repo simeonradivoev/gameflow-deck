@@ -25,7 +25,7 @@ export default class DOLPHINIntegration implements PluginType
         {
             const args: string[] = [];
 
-            const storageFolder = path.join(config.get('downloadPath'), "storage", 'DOLPHIN');
+            const storageFolder = path.join(config.get('downloadPath'), "storage", this.emulator);
             args.push(`--user=${storageFolder}`);
 
             args.push(`--config=Dolphin.Display.Fullscreen=${config.get('launchInFullscreen') ? "True" : "False"}`);
@@ -35,7 +35,7 @@ export default class DOLPHINIntegration implements PluginType
             args.push(`--config=Dolphin.Interface.SkipNKitWarning=True`);
             args.push(`--config=Dolphin.Analytics.PermissionAsked=True`);
 
-            const savesPath = path.join(config.get('downloadPath'), "saves", 'DOLPHIN');
+            const savesPath = path.join(config.get('downloadPath'), "saves", this.emulator);
 
             args.push(`--config=Dolphin.General.WiiSDCardPath=${path.join(savesPath, 'WiiSD.raw')}`);
             args.push(`--config=Dolphin.General.WiiSDCardSyncFolder=${path.join(savesPath, 'WiiSDSync')}`);

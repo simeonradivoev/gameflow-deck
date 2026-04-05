@@ -1,10 +1,11 @@
 import z from "zod";
 import { IJob, JobContext } from "../task-queue";
 import { ActiveGameSchema, ActiveGameType } from "@/bun/types/typesc.schema";
-import { db, events, plugins } from "../app";
+import { config, db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq, sql } from "drizzle-orm";
 import { spawn } from 'node:child_process';
+import path from "node:path";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, "playing">
 {
@@ -60,7 +61,9 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 const spawnGame = spawn(this.validCommand.command, {
                     shell: true,
                     cwd: this.validCommand.startDir,
-                    signal: context.abortSignal
+                    signal: context.abortSignal,
+                    env: {
+                    }
                 });
 
                 spawnGame.stdout.on('data', data => console.log(data));
@@ -82,6 +85,8 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 const bunGame = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs], {
                     cwd: this.validCommand.startDir,
                     signal: context.abortSignal,
+                    env: {
+                    }
                 });
 
                 context.abortSignal.addEventListener('abort', reject);

@@ -49,9 +49,9 @@ export default class PCSX2Integration implements PluginType
             {
                 const configFileContents = await Bun.file(configFile).text();
 
-                const biosFolder = path.join(config.get('downloadPath'), "bios", 'PCSX2');
-                const storageFolder = path.join(config.get('downloadPath'), "storage", 'PCSX2');
-                const savesFolder = path.join(config.get('downloadPath'), "saves", 'PCSX2');
+                const biosFolder = path.join(config.get('downloadPath'), "bios", this.emulator);
+                const storageFolder = path.join(config.get('downloadPath'), "storage", this.emulator);
+                const savesFolder = path.join(config.get('downloadPath'), "saves", this.emulator);
 
                 const view = {
                     BIOS_PATH: biosFolder,
@@ -70,7 +70,7 @@ export default class PCSX2Integration implements PluginType
                 if (process.platform === 'win32')
                     pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'inis');
                 else
-                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, "PCSX2", 'inis');
+                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, this.emulator, 'inis');
 
                 await Bun.write(path.join(pscx2Path, 'PCSX2.ini'), Mustache.render(configFileContents, view));
             }

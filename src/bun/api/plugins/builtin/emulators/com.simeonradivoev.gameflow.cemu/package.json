@@ -1,0 +1,14 @@
+{
+    "name": "com.simeonradivoev.gameflow.cemu",
+    "displayName": "CEMU Integration",
+    "version": "0.0.1",
+    "description": "CEMU Emulator Integration",
+    "main": "./cemu.ts",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Cemu_Emulator_Official_Logo.png",
+    "keywords": [
+        "integration",
+        "emulator",
+        "wiiu",
+        "cemu"
+    ]
+}
