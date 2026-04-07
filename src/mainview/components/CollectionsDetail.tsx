@@ -3,9 +3,9 @@ import { StickyHeaderUI } from './Header';
 import { GameList } from './GameList';
 import { Search, Settings2 } from 'lucide-react';
 import { JSX, Suspense } from 'react';
-import Shortcuts from './Shortcuts';
+import { FloatingShortcuts } from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
+import { GamePadButtonCode, useShortcuts } from '../scripts/shortcuts';
 import { GameListFilterType } from '@/shared/constants';
 import { GameCardFocusHandler } from './CardElement';
 import { HandleGoBack } from '../scripts/utils';
@@ -13,6 +13,7 @@ import LoadingCardList from './LoadingCardList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gameQuery } from '../scripts/queries/romm';
 import { useRouter } from '@tanstack/react-router';
+import SelectMenu from './SelectMenu';
 
 export interface CollectionsDetailParams
 {
@@ -43,8 +44,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
         preferredChildFocusKey: `${focusKey}-list`
     });
 
-    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router) }], [router]);
-    const { shortcuts } = useShortcutContext();
+    useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: (e) => HandleGoBack(router, e) }], [router]);
 
     const handleScroll: GameCardFocusHandler = (cardId, node, details) =>
     {
@@ -83,9 +83,10 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                     <div>
                         {data.footer}
                     </div>
-                    <Shortcuts shortcuts={shortcuts} />
+                    <FloatingShortcuts />
                 </footer>
             </div>
+            <SelectMenu rootFocusKey={focusKey} />
         </FocusContext>
     );
 }

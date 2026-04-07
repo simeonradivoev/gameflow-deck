@@ -1,5 +1,8 @@
 import { Router } from "@/mainview";
-import { oneShot, soundMap } from "./audio";
+import { soundMap } from "./audio/audioConstants";
+import { oneShotRumble } from "./gamepads";
+import { oneShot } from "./audio/audio";
+
 export default function load ()
 {
     let lastLocationPath: string | undefined;
@@ -13,12 +16,18 @@ export default function load ()
             const soundRoute = routes.find(r => r.staticData.enterSound !== undefined);
             if (soundRoute)
             {
-                if (soundRoute.staticData.enterSound) oneShot(soundRoute.staticData.enterSound);
+                oneShot(soundRoute.staticData.enterSound!);
             } else
             {
                 oneShot("openGeneric");
             }
 
+            if (op.location.state.eventType === 'gamepadbuttondown')
+            {
+                const hapticRoute = routes.find(r => r.staticData.enterHaptic !== undefined);
+                if (hapticRoute) oneShotRumble(hapticRoute.staticData.enterHaptic!, { all: true });
+                else oneShotRumble('navigateForward', { all: true });
+            }
         } else if (op.action.type === 'BACK')
         {
             if (lastLocationPath)
@@ -73,6 +82,7 @@ export default function load ()
                 if (e.detail.nativeEvent || e.detail.event)
                 {
                     oneShot(sound);
+                    oneShotRumble('select', { event: e.detail.event });
                 }
             }, 10);
         }

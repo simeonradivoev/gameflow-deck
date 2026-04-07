@@ -27,10 +27,11 @@ import { twMerge } from "tailwind-merge";
 import z from "zod";
 import { SettingsSchema } from "../../../shared/constants";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
-import Shortcuts from "@/mainview/components/Shortcuts";
+import Shortcuts, { FloatingShortcuts } from "@/mainview/components/Shortcuts";
 import { HandleGoBack } from "@/mainview/scripts/utils";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import { oneShot } from "@/mainview/scripts/audio/audio";
+import SelectMenu from "@/mainview/components/SelectMenu";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
@@ -55,11 +56,11 @@ function MenuItem (data: {
 {
   const router = useRouter();
   const acitve = !!useMatch({ from: data.route as any, shouldThrow: false });;
-  const handleNonFocusSelect = () =>
+  const handleNonFocusSelect = (e?: Event) =>
   {
     if (data.return)
     {
-      HandleGoBack(router);
+      HandleGoBack(router, e);
     } else if (!acitve)
     {
       router.navigate({ to: data.route, viewTransition: { types: ['slide-up'] }, replace: true });
@@ -88,7 +89,7 @@ function MenuItem (data: {
       ref={ref}
       key={data.route}
       data-sound-category={"menu"}
-      onClick={data.focusSelect ? focusSelf : handleNonFocusSelect}
+      onClick={data.focusSelect ? focusSelf : (e) => handleNonFocusSelect(e.nativeEvent)}
       onFocus={focusSelf}
       className={twMerge("flex group-focusable cursor-pointer", data.className)}
     >
@@ -180,8 +181,7 @@ export function SettingsUI ()
     preferredChildFocusKey: 'settings-menu'
   });
 
-  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router) }], [router]);
-  const { shortcuts } = useShortcutContext();
+  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: (e) => HandleGoBack(router, e) }], [router]);
 
   return (
     <FocusContext.Provider value={focusKey}>
@@ -195,10 +195,13 @@ export function SettingsUI ()
             <Outlet />
           </div>
         </div>
-        <div className="portrait:hidden divider divider-end">
-          <Shortcuts shortcuts={shortcuts} />
+        <div className="flex justify-between pt-2">
+          <Shortcuts centerElement={
+            <div className="divider divider-vertical grow px-4"></div>
+          } />
         </div>
       </div>
+      <SelectMenu rootFocusKey={focusKey} />
       <AutoFocus focus={focusSelf} />
     </FocusContext.Provider>
   );

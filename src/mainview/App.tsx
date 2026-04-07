@@ -1,7 +1,7 @@
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 import { Router } from ".";
 import { useEffect } from "react";
-import audioCallbacks from "./scripts/audio/audioCallbacks";
+import audioCallbacks from "./scripts/feedbackCallbacks";
 import { client as rommClient } from "../clients/romm/client.gen";
 import { RPC_URL } from "@/shared/constants";
 

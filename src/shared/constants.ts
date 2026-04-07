@@ -44,7 +44,9 @@ export const LocalSettingsSchema = z.object({
     backgroundBlur: z.stringbool().or(z.boolean()).default(true),
     backgroundAnimation: z.stringbool().or(z.boolean()).default(true),
     theme: z.enum(['dark', 'light', 'auto']).default('auto'),
-    soundEffects: z.boolean().default(true)
+    soundEffects: z.boolean().default(true),
+    soundEffectsVolume: z.number().min(0).max(100).default(50),
+    hapticsEffects: z.boolean().default(true)
 });
 
 export const GameListFilterSchema = z.object({

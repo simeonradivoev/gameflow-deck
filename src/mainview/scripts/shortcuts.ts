@@ -34,6 +34,7 @@ export interface Shortcut
     button: GamePadButtonCode;
     heldTime?: number;
     action?: (e: GamepadButtonEvent) => void;
+    side?: "left" | "right";
 }
 
 let isDirty = false;

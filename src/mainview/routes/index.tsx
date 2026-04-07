@@ -34,7 +34,6 @@ import { AutoFocus } from "../components/AutoFocus";
 import SaveScroll from "../components/SaveScroll";
 import { ErrorBoundary, useErrorBoundary } from "react-error-boundary";
 import { twMerge } from "tailwind-merge";
-import Shortcuts from "../components/Shortcuts";
 import { PlatformsList } from "../components/PlatformsList";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
 import z from "zod";
@@ -46,6 +45,8 @@ import Carousel from "../components/Carousel";
 import { closeMutation } from "@queries/system";
 import { gameQuery } from "../scripts/queries/romm";
 import { oneShot } from "../scripts/audio/audio";
+import { FloatingShortcuts } from "../components/Shortcuts";
+import SelectMenu from "../components/SelectMenu";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -94,7 +95,7 @@ function ShowAllGamesCard ()
   const router = useRouter();
   const handleNavigate = () =>
   {
-    router.navigate({ to: '/games', viewTransition: { types: ['zoom-in'] } });
+    router.navigate({ to: '/games' });
   };
   const { ref } = useFocusable({ focusKey: 'all-games-btn', onEnterPress: handleNavigate });
   return <div ref={ref} onClick={handleNavigate} className="flex focusable focusable-primary justify-center items-center bg-base-300/80 rounded-3xl font-semibold w-(--game-card-width) h-(--game-card-height) focusable-hover cursor-pointer">All Games</div>;
@@ -231,22 +232,22 @@ function MainMenu ()
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon
-          action={() => router.navigate({ to: "/games" })}
+          onAction={(e) => router.navigate({ to: "/games", state: { eventType: e?.type } })}
           icon={<Gamepad2 />}
           label="Home"
           type="secondary"
         />
         <CircleIcon icon={<MessageSquare />} label="News" />
-        <CircleIcon type="info" icon={<Store />} action={() => router.navigate({ to: "/store/tab" })} label="Shop" />
+        <CircleIcon type="info" icon={<Store />} onAction={(e) => router.navigate({ to: "/store/tab", state: { eventType: e?.type } })} label="Shop" />
         <CircleIcon icon={<Image />} label="Album" />
         <CircleIcon
           icon={<Gamepad2 />}
           label="Controllers"
         />
         <CircleIcon
-          action={() =>
+          onAction={(e) =>
           {
-            router.navigate({ to: '/settings/accounts' });
+            router.navigate({ to: '/settings/accounts', state: { eventType: e?.type } });
           }}
           icon={<Settings />}
           label="Settings"
@@ -258,15 +259,14 @@ function MainMenu ()
 }
 
 function CircleIcon (data: {
-  action?: () => void;
   type?: "secondary" | "accent" | "info";
   label?: string;
   icon?: JSX.Element;
-})
+} & InteractParams)
 {
-  const handleAction = () =>
+  const handleAction = (e?: Event) =>
   {
-    data.action?.();
+    data.onAction?.(e);
     oneShot('click');
   };
   const { ref, focusKey } = useFocusable({
@@ -284,7 +284,7 @@ function CircleIcon (data: {
     <li
       ref={ref}
       data-sound-category={"menu"}
-      onClick={handleAction}
+      onClick={e => handleAction(e.nativeEvent)}
       className={twMerge(
         `portrait:sm:size-12 sm:w-14 sm:h-10 menu-icon text-base-300 md:w-20 md:h-20 rounded-full flex items-center justify-center drop-shadow-lg cursor-pointer transition-all focusable focusable-primary focused:drop-shadow-2xl focused:animate-scale focusable-hover bg-base-content border-6 md:border-12 border-base-content focused:border-0 hover:border-0 z-1 active:border-0 active:bg-base-300 active:text-base-content active:transition-none`, typeClasses[data.type ?? 'none'])}
     >
@@ -309,7 +309,6 @@ export default function ConsoleHomeUI ()
 
   const setFilter = (filter: string) => router.navigate({ to: '/', search: { filter }, viewTransition: false, replace: true });
 
-  const { shortcuts } = useShortcutContext();
   const headerButtons: HeaderButton[] = [];
   if (mobileCheck())
     headerButtons.push({ id: "fullscreen", icon: <Maximize />, action: handleFullscreen });
@@ -348,9 +347,9 @@ export default function ConsoleHomeUI ()
         <footer className={twMerge(
           "fixed bottom-4 left-4 right-4 sm:portrait:hidden sm:col-span-1 md:col-start-2 md:col-span-2 flex items-end justify-end",
         )}>
-          <Shortcuts shortcuts={shortcuts} />
+          <FloatingShortcuts />
         </footer>
-
+        <SelectMenu rootFocusKey={focusKey} />
       </FocusContext.Provider>
     </AnimatedBackground>
   );

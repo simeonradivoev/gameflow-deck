@@ -7,7 +7,7 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { ButtonStyle } from '../components/options/Button';
 import { DoorOpen, RefreshCw, Undo } from 'lucide-react';
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
-import Shortcuts from '../components/Shortcuts';
+import Shortcuts, { FloatingShortcuts } from '../components/Shortcuts';
 import { useEventListener } from 'usehooks-ts';
 import useActiveControl from '../scripts/gamepads';
 import { twMerge } from 'tailwind-merge';
@@ -17,6 +17,9 @@ import { gameQuery } from '@queries/romm';
 
 export const Route = createFileRoute('/embedded/$source/$id')({
     component: RouteComponent,
+    staticData: {
+        enterSound: 'launch'
+    },
     loader: async (ctx) =>
     {
         const data = await ctx.context.queryClient.fetchQuery(gameQuery(ctx.params.source, ctx.params.id));
@@ -133,7 +136,13 @@ function RouteComponent ()
 
     function HandleGoBack ()
     {
-        router.navigate({ to: '/game/$source/$id', params: { source, id }, replace: true });
+        if (router.history.canGoBack())
+        {
+            router.history.back();
+        } else
+        {
+            router.navigate({ to: '/game/$source/$id', viewTransition: { types: ['zoom-out'] }, params: { source, id }, replace: true });
+        }
     }
 
     useEventListener('message', e =>
@@ -172,7 +181,6 @@ function RouteComponent ()
         }
     };
     useEffect(() => setPaused(overlayOpen), [overlayOpen]);
-    const { shortcuts } = useShortcutContext();
     useEffect(() => { if (!overlayOpen) focusSelf({ instant: true }); }, [overlayOpen]);
     function handleClose ()
     {
@@ -185,9 +193,7 @@ function RouteComponent ()
             <div className='flex fixed left-0 right-0 top-0'>
                 <Overlay iframeRef={iframeRef} goBack={HandleGoBack} open={overlayOpen} close={handleClose} />
             </div>
-            <div className='flex justify-end fixed bottom-4 right-4 left-4 z-10'>
-                <Shortcuts shortcuts={shortcuts} />
-            </div>
+            <FloatingShortcuts />
         </FocusContext>
     </div>;
 }

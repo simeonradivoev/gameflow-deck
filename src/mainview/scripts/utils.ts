@@ -4,7 +4,8 @@ import { useLocalStorage } from "usehooks-ts";
 import { jobsApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";
 import { AnyRouter, useRouter } from "@tanstack/react-router";
-import { soundMap } from "./audio/audio";
+import { soundMap } from "./audio/audioConstants";
+import { GamepadButtonEvent, oneShotRumble } from "./gamepads";
 
 export type ScrollSaveParams = {
   id: string;
@@ -60,11 +61,11 @@ export function mobileCheck ()
   return check;
 };
 
-export function getLocalSetting<TKey extends keyof LocalSettingsType> (key: TKey)
+export function getLocalSetting<TKey extends keyof LocalSettingsType> (key: TKey): LocalSettingsType[TKey]
 {
   const localValueRaw = localStorage.getItem(key);
-  if (!localValueRaw) return LocalSettingsSchema.shape[key].parse(undefined);
-  return LocalSettingsSchema.shape[key].parse(JSON.parse(localValueRaw));
+  if (!localValueRaw) return LocalSettingsSchema.shape[key].parse(undefined) as any;
+  return LocalSettingsSchema.shape[key].parse(JSON.parse(localValueRaw)) as any;
 }
 
 export function useLocalSetting<TKey extends keyof LocalSettingsType> (key: TKey)
@@ -329,11 +330,15 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
   return { data, state, error, wsRef: ref };
 }
 
-export function HandleGoBack (router: AnyRouter)
+export function HandleGoBack (router: AnyRouter, e?: Event)
 {
   if (router.history.canGoBack())
   {
     router.history.back();
+    if (e instanceof GamepadButtonEvent)
+    {
+      oneShotRumble("navigateBack", { event: e });
+    }
   } else
   {
     router.navigate({ to: '/', viewTransition: { types: ['zoom-out'] } });

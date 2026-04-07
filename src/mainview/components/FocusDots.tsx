@@ -51,7 +51,7 @@ export default function FocusDots (data: {
             {
                 const focused = em === focusedKey;
                 return <button key={i} onClick={(e) => setFocus(em, { nativeEvent: e.nativeEvent })}
-                    className={twMerge("cursor-pointer rounded-full size-2 bg-base-content/40 transition-all", classNames({
+                    className={twMerge("cursor-pointer rounded-full size-2 bg-base-content/60 transition-all", classNames({
                         "size-3 bg-base-content drop-shadow-lg drop-shadow-base-300/40": focused
                     }))}></button>;
             });
@@ -69,7 +69,7 @@ export default function FocusDots (data: {
         }
     }, [data.elements, data.scrollElement?.current]);
 
-    return <div className="divider opacity-20">
+    return <div className="divider opacity-40">
         <div className="flex gap-2 py-6 justify-center items-center h-3">{elements}</div>
     </div>;
 }

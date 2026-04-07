@@ -1,7 +1,7 @@
 import { getCurrentFocusKey, navigateByDirection } from "@noriginmedia/norigin-spatial-navigation";
 import { GetFocusedElement } from "./spatialNavigation";
 import { useEffect, useState } from "react";
-import { mobileCheck } from "./utils";
+import { getLocalSetting, mobileCheck } from "./utils";
 import { oneShot } from "./audio/audio";
 
 let loopStarted = false;
@@ -280,4 +280,45 @@ function updateStatus ()
     }
 
     requestAnimationFrame(updateStatus);
+}
+
+export const hapticMap = {
+    select: [{ duration: 50, strongMagnitude: 0, weakMagnitude: 1 }],
+    navigateForward: [{ duration: 50, strongMagnitude: 0.2, weakMagnitude: 0.2 }, { duration: 100, strongMagnitude: 0.5, weakMagnitude: 0.5 }],
+    navigateBack: [{ duration: 100, strongMagnitude: 0.5, weakMagnitude: 0.5 }, { duration: 50, strongMagnitude: 0.2, weakMagnitude: 0.2 }],
+    navigateStore: [{ duration: 200, strongMagnitude: 0.5, weakMagnitude: 0.5 }, { duration: 300, strongMagnitude: 0.2, weakMagnitude: 0.2 }],
+    openContext: [{ duration: 50, strongMagnitude: 0.5, weakMagnitude: 0.5 }, { duration: 50, strongMagnitude: 0.0, weakMagnitude: 0.0 }, { duration: 50, strongMagnitude: 0.2, weakMagnitude: 0.2 }],
+} satisfies Record<string, GamepadEffectParameters[]>;
+
+let lastRumble: AbortController;
+
+export function oneShotRumble (effect: keyof typeof hapticMap, init?: { event?: Event, all?: boolean; })
+{
+    if (!getLocalSetting('hapticsEffects')) return;
+
+    async function play (g: Gamepad)
+    {
+        lastRumble = new AbortController();
+        for (const e of hapticMap[effect])
+        {
+            await new Promise(resolve =>
+            {
+                g.vibrationActuator.playEffect('dual-rumble', e);
+                const timeout = setTimeout(() => resolve(true), e.duration + 50);
+                lastRumble.signal.onabort = () => clearTimeout(timeout);
+                if (lastRumble.signal.aborted) resolve(false);
+            });
+
+            if (lastRumble.signal.aborted) return;
+        }
+    }
+
+    if (lastRumble) lastRumble.abort();
+    if (init?.event instanceof GamepadEvent || init?.event instanceof GamepadButtonEvent)
+    {
+        if (init?.event.gamepad) play(init?.event.gamepad);
+    } else if (init?.all)
+    {
+        navigator.getGamepads().filter(g => !!g).forEach(g => play(g));
+    }
 }

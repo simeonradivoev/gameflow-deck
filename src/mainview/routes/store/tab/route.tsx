@@ -1,7 +1,8 @@
 import { AutoFocus } from '@/mainview/components/AutoFocus';
 import { FilterUI } from '@/mainview/components/Filters';
 import { HeaderUI } from '@/mainview/components/Header';
-import Shortcuts from '@/mainview/components/Shortcuts';
+import SelectMenu from '@/mainview/components/SelectMenu';
+import Shortcuts, { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { StoreContext } from '@/mainview/scripts/contexts';
 import { gameQuery } from '@/mainview/scripts/queries/romm';
 import { storeEmulatorDetailsQuery } from '@/mainview/scripts/queries/store';
@@ -19,7 +20,8 @@ export const Route = createFileRoute('/store/tab')({
   component: RouteComponent,
   validateSearch: zodValidator(z.object({ focus: z.string().optional() })),
   staticData: {
-    enterSound: 'openStore'
+    enterSound: 'openStore',
+    enterHaptic: 'navigateStore'
   }
 });
 
@@ -47,7 +49,7 @@ function TopArea (data: { filters: Record<string, FilterOption>; })
 
   useShortcuts("STORE_ROOT", () => [{
     label: "Return",
-    action: () => HandleGoBack(router),
+    action: (e) => HandleGoBack(router, e),
     button: GamePadButtonCode.B
   }], [router]);
 
@@ -94,8 +96,6 @@ function RouteComponent ()
     games: { label: "Games", selected: useIsSettings('games') }
   };
 
-  const { shortcuts } = useShortcutContext();
-
   const handleDetails = (type: string, source: string, id: string, focus: string) =>
   {
     if (type === 'emulator')
@@ -133,17 +133,16 @@ function RouteComponent ()
           </div>
           <TopArea filters={filters} />
           <StoreOutlet />
-          <div className='flex fixed bottom-4 left-4 right-4 justify-end z-15'>
-            <Shortcuts shortcuts={shortcuts} />
-          </div>
           {!isMobile && <>
             <div className='bg-gradient'></div>
             <div className='bg-noise'></div>
             <div className='bg-dots'></div>
           </>}
         </div>
+        <SelectMenu rootFocusKey={focusKey} />
       </FocusContext.Provider>
     </StoreContext>
     <AutoFocus focus={focusSelf} />
+    <FloatingShortcuts />
   </div >;
 }

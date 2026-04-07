@@ -20,6 +20,8 @@ function RouteComponent ()
       <LocalOption id="backgroundAnimation" label="Background Animation" type='checkbox'></LocalOption>
       <LocalOption id="theme" label="Theme" type='dropdown' values={['dark', 'light', 'auto']}></LocalOption>
       <LocalOption id='soundEffects' label="Sounds" type='checkbox'></LocalOption>
+      <LocalOption id='soundEffectsVolume' min={0} max={100} step={10} label="Sounds" type='range'></LocalOption>
+      <LocalOption id='hapticsEffects' label="Haptics" type='checkbox'></LocalOption>
     </FocusContext>
   </ul>;
 }

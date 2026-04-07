@@ -24,6 +24,14 @@ declare global
       sound?: string;
     }
   }
+
+  module "@tanstack/react-router" {
+    declare interface HistoryState
+    {
+      eventType?: string;
+    }
+  }
+
 }
 
 declare interface FocusEventDetails

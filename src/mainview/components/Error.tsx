@@ -1,7 +1,7 @@
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Home, TriangleAlert } from "lucide-react";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
-import Shortcuts from "./Shortcuts";
+import { FloatingShortcuts } from "./Shortcuts";
 import { Button } from "./options/Button";
 import { useEffect } from "react";
 import { ErrorComponentProps, useRouter } from "@tanstack/react-router";
@@ -12,7 +12,6 @@ export default function Error (data: ErrorComponentProps)
     const router = useRouter();
     const handleReturn = () => router.navigate({ to: '/', viewTransition: { types: ['zoom-in'] } });
     useShortcuts(focusKey, () => [{ label: "Return Home", button: GamePadButtonCode.B, action: handleReturn }]);
-    const { shortcuts } = useShortcutContext();
 
     useEffect(() => { focusSelf({ instant: true }); }, []);
 
@@ -30,7 +29,7 @@ export default function Error (data: ErrorComponentProps)
             <div className="mobile:hidden bg-gradient"></div>
             <div className="mobile:hidden bg-noise"></div>
             <div className="mobile:hidden bg-dots"></div>
-            <div className="flex justify-end fixed bottom-4 left-4 right-4"><Shortcuts shortcuts={shortcuts} /></div>
+            <FloatingShortcuts />
         </FocusContext>
     </div>;
 }

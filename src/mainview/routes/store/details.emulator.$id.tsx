@@ -6,7 +6,7 @@ import
 } from "@noriginmedia/norigin-spatial-navigation";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
-import Shortcuts from "@/mainview/components/Shortcuts";
+import Shortcuts, { FloatingShortcuts } from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { rommApi, systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
@@ -335,7 +335,7 @@ export function RouteComponent ()
 
     useShortcuts(focusKey, () => [{
         label: "Return",
-        action: () => HandleGoBack(router),
+        action: (e) => HandleGoBack(router, e),
         button: GamePadButtonCode.B
     }], [router]);
 
@@ -343,8 +343,6 @@ export function RouteComponent ()
         ...installEmulatorMutation(id),
         onSuccess: (data, variables, onMutateResult, context) => context.client.refetchQueries(storeEmulatorDetailsQuery(id)),
     });
-
-    const { shortcuts } = useShortcutContext();
 
     const stats: StatEntry[] = [];
     if (emulator)
@@ -434,7 +432,7 @@ export function RouteComponent ()
                         }} games={recommendedGames} /></div>}
                 </div>
                 <div className='flex fixed bottom-4 left-4 right-4 justify-end z-10'>
-                    <Shortcuts shortcuts={shortcuts} />
+                    <FloatingShortcuts />
                 </div>
             </FocusContext.Provider>
         </AnimatedBackground >

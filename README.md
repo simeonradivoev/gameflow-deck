@@ -96,3 +96,4 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 - UI Sounds
   - [CC BY 4.0 - Credit: JC Sounds](https://opengameart.org/content/jc-sounds-ui-utility-pack-vol-1)
   - [Sounds by: Chhoff](https://chhoffmusic.itch.io/classic-ui-sfx)
+  - [UI Sound Effects by lolurio](https://lolurio.itch.io/lolurios-free-cozy-ui-sfx)

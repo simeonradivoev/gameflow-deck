@@ -8,6 +8,8 @@ import CardElement, { GameCardFocusHandler, GameCardParams } from "./CardElement
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
+import { oneShot } from "../scripts/audio/audio";
+import { GamepadButtonEvent } from "../scripts/gamepads";
 
 export interface GameMetaExtra extends GameMeta
 {
@@ -24,10 +26,11 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusPara
     preview = data.game.previewUrl;
   }
 
-  const handleAction = () =>
+  const handleAction = (e?: Event) =>
   {
     data.game.onSelect?.();
     data.onAction?.();
+    oneShot('click');
   };
   useShortcuts(data.game.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: handleAction }]);
 

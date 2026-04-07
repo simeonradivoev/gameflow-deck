@@ -32,7 +32,7 @@ export function GetFocusedElement (focusKey: string)
 
 export function GetFocusedTree (leaf: string): string[]
 {
-  const tree: string[] = [];
+  const tree: string[] = ["window"];
   let component = (SpatialNavigation as any).focusableComponents[leaf];
   while (component)
   {

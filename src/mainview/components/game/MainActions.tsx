@@ -21,7 +21,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         },
         onSuccess (data, { source, id }, onMutateResult, context)
         {
-            router.navigate({ to: '/launcher/$source/$id', params: { source: source, id: id }, replace: true });
+            router.navigate({ to: '/launcher/$source/$id', params: { source: source, id: id } });
         },
     });
     const ws = useRef<{ send: (data: string) => void; }>(undefined);
@@ -108,7 +108,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         if (cmd.emulator === 'EMULATORJS')
         {
             const params = new URLSearchParams(cmd.command);
-            router.navigate({ to: '/embedded/$source/$id', params: { source: data.source, id: data.id }, search: Object.fromEntries(params.entries()), replace: true });
+            router.navigate({ to: '/embedded/$source/$id', params: { source: data.source, id: data.id }, search: Object.fromEntries(params.entries()) });
         } else
         {
             playMut.mutate({ source: data.source, id: data.id, command_id: cmd.id });

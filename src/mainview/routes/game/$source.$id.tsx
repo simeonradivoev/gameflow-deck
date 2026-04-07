@@ -6,7 +6,7 @@ import { Calendar, Folder, Gamepad2, Image, Info, TriangleAlert, Trophy } from "
 import { HeaderUI, StickyHeaderUI } from "../../components/Header";
 import { AnimatedBackground } from "../../components/AnimatedBackground";
 import { useQuery } from "@tanstack/react-query";
-import Shortcuts from "../../components/Shortcuts";
+import Shortcuts, { FloatingShortcuts } from "../../components/Shortcuts";
 import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Screenshots from "@/mainview/components/Screenshots";
 import { HandleGoBack, scrollIntoViewHandler, useOnNavigateBack } from "@/mainview/scripts/utils";
@@ -22,6 +22,7 @@ import { gameQuery, gamesRecommendedBasedOnGameQuery } from "@queries/romm";
 import { GamesSection } from "@/mainview/components/store/GamesSection";
 import Details from "@/mainview/components/game/Details";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
+import SelectMenu from "@/mainview/components/SelectMenu";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>
@@ -47,8 +48,7 @@ function Error (data: ErrorComponentProps)
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details-error", preferredChildFocusKey: "main-details" });
 
   const router = useRouter();
-  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router) }]);
-  const { shortcuts } = useShortcutContext();
+  useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: (e) => HandleGoBack(router, e) }]);
 
   return <AnimatedBackground ref={ref} backgroundKey="game-details">
     <div className="relative z-10 h-full">
@@ -59,12 +59,6 @@ function Error (data: ErrorComponentProps)
         </div>
         <div className="absolute w-full flex flex-col justify-center items-center h-full overflow-hidden bg-linear-to-t from-base-100 to-base-100/40">
           <div className="flex gap-2 items-center text-4xl text-error"><TriangleAlert className="size-12" /> {JSON.stringify(data.error, null, 3)}</div>
-        </div>
-        <div className="bg-base-200">
-
-          <footer className="fixed left-0 right-0 bottom-0 w-full p-4 flex items-center justify-end z-10">
-            <Shortcuts shortcuts={shortcuts} />
-          </footer>
         </div>
       </FocusContext>
     </div>
@@ -151,12 +145,10 @@ function RouteComponent ()
   const { data: recommendedGames } = useQuery({ ...gamesRecommendedBasedOnGameQuery(data?.id.source ?? source, data?.id.id ?? id), enabled: !!data && recommendedGamesVisible });
 
   useShortcuts(focusKey, () => [{
-    label: "Back", button: GamePadButtonCode.B, action: () => HandleGoBack(router)
+    label: "Back", button: GamePadButtonCode.B, action: (e) => HandleGoBack(router, e)
   }], [router]);
 
   useOnNavigateBack((s) => s.sound = 'returnDetails');
-
-  const { shortcuts } = useShortcutContext();
 
   const recommendedEmulators = data?.emulators?.filter(e => e.validSources.some(em => em.exists));
 
@@ -211,11 +203,10 @@ function RouteComponent ()
                 }} onFocus={scrollIntoViewHandler({ block: 'center', inline: 'nearest' })} games={recommendedGames} />
               </div>
             </div>
+            <SelectMenu rootFocusKey={focusKey} />
           </FocusContext>
         </div>
-        <footer className="fixed right-0 bottom-0 p-4 flex items-center justify-end z-10">
-          <Shortcuts shortcuts={shortcuts} />
-        </footer>
+        <FloatingShortcuts />
       </GameDetailsContext>
     </AnimatedBackground>
   );

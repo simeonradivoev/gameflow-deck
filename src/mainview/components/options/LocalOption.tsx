@@ -9,13 +9,18 @@ export function LocalOption (data: {
     label: string;
     id: keyof LocalSettingsType;
     type: HTMLInputTypeAttribute | 'dropdown';
+    min?: number;
+    max?: number;
+    step?: number;
     placeholder?: string;
     values?: string[];
     icon?: JSX.Element;
     children?: any;
 })
 {
-    const [localValue, setLocalValue] = useLocalStorage<any>(data.id, LocalSettingsSchema.shape[data.id].parse(undefined), { deserializer: (v) => LocalSettingsSchema.shape[data.id].parse(JSON.parse(v)) });
+    const [localValue, setLocalValue] = useLocalStorage<any>(data.id, LocalSettingsSchema.shape[data.id].parse(undefined), {
+        deserializer: (v) => LocalSettingsSchema.shape[data.id].parse(JSON.parse(v))
+    });
 
     return (
         <OptionSpace id={`${data.id}-space`} label={data.label}>
@@ -25,30 +30,21 @@ export function LocalOption (data: {
                 defaultValue={localValue}
                 onChange={(v) =>
                 {
-                    if (data.type === 'checkbox')
-                    {
-                        setLocalValue(v);
-                    } else
-                    {
-                        setLocalValue(v);
-                    }
+                    setLocalValue(v);
                 }}
                 value={localValue} />}
             {data.type !== 'dropdown' && <OptionInput
                 icon={data.icon}
                 name={data.id ?? ""}
                 type={data.type}
+                min={data.min}
+                max={data.max}
+                step={data.step}
                 placeholder={data.placeholder}
                 defaultValue={localValue}
                 onChange={(v) =>
                 {
-                    if (data.type === 'checkbox')
-                    {
-                        setLocalValue(v);
-                    } else
-                    {
-                        setLocalValue(v);
-                    }
+                    setLocalValue(v);
                 }}
                 value={localValue}
             />}

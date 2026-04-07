@@ -1,7 +1,7 @@
 import { OptionContext } from "@/mainview/scripts/contexts";
-import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { Direction, FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { JSX, useContext, useEffect, useMemo } from "react";
+import { JSX, useContext, useEffect, useMemo, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
 export function useOptionContext (params?: { onOptionEnterPress?: () => void; })
@@ -40,12 +40,16 @@ export function OptionSpace (data: {
     saveLastFocusedChild?: boolean;
 })
 {
+    const [focusBoundary, setFocusBoundary] = useState(false);
+    const [focusBoundaryDirections, setFocusBoundaryDirections] = useState<Direction[]>([]);
     const eventTarget = useMemo(() => new EventTarget(), []);
     const { ref, focused, focusSelf, focusKey } = useFocusable({
         focusKey: data.id,
         focusable: data.focusable !== false,
         trackChildren: true,
         saveLastFocusedChild: data.saveLastFocusedChild ?? false,
+        isFocusBoundary: focusBoundary,
+        focusBoundaryDirections,
         onFocus ()
         {
             (ref.current as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -71,7 +75,7 @@ export function OptionSpace (data: {
     }
 
     return (<FocusContext value={focusKey}>
-        <OptionContext value={{ focused, focus: focusSelf, eventTarget }}>
+        <OptionContext value={{ focused, focus: focusSelf, setFocusBoundary, setFocusBoundaryDirections, eventTarget }}>
             <li
                 ref={ref}
                 className={twMerge("flex portrait:flex-col portrait:gap-2 portrait:p-4 md:flex-row sm:p-2 md:p-4 md:pl-8! rounded-3xl border-b border-base-content/5 focused:bg-base-300 focused-child:bg-base-300",

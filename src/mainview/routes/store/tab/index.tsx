@@ -56,11 +56,11 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
     return <div ref={ref} className='flex sm:flex-wrap md:flex-nowrap group-focusable md:px-12 p-4 mt-4 gap-6'>
 
         <FocusContext value={focusKey}>
-            {game ? <div key={selectedGame} className="flex transition-all duration-500 flex-col rounded-3xl overflow-hidden shadow-black/5 shadow-lg w-full ring-6 ring-base-200 border-6 border-base-200">
+            {game ? <div key={selectedGame} className="flex transition-all duration-500 flex-col rounded-3xl overflow-hidden shadow-black/5 shadow-md w-full ring-6 ring-base-200 border-6 border-base-200">
                 <div className='flex relative h-full overflow-hidden'>
                     <div className='absolute w-full h-full z-0  bg-base-200'>
                         <img key={selectedGame}
-                            className='w-full h-full object-cover transition-all duration-500 ease-out scale-110 opacity-0 light:data-loaded:opacity-40 dark:data-loaded:opacity-100 z-0 mask-l-from-0'
+                            className='w-full h-full object-cover transition-all duration-500 ease-out scale-110 opacity-0 light:data-loaded:opacity-40 dark:data-loaded:opacity-80 z-0'
                             src={previewUrl?.href}
                             onLoad={(e) =>
                             {
@@ -72,13 +72,13 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
                     <div key={selectedGame} className='flex sm:flex-wrap md:flex-nowrap grow z-1 p-8 opacity-0 animate-fade-in h-full items-end gap-4 sm:justify-end md:justify-between'>
                         <div className='flex gap-4 max-h-full z-1 grow md:h-full'>
                             <div className='flex sm:portrait:flex-wrap sm:portrait:grow gap-4 max-h-full justify-center'>
-                                <div className='relative rounded-3xl max-w-xs h-48 overflow-hidden'>
-                                    <div className='flex absolute bottom-4 left-4 size-8 bg-base-content text-base-100 rounded-full items-center justify-center shadow-lg'><HardDrive /></div>
-                                    {!!data.games && <img className='object-cover w-full h-full' src={`${RPC_URL(__HOST__)}${data.games[selectedGame].path_cover}`} />}
+                                <div className='relative rounded-3xl max-w-xs h-48 overflow-hidden  shadow-lg'>
+                                    <div className='flex absolute bottom-4 left-4 size-8 bg-base-content text-base-100 rounded-full items-center justify-center shadow-lg '><HardDrive /></div>
+                                    {!!data.games && <img className='object-cover w-full h-full ' src={`${RPC_URL(__HOST__)}${data.games[selectedGame].path_cover}`} />}
                                 </div>
                                 <div className='flex flex-col gap-2 py-3 max-w-md'>
-                                    <h1 className='font-semibold text-3xl'>{game.name}</h1>
-                                    <p className='overflow-hidden text-wrap text-ellipsis text-base-content/60'>{game.summary}</p>
+                                    <h1 className='font-semibold text-3xl text-shadow-md'>{game.name}</h1>
+                                    <p className='overflow-hidden text-wrap text-ellipsis text-base-content/60 text-shadow-md'>{game.summary}</p>
                                 </div>
                             </div>
                         </div>
@@ -140,7 +140,7 @@ export function RouteComponent ()
 
                 <div className="px-6 py-3">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-5 rounded-full bg-accent shadow-sm shadow-sm" />
+                        <div className="w-2 h-5 rounded-full bg-accent shadow-sm" />
                         <Gamepad2 className="text-accent text-shadow-sm" />
                         <h2 className="font-bold uppercase tracking-widest text-accent grow text-shadow-sm">
                             Featured Games

@@ -7,6 +7,7 @@ import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts"
 import { ContextDialogContext } from "../scripts/contexts";
 import { FOCUS_KEYS } from "../scripts/types";
 import { oneShot } from "../scripts/audio/audio";
+import { oneShotRumble } from "../scripts/gamepads";
 
 export function ContextList (data: {
     options?: DialogEntry[];
@@ -18,7 +19,7 @@ export function ContextList (data: {
     const context = useContext(ContextDialogContext);
     return <ul className={twMerge("list gap-1", data.className)}>
         {data.options?.map(o => <OptionElement className="list-row" key={o.id} {...o} />)}
-        <div className="divider m-0 "></div>
+        {data.showCloseButton !== false && <div className="divider m-0 "></div>}
         {data.showCloseButton !== false && <OptionElement disabled={data.disableCloseButton} className="list-row" type='accent' icon={<X />} action={() => context.close()} id="close-context-dialog" content="Close" />}
     </ul>;
 }
@@ -85,9 +86,9 @@ export interface DialogEntry
     shortcuts?: Shortcut[];
 }
 
-export function useContextDialog (id: string, data: { content?: JSX.Element; className?: string; preferredChildFocusKey?: string; onClose?: () => void; canClose?: boolean; })
+export function useContextDialog (id: string, data: { content?: JSX.Element; className?: string; preferredChildFocusKey?: string; onClose?: () => void; canClose?: boolean; defaultOpen?: boolean; backdropClassName?: string; })
 {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(data.defaultOpen ?? false);
     const [sourceFocusKey, setSourceFocusKey] = useState<string | undefined>(undefined);
     const handleClose = (value: boolean, newSourceFocusKey?: string) =>
     {
@@ -111,7 +112,7 @@ export function useContextDialog (id: string, data: { content?: JSX.Element; cla
         }
 
     };
-    const dialog = <ContextDialog id={id} open={open} close={handleClose} className={data.className} preferredChildFocusKey={data.preferredChildFocusKey}>
+    const dialog = <ContextDialog id={id} open={open} close={handleClose} backdropClassName={data.backdropClassName} className={data.className} preferredChildFocusKey={data.preferredChildFocusKey}>
         {data.content}
     </ContextDialog>;
     return {
@@ -127,12 +128,13 @@ export function ContextDialog (data: {
     open: boolean,
     close: (open: boolean) => void;
     className?: string;
+    backdropClassName?: string;
     preferredChildFocusKey?: string;
 })
 {
     const { ref, focusKey, focusSelf } = useFocusable({
         focusable: data.open,
-        focusKey: `${data.id}-context-dialog`,
+        focusKey: FOCUS_KEYS.CONTEXT_DIALOG(data.id),
         isFocusBoundary: true,
         saveLastFocusedChild: !data.preferredChildFocusKey,
         preferredChildFocusKey: data.preferredChildFocusKey
@@ -148,6 +150,7 @@ export function ContextDialog (data: {
         {
             focusSelf({ instant: true });
             oneShot('openContext');
+            oneShotRumble('openContext', { all: true });
         }
     }, [data.open]);
 
@@ -159,7 +162,7 @@ export function ContextDialog (data: {
 
     return <dialog ref={ref} open={data.open} closedby="any" className={
         twMerge("fixed modal cursor-pointer bg-base-300/80 backdrop-blur-md backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
-            classNames({ "opacity-0": !data.open }))
+            classNames({ "opacity-0": !data.open }), data.backdropClassName)
     }
         onClick={handleClose}>
         <FocusContext value={focusKey}>

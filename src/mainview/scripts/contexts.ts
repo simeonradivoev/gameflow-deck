@@ -1,6 +1,7 @@
 import { SystemInfoType } from "@/shared/constants";
-import { FocusDetails } from "@noriginmedia/norigin-spatial-navigation";
+import { Direction, FocusDetails } from "@noriginmedia/norigin-spatial-navigation";
 import { createContext } from "react";
+import { Shortcut } from "./shortcuts";
 
 export const StoreContext = createContext({} as {
     showDetails: (type: 'emulator' | 'game', source: string, id: string, focusSource: string) => void;
@@ -20,6 +21,8 @@ export const OptionContext = createContext(
         focused: boolean;
         focus: (focusDetails?: FocusDetails | undefined) => void;
         eventTarget: EventTarget;
+        setFocusBoundary: (b: boolean) => void;
+        setFocusBoundaryDirections: (dirs: Direction[]) => void;
     },
 );
 
@@ -33,6 +36,12 @@ export const FilePickerContext = createContext<{
     drives: Drive[],
     activeDrive: Drive | undefined;
 }>({} as any);
+
+export const ShortcutsContext = createContext({} as {
+    shortcuts: ({
+        key: string;
+    } & Shortcut)[] | undefined;
+});
 
 export const SystemInfoContext = createContext({} as SystemInfoType | undefined);
 
