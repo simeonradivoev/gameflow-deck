@@ -10,7 +10,7 @@ import Shortcuts, { FloatingShortcuts } from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { rommApi, systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
-import { ChevronDown, CircleFadingArrowUp, Cpu, Download, Gamepad2, Info, Puzzle, Settings, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
+import { ChevronDown, CircleFadingArrowUp, CloudUpload, Cpu, Download, Fullscreen, Gamepad2, Info, Monitor, Puzzle, Save, Settings, Settings2, Terminal, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
 import { ContextList, DialogEntry, useContextDialog } from "@/mainview/components/ContextDialog";
 import { RPC_URL } from "@/shared/constants";
 import Screenshots from "@/mainview/components/Screenshots";
@@ -283,6 +283,9 @@ function TitleArea (data: {
                     {data.emulator && data.emulator.integrations.length > 0 && <div className="tooltip" data-tip="Has Integration">
                         <div className="bg-base-200 rounded-full p-2"><WandSparkles className="size-5" /></div>
                     </div>}
+                    {data.emulator?.integrations.some(s => s.capabilities?.includes('saves')) && <div className="tooltip" data-tip="Save Support">
+                        <div className="bg-base-200 rounded-full p-2"><CloudUpload className="size-5" /></div>
+                    </div>}
                 </div>
             </div>
             <div className="flex relative sm:portrait:grow md:grow-0 justify-center gap-4 items-center">
@@ -318,6 +321,14 @@ function Description (data: { emulator?: FrontEndEmulatorDetailed; })
         </div>}</div>
     </div>;
 }
+
+const capabilityIconMap: Record<string, any> = {
+    saves: <CloudUpload />,
+    fullscreen: <Fullscreen />,
+    resolution: <Monitor />,
+    config: <Settings2 />,
+    batch: <Terminal />
+};
 
 export function RouteComponent ()
 {
@@ -366,7 +377,9 @@ export function RouteComponent ()
                             <Puzzle />
                             <div>{i.id}</div>
                         </div>
-                        <div className="text-base-content/40">{`${i.capabilities?.join(", ")}`}</div>
+                        <div className="flex flex-wrap text-base-content/40">
+                            {i.capabilities?.map(c => <><div className="divider divider-horizontal"></div><div className="flex gap-1">{capabilityIconMap[c]}{c}</div></>)}
+                        </div>
                     </div>;
                 })}
             </div>

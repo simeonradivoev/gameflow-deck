@@ -14,8 +14,8 @@ export default async function Initialize ()
         const launchGameTask = taskQueue.findJob(LaunchGameJob.id, LaunchGameJob);
         if (launchGameTask)
         {
-            launchGameTask.abort('exit');
             taskQueue.waitForJob(LaunchGameJob.id).then(() => setTimeout(() => events.emit('focus'), 300));
+            launchGameTask.abort('exit');
         } else
         {
             events.emit('focus');

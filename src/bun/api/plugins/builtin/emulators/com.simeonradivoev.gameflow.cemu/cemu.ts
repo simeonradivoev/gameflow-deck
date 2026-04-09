@@ -11,7 +11,7 @@ export default class CEMUIntegration implements PluginType
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "fullscreen", "saves", "states"] };
+            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "fullscreen"] };
         });
 
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
@@ -29,7 +29,7 @@ export default class CEMUIntegration implements PluginType
                 args.push(`--game=${ctx.autoValidCommand.metadata.romPath}`);
             }
 
-            return args;
+            return { args, savesPath: savesPath };
         });
     }
 }

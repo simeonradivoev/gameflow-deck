@@ -66,6 +66,8 @@ declare interface FrontEndGameTypeDetailed extends FrontEndGameType
     genres?: string[];
     companies?: string[];
     release_date?: Date;
+    imdb_id?: number;
+    ra_id?: number;
     emulators?: FrontEndGameTypeDetailedEmulator[],
     achievements?: {
         unlocked: number;
@@ -105,7 +107,8 @@ declare interface FrontendNotification
 {
     title?: string;
     message: string;
-    type: 'success' | 'error' | 'info';
+    type: 'success' | 'error' | 'info' | 'custom';
+    icon?: "save" | "upload" | "clock";
     duration?: number;
 }
 
@@ -278,4 +281,11 @@ declare interface EmulatorSupport
     source?: EmulatorSourceEntryType;
     supportLevel?: "partial" | "full";
     capabilities?: EmulatorCapabilities[];
+}
+
+declare interface SaveFileChange
+{
+    subPath: string;
+    cwd: string;
+    shared: boolean;
 }

@@ -181,7 +181,7 @@ export async function tryLoginAndSave ({ host, username, password }: { host: str
         body: {
             password,
             username,
-            scope: 'me.read roms.read platforms.read assets.read firmware.read roms.user.read collections.read me.write roms.user.write'
+            scope: 'me.read roms.read platforms.read assets.read assets.write firmware.read roms.user.read collections.read me.write roms.user.write'
         }, baseUrl: host
     });
 

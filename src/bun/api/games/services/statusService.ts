@@ -13,6 +13,7 @@ import Elysia from "elysia";
 import z from "zod";
 import { InstallJob, InstallJobStates } from "../../jobs/install-job";
 import { LaunchGameJob } from "../../jobs/launch-game-job";
+import * as appSchema from "@schema/app";
 
 class CommandSearchError extends Error
 {
@@ -26,7 +27,14 @@ class CommandSearchError extends Error
 export async function getLocalGame (source: string, id: string)
 {
     const localGame = await db.query.games.findFirst({
-        columns: { id: true, path_fs: true, source: true, source_id: true },
+        columns: {
+            id: true,
+            path_fs: true,
+            source: true,
+            source_id: true,
+            igdb_id: true,
+            ra_id: true
+        },
         where: getLocalGameMatch(id, source),
         with: {
             platform: { columns: { slug: true } }
@@ -34,6 +42,33 @@ export async function getLocalGame (source: string, id: string)
     });
 
     return localGame;
+}
+
+export async function validateGameSource (source: string, id: string): Promise<{ valid: boolean, reason?: string; }>
+{
+    const localGame = await getLocalGame(source, id);
+    if (!localGame) throw new Error("Could not find local game");
+    if (localGame.source && localGame.source_id)
+    {
+        const sourceGame = await plugins.hooks.games.fetchGame.promise({ source: localGame.source, id: localGame.source_id });
+        if (!sourceGame) return { valid: false, reason: "Source Missing" };
+        if (sourceGame.imdb_id !== (localGame.igdb_id ?? undefined))
+        {
+            return { valid: false, reason: "IGDB Miss Match" };
+        }
+
+        if (sourceGame.ra_id !== (localGame.ra_id ?? undefined))
+        {
+            return { valid: false, reason: "RA Miss Match" };
+        }
+    }
+
+    return { valid: true };
+}
+
+export async function updateLocalLastPlayed (id: number)
+{
+    await db.update(appSchema.games).set({ last_played: new Date() }).where(eq(appSchema.games.id, Number(id)));
 }
 
 export async function getValidLaunchCommandsForGame (source: string, id: string): Promise<{ commands: CommandEntry[], gameId: FrontEndId, source?: string, sourceId?: string; } | Error | undefined>

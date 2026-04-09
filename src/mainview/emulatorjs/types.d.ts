@@ -14,6 +14,7 @@ export declare global
         EJS_cheats: string[][],
         EJS_fullscreenOnLoaded: boolean,
         EJS_startOnLoaded: boolean,
+        EJS_onGameStart,
         EJS_core: string,
         EJS_lightgun: boolean,
         EJS_biosUrl: string,
@@ -56,7 +57,9 @@ export declare global
         EJS_browserMode,
         EJS_shaders,
         EJS_fixedSaveInterval,
+        EJS_onSaveUpdate,
         EJS_disableAutoUnload,
         EJS_disableBatchBootup;
+        EJS_onSaveSave;
     }
 }

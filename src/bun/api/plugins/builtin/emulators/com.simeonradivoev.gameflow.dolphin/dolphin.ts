@@ -3,17 +3,18 @@ import { config } from "@/bun/api/app";
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import path from 'node:path';
 import desc from './package.json';
+import { ensureDir } from "fs-extra";
+import { getSavePaths, getType } from "./utils";
 
 export default class DOLPHINIntegration implements PluginType
 {
     emulator = 'DOLPHIN';
 
-
     load (ctx: PluginContextType)
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "config", "resolution", "fullscreen", "states"] };
+            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "config", "resolution", "fullscreen", "saves"] };
         });
 
         ctx.hooks.emulators.emulatorPostInstall.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
@@ -51,14 +52,33 @@ export default class DOLPHINIntegration implements PluginType
             args.push(`--config=Dolphin.General.WiiSDCardPath=${path.join(savesPath, 'WiiSD.raw')}`);
             args.push(`--config=Dolphin.General.WiiSDCardSyncFolder=${path.join(savesPath, 'WiiSDSync')}`);
             args.push(`--config=Dolphin.GBA.SavesPath=${path.join(savesPath, 'GBA')}`);
+            args.push(`--config=Dolphin.Core.GCIFolderAPath=${path.join(savesPath, 'GC')}`);
 
+            if (!ctx.dryRun)
+            {
+                await ensureDir(path.join(savesPath, 'GC', "JAP"));
+                await ensureDir(path.join(savesPath, 'GC', "EUR"));
+                await ensureDir(path.join(savesPath, 'GC', "USA"));
+            }
+
+            let finalSavesPath: string | undefined = undefined;
             if (ctx.autoValidCommand.metadata.romPath)
             {
                 args.push("--batch");
                 args.push(`--exec=${ctx.autoValidCommand.metadata.romPath}`);
+
+                finalSavesPath = await getType(ctx.autoValidCommand.metadata.romPath, ctx.autoValidCommand.metadata.emulatorDir) === 'gamecube' ? savesPath : storageFolder;
             }
 
-            return args;
+            return { args, savesPath: finalSavesPath };
+        });
+
+        ctx.hooks.games.postPlay.tap({ name: desc.name, before: "com.simeonradivoev.gameflow.romm" }, async ({ validChangedSaveFiles, saveFolderPath, command, gameInfo }) =>
+        {
+            if (command.emulator === this.emulator && saveFolderPath && command.metadata.romPath)
+            {
+                validChangedSaveFiles.push(...await getSavePaths(command.metadata.romPath, saveFolderPath, command.metadata.emulatorDir));
+            }
         });
     }
 }

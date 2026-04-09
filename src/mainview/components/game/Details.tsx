@@ -2,16 +2,16 @@ import { scrollIntoViewHandler } from "@/mainview/scripts/utils";
 import { RPC_URL } from "@/shared/constants";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { Clock, CloudDownload, HardDrive, Store, TriangleAlert } from "lucide-react";
+import { Clock, CloudBackup, CloudDownload, CloudUpload, HardDrive, Store, TriangleAlert } from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import { JSX } from "react";
 import ActionButtons from "./ActionButtons";
+import prettyMilliseconds from 'pretty-ms';
 
-
-export function DetailElement (data: { icon: JSX.Element; children?: any | any[]; })
+export function DetailElement (data: { icon: JSX.Element; tooltip?: string | null, children?: any | any[]; })
 {
     return (
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center tooltip" data-tip={data.tooltip}>
             {data.icon}
             {data.children}
         </div>
@@ -62,15 +62,14 @@ export default function Details (data: {
                     }
                 </div>
                 <div className="flex-2 flex flex-col sm:gap-1 md:gap-6 sm:pt-2 md:pt-16 min-h-0">
-                    <div className="flex flex-wrap sm:gap-4 md:gap-6 shrink-0">
-                        <DetailElement icon={<Clock />} >{data.game?.last_played ? new Date(data.game.last_played).toDateString() : "Never"}</DetailElement>
+                    <div className="flex flex-wrap items-center sm:gap-4 md:gap-6 shrink-0">
+                        <DetailElement icon={<Clock />} >{data.game?.last_played ? `${prettyMilliseconds(new Date().getTime() - new Date(data.game.last_played).getTime(), { compact: true, verbose: true })} ago` : "Never"}</DetailElement>
                         {!!data.game && (data.game.fs_size_bytes !== null || data.game.missing) &&
-                            <div className={classNames({ "text-error": data.game.missing })}>
-                                <div className="tooltip" data-tip={data.game.path_fs}>
-                                    <DetailElement icon={fileSizeIcon} >{data.game.missing ? 'Missing' : prettyBytes(data.game.fs_size_bytes!)}</DetailElement>
-                                </div>
+                            <div className={classNames("flex items-center", { "text-error": data.game.missing })}>
+                                <DetailElement tooltip={data.game.path_fs} icon={fileSizeIcon} >{data.game.missing ? 'Missing' : prettyBytes(data.game.fs_size_bytes!)}</DetailElement>
                             </div>}
                         <DetailElement icon={platformCoverImg ? <img className="size-6" src={platformCoverImg.href}></img> : <div className="skeleton size-6 rounded-full shrink-0"></div>} >{data.game?.platform_display_name ?? <div className="skeleton h-4 w-32"></div>}</DetailElement>
+                        {data.game?.emulators?.some(e => e.integrations.some(i => i.capabilities?.includes('saves'))) && <DetailElement tooltip={"Save Backup"} icon={<CloudUpload />} />}
                         <DetailElement icon={
                             <Store />
                         } >

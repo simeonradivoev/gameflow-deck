@@ -18,8 +18,9 @@ export class GameHooks
             source?: string;
             sourceId?: string;
             id: FrontEndId;
+            platformSlug?: string;
         };
-    }], string[] | undefined, { emulator: string; }>(['ctx']);
+    }], { args: string[], savesPath?: string; } | undefined, { emulator: string; }>(['ctx']);
     /**
      * Is the given emulator for the given command supported 
      * @returns The current support level. Partial means it can affect some functionality. Full means fully integrated for example with portable ones where you can control all aspects.
@@ -69,7 +70,27 @@ export class GameHooks
     fetchPlatforms = new AsyncSeriesHook<[ctx: {
         platforms: FrontEndPlatformType[];
     }]>(['ctx']);
-    updatePlayed = new AsyncSeriesWaterfallHook<[ctx: { source: string, id: string; }], boolean>(["ctx"]);
+    prePlay = new AsyncSeriesHook<[ctx: {
+        source: string,
+        id: string;
+        saveFolderPath?: string;
+        setProgress: (progress: number, state: string) => void,
+        command: CommandEntry;
+        gameInfo: {
+            platformSlug?: string;
+        };
+    }]>(["ctx"]);
+    postPlay = new AsyncSeriesHook<[ctx: {
+        source: string,
+        id: string;
+        saveFolderPath?: string;
+        changedSaveFiles: SaveFileChange[],
+        validChangedSaveFiles: SaveFileChange[],
+        command: CommandEntry;
+        gameInfo: {
+            platformSlug?: string;
+        };
+    }]>(["ctx"]);
     fetchCollections = new AsyncSeriesHook<[ctx: { collections: FrontEndCollection[]; }]>(['ctx']);
     fetchCollection = new AsyncSeriesBailHook<[ctx: { source: string, id: string; }], FrontEndCollection | undefined>(['ctx']);
 

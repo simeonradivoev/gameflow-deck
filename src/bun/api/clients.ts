@@ -5,9 +5,10 @@ import games from "./games/games";
 import platforms from "./games/platforms";
 import auth from "./auth";
 import collections from "./games/collections";
+import emulatorjs from "./emulatorjs/emulatorjs";
 
 export default new Elysia({ prefix: "/api/romm" })
-    .use([games, platforms, collections, auth])
+    .use([games, platforms, collections, auth, emulatorjs])
     .all("/*", async ({ request, set }) =>
     {
         set.headers["cross-origin-resource-policy"] = 'cross-origin';

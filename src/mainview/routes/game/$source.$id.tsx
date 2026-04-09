@@ -104,6 +104,8 @@ function Stats (data: { game: FrontEndGameTypeDetailed | undefined; })
       stats.push({ label: "Release Date", content: data.game.release_date.toLocaleDateString(), icon: <Calendar /> });
     if (data.game.emulators)
       stats.push({ label: "Emulators", content: data.game.emulators.map(e => e.name) });
+    const integrations = new Set<string>(data.game.emulators?.flatMap(e => e.integrations).flatMap(i => i.capabilities).filter(c => !!c));
+    stats.push({ label: "Integrations", content: Array.from(integrations) });
   }
 
   return <StatList elementClassName="bg-base-300" stats={stats} id="game-detail-stats" />;

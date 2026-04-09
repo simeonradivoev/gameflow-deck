@@ -14,7 +14,7 @@ export default class XEMUIntegration implements PluginType
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "fullscreen", "saves", "states"] };
+            return { id: desc.name, supportLevel: "full", capabilities: ["batch", "fullscreen"] };
         });
 
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
@@ -68,7 +68,7 @@ export default class XEMUIntegration implements PluginType
             }
 
 
-            return args;
+            return { args };
         });
     }
 }

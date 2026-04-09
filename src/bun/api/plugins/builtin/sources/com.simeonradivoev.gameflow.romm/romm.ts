@@ -2,8 +2,8 @@
 
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
-import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomContentApiRomsIdContentFileNameGet, getRomsApiRomsGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
-import { config } from "@/bun/api/app";
+import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomContentApiRomsIdContentFileNameGet, getRomsApiRomsGet, getSavesSummaryApiSavesSummaryGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
+import { config, events } from "@/bun/api/app";
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { hashFile, isSteamDeckGameMode } from "@/bun/utils";
@@ -11,6 +11,7 @@ import { CACHE_KEYS, getOrCached } from "@/bun/api/cache";
 import secrets from "@/bun/api/secrets";
 import { getAuthToken } from "@/clients/romm/core/auth.gen";
 import { client } from "@/clients/romm/client.gen";
+import { validateGameSource } from "@/bun/api/games/services/statusService";
 
 export default class RommIntegration implements PluginType
 {
@@ -75,7 +76,9 @@ export default class RommIntegration implements PluginType
             missing: rom.missing_from_fs,
             genres: rom.metadatum.genres,
             companies: rom.metadatum.companies,
-            release_date: rom.metadatum.first_release_date ? new Date(rom.metadatum.first_release_date) : undefined
+            release_date: rom.metadatum.first_release_date ? new Date(rom.metadatum.first_release_date) : undefined,
+            imdb_id: rom.igdb_id ?? undefined,
+            ra_id: rom.ra_id ?? undefined
         };
 
         const userData = await getCurrentUserApiUsersMeGet();
@@ -371,12 +374,143 @@ export default class RommIntegration implements PluginType
             }
         });
 
-        ctx.hooks.games.updatePlayed.tapPromise(desc.name, async ({ source, id }) =>
+        ctx.hooks.games.prePlay.tapPromise(desc.name, async ({ source, id, saveFolderPath, setProgress }) =>
         {
-            if (source !== 'romm') return false;
+            if (source !== 'romm') return;
+            if (saveFolderPath)
+            {
+                setProgress(0, "saves");
+
+                const saveFiles = await getSavesSummaryApiSavesSummaryGet({ query: { rom_id: Number(id) } });
+                if (saveFiles.error)
+                {
+                    console.error(saveFiles.error);
+                } else
+                {
+                    for (let i = 0; i < saveFiles.data.slots.length; i++)
+                    {
+                        const slot = saveFiles.data.slots[i];
+                        const savePath = path.join(saveFolderPath, slot.slot ?? '', `${slot.latest.file_name_no_tags}.${slot.latest.file_extension}`);
+                        if (await fs.exists(savePath))
+                        {
+                            const existingSaveSync = await fs.stat(savePath);
+                            const updatedAtTime = new Date(slot.latest.updated_at).getTime();
+
+                            if (existingSaveSync.mtimeMs > updatedAtTime)
+                            {
+                                console.log("Newer save file", savePath, "Server:", new Date(slot.latest.updated_at), "Local:", existingSaveSync.mtime);
+                                // Newer file
+                                continue;
+                            } else if (updatedAtTime === existingSaveSync.mtimeMs)
+                            {
+                                //TODO: do checksum comparison when that works on romm
+                                console.log("Same save file", savePath);
+                                continue;
+                            }
+                        }
+
+                        const auth = await this.getAuthToken();
+                        const headers: Record<string, string> = {};
+                        if (auth)
+                            headers['Authorization'] = auth;
+
+                        const saveResponse = await fetch(`${config.get('rommAddress')}${slot.latest.download_path}`, { headers });
+                        if (!saveResponse.ok)
+                        {
+                            console.error("Error downloading save", saveResponse.statusText);
+                            break;
+                        }
+                        await Bun.write(savePath, saveResponse);
+                        console.log("Loaded", savePath);
+                        setProgress((i / saveFiles.data.slots.length) * 100, "saves");
+                    }
+                }
+
+                setProgress(1, "saves");
+                await Bun.sleep(1000);
+            }
+        });
+
+        ctx.hooks.games.postPlay.tapPromise(desc.name, async ({ source, id, validChangedSaveFiles, saveFolderPath, command }) =>
+        {
+            if (source !== 'romm') return;
+
+            const sourceValidation = await validateGameSource(source, id);
+            if (!sourceValidation.valid)
+            {
+                console.warn("Invalid Source", sourceValidation.reason, "Skipping updates");
+                return;
+            }
+
+            const finalSavePaths = validChangedSaveFiles.filter(f => !f.shared);
+
+            const saveFiles = await getSavesSummaryApiSavesSummaryGet({ query: { rom_id: Number(id) } });
+            if (saveFiles.error)
+            {
+                console.error(saveFiles.error);
+            } else if (saveFolderPath)
+            {
+                for (let i = 0; i < saveFiles.data.slots.length; i++)
+                {
+                    const slot = saveFiles.data.slots[i];
+                    const savePath = path.join(saveFolderPath, slot.slot ?? '', `${slot.latest.file_name_no_tags}.${slot.latest.file_extension}`);
+                    if (await fs.exists(savePath))
+                    {
+                        const stat = await fs.stat(savePath);
+                        if (stat.mtimeMs > new Date(slot.latest.updated_at).getTime())
+                        {
+                            const subPath = path.join(slot.slot ?? '', `${slot.latest.file_name_no_tags}.${slot.latest.file_extension}`);
+                            if (!finalSavePaths.some(f => f.subPath === subPath))
+                            {
+                                // Add newer files to the list, maybe they were changed offscreen.
+                                finalSavePaths.push({ subPath, cwd: saveFolderPath, shared: false });
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (finalSavePaths.length > 0)
+            {
+                console.log("Files Changed:", finalSavePaths.map(f => f.subPath)?.join(", "));
+
+                await Promise.all(finalSavePaths.map(async f =>
+                {
+                    const absolutePath = path.join(f.cwd, f.subPath);
+                    if (!await fs.exists(absolutePath)) return;
+                    const stat = await fs.stat(absolutePath);
+                    if (stat.isDirectory()) return;
+                    const data: FormData = new FormData();
+                    data.append('saveFile', Bun.file(absolutePath), path.basename(f.subPath));
+
+                    const url = new URL(`${config.get('rommAddress')}/api/saves`);
+                    url.searchParams.set('rom_id', id);
+                    url.searchParams.set('slot', path.dirname(f.subPath));
+                    url.searchParams.set('autocleanup', "true");
+                    url.searchParams.set('autocleanup_limit', "2");
+                    if (command.emulator)
+                        url.searchParams.set('emulator', command.emulator);
+                    url.searchParams.set('overwrite', "true");
+
+                    const auth = await this.getAuthToken();
+                    const headers: Record<string, string> = {};
+                    if (auth)
+                        headers['Authorization'] = auth;
+
+                    const response = await fetch(url, {
+                        body: data,
+                        method: "POST",
+                        headers
+                    });
+                    if (!response.ok) console.error(response.statusText);
+                }));
+
+                events.emit('notification', { message: "Saves Uploaded", icon: 'upload', type: "success" });
+            }
+
             const resp = await updateRomUserApiRomsIdPropsPut({ path: { id: Number(id) }, body: { update_last_played: true } });
             if (resp.error) console.error(resp.error);
-            return resp.response.ok;
+            events.emit('notification', { message: "Updated Played", type: "success", icon: "clock" });
         });
 
         ctx.hooks.games.fetchCollections.tapPromise(desc.name, async ({ collections }) =>

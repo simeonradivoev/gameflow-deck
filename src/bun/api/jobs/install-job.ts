@@ -3,7 +3,7 @@ import { and, eq, or } from 'drizzle-orm';
 import fs from 'node:fs/promises';
 import * as schema from "@schema/app";
 import * as emulatorSchema from "@schema/emulators";
-import path from 'node:path';
+import path, { join } from 'node:path';
 import { config, db, emulatorsDb, events, plugins } from "../app";
 import { extractStoreGameSourceId, getStoreGameFromId } from "../store/services/gamesService";
 import * as igdb from 'ts-igdb-client';
@@ -13,9 +13,12 @@ import { Downloader } from "@/bun/utils/downloader";
 import Seven from 'node-7z';
 import z from "zod";
 import { checkFiles } from "../games/services/utils";
-import { ensureDir } from "fs-extra";
+import { ensureDir, existsSync } from "fs-extra";
 import { path7za } from "7zip-bin";
 import slugify from 'slugify';
+import StreamZip from 'node-stream-zip';
+import { createExtractorFromFile } from 'node-unrar-js';
+import { which } from "bun";
 
 interface JobConfig
 {
@@ -116,23 +119,62 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     for (const filePath of downloadedFiles)
                     {
                         const extractPath = path.join(config.get('downloadPath'), info.path_fs ?? '', info.extract_path);
-                        await new Promise((resolve, reject) =>
+                        await new Promise(async (resolve, reject) =>
                         {
-                            const seven = Seven.extractFull(filePath, extractPath, { $bin: process.env.ZIP7_PATH ?? path7za, $progress: true });
+                            let sevenZipPath = process.env.ZIP7_PATH ?? path7za;
+
+                            if (filePath.endsWith('.rar'))
+                            {
+                                let newPath: string | undefined;
+                                if (process.platform === 'win32' && await fs.exists("C:\\Program Files\\7-Zip\\7z.exe"))
+                                {
+                                    newPath = "C:\\Program Files\\7-Zip\\7z.exe";
+                                } else
+                                {
+                                    newPath = which('7z') ?? undefined;
+                                }
+
+                                if (!newPath)
+                                {
+                                    await fs.rm(filePath);
+                                    reject(new Error("No RAR Support"));
+                                    return;
+                                }
+
+                                sevenZipPath = newPath;
+                            }
+
+                            let rejected = false;
+                            const seven = Seven.extractFull(filePath, extractPath, { $bin: sevenZipPath, $progress: true });
                             seven.on('progress', p =>
                             {
                                 cx.setProgress(progress + p.percent * progressDelta, "extract");
                             });
-
                             seven.on('error', e =>
                             {
                                 reject(e);
+                                rejected = true;
                             });
                             seven.on('end', async () =>
                             {
+                                if (rejected) return;
                                 await fs.rm(filePath);
                                 resolve(true);
                             });
+                        }).catch(async e =>
+                        {
+                            if (filePath.endsWith('.zip'))
+                            {
+                                console.warn("Could not extract", filePath, "with 7zip trying zip extractor");
+                                await ensureDir(extractPath);
+                                const zip = new StreamZip.async({ file: filePath });
+                                const count = await zip.extract(null, extractPath);
+                                console.log(`Extracted ${count} entries`);
+                                await zip.close();
+                            } else
+                            {
+                                throw e;
+                            }
                         });
                         progress += progressDelta * 100;
                     }

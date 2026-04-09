@@ -223,14 +223,28 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
             }
         } catch (error)
         {
-            if (error !== 'cancel')
+            try
             {
-                console.error(error);
+                if (error instanceof Event)
+                {
+                    if (error.target instanceof AbortSignal)
+                    {
+
+                    } else
+                    {
+                        console.error(error);
+                    }
+                } else
+                {
+                    console.error(error);
+                    this.events.emit('error', { id: this.m_id, job: this, error });
+                    this.error = error;
+                }
+            } finally
+            {
+                this.m_promise.resolve(undefined);
             }
 
-            this.events.emit('error', { id: this.m_id, job: this, error });
-            this.error = error;
-            this.m_promise.resolve(undefined);
         } finally
         {
             this.running = false;

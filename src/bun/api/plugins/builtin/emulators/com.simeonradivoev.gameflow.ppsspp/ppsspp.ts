@@ -9,6 +9,7 @@ import path from "node:path";
 import Mustache from "mustache";
 import { ensureDir } from "fs-extra";
 import { homedir } from "node:os";
+import ini from 'ini';
 
 export default class PPSSPPIntegration implements PluginType
 {
@@ -27,7 +28,7 @@ export default class PPSSPPIntegration implements PluginType
 
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen", "saves", "states"];
+            const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen"];
 
             if (ctx.source?.type === 'store')
             {
@@ -59,18 +60,18 @@ export default class PPSSPPIntegration implements PluginType
 
             if (ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir && !ctx.dryRun)
             {
-                let confPath: string | undefined = undefined;
-                let controlsPath: string | undefined = undefined;
+                let defaultConfigPath: string | undefined = undefined;
+                let defaultControlsPath: string | undefined = undefined;
 
                 switch (process.platform)
                 {
                     case "win32":
-                        confPath = configFilePathWin32;
-                        controlsPath = configControlsFilePathWin32;
+                        defaultConfigPath = configFilePathWin32;
+                        defaultControlsPath = configControlsFilePathWin32;
                         break;
                     case 'linux':
-                        confPath = configFilePathLinux;
-                        controlsPath = configControlsFilePathLinux;
+                        defaultConfigPath = configFilePathLinux;
+                        defaultControlsPath = configControlsFilePathLinux;
                         break;
                 }
 
@@ -87,29 +88,36 @@ export default class PPSSPPIntegration implements PluginType
 
                 ensureDir(ppssppPath);
 
-                if (confPath)
+                if (defaultConfigPath)
                 {
-                    const resolutionMapping = {
-                        "720p": "2",
-                        "1080p": "4",
-                        "1440p": "6",
-                        "4k": "8"
+                    const resolutionMapping: Record<string, number> = {
+                        "720p": 2,
+                        "1080p": 4,
+                        "1440p": 6,
+                        "4k": 8
                     };
-                    const configFileContents = await Bun.file(confPath).text();
-                    await Bun.write(path.join(ppssppPath, 'ppsspp.ini'), Mustache.render(configFileContents, {
-                        RESOLUTION: resolutionMapping[config.get('emulatorResolution')] ?? 0,
-                        FULLSCREEN: config.get('launchInFullscreen') ? "True" : "False"
-                    }));
+                    const configPath = path.join(ppssppPath, 'ppsspp.ini');
+                    const configFile = Bun.file(configPath);
+
+                    const ppssppConfig = await configFile.exists() ? ini.parse(await configFile.text()) : ini.parse(await Bun.file(defaultConfigPath).text());
+
+                    ppssppConfig.Graphics ??= {};
+                    ppssppConfig.Graphics.InternalResolution = resolutionMapping[config.get('emulatorResolution')] ?? 0;
+                    ppssppConfig.Graphics.FullScreen = config.get('launchInFullscreen');
+
+                    await Bun.write(configPath, ini.stringify(ppssppConfig));
                 }
 
-                if (controlsPath)
+                if (defaultControlsPath)
                 {
-                    const controlsFileContents = await Bun.file(controlsPath).text();
+                    const controlsFileContents = await Bun.file(defaultControlsPath).text();
                     await Bun.write(path.join(ppssppPath, 'controls.ini'), Mustache.render(controlsFileContents, {}));
                 }
+
+                return { args, savesPath: path.join(config.get('downloadPath'), 'saves', this.emulator, "PSP", "SAVEDATA") };
             }
 
-            return args;
+            return { args };
         });
     }
 }

@@ -5,20 +5,24 @@ import z from 'zod';
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { ButtonStyle } from '../components/options/Button';
-import { DoorOpen, RefreshCw, Undo } from 'lucide-react';
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
-import Shortcuts, { FloatingShortcuts } from '../components/Shortcuts';
+import { CloudDownload, DoorOpen, RefreshCw, Save, Undo } from 'lucide-react';
+import { GamePadButtonCode, useShortcuts } from '../scripts/shortcuts';
+import { FloatingShortcuts } from '../components/Shortcuts';
 import { useEventListener } from 'usehooks-ts';
 import useActiveControl from '../scripts/gamepads';
 import { twMerge } from 'tailwind-merge';
 import { HeaderAccounts, HeaderStatusBar } from '../components/Header';
 import { RoundButton } from '../components/RoundButton';
 import { gameQuery } from '@queries/romm';
+import { rommApi } from '../scripts/clientApi';
+import toast from 'react-hot-toast';
+import { getErrorMessage } from 'react-error-boundary';
 
 export const Route = createFileRoute('/embedded/$source/$id')({
     component: RouteComponent,
     staticData: {
-        enterSound: 'launch'
+        enterSound: 'launch',
+        missNavSound: false
     },
     loader: async (ctx) =>
     {
@@ -45,7 +49,7 @@ function OverlayButton (data: {
 
 function Overlay (data: {
     open: boolean;
-    iframeRef: RefObject<HTMLIFrameElement | null>;
+    postMessage: (m: EmulatorJsMessage) => void;
     close: () => void;
     goBack: () => void;
 })
@@ -64,7 +68,6 @@ function Overlay (data: {
     }, [data.open]);
 
     const { isPointer } = useActiveControl();
-    const handleEvent = (type: string, value?: any) => data.iframeRef.current?.contentWindow?.postMessage({ type, data: value });
 
     return <div data-open={data.open} className='flex group w-full flex-col gap-2 transition-opacity p-4 not-data-[open=true]:pointer-events-none not-data-[open=true]:opacity-0'>
         <div className='grid grid-cols-3 justify-between items-start'>
@@ -78,7 +81,7 @@ function Overlay (data: {
                         <OverlayButton id="restart" style='secondary' tooltip='Restart' setTooltip={setTooltip} onAction={() =>
                         {
                             data.close();
-                            handleEvent('restart');
+                            data.postMessage({ type: 'restart' });
                         }} ><RefreshCw /></OverlayButton>
                         <OverlayButton id="exit" style='warning' tooltip='Exit' setTooltip={setTooltip} onAction={data.goBack} ><DoorOpen /></OverlayButton>
                     </FocusContext>
@@ -132,6 +135,7 @@ function RouteComponent ()
     });
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [overlayOpen, setOverlayOpen] = useState(false);
+    const postMessage = (m: EmulatorJsMessage) => iframeRef.current?.contentWindow?.postMessage(m);
     const { source, id } = Route.useParams();
 
     function HandleGoBack ()
@@ -147,9 +151,23 @@ function RouteComponent ()
 
     useEventListener('message', e =>
     {
-        if (e.data.type === 'exit')
+        const data = e.data as EmulatorJsMessage;
+        switch (data.type)
         {
-            HandleGoBack();
+            case "exit":
+                rommApi.api.romm.emulatorjs.post_play({ source })({ id }).post({ save: data.save });
+                HandleGoBack();
+                break;
+            case "loaded":
+                toast.success("Save Loaded", { icon: <CloudDownload /> });
+                break;
+            case "save":
+                rommApi.api.romm.emulatorjs.save.put({ save: data.save }).then(r =>
+                {
+                    if (r.error) toast.error(getErrorMessage(r.error.value) ?? "Error While Saving");
+                    else toast.success("Save Backed Up");
+                });
+                break;
         }
     });
 
@@ -173,11 +191,11 @@ function RouteComponent ()
 
     const setPaused = (paused: boolean) =>
     {
-        if (paused) iframeRef.current?.contentWindow?.postMessage({ type: 'pause', data: true });
+        if (paused) postMessage({ type: 'pause', paused: true });
         else
         {
             // we want to prevent input from closing the overlay spilling
-            setTimeout(() => iframeRef.current?.contentWindow?.postMessage({ type: 'pause', data: false }), 100);
+            setTimeout(() => postMessage({ type: 'pause', paused: false }), 100);
         }
     };
     useEffect(() => setPaused(overlayOpen), [overlayOpen]);
@@ -191,7 +209,7 @@ function RouteComponent ()
         <FocusContext value={focusKey}>
             <Frame ref={iframeRef} />
             <div className='flex fixed left-0 right-0 top-0'>
-                <Overlay iframeRef={iframeRef} goBack={HandleGoBack} open={overlayOpen} close={handleClose} />
+                <Overlay postMessage={postMessage} goBack={HandleGoBack} open={overlayOpen} close={handleClose} />
             </div>
             <FloatingShortcuts />
         </FocusContext>

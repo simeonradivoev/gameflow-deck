@@ -61,3 +61,10 @@ declare interface FilterOption extends FocusParams, InteractParams
   selected: boolean;
   icon?: any;
 }
+
+declare type EmulatorJsMessage = { type: 'restart'; } |
+{ type: 'pause'; paused: boolean; } |
+{ type: 'exit'; save?: File; } |
+{ type: 'save', save: File, screenshot?: File, type: string; } |
+{ type: 'loaded'; } |
+{ type: 'requestSave'; };

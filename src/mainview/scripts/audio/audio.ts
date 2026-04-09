@@ -28,6 +28,7 @@ declare module '@tanstack/react-router' {
         enterSound?: keyof typeof soundMap | null;
         enterHaptic?: keyof typeof hapticMap | null;
         goBackSound?: keyof typeof soundMap | null;
+        missNavSound?: boolean;
     }
 }
 

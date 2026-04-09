@@ -3,6 +3,7 @@ import { GetFocusedElement } from "./spatialNavigation";
 import { useEffect, useState } from "react";
 import { getLocalSetting, mobileCheck } from "./utils";
 import { oneShot } from "./audio/audio";
+import { Router } from "@/mainview";
 
 let loopStarted = false;
 let isTouching = false;
@@ -108,7 +109,13 @@ function throttleNav (key: string, dir: string, event: Event)
         const currentFocusKey = getCurrentFocusKey();
         navigateByDirection(dir, { event });
         if (currentFocusKey === getCurrentFocusKey())
-            oneShot('invalidNavigation');
+        {
+            const routes = Router.matchRoutes(Router.history.location.pathname);
+            if (!routes.some(r => r.staticData.missNavSound === false))
+            {
+                oneShot('invalidNavigation');
+            }
+        }
         throttleMap.set(key, currentDate.getTime());
         throttleAcceleration.set(key, acceleration + 1);
         return true;

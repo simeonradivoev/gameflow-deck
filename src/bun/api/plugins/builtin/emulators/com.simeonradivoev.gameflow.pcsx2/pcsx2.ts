@@ -1,11 +1,11 @@
 
 import { config } from "@/bun/api/app";
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
-import configFile from './PCSX2.ini' with { type: 'file' };
-import Mustache from 'mustache';
+import defaultConfig from './PCSX2.ini' with { type: 'file' };
 import path from 'node:path';
 import { ensureDir } from "fs-extra";
 import desc from './package.json';
+import ini from 'ini';
 
 export default class PCSX2Integration implements PluginType
 {
@@ -15,7 +15,7 @@ export default class PCSX2Integration implements PluginType
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
-            const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen", "saves", "states"];
+            const baseCapabilities: EmulatorCapabilities[] = ["batch", "fullscreen"];
 
             if (ctx.source?.type === 'store')
             {
@@ -47,7 +47,16 @@ export default class PCSX2Integration implements PluginType
 
             if (ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir && !ctx.dryRun)
             {
-                const configFileContents = await Bun.file(configFile).text();
+                let pscx2Path = '';
+                if (process.platform === 'win32')
+                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'inis');
+                else
+                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, this.emulator, 'inis');
+
+                const configPath = path.join(pscx2Path, 'PCSX2.ini');
+                const existingConfigFile = Bun.file(configPath);
+
+                const configFile = await existingConfigFile.exists() ? ini.parse(await existingConfigFile.text()) : ini.parse(await Bun.file(defaultConfig).text());
 
                 const biosFolder = path.join(config.get('downloadPath'), "bios", this.emulator);
                 const storageFolder = path.join(config.get('downloadPath'), "storage", this.emulator);
@@ -67,28 +76,37 @@ export default class PCSX2Integration implements PluginType
                     CACHE_PATH: path.join(storageFolder, 'cache'),
                     COVERS_PATH: path.join(storageFolder, 'covers'),
                     TEXTURES_PATH: path.join(storageFolder, 'textures'),
+                    VIDEOS_PATH: path.join(storageFolder, 'videos'),
+                    LOGS_PATH: path.join(storageFolder, 'logs'),
                     RECURSIVE_PATHS: path.join(config.get('downloadPath'), 'roms', 'PS2'),
                 };
 
                 await Promise.all(Object.values(paths).map(p => ensureDir(p)));
 
-                const view = {
-                    ...paths,
-                    ENABLE_WIDESCREEN: config.get('emulatorWidescreen'),
-                    ASPECT_RATIO: config.get('emulatorWidescreen') ? "16:9" : "Auto 4:3/3:2",
-                    UPSCALE_MULTIPLIER: resolutionMapping[config.get('emulatorResolution')] ?? 1
-                };
+                configFile.EmuCore ??= {};
+                configFile.EmuCore.EnableWideScreenPatches = config.get('emulatorWidescreen');
+                configFile['EmuCore/GS'] ??= {};
+                configFile['EmuCore/GS'].AspectRatio = config.get('emulatorWidescreen') ? "16:9" : "Auto 4:3/3:2";
+                configFile['EmuCore/GS'].upscale_multiplier = resolutionMapping[config.get('emulatorResolution')] ?? 1;
+                configFile.Folders ??= {};
+                configFile.Folders.Bios = paths.BIOS_PATH;
+                configFile.Folders.Snapshots = paths.SNAPSHOTS_PATH;
+                configFile.Folders.SaveStates = paths.SAVE_STATES_PATH;
+                configFile.Folders.MemoryCards = paths.MEMORY_CARDS_PATH;
+                configFile.Folders.Cache = paths.CACHE_PATH;
+                configFile.Folders.Covers = paths.COVERS_PATH;
+                configFile.Folders.Textures = paths.TEXTURES_PATH;
+                configFile.Folders.Videos = paths.VIDEOS_PATH;
+                configFile.Folders.Logs = paths.LOGS_PATH;
+                configFile.GameList ??= {};
+                configFile.GameList.RecursivePaths = paths.RECURSIVE_PATHS;
 
-                let pscx2Path = '';
-                if (process.platform === 'win32')
-                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, 'inis');
-                else
-                    pscx2Path = path.join(ctx.autoValidCommand.metadata.emulatorDir, this.emulator, 'inis');
+                await Bun.write(configPath, ini.stringify(configFile));
 
-                await Bun.write(path.join(pscx2Path, 'PCSX2.ini'), Mustache.render(configFileContents, view));
+                return { args, savesPath: paths.MEMORY_CARDS_PATH };
             }
 
-            return args;
+            return { args };
         });
     }
 }

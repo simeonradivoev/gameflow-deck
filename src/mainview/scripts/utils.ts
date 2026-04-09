@@ -1,5 +1,5 @@
 import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { DependencyList, RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { jobsApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";
@@ -272,7 +272,8 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
     onEnded?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
     onCompleted?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
     onError?: (error: string) => void;
-  }
+  },
+  deps?: DependencyList
 )
 {
   type Response = JobResponse<JOB>;
@@ -325,7 +326,7 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
       sub.close();
       ref.current = null;
     };
-  }, [id, init?.query, init?.onEnded, init?.onCompleted, init?.onProgress, init?.onError]);
+  }, [id, init?.query, init?.onEnded, init?.onCompleted, init?.onProgress, init?.onError, ...(deps ?? [])]);
 
   return { data, state, error, wsRef: ref };
 }

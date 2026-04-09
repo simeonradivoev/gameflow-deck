@@ -5,6 +5,7 @@ import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import Shortcuts, { FloatingShortcuts } from '../components/Shortcuts';
 import { useJobStatus } from '../scripts/utils';
+import { useRef } from 'react';
 
 export const Route = createFileRoute('/launcher/$source/$id')({
   component: RouteComponent,
@@ -12,6 +13,10 @@ export const Route = createFileRoute('/launcher/$source/$id')({
     enterSound: 'launch'
   },
 });
+
+const stateLookup: Record<string, string> = {
+  saves: "Syncing Saves"
+};
 
 function RouteComponent ()
 {
@@ -27,12 +32,18 @@ function RouteComponent ()
     }
   }
 
+  const progressRef = useRef<HTMLProgressElement>(null);
   const { source, id } = Route.useParams();
   const { ref, focusKey } = useFocusable({ focusKey: `launching-${source}-${id}` });
 
   useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
 
-  const { data } = useJobStatus('launch-game', {
+  const { data, state } = useJobStatus('launch-game', {
+    onProgress (process, data)
+    {
+      if (progressRef.current)
+        progressRef.current.value = process;
+    },
     onEnded (data)
     {
       HandleGoBack();
@@ -41,14 +52,19 @@ function RouteComponent ()
     {
       HandleGoBack();
     },
-  });
+  }, [progressRef.current, HandleGoBack]);
 
   useBlocker({ shouldBlockFn: () => !!data });
 
   return <AnimatedBackground ref={ref} backgroundKey='game-details'>
     <div className='flex shadow-2xs shadow-black flex-col absolute w-screen h-screen overflow-hidden justify-center items-center gap-4'>
       <DotsLoading />
-      <h1 className='font-semibold'>Launching {data?.name} ...</h1>
+      {!!state && !!stateLookup[state] ?
+        <>
+          <h1 className='font-semibold'>Launching {data?.name} ...</h1> <progress ref={progressRef} className="progress w-56" value={0} max="100"></progress>
+        </>
+        :
+        <h1 className='font-semibold'>Launching {data?.name} ...</h1>}
     </div>
     <FloatingShortcuts />
   </AnimatedBackground>;
