@@ -1,6 +1,6 @@
 import { DefaultRommStaleTime, GameListFilterType, RommLoginDataSchema } from "@/shared/constants";
 import { rommApi, settingsApi } from "../clientApi";
-import { mutationOptions, QueryFilters, queryOptions } from "@tanstack/react-query";
+import { mutationOptions, QueryFilters, queryOptions, useMutation } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
 
@@ -155,4 +155,19 @@ export const gameInvalidationQuery = (source: string, id: string): QueryFilters 
         if (query.queryKey.includes(source) && query.queryKey.includes(id)) return true;
         return false;
     },
+});
+export const validateSourceQuery = (source: string, id: string) => queryOptions({
+    queryKey: ["game", source, id, "validate"], queryFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).validate.get();
+        return data;
+    }
+});
+export const fixSourceMutation = mutationOptions({
+    mutationKey: ['game', "fix_source"], mutationFn: async ({ source, id }: { source: string, id: string; }) =>
+    {
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).fix_source.post();
+        if (error) throw error;
+        return data;
+    }
 });

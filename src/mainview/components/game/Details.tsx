@@ -2,11 +2,13 @@ import { scrollIntoViewHandler } from "@/mainview/scripts/utils";
 import { RPC_URL } from "@/shared/constants";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { Clock, CloudBackup, CloudDownload, CloudUpload, HardDrive, Store, TriangleAlert } from "lucide-react";
+import { Clock, CloudBackup, CloudDownload, CloudUpload, Gamepad2, HardDrive, Store, TriangleAlert } from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import { JSX } from "react";
 import ActionButtons from "./ActionButtons";
 import prettyMilliseconds from 'pretty-ms';
+import { useQuery } from "@tanstack/react-query";
+import { validateSourceQuery } from "@/mainview/scripts/queries/romm";
 
 export function DetailElement (data: { icon: JSX.Element; tooltip?: string | null, children?: any | any[]; })
 {
@@ -17,6 +19,12 @@ export function DetailElement (data: { icon: JSX.Element; tooltip?: string | nul
         </div>
     );
 }
+
+const sourceIconMap: Record<string, any> = {
+    store: <Store />,
+    local: <HardDrive />,
+    romm: <Gamepad2 />
+};
 
 export default function Details (data: {
     game?: FrontEndGameTypeDetailed,
@@ -31,6 +39,8 @@ export default function Details (data: {
         saveLastFocusedChild: false,
         forceFocus: true
     });
+
+    const { data: validation } = useQuery(validateSourceQuery(data.source, data.id));
 
     const platformCoverImg = data.game?.path_platform_cover ? new URL(`${RPC_URL(__HOST__)}${data.game?.path_platform_cover}`) : undefined;
     if (platformCoverImg)
@@ -70,8 +80,8 @@ export default function Details (data: {
                             </div>}
                         <DetailElement icon={platformCoverImg ? <img className="size-6" src={platformCoverImg.href}></img> : <div className="skeleton size-6 rounded-full shrink-0"></div>} >{data.game?.platform_display_name ?? <div className="skeleton h-4 w-32"></div>}</DetailElement>
                         {data.game?.emulators?.some(e => e.integrations.some(i => i.capabilities?.includes('saves'))) && <DetailElement tooltip={"Save Backup"} icon={<CloudUpload />} />}
-                        <DetailElement icon={
-                            <Store />
+                        <DetailElement tooltip={validation?.reason} icon={
+                            validation ? validation.valid ? sourceIconMap[data.game?.source ?? ''] : <TriangleAlert className="text-error" /> : <span className="loading loading-spinner loading-lg"></span>
                         } >
                             {data.game?.source ?? data.game?.id.source}
                             {data.game?.local && <small className="text-base-content/60 font-semibold">local</small>}</DetailElement>

@@ -44,26 +44,53 @@ export async function getLocalGame (source: string, id: string)
     return localGame;
 }
 
-export async function validateGameSource (source: string, id: string): Promise<{ valid: boolean, reason?: string; }>
+export async function fixSource (source: string, id: string)
+{
+    const valid = await validateGameSource(source, id);
+    if (!valid.valid)
+    {
+        if (!valid.localGame) throw new Error("No Local Game");
+        if (!valid.localGame.source) throw new Error("No Valid Source");
+
+        const foundGame = await plugins.hooks.games.searchGame.promise({
+            igdb_id: valid.localGame.igdb_id ?? undefined,
+            ra_id: valid.localGame.ra_id ?? undefined,
+            source: valid.localGame.source
+        });
+
+        if (foundGame)
+        {
+            await db.update(appSchema.games).set({ source: foundGame.id.source, source_id: foundGame.id.id }).where(eq(appSchema.games.id, valid.localGame.id));
+            return true;
+        } else
+        {
+            throw new Error("Could not find Source Game");
+        }
+    } else
+    {
+        throw new Error("Game Source Already Valid");
+    }
+}
+
+export async function validateGameSource (source: string, id: string): Promise<{
+    valid: boolean,
+    localGame?: { id: number; igdb_id: number | null; ra_id: number | null; source: string | null; },
+    reason?: string;
+}>
 {
     const localGame = await getLocalGame(source, id);
-    if (!localGame) throw new Error("Could not find local game");
+    if (!localGame) return { valid: true };
     if (localGame.source && localGame.source_id)
     {
         const sourceGame = await plugins.hooks.games.fetchGame.promise({ source: localGame.source, id: localGame.source_id });
-        if (!sourceGame) return { valid: false, reason: "Source Missing" };
-        if (sourceGame.imdb_id !== (localGame.igdb_id ?? undefined))
+        if (!sourceGame) return { valid: false, reason: "Source Missing", localGame };
+        if (sourceGame.imdb_id !== (localGame.igdb_id ?? undefined) && sourceGame.ra_id !== (localGame.ra_id ?? undefined))
         {
-            return { valid: false, reason: "IGDB Miss Match" };
-        }
-
-        if (sourceGame.ra_id !== (localGame.ra_id ?? undefined))
-        {
-            return { valid: false, reason: "RA Miss Match" };
+            return { valid: false, reason: "Metadata Missmatch", localGame };
         }
     }
 
-    return { valid: true };
+    return { valid: true, localGame };
 }
 
 export async function updateLocalLastPlayed (id: number)
@@ -174,7 +201,7 @@ export default function buildStatusResponse ()
         },
         async open (ws)
         {
-            sendLatests();
+            sendLatests().catch(e => ws.send({ status: 'error', error: JSON.stringify(e) }));
             const installJobId = InstallJob.query({ source: ws.data.params.source, id: ws.data.params.id });
 
             async function sendLatests ()

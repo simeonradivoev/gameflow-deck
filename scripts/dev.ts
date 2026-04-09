@@ -26,15 +26,7 @@ function spawnServer ()
         killSignal: 'SIGUSR1',
         onExit (subprocess, exitCode, signalCode)
         {
-            if (exitCode === 1 && retries <= 3)
-            {
-                server = spawnServer();
-                retries++;
-            } else
-            {
-                process.exit();
-            }
-
+            process.exit();
         }
     });
     const rl = createInterface({ input: Readable.fromWeb(s.stdout as any) });

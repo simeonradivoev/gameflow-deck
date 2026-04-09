@@ -2,7 +2,7 @@
 
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
-import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomContentApiRomsIdContentFileNameGet, getRomsApiRomsGet, getSavesSummaryApiSavesSummaryGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
+import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomByMetadataProviderApiRomsByMetadataProviderGet, getRomContentApiRomsIdContentFileNameGet, getRomsApiRomsGet, getSavesSummaryApiSavesSummaryGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
 import { config, events } from "@/bun/api/app";
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -556,6 +556,15 @@ export default class RommIntegration implements PluginType
             if (source !== 'romm') return;
             const platforms = await this.getAllRommPlatforms();
             return platforms.find(p => p.id === Number(id));
+        });
+
+        ctx.hooks.games.searchGame.tapPromise(desc.name, async ({ source, igdb_id, ra_id }) =>
+        {
+            if (source !== 'romm') return;
+            const roms = await getRomByMetadataProviderApiRomsByMetadataProviderGet({ query: { igdb_id, ra_id } });
+            if (roms.error) throw roms.error;
+            if (!roms.data) return;
+            return this.convertRomToFrontendDetailed(roms.data);
         });
     }
 }

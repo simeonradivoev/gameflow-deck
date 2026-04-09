@@ -43,6 +43,11 @@ export class GameHooks
         localGame?: FrontEndGameTypeDetailed;
         id: string;
     }], FrontEndGameTypeDetailed | undefined>(['ctx']);
+    searchGame = new AsyncSeriesBailHook<[ctx: {
+        source: string;
+        igdb_id?: number;
+        ra_id?: number;
+    }], FrontEndGameTypeDetailed | undefined>(['ctx']);
     /** Get download file URLs
      * @param ctx.checksum Check if file already exists using checksums
      */

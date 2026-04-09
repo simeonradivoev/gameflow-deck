@@ -1,10 +1,10 @@
-import { deleteGameMutation, gameInvalidationQuery } from "@/mainview/scripts/queries/romm";
+import { deleteGameMutation, fixSourceMutation, gameInvalidationQuery, validateSourceQuery } from "@/mainview/scripts/queries/romm";
 import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
 import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
-import { Settings, Trash, Trophy } from "lucide-react";
+import { Hammer, Settings, Trash, Trophy } from "lucide-react";
 import MainActions from "./MainActions";
 import ActionButton from "./ActionButton";
 import { useLocalStorage } from "usehooks-ts";
@@ -33,6 +33,18 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
 {
     const [, setDetailsSection] = useLocalStorage('details-section', 'screenshots');
 
+    const fixMutation = useMutation({
+        ...fixSourceMutation, onSuccess (data, variables, onMutateResult, context)
+        {
+            if (onMutateResult) toast.success("Updated Source");
+            context.client.invalidateQueries(gameInvalidationQuery(variables.id, variables.source)).then(() => router.history.back());
+        },
+        onError (error)
+        {
+            toast.error(getErrorMessage(error) ?? "Error While Trying To Fix");
+        }
+    });
+    const { data: validation } = useQuery(validateSourceQuery(data.source, data.id));
     const { ref, focusKey, hasFocusedChild } = useFocusable({ focusKey: 'actions', forceFocus: true, trackChildren: true, preferredChildFocusKey: 'mainAction' });
     const router = useRouter();
     const deleteMutation = useMutation({
@@ -47,32 +59,41 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
         }
     });
 
-    useBlocker({ shouldBlockFn: () => deleteMutation.isPending });
+    useBlocker({
+        shouldBlockFn: () =>
+        {
+            return deleteMutation.isPending || fixMutation.isPending;
+        }
+    });
 
     const contextOptions: DialogEntry[] = [];
     if (data.game?.local)
     {
-        if (deleteMutation.isPending)
-        {
-            contextOptions.push({
-                id: 'delete',
-                icon: <span className="loading loading-spinner loading-lg"></span>,
-                content: "Deleting",
-                type: 'error'
-            });
-        } else
-        {
-            contextOptions.push({
-                id: 'delete',
-                action: () =>
-                {
-                    deleteMutation.mutate();
-                },
-                icon: <Trash />,
-                content: "Delete",
-                type: 'error'
-            });
-        }
+        contextOptions.push({
+            id: 'delete',
+            action: () =>
+            {
+                deleteMutation.mutate();
+            },
+            icon: deleteMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <Trash />,
+            content: deleteMutation.isPending ? "Deleting" : "Delete",
+            type: 'error'
+        });
+    }
+
+    if (!validation?.valid)
+    {
+        contextOptions.push({
+            id: "fix_source",
+            action (ctx)
+            {
+                if (data.game)
+                    fixMutation.mutate({ source: data.game.id.source, id: data.game.id.id });
+            },
+            icon: fixMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <Hammer />,
+            content: "Try Fix Source",
+            type: "warning"
+        });
     }
 
     const { setOpen, dialog: settingsDialog } = useContextDialog("settings-context", { content: <ContextList disableCloseButton={deleteMutation.isPending} options={contextOptions} />, canClose: !deleteMutation.isPending });

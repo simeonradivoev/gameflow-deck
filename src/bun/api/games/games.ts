@@ -8,7 +8,7 @@ import { GameListFilterSchema, SERVER_URL } from "@shared/constants";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
 import { convertLocalToFrontend, convertStoreToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
-import buildStatusResponse, { getValidLaunchCommandsForGame } from "./services/statusService";
+import buildStatusResponse, { fixSource, getValidLaunchCommandsForGame, validateGameSource } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
 import { getEmulatorsForSystem, getRomFilePaths, launchCommand } from "./services/launchGameService";
 import { getErrorMessage, SeededRandom } from "@/bun/utils";
@@ -411,6 +411,15 @@ export default new Elysia()
     }, {
         params: z.object({ id: z.string(), source: z.string() }),
         response: z.any()
+    })
+    .get('/game/:source/:id/validate', async ({ params: { id, source } }) =>
+    {
+        const valid = await validateGameSource(source, id);
+        return { valid: valid.valid, reason: valid.reason };
+    })
+    .post('/game/:source/:id/fix_source', async ({ params: { id, source } }) =>
+    {
+        return fixSource(source, id);
     })
     .post('/game/:source/:id/play', async ({ params: { id, source }, body, set }) =>
     {
