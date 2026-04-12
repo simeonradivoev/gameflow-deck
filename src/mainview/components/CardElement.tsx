@@ -18,9 +18,7 @@ export function GameCardSkeleton ()
   );
 }
 
-export type GameCardFocusHandler = (id: string, node: HTMLElement, details: FocusDetails) => void;
-
-export interface GameCardParams
+export interface GameCardParams extends FocusParams
 {
   title: string;
   subtitle: string | JSX.Element;
@@ -31,7 +29,6 @@ export interface GameCardParams
   id: string;
   badges?: JSX.Element[];
   className?: string;
-  onFocus?: GameCardFocusHandler;
   onBlur?: (id: string) => void;
   clickFocuses?: boolean;
   previewClassName?: string;
@@ -39,14 +36,14 @@ export interface GameCardParams
 
 export default function CardElement (data: GameCardParams & InteractParams)
 {
-  const handleAction = () =>
+  const handleAction = (event?: Event) =>
   {
-    data.onAction?.();
+    data.onAction?.({ event, focusKey });
     oneShot('click');
   };
-  const { ref, focused, focusSelf } = useFocusable({
+  const { ref, focused, focusSelf, focusKey } = useFocusable({
     focusKey: data.focusKey,
-    onFocus: (l, p, details) => data.onFocus?.(data.id, ref.current as any, details),
+    onFocus: (l, p, details) => data.onFocus?.(focusKey, ref.current as any, details),
     onEnterPress: handleAction,
     onBlur: () => data.onBlur?.(data.id),
   });
@@ -63,10 +60,10 @@ export default function CardElement (data: GameCardParams & InteractParams)
         scrollSnapAlign: isPointer ? "center" : "none"
       }}
       onFocus={focusSelf}
-      onClick={() =>
+      onClick={(e) =>
       {
         focusSelf();
-        handleAction();
+        handleAction(e.nativeEvent);
       }}
       className={twMerge(
         "relative game-card light:bg-base-100 dark:bg-base-300 flex flex-col z-5 overflow-hidden transition-all duration-200 not-mobile:drop-shadow-lg cursor-pointer focusable focusable-primary focusable-hover select-none focused focused:not-control-mouse:animate-wiggle focused:not-control-mouse:bg-base-content focused:not-control-mouse:text-base-300 focused:not-control-mouse:drop-shadow-lg focused:not-control-mouse:drop-shadow-black/30 focused:not-control-mouse:scale-102 focused:not-control-mouse:z-10 group control-mouse:hover:bg-base-200 h-full [--tw-border-style:inset] border-2 border-base-content/5 backdrop-opacity-0 active:bg-base-content! active:text-base-100 active:transition-none",

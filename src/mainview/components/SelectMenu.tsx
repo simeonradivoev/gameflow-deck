@@ -9,7 +9,6 @@ import { FOCUS_KEYS } from "../scripts/types";
 export default function SelectMenu (data: { rootFocusKey: string; })
 {
     const navigate = useNavigate();
-    const routeState = useRouterState();
     const matchRoute = useMatchRoute();
 
     const options: DialogEntry[] = [
@@ -85,7 +84,7 @@ export default function SelectMenu (data: { rootFocusKey: string; })
     ];
     const { dialog, setOpen, open } = useContextDialog('select-menu', {
         content: <ContextList showCloseButton={false} options={options} />,
-        className: 'absolute flex flex-col justify-center left-0 top-0 bottom-0 rounded-none',
+        className: 'absolute flex flex-col justify-center left-0 top-0 bottom-0 rounded-none max-h-screen',
         preferredChildFocusKey: FOCUS_KEYS.CONTEXT_DIALOG_OPTION('select-menu', options.find(o => o.selected)?.id ?? '')
     });
     useShortcuts(data.rootFocusKey, () => [{

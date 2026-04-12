@@ -191,7 +191,7 @@ export function useShortcutContext ()
     return { shortcuts: array };
 }
 
-export function useShortcuts (focusKey: string, build: () => Shortcut[], ...deps: DependencyList)
+export function useShortcuts (focusKey: string, build: () => Shortcut[], deps?: DependencyList)
 {
     useEffect(() =>
     {
@@ -211,6 +211,6 @@ export function useShortcuts (focusKey: string, build: () => Shortcut[], ...deps
 
             markDirtyThrottled();
         };
-    }, [...deps, focusKey]);
+    }, [focusKey, ...deps ?? []]);
 
 }

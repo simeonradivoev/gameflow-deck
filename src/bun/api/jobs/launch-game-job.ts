@@ -168,7 +168,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                             if (typeof filename === 'string')
                             {
                                 console.log("Save File Changed", filename);
-                                this.changedSaveFiles.set(filename, { subPath: filename, cwd: commandArgs.savesPath! });
+                                this.changedSaveFiles.set(filename, { subPath: filename, cwd: commandArgs.savesPath!, shared: true });
                             }
                         });
 

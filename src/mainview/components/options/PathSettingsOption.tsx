@@ -101,7 +101,7 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
                 onBlur={handleInputBlur}
                 onChange={(e) =>
                 {
-                    data.setLocalValue(e);
+                    data.setLocalValue(String(e));
                 }}
                 value={data.localValue}
             />

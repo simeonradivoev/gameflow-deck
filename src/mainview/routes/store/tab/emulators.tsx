@@ -10,6 +10,7 @@ import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { useQuery } from '@tanstack/react-query';
 import { storeEmulatorsQuery } from '@queries/store';
 import InvalidStoreError from '@/mainview/components/store/InvalidStoreError';
+import { useSessionStorage } from 'usehooks-ts';
 
 export const Route = createFileRoute('/store/tab/emulators')({
   component: RouteComponent,
@@ -18,13 +19,14 @@ export const Route = createFileRoute('/store/tab/emulators')({
 
 function RouteComponent ()
 {
-  const { focus } = useSearch({ from: '/store/tab' });
+  const { focus } = Route.useSearch();
+  const [search] = useSessionStorage<string | undefined>(`${Route.to}-search`, undefined);
   const { ref, focusKey, focusSelf } = useFocusable({
     focusKey: "main-area",
     preferredChildFocusKey: focus
   });
   const storeContext = useContext(StoreContext);
-  const { data: emulators } = useQuery({ ...storeEmulatorsQuery, retry: false, throwOnError: true });
+  const { data: emulators } = useQuery({ ...storeEmulatorsQuery({ search }), retry: false, throwOnError: true });
 
   useEffect(() =>
   {

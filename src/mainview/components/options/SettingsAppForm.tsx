@@ -29,7 +29,7 @@ function FormOption (data: { type: HTMLInputTypeAttribute, icon?: JSX.Element; l
             name={field.name}
             value={field.state.value}
             type={data.type}
-            onChange={v => field.handleChange(v)}
+            onChange={v => field.handleChange(String(v))}
             placeholder={data.placeholder}
             className={classNames({ " flex-3 ring-4 ring-accent": field.getMeta().isDirty })}
         />

@@ -11,7 +11,15 @@ export const games = sqliteTable('games', {
     path_fs: text("path_fs"),
     last_played: integer("last_played", { mode: 'timestamp' }),
     created_at: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
-    metadata: text("metadata", { mode: 'json' }).default(sql`'{}'`),
+    metadata: text("metadata", { mode: 'json' }).default(sql`'{}'`).$type<{
+        genres?: string[],
+        companies?: string[],
+        game_modes?: string[],
+        age_ratings?: string[];
+        player_count?: string;
+        first_release_date?: number;
+        average_rating?: number;
+    }>().notNull(),
     slug: text("slug").unique(),
     platform_id: integer("platform_id").references(() => platforms.id, { onUpdate: 'cascade' }).notNull(),
     cover: blob("cover", { mode: 'buffer' }),

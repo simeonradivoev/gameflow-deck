@@ -12,9 +12,9 @@ import { twMerge } from "tailwind-merge";
 function Screenshot (data: { path: string; index: number; setFocused?: (index: number) => void; } & InteractParams)
 {
     const imageRef = useRef<HTMLImageElement>(null);
-    const { ref, focusSelf } = useFocusable({
+    const { ref, focusSelf, focusKey } = useFocusable({
         focusKey: `screenshot-${data.index}`,
-        onEnterPress: () => data.onAction?.(),
+        onEnterPress: () => data.onAction?.({ focusKey }),
         onFocus: (e, p, details) =>
         {
             data.setFocused?.(data.index);
@@ -23,7 +23,7 @@ function Screenshot (data: { path: string; index: number; setFocused?: (index: n
     }); 4096;
     return <div ref={ref} className="group relative flex min-w-fit aspect-video max-h-[60vh] rounded-3xl focusable focusable-accent not-focused:cursor-pointer overflow-hidden">
         <img ref={imageRef} draggable={false} className="object-cover w-full h-full" onClick={e => focusSelf({ nativeEvent: e.nativeEvent })} src={`${RPC_URL(__HOST__)}${data.path}`} loading="lazy" decoding="async" />
-        <div className="absolute flex justify-center items-center bottom-2 right-2 size-10 rounded-full bg-base-100 hover:bg-base-content hover:text-base-300 cursor-pointer opacity-60 not-control-mouse:hidden invisible group-has-hover:visible" onClick={e => data.onAction?.(e.nativeEvent)}> <Fullscreen /> </div>
+        <div className="absolute flex justify-center items-center bottom-2 right-2 size-10 rounded-full bg-base-100 hover:bg-base-content hover:text-base-300 cursor-pointer opacity-60 not-control-mouse:hidden invisible group-has-hover:visible" onClick={e => data.onAction?.({ event: e.nativeEvent, focusKey })}> <Fullscreen /> </div>
     </div>;
 }
 

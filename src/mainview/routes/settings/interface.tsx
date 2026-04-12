@@ -1,6 +1,7 @@
 import { LocalOption } from '@/mainview/components/options/LocalOption';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { createFileRoute } from '@tanstack/react-router';
+import { Terminal } from 'lucide-react';
 
 export const Route = createFileRoute('/settings/interface')({
   component: RouteComponent,
@@ -22,6 +23,11 @@ function RouteComponent ()
       <LocalOption id='soundEffects' label="Sounds" type='checkbox'></LocalOption>
       <LocalOption id='soundEffectsVolume' min={0} max={100} step={10} label="Sounds" type='range'></LocalOption>
       <LocalOption id='hapticsEffects' label="Haptics" type='checkbox'></LocalOption>
+      {import.meta.env.DEV && <>
+        <div className="divider">Dev Settings<Terminal /></div>
+        <LocalOption id='showQueryDevOptions' label="Show Query Options" type='checkbox'></LocalOption>
+        <LocalOption id='showRouterDevOptions' label="Show Router Options" type='checkbox'></LocalOption>
+      </>}
     </FocusContext>
   </ul>;
 }

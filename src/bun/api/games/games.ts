@@ -1,6 +1,6 @@
 import Elysia, { status } from "elysia";
 import { config, db, emulatorsDb, plugins, taskQueue } from "../app";
-import { and, eq, getTableColumns, inArray, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, ilike, inArray, like, sql } from "drizzle-orm";
 import z from "zod";
 import * as schema from "@schema/app";
 import fs from "node:fs/promises";
@@ -20,6 +20,7 @@ import { buildStoreFrontendEmulatorSystems, getShuffledStoreGames, getStoreEmula
 import { convertStoreEmulatorToFrontend } from "../store/services/emulatorsService";
 import { host } from "@/bun/utils/host";
 import { LaunchGameJob } from "../jobs/launch-game-job";
+import { cores } from "../emulatorjs/emulatorjs";
 
 // A custom jimp that supports webp
 const Jimp = createJimp({
@@ -134,12 +135,24 @@ export default new Elysia()
     .get('/games', async ({ query, set }) =>
     {
         const games: FrontEndGameType[] = [];
+        const filterSets: FrontEndFilterSets = {
+            age_ratings: new Set(),
+            player_counts: new Set(),
+            languages: new Set(),
+            companies: new Set(),
+            genres: new Set()
+        };
 
         if (query.source === 'store')
         {
             const shuffledGames = await getShuffledStoreGames();
             set.headers['x-max-items'] = shuffledGames.length;
-            const storeGames = await Promise.all(shuffledGames
+            const storeGames = await Promise.all(shuffledGames.filter(g =>
+            {
+                if (query.search)
+                    return path.basename(g.path).toLocaleLowerCase().includes(query.search.toLocaleLowerCase());
+                return true;
+            })
                 .slice(query.offset ?? 0, Math.min((query.offset ?? 0) + (query.limit ?? 50), shuffledGames.length))
                 .map(async (e) =>
                 {
@@ -185,6 +198,11 @@ export default new Elysia()
                 }
             }
 
+            if (query.search)
+            {
+                where.push(like(schema.games.name, query.search));
+            }
+
             if (query.source)
             {
                 where.push(eq(schema.games.source, query.source));
@@ -218,7 +236,7 @@ export default new Elysia()
             {
                 // Collections are just a remote thing for now.
                 const remoteGames: FrontEndGameTypeWithIds[] = [];
-                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
+                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames, filters: filterSets }).catch(e => console.error(e));
                 games.push(...remoteGames.map(g =>
                 {
                     if (localGameExistsPredicate(g))
@@ -233,37 +251,74 @@ export default new Elysia()
 
             } else
             {
-                games.push(...localGames.slice(query.offset, query.limit ? query.offset ?? 0 + query.limit : undefined).map(g =>
+                games.push(...localGames.slice(query.offset, query.limit ? query.offset ?? 0 + query.limit : undefined).filter(g =>
+                {
+                    if (query.genres && query.genres.length > 0)
+                    {
+                        if (!g.metadata) return false;
+                        if (!g.metadata.genres) return false;
+                        if (query.genres.some(genre => !g.metadata?.genres?.includes(genre))) return false;
+                    }
+
+                    return true;
+                }).map(g =>
                 {
                     return convertLocalToFrontend(g);
                 }));
 
-                const remoteGames: FrontEndGameTypeWithIds[] = [];
-                const remoteGameSet = new Set<string>();
-                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
-                games.push(...remoteGames.filter(g =>
+                if (query.localOnly !== true)
                 {
-                    if (localGameExistsPredicate(g))
+                    const remoteGames: FrontEndGameTypeWithIds[] = [];
+                    const remoteGameSet = new Set<string>();
+                    await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames, filters: filterSets }).catch(e => console.error(e));
+                    games.push(...remoteGames.filter(g =>
                     {
-                        return false;
-                    }
+                        if (localGameExistsPredicate(g))
+                        {
+                            return false;
+                        }
 
-                    if (g.igdb_id)
+                        if (g.igdb_id)
+                        {
+                            const igdbId = `igdb@${g.igdb_id}`;
+                            if (remoteGameSet.has(igdbId)) return false;
+                            remoteGameSet.add(igdbId);
+                        }
+
+                        if (g.ra_id)
+                        {
+                            const raId = `ra@${g.ra_id}`;
+                            if (remoteGameSet.has(raId)) return false;
+                            remoteGameSet.add(raId);
+                        }
+
+                        return true;
+                    }));
+                } else
+                {
+                    await plugins.hooks.games.fetchFilters.promise({ filters: filterSets }).catch(e => console.error(e));
+                }
+
+                localGames.map(g =>
+                {
+                    const metadata: any = g.metadata;
+                    if (metadata.genres && Array.isArray(metadata.genres))
                     {
-                        const igdbId = `igdb@${g.igdb_id}`;
-                        if (remoteGameSet.has(igdbId)) return false;
-                        remoteGameSet.add(igdbId);
+                        metadata.genres.forEach((g: string) => filterSets.genres.add(g));
                     }
-
-                    if (g.ra_id)
+                    if (metadata.age_ratings && Array.isArray(metadata.age_ratings))
                     {
-                        const raId = `ra@${g.ra_id}`;
-                        if (remoteGameSet.has(raId)) return false;
-                        remoteGameSet.add(raId);
+                        metadata.age_ratings.forEach((g: string) => filterSets.age_ratings.add(g));
                     }
-
-                    return true;
-                }));
+                    if (metadata.companies && Array.isArray(metadata.companies))
+                    {
+                        metadata.companies.forEach((g: string) => filterSets.companies.add(g));
+                    }
+                    if (metadata.player_count)
+                    {
+                        filterSets.player_counts.add(metadata.player_count);
+                    }
+                });
             }
         }
 
@@ -280,11 +335,22 @@ export default new Elysia()
                 case 'name':
                     games.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
                     break;
+                case "release":
+                    games.sort((a, b) => (b.metadata.first_release_date?.getTime() ?? 0) - (a.metadata.first_release_date?.getTime() ?? 0));
+                    break;
             }
 
         }
 
-        return { games };
+        const filterLists: FrontEndFilterLists = {
+            age_ratings: Array.from(filterSets.age_ratings),
+            player_counts: Array.from(filterSets.player_counts),
+            languages: Array.from(filterSets.languages),
+            companies: Array.from(filterSets.companies),
+            genres: Array.from(filterSets.genres)
+        };
+
+        return { games, filters: filterLists };
     }, {
         query: GameListFilterSchema,
     })
@@ -341,8 +407,22 @@ export default new Elysia()
                             return {
                                 name: 'EMULATORJS',
                                 validSources: [{ binPath: SERVER_URL(host), type: 'embedded', exists: true }],
-                                logo: `/api/romm/image?url=${encodeURIComponent('https://emulatorjs.org/logo/EmulatorJS.png')}`,
-                                systems: [],
+                                logo: 'https://emulatorjs.org/logo/EmulatorJS.png',
+                                systems: await Promise.all(Object.keys(cores).map(async c =>
+                                {
+                                    const mapping = await emulatorsDb.query.systemMappings.findFirst({
+                                        where (fields, operators)
+                                        {
+                                            return operators.and(operators.eq(fields.source, "romm"), operators.eq(fields.system, c));
+                                        }, columns: { sourceSlug: true }
+                                    });
+                                    const system: EmulatorSystem = {
+                                        id: c,
+                                        name: c,
+                                        iconUrl: `/api/romm/image/romm/assets/platforms/${mapping?.sourceSlug}.svg`
+                                    };
+                                    return system;
+                                })),
                                 gameCount: 0,
                                 integrations: []
                             } satisfies FrontEndGameTypeDetailedEmulator;
@@ -536,8 +616,8 @@ export default new Elysia()
         const sourceData = await getSourceGameDetailed(source, id);
         if (!sourceData) return status("Not Found");
 
-        const sourceCompaniesSet = new Set(sourceData.companies);
-        const sourceGenresSet = new Set(sourceData.genres);
+        const sourceCompaniesSet = new Set(sourceData.metadata.companies);
+        const sourceGenresSet = new Set(sourceData.metadata.genres);
 
         const esSystem = sourceData.platform_slug ? await emulatorsDb.query.systemMappings.findFirst({ where: and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.sourceSlug, sourceData.platform_slug)), columns: { system: true } }) : undefined;
 
@@ -550,7 +630,7 @@ export default new Elysia()
 
         const localGamesSourceSet = new Set(localGames.filter(g => g.source).map(g => `${g.source}@${g.source_id}`));
 
-        games.push(...localGames.map(g => ({ ...convertLocalToFrontend(g), metadata: g.metadata })));
+        games.push(...localGames.map(g => convertLocalToFrontend(g)));
 
         const shuffledGames = await getShuffledStoreGames();
         const storeGames = await Promise.all(shuffledGames
@@ -559,7 +639,7 @@ export default new Elysia()
                 const system = path.dirname(g.path);
                 const id = path.basename(g.path, path.extname(g.path));
 
-                if (localGamesSourceSet.has(`${system}@${id}`))
+                if (localGamesSourceSet.has(`store@${system}@${id}`))
                     return false;
 
                 if (esSystem)

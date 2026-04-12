@@ -5,7 +5,6 @@ import { CardList, GameMetaExtra } from "./CardList";
 import { rommApi } from "../scripts/clientApi";
 import { JSX, useMemo } from "react";
 import { HardDrive } from "lucide-react";
-import { GameCardFocusHandler } from "./CardElement";
 import { mobileCheck } from "../scripts/utils";
 import { twMerge } from "tailwind-merge";
 
@@ -13,11 +12,10 @@ export function PlatformsList (data: {
     id: string,
     setBackground: (url: string) => void;
     className?: string;
-    onFocus?: GameCardFocusHandler;
     grid?: boolean;
     onSelect?: (source: string, id: string) => void;
     saveChildFocus?: "session" | "local";
-})
+} & FocusParams)
 {
     const isMobile = mobileCheck();
     const navigate = useNavigate();
@@ -88,7 +86,7 @@ export function PlatformsList (data: {
             id={data.id}
             grid={data.grid}
             className={twMerge('*:aspect-8/10! md:py-12', data.className)}
-            onGameFocus={data.onFocus}
+            onFocus={data.onFocus}
             games={platformsMapped}
             onSelectGame={(id) =>
             {

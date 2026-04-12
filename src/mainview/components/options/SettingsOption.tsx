@@ -15,7 +15,7 @@ export function SettingsOption (data: {
 })
 {
     const [dirty, setDirty] = useState(false);
-    const [localValue, setLocalValue] = useState<string | boolean | undefined>();
+    const [localValue, setLocalValue] = useState<string | number | boolean | undefined>();
     const { data: serverValue } = useQuery(getSettingQuery(data.id));
     const setMutation = useMutation(setSettingMutation(data.id));
 

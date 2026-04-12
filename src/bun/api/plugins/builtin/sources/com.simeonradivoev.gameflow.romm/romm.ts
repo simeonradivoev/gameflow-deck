@@ -2,7 +2,7 @@
 
 import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
-import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomByMetadataProviderApiRomsByMetadataProviderGet, getRomContentApiRomsIdContentFileNameGet, getRomsApiRomsGet, getSavesSummaryApiSavesSummaryGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
+import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomByMetadataProviderApiRomsByMetadataProviderGet, getRomContentApiRomsIdContentFileNameGet, getRomFiltersApiRomsFiltersGet, getRomsApiRomsGet, getSavesSummaryApiSavesSummaryGet, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
 import { config, events } from "@/bun/api/app";
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -16,6 +16,12 @@ import { validateGameSource } from "@/bun/api/games/services/statusService";
 export default class RommIntegration implements PluginType
 {
     isSteamDeck = false;
+    orderByMap: Record<string, string> = {
+        added: "created_at",
+        activity: "created_at",
+        name: "name",
+        release: "metadatum.first_release_date"
+    };
 
     async updateClient ()
     {
@@ -49,8 +55,11 @@ export default class RommIntegration implements PluginType
         const game: FrontEndGameType = {
             id: { id: String(rom.id), source: 'romm' },
             path_cover: `/api/romm/image/romm${this.isSteamDeck ? rom.path_cover_small : rom.path_cover_large}`,
-            last_played: rom.rom_user.last_played ? new Date(rom.rom_user.last_played) : null,
+            last_played: rom.rom_user.last_played !== null ? new Date(rom.rom_user.last_played) : null,
             updated_at: new Date(rom.created_at),
+            metadata: {
+                first_release_date: rom.metadatum.first_release_date !== null ? new Date(rom.metadatum.first_release_date) : null,
+            },
             slug: rom.slug,
             platform_id: rom.platform_id,
             platform_display_name: rom.platform_display_name,
@@ -74,11 +83,17 @@ export default class RommIntegration implements PluginType
             fs_size_bytes: rom.fs_size_bytes,
             local: false,
             missing: rom.missing_from_fs,
-            genres: rom.metadatum.genres,
-            companies: rom.metadatum.companies,
-            release_date: rom.metadatum.first_release_date ? new Date(rom.metadatum.first_release_date) : undefined,
             imdb_id: rom.igdb_id ?? undefined,
-            ra_id: rom.ra_id ?? undefined
+            ra_id: rom.ra_id ?? undefined,
+            metadata: {
+                age_ratings: rom.metadatum.age_ratings,
+                genres: rom.metadatum.genres,
+                companies: rom.metadatum.companies,
+                game_modes: rom.metadatum.game_modes,
+                player_count: rom.metadatum.player_count,
+                average_rating: rom.metadatum.average_rating,
+                first_release_date: rom.metadatum.first_release_date ? new Date(rom.metadatum.first_release_date) : null
+            }
         };
 
         const userData = await getCurrentUserApiUsersMeGet();
@@ -119,16 +134,10 @@ export default class RommIntegration implements PluginType
 
     load (ctx: PluginContextType)
     {
-        ctx.hooks.games.fetchGames.tapPromise(desc.name, async ({ query, games }) =>
+        ctx.hooks.games.fetchGames.tapPromise(desc.name, async ({ query, games, filters }) =>
         {
             if (((!query.platform_source || query.platform_source === 'romm') || !!query.collection_id) && (!query.source || query.source === 'romm'))
             {
-
-                const orderByMap: Record<string, string> = {
-                    added: "created_at",
-                    activity: "created_at",
-                    name: "name"
-                };
 
                 const rommGames = await getRomsApiRomsGet({
                     query: {
@@ -136,9 +145,21 @@ export default class RommIntegration implements PluginType
                         collection_id: query.collection_id,
                         limit: query.limit,
                         offset: query.offset,
-                        order_by: orderByMap[query.orderBy ?? '']
+                        order_by: this.orderByMap[query.orderBy ?? ''],
+                        with_filter_values: true,
+                        genres: query.genres,
+                        genres_logic: "all",
+                        age_ratings: query.age_ratings,
+                        search_term: query.search,
                     }, throwOnError: true
                 });
+
+                rommGames.data.filter_values.age_ratings.forEach(r => filters.age_ratings.add(r));
+                rommGames.data.filter_values.companies.forEach(r => filters.companies.add(r));
+                rommGames.data.filter_values.languages.forEach(r => filters.languages.add(r));
+                rommGames.data.filter_values.player_counts.forEach(r => filters.player_counts.add(r));
+                rommGames.data.filter_values.genres.forEach(r => filters.genres.add(r));
+
                 games.push(...rommGames.data.items.map(g =>
                 {
                     const game: FrontEndGameTypeWithIds = {
@@ -149,6 +170,16 @@ export default class RommIntegration implements PluginType
                     return game;
                 }));
             }
+        });
+
+        ctx.hooks.games.fetchFilters.tapPromise(desc.name, async ({ filters }) =>
+        {
+            const rommFilters = await getRomFiltersApiRomsFiltersGet({ throwOnError: true });
+            rommFilters.data.age_ratings.forEach(r => filters.age_ratings.add(r));
+            rommFilters.data.companies.forEach(r => filters.companies.add(r));
+            rommFilters.data.languages.forEach(r => filters.languages.add(r));
+            rommFilters.data.player_counts.forEach(r => filters.player_counts.add(r));
+            rommFilters.data.genres.forEach(r => filters.genres.add(r));
         });
 
         ctx.hooks.auth.loginComplete.tapPromise(desc.name, async ({ service }) =>
@@ -277,10 +308,10 @@ export default class RommIntegration implements PluginType
                 const rommPlatform = rommPlatforms.find(p => p.slug === game.platform_slug);
                 if (rommPlatform)
                 {
-                    const rommGames = await getRomsApiRomsGet({ query: { genres: game.genres, genres_logic: 'any' } });
+                    const rommGames = await getRomsApiRomsGet({ query: { genres: game.metadata.genres, genres_logic: 'any' } });
                     if (rommGames.data)
                     {
-                        games.push(...rommGames.data.items.map(g => ({ ...this.convertRomToFrontend(g), metadata: g.metadatum })));
+                        games.push(...rommGames.data.items.map(g => ({ ...this.convertRomToFrontend(g) })));
                     }
                 }
             }

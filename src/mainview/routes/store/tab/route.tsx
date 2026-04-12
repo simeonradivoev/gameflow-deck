@@ -1,6 +1,7 @@
 import { AutoFocus } from '@/mainview/components/AutoFocus';
 import { FilterUI } from '@/mainview/components/Filters';
 import { HeaderUI } from '@/mainview/components/Header';
+import HeaderSearchField from '@/mainview/components/HeaderSearchField';
 import SelectMenu from '@/mainview/components/SelectMenu';
 import Shortcuts, { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { StoreContext } from '@/mainview/scripts/contexts';
@@ -13,7 +14,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMatchRoute, useRouter } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { useSessionStorage } from 'usehooks-ts';
 import z from 'zod';
 
 export const Route = createFileRoute('/store/tab')({
@@ -95,6 +97,8 @@ function RouteComponent ()
     emulators: { label: "Emulators", selected: useIsSettings('emulators') },
     games: { label: "Games", selected: useIsSettings('games') }
   };
+  const [search, setSearch] = useSessionStorage<string | undefined>(`${router.history.location.pathname}-search`, undefined);
+  const [, setGamesSearch] = useSessionStorage<string | undefined>(`/store/tab/games-search`, undefined);
 
   const handleDetails = (type: string, source: string, id: string, focus: string) =>
   {
@@ -120,6 +124,19 @@ function RouteComponent ()
     }
   };
 
+  const handleSearch = (search: string | undefined) =>
+  {
+    if (filters['home'].selected)
+    {
+      setGamesSearch(search);
+      router.navigate({ to: '/store/tab/games', replace: true, viewTransition: { types: ['slide-up'] } });
+    } else
+    {
+      setSearch(search);
+    }
+
+  };
+
   const isMobile = mobileCheck();
   useStickyDataAttr(headerRef, sentinelRef, ref);
 
@@ -129,7 +146,7 @@ function RouteComponent ()
         <div className="relative flex flex-col min-h-screen text-base-content z-10" >
           <div ref={sentinelRef} className="h-0" />
           <div ref={headerRef} className='sticky p-2 group top-0 not-mobile:data-stuck:backdrop-blur-xl z-15 mobile:data-stuck:bg-base-300'>
-            <HeaderUI />
+            <HeaderUI buttonElements={<HeaderSearchField compact={useIsSettings('')} id={'store-search'} search={search} onSubmit={handleSearch} />} />
           </div>
           <TopArea filters={filters} />
           <StoreOutlet />

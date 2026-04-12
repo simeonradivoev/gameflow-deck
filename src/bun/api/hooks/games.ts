@@ -37,6 +37,10 @@ export class GameHooks
     fetchGames = new AsyncSeriesHook<[ctx: {
         query: GameListFilterType;
         games: FrontEndGameTypeWithIds[];
+        filters: FrontEndFilterSets;
+    }]>(['ctx']);
+    fetchFilters = new AsyncSeriesHook<[ctx: {
+        filters: FrontEndFilterSets;
     }]>(['ctx']);
     fetchGame = new AsyncSeriesBailHook<[ctx: {
         source: string;

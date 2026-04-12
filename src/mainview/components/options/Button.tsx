@@ -36,9 +36,9 @@ export function Button (data: {
     tooltipType?: "base" | "accent" | "error" | "warning";
 } & InteractParams & FocusParams)
 {
-    const handleAction = (e?: any) =>
+    const handleAction = (event?: Event) =>
     {
-        data.onAction?.(e);
+        data.onAction?.({ event, focusKey });
         oneShot('click');
     };
     const { ref, focused, focusKey } = useFocusable({
@@ -50,12 +50,12 @@ export function Button (data: {
 
     if (data.shortcutLabel)
     {
-        useShortcuts(focusKey, () => [{ label: data.shortcutLabel, action: data.onAction, button: GamePadButtonCode.A }], [data.shortcutLabel]);
+        useShortcuts(focusKey, () => [{ label: data.shortcutLabel, action: handleAction, button: GamePadButtonCode.A }], [data.shortcutLabel]);
     }
 
     return <button
         ref={ref}
-        onClick={handleAction}
+        onClick={e => handleAction(e.nativeEvent)}
         disabled={data.disabled}
         data-tooltip={data.tooltip}
         data-tooltip-type={data.tooltipType}

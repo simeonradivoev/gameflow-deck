@@ -28,7 +28,7 @@ function Plugin (data: {
             <div className='text-sm text-base-content/40'>{data.plugin.name} ({data.plugin.version})</div>
         </div>
     </div>} className='flex p-4 bg-base-200 rounded-3xl'>
-        <OptionInput onChange={data.setEnabled} value={data.plugin.enabled} name={data.plugin.name} type="checkbox" />
+        <OptionInput onChange={v => data.setEnabled(!!v)} value={data.plugin.enabled} name={data.plugin.name} type="checkbox" />
         <Button id={`${data.plugin.name}-details`} ><Search /> Details</Button>
     </OptionSpace>;
 }

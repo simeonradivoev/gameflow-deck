@@ -60,7 +60,19 @@ export async function fixSource (source: string, id: string)
 
         if (foundGame)
         {
-            await db.update(appSchema.games).set({ source: foundGame.id.source, source_id: foundGame.id.id }).where(eq(appSchema.games.id, valid.localGame.id));
+            await db.update(appSchema.games).set({
+                source: foundGame.id.source,
+                source_id: foundGame.id.id,
+                metadata: {
+                    age_ratings: foundGame.metadata.age_ratings,
+                    genres: foundGame.metadata.genres,
+                    player_count: foundGame.metadata.player_count ?? undefined,
+                    companies: foundGame.metadata.companies,
+                    game_modes: foundGame.metadata.game_modes,
+                    average_rating: foundGame.metadata.average_rating ?? undefined,
+                    first_release_date: foundGame.metadata.first_release_date?.getTime() ?? undefined,
+                }
+            }).where(eq(appSchema.games.id, valid.localGame.id));
             return true;
         } else
         {
@@ -82,6 +94,9 @@ export async function validateGameSource (source: string, id: string): Promise<{
     if (!localGame) return { valid: true };
     if (localGame.source && localGame.source_id)
     {
+        // Store should be immutable
+        if (localGame.source === 'store') return { valid: true, localGame };
+
         const sourceGame = await plugins.hooks.games.fetchGame.promise({ source: localGame.source, id: localGame.source_id });
         if (!sourceGame) return { valid: false, reason: "Source Missing", localGame };
         if (sourceGame.imdb_id !== (localGame.igdb_id ?? undefined) && sourceGame.ra_id !== (localGame.ra_id ?? undefined))

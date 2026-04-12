@@ -23,7 +23,6 @@ import { GamesSection } from "@/mainview/components/store/GamesSection";
 import Details from "@/mainview/components/game/Details";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import SelectMenu from "@/mainview/components/SelectMenu";
-import { stat } from "node:fs";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>
@@ -97,12 +96,12 @@ function Stats (data: { game: FrontEndGameTypeDetailed | undefined; })
   {
     if (data.game.path_fs)
       stats.push({ label: "Location", content: data.game.path_fs, icon: <Folder /> });
-    if (data.game.companies)
-      stats.push({ label: "Companies", content: data.game.companies });
-    if (data.game.genres)
-      stats.push({ label: 'Genres', content: data.game.genres });
-    if (data.game.release_date)
-      stats.push({ label: "Release Date", content: data.game.release_date.toLocaleDateString(), icon: <Calendar /> });
+    if (data.game.metadata.companies)
+      stats.push({ label: "Companies", content: data.game.metadata.companies });
+    if (data.game.metadata.genres)
+      stats.push({ label: 'Genres', content: data.game.metadata.genres });
+    if (data.game.metadata.first_release_date)
+      stats.push({ label: "Release Date", content: data.game.metadata.first_release_date.toLocaleDateString(), icon: <Calendar /> });
     if (data.game.emulators)
       stats.push({ label: "Emulators", content: data.game.emulators.map(e => e.name) });
     if (data.game.source)

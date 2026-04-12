@@ -13,11 +13,10 @@ export default function ActionButton (data: {
     onFocus?: () => void;
     tooltip?: string,
     tooltip_type?: 'accent' | 'error';
-    onAction?: () => void;
     disabled?: boolean;
-})
+} & InteractParams)
 {
-    const { ref } = useFocusable({ focusKey: data.id, onFocus: data.onFocus, onEnterPress: data.onAction, focusable: data.disabled !== true });
+    const { ref, focusKey } = useFocusable({ focusKey: data.id, onFocus: data.onFocus, onEnterPress: () => data.onAction?.({ focusKey }), focusable: data.disabled !== true });
     const styles = {
         primary: "bg-primary text-primary-content focused:bg-base-content focused:text-base-300 focusable focusable-primary",
         base: " text-base-content border-dashed border-base-content/20 border-2 focused:bg-base-content focused:text-base-300 focusable focusable-primary",
@@ -29,7 +28,7 @@ export default function ActionButton (data: {
             <button
                 disabled={data.disabled}
                 ref={ref}
-                onClick={data.onAction}
+                onClick={e => data.onAction?.({ event: e.nativeEvent, focusKey })}
                 data-tooltip={data.tooltip}
                 data-tooltip-type={data.tooltip_type}
                 className={twMerge("header-icon flex flex-col gap-2 md:px-5 md:py-4 rounded-3xl md:text-2xl justify-center items-center cursor-pointer disabled:opacity-30 active:bg-base-100 active:transition-none active:text-base-content",

@@ -234,7 +234,7 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
     });
   }
 
-  return <div onClick={handleSelect} ref={ref} style={{ viewTimelineName: "header-accounts" }} className="avatar-group cursor-pointer -space-x-6 w-fit flex items-center gap-2 drop-shadow-sm overflow-visible rounded-3xl focusable focusable-hover ">
+  return <div onClick={handleSelect} ref={ref} style={{ viewTimelineName: "header-accounts" }} className="avatar-group cursor-pointer -space-x-6 w-fit flex items-center gap-2 drop-shadow-sm overflow-visible rounded-3xl focusable focusable-primary focusable-hover ">
     {accounts?.map(a => <HeaderAvatar
       key={`header-avatar-${a.id}`}
       id={`account-${a.id}`}
@@ -260,7 +260,8 @@ export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElement
       </div>
       {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}
       <div className="flex gap-2">
-        {data.buttonElements ?? data.buttons?.map(b => <RoundButton
+        {data.buttonElements}
+        {data.buttons?.map(b => <RoundButton
           key={b.id}
           className={twMerge("header-icon sm:size-10 md:size-14", b.className)}
           id={b.id}
@@ -306,7 +307,7 @@ export function HeaderUI (data: HeaderUIParams)
   );
 }
 
-export function StickyHeaderUI (data: { ref: RefObject<any>; className?: string; } & HeaderUIParams)
+export function StickyHeaderUI (data: { ref: RefObject<any>; className?: string; children?: any; } & HeaderUIParams)
 {
   const [isStuck, setIsStuck] = useState(false);
   const headerRef = useRef(null);
@@ -317,6 +318,7 @@ export function StickyHeaderUI (data: { ref: RefObject<any>; className?: string;
     <div ref={sentinelRef} className="h-0" />
     <div ref={headerRef} className={twMerge('sticky not-mobile:data-stuck:backdrop-blur-xl transition-all top-0 px-2 p-2 not-data-stuck:bg-base-200 mobile:bg-base-300 z-15', data.className)}>
       <HeaderUI focusable={!isStuck} {...data} />
+      {data.children}
     </div>
   </>;
 }

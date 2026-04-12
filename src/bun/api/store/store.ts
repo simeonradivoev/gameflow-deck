@@ -25,7 +25,22 @@ export const store = new Elysia({ prefix: '/api/store' })
         });
         const emulatesParsed = await getAllStoreEmulatorPackages();
         let frontEndEmulators = await Promise.all(emulatesParsed
-            .filter(e => e.os.includes(process.platform as any))
+            .filter(e =>
+            {
+                if (!e.os.includes(process.platform as any)) return false;
+                if (query.search)
+                {
+                    const lowerCaseSearch = query.search.toLocaleLowerCase();
+
+                    if (e.name.toLocaleLowerCase().includes(lowerCaseSearch) || e.systems.some(s => s.toLocaleLowerCase().includes(lowerCaseSearch)) || e.keywords?.some(k => k.toLocaleLowerCase().includes(lowerCaseSearch)))
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+                return true;
+            })
             .map(async (emulator) =>
             {
                 const systems = await buildStoreFrontendEmulatorSystems(emulator);
@@ -77,7 +92,8 @@ export const store = new Elysia({ prefix: '/api/store' })
                 limit: z.coerce.number().optional(),
                 missing: z.stringbool().optional().describe("Show Only Non Installed emulators"),
                 orderBy: z.enum(['name', 'recently_updated', 'importance']).optional(),
-                related: z.string().optional()
+                related: z.string().optional(),
+                search: z.string().optional()
             })
         })
     .get('/games/featured', async () =>

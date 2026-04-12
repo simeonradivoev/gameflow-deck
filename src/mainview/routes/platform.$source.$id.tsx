@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CollectionsDetail } from "../components/CollectionsDetail";
 import { useQuery } from "@tanstack/react-query";
-import { RPC_URL } from "../../shared/constants";
+import { GameListFilterSchema, GameListFilterType, RPC_URL } from "../../shared/constants";
 import { platformQuery } from "@queries/romm";
 import { zodValidator } from "@tanstack/zod-adapter";
 import z from "zod";
+import { useLocalStorage } from "usehooks-ts";
 
 export const Route = createFileRoute("/platform/$source/$id")({
   component: RouteComponent,
-  validateSearch: zodValidator(z.object({ countHint: z.number().optional() }))
+  validateSearch: zodValidator(z.object({
+    countHint: z.number().optional()
+  }))
 });
 
 function PlatformTitle (data: {})
@@ -29,11 +32,14 @@ function RouteComponent ()
 {
   const { source, id } = Route.useParams();
   const { countHint } = Route.useSearch();
+  const [filter, setFilter] = useLocalStorage<GameListFilterType>("platforms-filters", {});
 
   return (
     <div className="w-full h-full">
       <CollectionsDetail
-        countHit={countHint}
+        localFilter={filter}
+        setLocalFilter={setFilter}
+        countHint={countHint}
         title={<PlatformTitle />}
         filters={{ platform_id: Number(id), platform_source: source }}
       />

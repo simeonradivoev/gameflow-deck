@@ -95,9 +95,9 @@ export function StoreEmulatorCard (data: {
                     >
                         <div className="bg-primary in-data-[full-support=false]:bg-warning in-data-[full-support=false]:text-warning-content in-aria-disabled:bg-base-200 in-aria-disabled:text-base-content text-primary-content rounded-full p-1.5"><WandSparkles className="size-5" /></div>
                     </div>}
-                    {data.emulator.validSources.slice(0, 3).map(s =>
+                    {data.emulator.validSources.slice(0, 3).map((s, i) =>
                     {
-                        return <div className="tooltip" data-tip={s.type}>
+                        return <div key={i} className="tooltip" data-tip={s.type}>
                             <div data-source={s.type} className="flex items-center justify-center rounded-full p-1 size-8 bg-base-300 text-base-content data-[source=store]:bg-success data-[source=store]:text-success-content">
                                 {emulatorStatusIcons[s.type]}
                             </div>

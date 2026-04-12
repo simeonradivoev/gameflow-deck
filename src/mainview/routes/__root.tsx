@@ -6,6 +6,8 @@ import { mobileCheck, useLocalSetting } from "../scripts/utils";
 import useActiveControl from "../scripts/gamepads";
 import { useEffect } from "react";
 import AppCommunication from "../components/AppCommunication";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
@@ -32,6 +34,9 @@ function RootComponent ()
 
   }, [theme]);
 
+  const queryDevOptions = useLocalSetting('showQueryDevOptions');
+  const routerDevOptions = useLocalSetting('showRouterDevOptions');
+
   return (
     <div data-device={isMobile ? 'mobile' : ''} data-active-control={control} className="w-screen h-screen overflow-hidden">
       <AppCommunication>
@@ -39,12 +44,8 @@ function RootComponent ()
       </AppCommunication>
       <Notifications />
       <Toaster containerStyle={{ viewTimelineName: 'toasters', viewTransitionName: 'notifications' }} />
-      {/*import.meta.env.DEV && !isMobile &&
-        <>
-          <TanStackRouterDevtools position="top-left" />
-          <ReactQueryDevtools buttonPosition="top-right" />
-        </>
-      */}
+      {queryDevOptions && <ReactQueryDevtools buttonPosition="top-right" />}
+      {routerDevOptions && <TanStackRouterDevtools position="top-left" />}
     </div >
   );
 }

@@ -47,6 +47,7 @@ import { gameQuery } from "../scripts/queries/romm";
 import { oneShot } from "../scripts/audio/audio";
 import { FloatingShortcuts } from "../components/Shortcuts";
 import SelectMenu from "../components/SelectMenu";
+import HeaderSearchField from "../components/HeaderSearchField";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -232,13 +233,13 @@ function MainMenu ()
     >
       <FocusContext.Provider value={focusKey}>
         <CircleIcon
-          onAction={(e) => router.navigate({ to: "/games", state: { eventType: e?.type } })}
+          onAction={(e) => router.navigate({ to: "/games", state: { eventType: e?.event?.type } })}
           icon={<Gamepad2 />}
           label="Home"
           type="secondary"
         />
         <CircleIcon icon={<MessageSquare />} label="News" />
-        <CircleIcon type="info" icon={<Store />} onAction={(e) => router.navigate({ to: "/store/tab", state: { eventType: e?.type } })} label="Shop" />
+        <CircleIcon type="info" icon={<Store />} onAction={(e) => router.navigate({ to: "/store/tab", state: { eventType: e?.event?.type } })} label="Shop" />
         <CircleIcon icon={<Image />} label="Album" />
         <CircleIcon
           icon={<Gamepad2 />}
@@ -247,7 +248,7 @@ function MainMenu ()
         <CircleIcon
           onAction={(e) =>
           {
-            router.navigate({ to: '/settings/accounts', state: { eventType: e?.type } });
+            router.navigate({ to: '/settings/accounts', state: { eventType: e?.event?.type } });
           }}
           icon={<Settings />}
           label="Settings"
@@ -264,9 +265,9 @@ function CircleIcon (data: {
   icon?: JSX.Element;
 } & InteractParams)
 {
-  const handleAction = (e?: Event) =>
+  const handleAction = (event?: Event) =>
   {
-    data.onAction?.(e);
+    data.onAction?.({ event, focusKey });
     oneShot('click');
   };
   const { ref, focusKey } = useFocusable({
@@ -313,10 +314,13 @@ export default function ConsoleHomeUI ()
   if (mobileCheck())
     headerButtons.push({ id: "fullscreen", icon: <Maximize />, action: handleFullscreen });
   headerButtons.push(
-    { id: "search-header-button", icon: <Search /> },
     { id: "power-button", icon: <Power />, external: true, action: () => close.mutate(), className: "focusable-error!" },
     { id: "settings-header-button", icon: <Settings />, external: true, action: () => router.navigate({ to: "/settings/accounts" }) }
   );
+  const handleSearch = (search: string | undefined) =>
+  {
+    router.navigate({ to: '/games', search: { search } });
+  };
 
   return (
     <AnimatedBackground animated ref={ref} backgroundKey="home-background" className="grid grid-cols-3 sm:landscape:grid-rows-[3rem_minmax(var(--game-card-height-safe),1fr)_4rem] md:landscape:grid-rows-[5rem_4rem_minmax(var(--game-card-height-safe),1fr)_6rem_6rem] gap-1 portrait:grid-rows-[3rem_4rem_minmax(var(--game-card-height-safe),1fr)] max-h-screen overflow-clip">
@@ -334,7 +338,7 @@ export default function ConsoleHomeUI ()
           />
         </div>
         <div className="flex sm:landscape:col-span-2 sm:portrait:col-start-2 sm:portrait:col-span-2 sm:portrait:row-start-1 md:col-start-3 md:col-span-1 justify-end md:pr-2 md:pt-2">
-          <HeaderStatusBar buttons={headerButtons} />
+          <HeaderStatusBar buttons={headerButtons} buttonElements={<HeaderSearchField compact id={"header-search-field"} search={undefined} onSubmit={handleSearch} />} />
         </div>
         <div className="col-span-3 min-h-0 landscape:flex landscape:items-center-safe">
           <HomeList

@@ -4,12 +4,11 @@ import
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { GameMeta } from "../../shared/constants";
-import CardElement, { GameCardFocusHandler, GameCardParams } from "./CardElement";
+import CardElement, { GameCardParams } from "./CardElement";
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import { oneShot } from "../scripts/audio/audio";
-import { GamepadButtonEvent } from "../scripts/gamepads";
 
 export interface GameMetaExtra extends GameMeta
 {
@@ -26,13 +25,14 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusPara
     preview = data.game.previewUrl;
   }
 
-  const handleAction = (e?: Event) =>
+  const handleAction = (ctx: InteractParamsArgs) =>
   {
     data.game.onSelect?.();
-    data.onAction?.();
+    data.onAction?.({ event, focusKey: data.game.focusKey });
     oneShot('click');
   };
-  useShortcuts(data.game.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: handleAction }]);
+
+  useShortcuts(data.game.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: event => handleAction({ event, focusKey: data.game.focusKey }) }]);
 
   return (
     <CardElement
@@ -42,10 +42,10 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusPara
       title={data.game.title}
       subtitle={data.game.subtitle ?? ""}
       srcset={data.game.previewSrcset}
-      onFocus={(id, node, details) =>
+      onFocus={(focusKey, node, details) =>
       {
-        data.game.onFocus?.(details);
-        data.onFocus?.(id, node, details);
+        data.game.onFocus?.(focusKey, node, details);
+        data.onFocus?.(focusKey, node, details);
       }}
       onAction={handleAction}
       preview={preview}
@@ -61,16 +61,18 @@ export function CardList (data: {
   games: GameMetaExtra[];
   grid?: boolean;
   onSelectGame?: (id: string) => void;
-  onGameFocus?: GameCardFocusHandler;
+  focus?: string;
   className?: string;
   finalElement?: JSX.Element;
   saveChildFocus?: 'session' | 'local';
-})
+} & FocusParams)
 {
   const { ref, focusKey } = useFocusable({
     focusKey: data.id,
     forceFocus: true,
-    autoRestoreFocus: true
+    autoRestoreFocus: true,
+    focusable: data.games.length > 0,
+    preferredChildFocusKey: data.focus
   });
 
   return (
@@ -92,7 +94,7 @@ export function CardList (data: {
     >
       <FocusContext.Provider value={focusKey}>
         {data.games.map((g, i) => <LocalCardElement
-          key={g.id} onFocus={data.onGameFocus} game={g} onAction={() => data.onSelectGame?.(g.id)} i={i} />)}
+          key={g.id} onFocus={data.onFocus} game={g} onAction={() => data.onSelectGame?.(g.id)} i={i} />)}
         {data.finalElement}
       </FocusContext.Provider>
     </ul>

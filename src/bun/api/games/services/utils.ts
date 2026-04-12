@@ -32,7 +32,7 @@ export function convertLocalToFrontend (g: typeof schema.games.$inferSelect & {
 })
 {
     const game: FrontEndGameType = {
-        platform_display_name: g.platform?.name ?? "Local",
+        platform_display_name: g.platform?.name ?? null,
         id: { id: String(g.id), source: 'local' },
         updated_at: g.created_at,
         path_cover: `/api/romm/game/local/${g.id}/cover`,
@@ -45,17 +45,24 @@ export function convertLocalToFrontend (g: typeof schema.games.$inferSelect & {
         slug: g.slug,
         name: g.name,
         platform_id: g.platform_id,
-        platform_slug: g.platform?.slug ?? null
+        platform_slug: g.platform?.slug ?? null,
+        metadata: {
+            first_release_date: g.metadata?.first_release_date !== undefined ? new Date(g.metadata?.first_release_date) : null
+        }
     };
 
     return game;
 }
 
-export function convertLocalToFrontendDetailed (g: typeof schema.games.$inferSelect & {
-    platform?: typeof schema.platforms.$inferSelect | null;
+export async function convertLocalToFrontendDetailed (g: typeof schema.games.$inferSelect & {
+    platform?: { name: string | null, slug: string | null; } | null;
     screenshotIds?: number[];
 })
 {
+
+    const exists = await checkInstalled(g.path_fs);
+    const fileSize = await calculateSize(g.path_fs);
+
     const game: FrontEndGameTypeDetailed = {
         platform_display_name: g.platform?.name ?? "Local",
         id: { id: String(g.id), source: 'local' },
@@ -72,9 +79,18 @@ export function convertLocalToFrontendDetailed (g: typeof schema.games.$inferSel
         platform_id: g.platform_id,
         platform_slug: g.platform?.slug ?? null,
         summary: g.summary,
-        fs_size_bytes: 0,
-        missing: false,
-        local: true
+        fs_size_bytes: fileSize,
+        missing: !exists,
+        local: true,
+        metadata: {
+            genres: g.metadata.genres ?? [],
+            companies: g.metadata.companies ?? [],
+            game_modes: g.metadata.game_modes ?? [],
+            age_ratings: g.metadata.age_ratings ?? [],
+            player_count: g.metadata.player_count ?? null,
+            average_rating: g.metadata.average_rating ?? null,
+            first_release_date: g.metadata.first_release_date ? new Date(g.metadata.first_release_date) : null
+        }
     };
 
     return game;
@@ -107,7 +123,10 @@ export async function convertStoreToFrontend (system: string, id: string, storeG
         name: storeGame.title,
         platform_id: null,
         platform_slug: rommSystem?.sourceSlug ?? system,
-        paths_screenshots: storeGame.pictures.screenshots?.map((s: string) => `/api/romm/image?url=${encodeURIComponent(s)}`) ?? []
+        paths_screenshots: storeGame.pictures.screenshots?.map((s: string) => `/api/romm/image?url=${encodeURIComponent(s)}`) ?? [],
+        metadata: {
+            first_release_date: null
+        }
     };
 
     return game;
@@ -131,6 +150,15 @@ export async function convertStoreToFrontendDetailed (system: string, id: string
         fs_size_bytes: size,
         missing: false,
         local: false,
+        metadata: {
+            genres: storeGame.tags,
+            companies: [],
+            game_modes: [],
+            age_ratings: [],
+            player_count: "",
+            average_rating: null,
+            first_release_date: null
+        }
     };
 
     return detailed;
@@ -148,29 +176,7 @@ export async function getLocalGameDetailed (match: any)
 
     if (localGame)
     {
-        const exists = await checkInstalled(localGame.path_fs);
-        const fileSize = await calculateSize(localGame.path_fs);
-        const game: FrontEndGameTypeDetailed = {
-            path_cover: `/api/romm/game/local/${localGame.id}/cover`,
-            updated_at: localGame.created_at,
-            id: { id: String(localGame.id), source: 'local' },
-            path_platform_cover: `/api/romm/platform/local/${localGame.platform_id}/cover`,
-            fs_size_bytes: fileSize ?? null,
-            paths_screenshots: localGame.screenshots.map(s => `/api/romm/screenshot/${s.id}`),
-            local: true,
-            missing: !exists,
-            platform_display_name: localGame.platform?.name,
-            summary: localGame.summary,
-            source: localGame.source,
-            source_id: localGame.source_id,
-            path_fs: localGame.path_fs,
-            last_played: localGame.last_played,
-            slug: localGame.slug,
-            name: localGame.name,
-            platform_id: localGame.platform_id,
-            platform_slug: localGame.platform.slug
-        };
-        return game;
+        return convertLocalToFrontendDetailed({ ...localGame, screenshotIds: localGame.screenshots.map(s => s.id) });
     }
 
     return undefined;

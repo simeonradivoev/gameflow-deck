@@ -57,17 +57,15 @@ declare interface FrontEndGameTypeDetailedEmulator extends FrontEndEmulator
 
 }
 
-declare interface FrontEndGameTypeDetailed extends FrontEndGameType
+declare interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameType, "metadata">
 {
     summary: string | null;
     fs_size_bytes: number | null;
     missing: boolean;
     local: boolean;
-    genres?: string[];
-    companies?: string[];
-    release_date?: Date;
     imdb_id?: number;
     ra_id?: number;
+    metadata: FrontEndGameMetadataDetailed,
     emulators?: FrontEndGameTypeDetailedEmulator[],
     achievements?: {
         unlocked: number;
@@ -162,6 +160,39 @@ declare interface FrontEndGameTypeWithIds extends FrontEndGameType
     ra_id: number | null;
 }
 
+declare interface FrontEndFilterSets
+{
+    age_ratings: Set<string>,
+    player_counts: Set<string>,
+    languages: Set<string>,
+    companies: Set<string>,
+    genres: Set<string>;
+}
+
+declare interface FrontEndFilterLists
+{
+    age_ratings: string[],
+    player_counts: string[],
+    languages: string[],
+    companies: string[],
+    genres: string[];
+}
+
+declare interface FrontEndGameMetadata
+{
+    first_release_date: Date | null;
+}
+
+declare interface FrontEndGameMetadataDetailed extends FrontEndGameMetadata
+{
+    genres: string[],
+    companies: string[],
+    game_modes: string[],
+    age_ratings: string[];
+    player_count: string | null;
+    average_rating: number | null;
+}
+
 declare interface FrontEndGameType
 {
     platform_display_name: string | null,
@@ -173,6 +204,7 @@ declare interface FrontEndGameType
     path_cover: string | null,
     last_played: Date | null,
     updated_at: Date,
+    metadata: FrontEndGameMetadata,
     slug: string | null,
     name: string | null,
     platform_id: number | null,

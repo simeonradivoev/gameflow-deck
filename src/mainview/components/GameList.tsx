@@ -3,28 +3,28 @@ import { GameMetaExtra, CardList } from "./CardList";
 import { DefaultRommStaleTime, GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
 import { HardDrive } from "lucide-react";
-import { JSX, useContext } from "react";
-import { GameCardFocusHandler } from "./CardElement";
+import { JSX, Ref, useContext, useEffect } from "react";
 import { useLocalSetting } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import { allGamesQuery } from "@queries/romm";
 
-export interface GameListParams
+export interface GameListParams extends FocusParams
 {
     id: string,
     filters?: GameListFilterType,
     grid?: boolean,
     setBackground?: (url: string) => void;
     onGameSelect?: (id: FrontEndId, source: string | null, sourceId: string | null) => void;
-    onFocus?: GameCardFocusHandler;
+    focus?: string;
     className?: string;
     finalElement?: JSX.Element;
     saveChildFocus?: "session" | "local";
+    setFilterValues?: (filters: FrontEndFilterLists) => void;
 }
 
 export function GameList (data: GameListParams)
 {
-    const games = useSuspenseQuery({ ...allGamesQuery(data.filters), staleTime: DefaultRommStaleTime });
+    const games = useSuspenseQuery({ ...allGamesQuery(data.filters), queryKey: ['games', data.filters ?? 'all'], staleTime: DefaultRommStaleTime });
     const navigator = useNavigate();
     const blur = useLocalSetting('backgroundBlur');
     const backgroundContext = useContext(AnimatedBackgroundContext);
@@ -48,6 +48,11 @@ export function GameList (data: GameListParams)
         }
     };
 
+    useEffect(() =>
+    {
+        data.setFilterValues?.(games.data.filters);
+    }, [games.data.filters]);
+
     function handleDefaultSelect (g: FrontEndGameType)
     {
         navigator({ to: '/game/$source/$id', params: { id: String(g.source_id ?? g.id.id), source: g.source ?? g.id.source } });
@@ -60,9 +65,10 @@ export function GameList (data: GameListParams)
                 type="game"
                 grid={data.grid}
                 className={data.className}
-                onGameFocus={data.onFocus}
+                onFocus={data.onFocus}
                 finalElement={data.finalElement}
                 saveChildFocus={data.saveChildFocus}
+                focus={data.focus}
                 games={games.data?.games
                     .map(
                         (g) =>

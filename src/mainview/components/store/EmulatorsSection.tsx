@@ -4,7 +4,7 @@ import
     useFocusable,
     FocusContext,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { ChevronRight, Joystick } from "lucide-react";
+import { ChevronRight, Joystick, LayoutGrid } from "lucide-react";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { scrollIntoNearestParent, useDragScroll } from "@/mainview/scripts/utils";
 import FocusDots from "../FocusDots";
@@ -26,9 +26,9 @@ function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (detail
         role="button"
         tabIndex={0}
         onClick={data.onAction}
-        className={"flex focusable focusable-info bg-base-100 rounded-4xl transition-shadow focused:animate-scale-small p-4 justify-center items-center min-w-2xs gap-2 hover:bg-base-300 cursor-pointer"}
+        className={"flex focusable focusable-hover focusable-info bg-base-100 rounded-4xl transition-shadow focused:animate-scale-small p-4 justify-center items-center min-w-2xs gap-2 cursor-pointer"}
     >
-        See All Emulators <ChevronRight />
+        <LayoutGrid /> See All Emulators <ChevronRight />
     </div>;
 }
 

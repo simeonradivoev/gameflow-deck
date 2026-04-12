@@ -4,9 +4,9 @@ import { useIntersectionObserver } from "usehooks-ts";
 
 export default function LoadMoreButton (data: { isFetching: boolean; lastId?: FrontEndId; } & FocusParams & InteractParams)
 {
-    const handleAction = (e?: Event) =>
+    const handleAction = (event?: Event) =>
     {
-        data.onAction?.(e);
+        data.onAction?.({ event, focusKey });
         if (data.lastId && focused)
             setFocus(FOCUS_KEYS.GAME_CARD(data.lastId));
     };
@@ -17,8 +17,6 @@ export default function LoadMoreButton (data: { isFetching: boolean; lastId?: Fr
         onFocus: (_l, _p, details) => data.onFocus?.(focusKey, ref.current, details),
         onEnterPress: handleAction
     });
-
-
 
     const { ref: intersct } = useIntersectionObserver({
         initialIsIntersecting: true,

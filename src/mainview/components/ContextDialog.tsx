@@ -35,7 +35,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
     const handleAction = () =>
     {
         if (data.disabled === true) return;
-        data.action?.({ close: context.close, focus: focusSelf });
+        data.action?.({ close: context.close, focus: focusSelf, selected: data.selected });
         oneShot('click');
     };
     const { ref, focusSelf, focusKey } = useFocusable({
@@ -82,7 +82,7 @@ export interface DialogEntry
     icon?: string | JSX.Element;
     type: 'primary' | 'secondary' | 'accent' | 'info' | 'warning' | 'error';
     selected?: boolean;
-    action?: (ctx: { close: () => void, focus: (focusDetails?: FocusDetails | undefined) => void; }) => void;
+    action?: (ctx: { close: () => void, focus: (focusDetails?: FocusDetails | undefined) => void; selected?: boolean; }) => void;
     shortcuts?: Shortcut[];
 }
 
@@ -102,6 +102,7 @@ export function useContextDialog (id: string, data: { content?: JSX.Element; cla
         {
             setOpen(false);
             data.onClose?.();
+            oneShot('closeContext');
             if (newSourceFocusKey)
             {
                 setFocus(newSourceFocusKey, { instant: true });
@@ -118,7 +119,12 @@ export function useContextDialog (id: string, data: { content?: JSX.Element; cla
     return {
         dialog,
         open,
-        setOpen: handleClose
+        setOpen: handleClose,
+        setToggle: (focNewSourceFocusKey?: string | undefined) =>
+        {
+            if (open) handleClose(false, focNewSourceFocusKey);
+            else handleClose(true, focNewSourceFocusKey);
+        }
     };
 }
 
@@ -142,7 +148,6 @@ export function ContextDialog (data: {
     const handleClose = () =>
     {
         data.close(false);
-        oneShot('closeContext');
     };
     useEffect(() =>
     {
@@ -161,7 +166,7 @@ export function ContextDialog (data: {
     }] : [], [data.open]);
 
     return <dialog ref={ref} open={data.open} closedby="any" className={
-        twMerge("fixed modal cursor-pointer bg-base-300/80 backdrop-blur-md backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
+        twMerge("fixed modal cursor-pointer bg-base-300/80 not-mobile:backdrop-blur-md backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
             classNames({ "opacity-0": !data.open }), data.backdropClassName)
     }
         onClick={handleClose}>
@@ -169,7 +174,7 @@ export function ContextDialog (data: {
             <ContextDialogContext value={{ id: data.id, close: handleClose }} >
                 <div
                     className={twMerge(
-                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] cursor-auto backdrop-blur-2xl",
+                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] max-h-[80vh] overflow-y-auto cursor-auto not-mobile:backdrop-blur-2xl",
                         data.open ? "animate-scale-delayed" : "opacity-0",
                         data.className)
                     }

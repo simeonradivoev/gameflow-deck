@@ -50,9 +50,15 @@ declare interface FocusParams
   onFocus?: (focusKey: string, node: HTMLElement, details: Record<string, any>) => void;
 }
 
+declare interface InteractParamsArgs
+{
+  event?: Event,
+  focusKey?: string;
+}
+
 declare interface InteractParams
 {
-  onAction?: (e?: Event) => void;
+  onAction?: (ctx: InteractParamsArgs) => void;
 }
 
 declare interface FilterOption extends FocusParams, InteractParams

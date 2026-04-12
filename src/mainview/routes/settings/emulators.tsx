@@ -148,7 +148,7 @@ function EmulatorPath (data: { id: string; })
           autocomplete="off"
           onChange={(v) =>
           {
-            setLocalValue(v);
+            setLocalValue(v as string);
             setDirty(true);
           }}
           value={localValue}

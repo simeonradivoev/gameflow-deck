@@ -1,7 +1,6 @@
 import { RPC_URL } from "@/shared/constants";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { CardList, GameMetaExtra } from "./CardList";
-import { GameCardFocusHandler } from "./CardElement";
 import { getCollectionsQuery } from "@queries/romm";
 import { useRouter } from "@tanstack/react-router";
 

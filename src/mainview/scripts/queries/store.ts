@@ -1,11 +1,12 @@
 import { infiniteQueryOptions, mutationOptions, queryOptions } from "@tanstack/react-query";
 import { rommApi, storeApi } from "../clientApi";
+import { GameListFilterType } from "@/shared/constants";
 
 
-export const storeEmulatorsQuery = queryOptions({
-    queryKey: ['store-emulators'], queryFn: async () =>
+export const storeEmulatorsQuery = (filters: { search?: string; }) => queryOptions({
+    queryKey: ['store-emulators', filters], queryFn: async () =>
     {
-        const { data, error } = await storeApi.api.store.emulators.get();
+        const { data, error } = await storeApi.api.store.emulators.get({ query: { search: filters.search } });
         if (error) throw new Error(JSON.stringify(error.value));
         return data;
     }
@@ -42,14 +43,14 @@ export const storeEmulatorDeleteMutation = mutationOptions({
         if (error) throw error;
     }
 });
-export const storeGamesInfiniteQuery = infiniteQueryOptions<{ data: FrontEndGameType[], nextPage: number; }>({
+export const storeGamesInfiniteQuery = (filter: GameListFilterType) => infiniteQueryOptions<{ data: FrontEndGameType[], nextPage: number; }>({
     initialPageParam: 0,
-    queryKey: ['store-games'],
+    queryKey: ['store-games', filter],
     getNextPageParam: (lastPage, pages) => lastPage.nextPage,
     queryFn: async (data) =>
     {
         const pageParam = data.pageParam as number;
-        const { data: games, error } = await rommApi.api.romm.games.get({ query: { source: 'store', offset: pageParam * 10, limit: 10 } });
+        const { data: games, error } = await rommApi.api.romm.games.get({ query: { ...filter, source: 'store', offset: pageParam * 10, limit: 10 } });
         if (error) throw error;
         return { data: games.games, nextPage: pageParam + 1 };
     }

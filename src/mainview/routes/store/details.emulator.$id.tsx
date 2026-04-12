@@ -356,40 +356,6 @@ export function RouteComponent ()
     });
 
     const stats: StatEntry[] = [];
-    if (emulator)
-    {
-        if (emulator.keywords)
-            stats.push({ label: "Tags", content: emulator.keywords });
-        if (emulator.storeDownloadInfo)
-            stats.push({ label: "Version", content: `${emulator.storeDownloadInfo.version ?? "Unknown"} (${emulator.storeDownloadInfo.type})` });
-        stats.push({ label: "Systems", content: emulator.systems.map(s => s.name) });
-        stats.push(...emulator.validSources.flatMap(s => [{
-            label: "Source", content: <div className="flex flex-col grow">
-                <div className="flex grow flex-wrap justify-between gap-1">
-                    <div className="flex gap-1">{emulatorStatusIcons[s.type]}{s.type}</div>
-                    <div className="text-base-content/40">{s.binPath}</div>
-                </div>
-                {emulator.integrations.some(i => i.source?.type === s.type) && <div className="divider m-0"></div>}
-                {emulator.integrations.filter(i => i.source?.type === s.type).map(i =>
-                {
-                    return <div key={i.id} className="flex flex-wrap justify-between gap-1">
-                        <div className="flex gap-2">
-                            <Puzzle />
-                            <div>{i.id}</div>
-                        </div>
-                        <div className="flex flex-wrap text-base-content/40">
-                            {i.capabilities?.map(c => <><div className="divider divider-horizontal"></div><div className="flex gap-1">{capabilityIconMap[c]}{c}</div></>)}
-                        </div>
-                    </div>;
-                })}
-            </div>
-        }]));
-        if (emulator.bios)
-            stats.push({
-                label: "Bios", content: emulator.bios && emulator.bios.length > 0 ? emulator.bios : <div className="text-warning font-semibold">Missing</div>
-            });
-
-    }
 
     return (
         <AnimatedBackground ref={ref} className="" scrolling>

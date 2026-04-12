@@ -17,11 +17,10 @@ export const SOCKETS_URL = (host: string) => `ws://${host}:${RPC_PORT}`;
 export const STORE_VERSION = "^0";
 
 export const DefaultRommStaleTime = 60 * 1000; // A minute
-export interface GameMeta
+export interface GameMeta extends FocusParams
 {
     id: string,
     onSelect?: () => void,
-    onFocus?: (details: FocusDetails) => void,
     title: string,
     subtitle: string | JSX.Element,
     previewUrl?: string;
@@ -46,7 +45,9 @@ export const LocalSettingsSchema = z.object({
     theme: z.enum(['dark', 'light', 'auto']).default('auto'),
     soundEffects: z.boolean().default(true),
     soundEffectsVolume: z.number().min(0).max(100).default(50),
-    hapticsEffects: z.boolean().default(true)
+    hapticsEffects: z.boolean().default(true),
+    showRouterDevOptions: z.boolean().default(false),
+    showQueryDevOptions: z.boolean().default(false),
 });
 
 export const GameListFilterSchema = z.object({
@@ -56,9 +57,14 @@ export const GameListFilterSchema = z.object({
     collection_id: z.coerce.number().optional(),
     collection_source: z.string().optional(),
     limit: z.coerce.number().optional(),
+    search: z.string().optional(),
     offset: z.coerce.number().optional(),
     source: z.string().optional(),
-    orderBy: z.literal(['added', 'activity', 'name']).optional()
+    localOnly: z.coerce.boolean().optional(),
+    orderBy: z.literal(['added', 'activity', 'name', 'release']).optional(),
+    age_ratings: z.union([z.string().array(), z.string().transform(v => [v])]).optional(),
+    genres: z.union([z.string().array(), z.string().transform(v => [v])]).optional(),
+    keywords: z.union([z.string().array(), z.string().transform(v => [v])]).optional(),
 });
 
 export const RommLoginDataSchema = z.object({ hostname: z.url(), username: z.string(), password: z.string() });
