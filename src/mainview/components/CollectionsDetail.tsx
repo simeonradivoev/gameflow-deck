@@ -10,7 +10,7 @@ import { GameListFilterSchema, GameListFilterType } from '@/shared/constants';
 import { HandleGoBack } from '../scripts/utils';
 import LoadingCardList from './LoadingCardList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { gameQuery } from '../scripts/queries/romm';
+import { gameFiltersQuery, gameQuery } from '../scripts/queries/romm';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import SelectMenu from './SelectMenu';
 import { RoundButton } from './RoundButton';
@@ -41,7 +41,6 @@ export interface CollectionsDetailParams
 export function CollectionsDetail (data: CollectionsDetailParams)
 {
     const router = useRouter();
-    const [filterValues, setFilterValues] = useState<FrontEndFilterLists>();
     const queryClient = useQueryClient();
     const finalFilter = { ...data.localFilter, ...data.filters };
     const focusKey = `game-list-${data.id}`;
@@ -49,6 +48,8 @@ export function CollectionsDetail (data: CollectionsDetailParams)
         focusKey,
         preferredChildFocusKey: `${focusKey}-list`
     });
+
+    const { data: filterValues } = useQuery(gameFiltersQuery({ source: data.filters?.source }));
 
     useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: (e) => HandleGoBack(router, e) }], [router]);
 
@@ -79,7 +80,6 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                             <GameList
                                 key={`${data.id}-${JSON.stringify(finalFilter)}`}
                                 grid
-                                setFilterValues={setFilterValues}
                                 filters={finalFilter}
                                 onFocus={handleScroll}
                                 focus={data.focus}

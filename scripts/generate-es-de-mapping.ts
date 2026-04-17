@@ -96,12 +96,18 @@ await Promise.all(platforms.map(async ([platform, arch]) =>
         });
 
         const rommMapping = rommPlatforms.data?.find(p =>
-            p.slug === (customMappings as any)[name] ||
-            p.slug === name ||
-            p.igdb_slug === name ||
-            p.hltb_slug === name ||
-            p.moby_slug === name ||
-            p.display_name === fullname
+        {
+            const custom = (customMappings as any)[name];
+            if (Array.isArray(custom) && custom.some(m => m === p.slug))
+            {
+                return true;
+            }
+
+            return p.slug === custom ||
+                p.slug === name ||
+                p.igdb_slug === name ||
+                p.display_name === fullname;
+        }
         );
 
         const mappings: {

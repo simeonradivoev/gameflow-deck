@@ -5,6 +5,7 @@
     "description": "ROMM Server Integration",
     "main": "./romm.ts",
     "icon": "https://romm.app/_ipx/q_80/images/blocks/logos/romm.svg",
+    "category": "sources",
     "keywords": [
         "integration",
         "romm"

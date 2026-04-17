@@ -13,6 +13,7 @@ import
   BatteryWarning,
   Bell,
   Bluetooth,
+  CircleFadingArrowUp,
   Clock,
   Settings,
   Wifi,
@@ -31,6 +32,7 @@ import { twitchLoginVerificationQuery } from "../scripts/queries/settings";
 import { SystemInfoContext } from "../scripts/contexts";
 import { useRouter } from "@tanstack/react-router";
 import { oneShot } from "../scripts/audio/audio";
+import { hasUpdateQuery } from "../scripts/queries/system";
 
 function HeaderAvatar (data: {
   id: string;
@@ -81,6 +83,14 @@ export interface HeaderAccount
   type?: "base" | "primary" | "secondary" | "accent";
   locked?: boolean;
   action?: () => void;
+}
+
+function UpdateStatus ()
+{
+  const hasUnread = false;
+  return <div className={classNames("tooltip tooltip-bottom tooltip-warning p-2 rounded-full", { "bg-warning text-warning-content": hasUnread })} data-tip="Update Available">
+    <CircleFadingArrowUp className="sm:size-4 md:size-8 text-warning" />
+  </div>;
 }
 
 function NotificationStatus ()
@@ -249,13 +259,15 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElements?: JSX.Element[] | JSX.Element; })
 {
   const { ref, focusKey } = useFocusable({ focusKey: 'header-status-bar' });
+  const { data: hasUpdate } = useQuery(hasUpdateQuery);
   return <div ref={ref} className="flex items-center sm:gap-1 md:gap-2 text drop-shadow-sm">
     <FocusContext value={focusKey}>
-      <div className="flex sm:gap-2 md:gap-5 items-center" style={{ viewTransitionName: 'status-bar-icons' }}>
+      <div className="flex gap-2 items-center" style={{ viewTransitionName: 'status-bar-icons' }}>
         <ClockStatus />
         <WiFiStatus />
         <BluetoothStatus />
         <NotificationStatus />
+        {!!hasUpdate && hasUpdate >= 1 && <UpdateStatus />}
         <BatteryStatus />
       </div>
       {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}

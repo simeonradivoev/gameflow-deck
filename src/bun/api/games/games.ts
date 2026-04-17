@@ -1,26 +1,26 @@
 import Elysia, { status } from "elysia";
 import { config, db, emulatorsDb, plugins, taskQueue } from "../app";
-import { and, eq, getTableColumns, ilike, inArray, like, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, inArray, like, sql } from "drizzle-orm";
 import z from "zod";
 import * as schema from "@schema/app";
 import fs from "node:fs/promises";
 import { GameListFilterSchema, SERVER_URL } from "@shared/constants";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
-import { convertLocalToFrontend, convertStoreToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
-import buildStatusResponse, { fixSource, getValidLaunchCommandsForGame, validateGameSource } from "./services/statusService";
+import { convertLocalToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
+import buildStatusResponse, { fixSource, getValidLaunchCommandsForGame, update, validateGameSource } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
-import { getEmulatorsForSystem, getRomFilePaths, launchCommand } from "./services/launchGameService";
+import { launchCommand } from "./services/launchGameService";
 import { getErrorMessage, SeededRandom } from "@/bun/utils";
 import { defaultFormats, defaultPlugins } from 'jimp';
 import { createJimp } from "@jimp/core";
 import webp from "@jimp/wasm-webp";
 import * as emulatorSchema from '@schema/emulators';
-import { buildStoreFrontendEmulatorSystems, getShuffledStoreGames, getStoreEmulatorPackage, getStoreGameFromPath, getStoreGameManifest } from "../store/services/gamesService";
-import { convertStoreEmulatorToFrontend } from "../store/services/emulatorsService";
+import { buildStoreFrontendEmulatorSystems, getStoreEmulatorPackage } from "../store/services/gamesService";
 import { host } from "@/bun/utils/host";
 import { LaunchGameJob } from "../jobs/launch-game-job";
 import { cores } from "../emulatorjs/emulatorjs";
+import { findEmulatorPluginIntegration } from "../store/services/emulatorsService";
 
 // A custom jimp that supports webp
 const Jimp = createJimp({
@@ -58,8 +58,15 @@ async function processImage (img: string | Buffer | ArrayBuffer, { blur, width, 
 
     if (typeof img === 'string')
     {
-        const rommFetch = await fetch(img);
-        return rommFetch;
+        const res = await fetch(img);
+
+        return new Response(res.body, {
+            status: res.status,
+            headers: {
+                "Content-Type": res.headers.get("Content-Type") ?? "image/jpeg",
+                "Cache-Control": "public, max-age=86400",
+            },
+        });
     }
 
     return img;
@@ -135,190 +142,144 @@ export default new Elysia()
     .get('/games', async ({ query, set }) =>
     {
         const games: FrontEndGameType[] = [];
-        const filterSets: FrontEndFilterSets = {
-            age_ratings: new Set(),
-            player_counts: new Set(),
-            languages: new Set(),
-            companies: new Set(),
-            genres: new Set()
-        };
 
-        if (query.source === 'store')
+        const where: any[] = [];
+        let localGamesSet: Set<string> | undefined;
+
+        if (query.platform_slug)
         {
-            const shuffledGames = await getShuffledStoreGames();
-            set.headers['x-max-items'] = shuffledGames.length;
-            const storeGames = await Promise.all(shuffledGames.filter(g =>
+            where.push(eq(schema.platforms.slug, query.platform_slug));
+        } else if (query.platform_id && query.platform_source === 'local')
+        {
+            where.push(eq(schema.platforms.id, query.platform_id));
+        }
+        else if (query.platform_id && query.platform_source)
+        {
+            const platform = await plugins.hooks.games.platformLookup.promise({ source: query.platform_source, id: query.platform_id ? String(query.platform_id) : undefined });
+            if (platform)
             {
-                if (query.search)
-                    return path.basename(g.path).toLocaleLowerCase().includes(query.search.toLocaleLowerCase());
-                return true;
-            })
-                .slice(query.offset ?? 0, Math.min((query.offset ?? 0) + (query.limit ?? 50), shuffledGames.length))
-                .map(async (e) =>
+                where.push(eq(schema.platforms.slug, platform?.slug));
+            }
+        }
+
+        if (query.search)
+        {
+            where.push(like(schema.games.name, query.search));
+        }
+
+        if (query.source)
+        {
+            where.push(eq(schema.games.source, query.source));
+        }
+
+        const ordering: any[] = [];
+
+        if (query.orderBy)
+        {
+            switch (query.orderBy)
+            {
+                case 'added':
+                    ordering.push(desc(schema.games.created_at));
+                    break;
+                case 'activity':
+                    ordering.push(sql`MAX(COALESCE(${schema.games.created_at}, '1970-01-01'), COALESCE(${schema.games.last_played}, '1970-01-01')) DESC`);
+                    break;
+                case 'name':
+                    ordering.push(desc(schema.games.name));
+                    break;
+                case "release":
+                    ordering.push(sql`json_extract(${schema.games.metadata}, '$.first_release_date') DESC NULLS LAST`);
+                    break;
+            }
+        }
+
+        const localGames = await db.select({
+            ...getTableColumns(schema.games),
+            platform: schema.platforms,
+            screenshotIds: sql<number[]>`coalesce(json_group_array(${schema.screenshots.id}),json('[]'))`.mapWith(d => JSON.parse(d) as number[]),
+        })
+            .from(schema.games)
+            .leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id))
+            .leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id))
+            .groupBy(schema.games.id)
+            .orderBy(...ordering)
+            .where(and(...where));
+
+        localGamesSet = new Set(
+            localGames.filter(g => !!g.source_id && !!g.source).map(g => `${g.source}@${g.source_id}`)
+                .concat(localGames.filter(g => !!g.igdb_id).map(g => `igdb@${g.igdb_id}`))
+        );
+
+        function localGameExistsPredicate (game: { id: FrontEndId, igdb_id?: number | null, ra_id?: number | null; })
+        {
+            if (localGamesSet?.has(`${game.id.source}@${game.id.id}`)) return true;
+            if (game.igdb_id && localGamesSet?.has(`igdb@${game.igdb_id}`)) return true;
+            if (game.ra_id && localGamesSet?.has(`ra@${game.ra_id}`)) return true;
+            return false;
+        }
+
+        if (query.collection_id)
+        {
+            // Collections are just a remote thing for now.
+            const remoteGames: FrontEndGameTypeWithIds[] = [];
+            await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
+            games.push(...remoteGames.map(g =>
+            {
+                if (localGameExistsPredicate(g))
                 {
-                    const system = path.dirname(e.path);
-                    const id = path.basename(e.path, path.extname(e.path));
+                    return convertLocalToFrontend(localGames.find(g => localGameExistsPredicate({ id: { id: g.source_id ?? '', source: g.source ?? '' }, igdb_id: g.igdb_id, ra_id: g.ra_id }))!);
+                }
+                else
+                {
+                    return g;
+                }
+            }));
 
-                    const localGame = await db.select({
-                        ...getTableColumns(schema.games),
-                        platform: schema.platforms,
-                        screenshotIds: sql<number[]>`coalesce(json_group_array(${schema.screenshots.id}),json('[]'))`.mapWith(d => JSON.parse(d) as number[]),
-                    })
-                        .from(schema.games)
-                        .leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id))
-                        .leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id))
-                        .groupBy(schema.games.id)
-                        .where(and(eq(schema.games.source, 'store'), eq(schema.games.source_id, `${system}@${id}`)));
-
-                    if (localGame.length > 0) return convertLocalToFrontend(localGame[0]);
-
-                    const storeGame = await getStoreGameFromPath(e.path);
-
-                    return convertStoreToFrontend(system, id, storeGame);
-                }));
-            games.push(...storeGames.filter(g => g !== undefined));
         } else
         {
-            const where: any[] = [];
-            let localGamesSet: Set<string> | undefined;
-
-            if (query.platform_slug)
+            games.push(...localGames.slice(query.offset, query.limit !== undefined ? ((query.offset ?? 0) + query.limit) : undefined).filter(g =>
             {
-                where.push(eq(schema.platforms.slug, query.platform_slug));
-            } else if (query.platform_id && query.platform_source === 'local')
-            {
-                where.push(eq(schema.platforms.id, query.platform_id));
-            }
-            else if (query.platform_id && query.platform_source)
-            {
-                const platform = await plugins.hooks.games.platformLookup.promise({ source: query.platform_source, id: String(query.platform_id) });
-                if (platform)
+                if (query.genres && query.genres.length > 0)
                 {
-                    where.push(eq(schema.platforms.slug, platform?.slug));
+                    if (!g.metadata) return false;
+                    if (!g.metadata.genres) return false;
+                    if (query.genres.some(genre => !g.metadata?.genres?.includes(genre))) return false;
                 }
-            }
 
-            if (query.search)
+                return true;
+            }).map(g =>
             {
-                where.push(like(schema.games.name, query.search));
-            }
+                return convertLocalToFrontend(g);
+            }));
 
-            if (query.source)
+            if (query.localOnly !== true)
             {
-                where.push(eq(schema.games.source, query.source));
-            }
-
-            const localGames = await db.select({
-                ...getTableColumns(schema.games),
-                platform: schema.platforms,
-                screenshotIds: sql<number[]>`coalesce(json_group_array(${schema.screenshots.id}),json('[]'))`.mapWith(d => JSON.parse(d) as number[]),
-            })
-                .from(schema.games)
-                .leftJoin(schema.platforms, eq(schema.platforms.id, schema.games.platform_id))
-                .leftJoin(schema.screenshots, eq(schema.screenshots.game_id, schema.games.id))
-                .groupBy(schema.games.id)
-                .where(and(...where));
-
-            localGamesSet = new Set(
-                localGames.filter(g => !!g.source_id && !!g.source).map(g => `${g.source}@${g.source_id}`)
-                    .concat(localGames.filter(g => !!g.igdb_id).map(g => `igdb@${g.igdb_id}`))
-            );
-
-            function localGameExistsPredicate (game: { id: FrontEndId, igdb_id?: number | null, ra_id?: number | null; })
-            {
-                if (localGamesSet?.has(`${game.id.source}@${game.id.id}`)) return true;
-                if (game.igdb_id && localGamesSet?.has(`igdb@${game.igdb_id}`)) return true;
-                if (game.ra_id && localGamesSet?.has(`ra@${game.ra_id}`)) return true;
-                return false;
-            }
-
-            if (query.collection_id)
-            {
-                // Collections are just a remote thing for now.
                 const remoteGames: FrontEndGameTypeWithIds[] = [];
-                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames, filters: filterSets }).catch(e => console.error(e));
-                games.push(...remoteGames.map(g =>
+                const remoteGameSet = new Set<string>();
+                await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
+                games.push(...remoteGames.filter(g =>
                 {
                     if (localGameExistsPredicate(g))
                     {
-                        return convertLocalToFrontend(localGames.find(g => localGameExistsPredicate({ id: { id: g.source_id ?? '', source: g.source ?? '' }, igdb_id: g.igdb_id, ra_id: g.ra_id }))!);
+                        return false;
                     }
-                    else
-                    {
-                        return g;
-                    }
-                }));
 
-            } else
-            {
-                games.push(...localGames.slice(query.offset, query.limit ? query.offset ?? 0 + query.limit : undefined).filter(g =>
-                {
-                    if (query.genres && query.genres.length > 0)
+                    if (g.igdb_id)
                     {
-                        if (!g.metadata) return false;
-                        if (!g.metadata.genres) return false;
-                        if (query.genres.some(genre => !g.metadata?.genres?.includes(genre))) return false;
+                        const igdbId = `igdb@${g.igdb_id}`;
+                        if (remoteGameSet.has(igdbId)) return false;
+                        remoteGameSet.add(igdbId);
+                    }
+
+                    if (g.ra_id)
+                    {
+                        const raId = `ra@${g.ra_id}`;
+                        if (remoteGameSet.has(raId)) return false;
+                        remoteGameSet.add(raId);
                     }
 
                     return true;
-                }).map(g =>
-                {
-                    return convertLocalToFrontend(g);
                 }));
-
-                if (query.localOnly !== true)
-                {
-                    const remoteGames: FrontEndGameTypeWithIds[] = [];
-                    const remoteGameSet = new Set<string>();
-                    await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames, filters: filterSets }).catch(e => console.error(e));
-                    games.push(...remoteGames.filter(g =>
-                    {
-                        if (localGameExistsPredicate(g))
-                        {
-                            return false;
-                        }
-
-                        if (g.igdb_id)
-                        {
-                            const igdbId = `igdb@${g.igdb_id}`;
-                            if (remoteGameSet.has(igdbId)) return false;
-                            remoteGameSet.add(igdbId);
-                        }
-
-                        if (g.ra_id)
-                        {
-                            const raId = `ra@${g.ra_id}`;
-                            if (remoteGameSet.has(raId)) return false;
-                            remoteGameSet.add(raId);
-                        }
-
-                        return true;
-                    }));
-                } else
-                {
-                    await plugins.hooks.games.fetchFilters.promise({ filters: filterSets }).catch(e => console.error(e));
-                }
-
-                localGames.map(g =>
-                {
-                    const metadata: any = g.metadata;
-                    if (metadata.genres && Array.isArray(metadata.genres))
-                    {
-                        metadata.genres.forEach((g: string) => filterSets.genres.add(g));
-                    }
-                    if (metadata.age_ratings && Array.isArray(metadata.age_ratings))
-                    {
-                        metadata.age_ratings.forEach((g: string) => filterSets.age_ratings.add(g));
-                    }
-                    if (metadata.companies && Array.isArray(metadata.companies))
-                    {
-                        metadata.companies.forEach((g: string) => filterSets.companies.add(g));
-                    }
-                    if (metadata.player_count)
-                    {
-                        filterSets.player_counts.add(metadata.player_count);
-                    }
-                });
             }
         }
 
@@ -342,7 +303,37 @@ export default new Elysia()
 
         }
 
-        const filterLists: FrontEndFilterLists = {
+        return { games };
+    }, {
+        query: GameListFilterSchema,
+    })
+    .get('/games/filters', async ({ query: { source } }) =>
+    {
+        const filterSets: FrontEndFilterSets = {
+            age_ratings: new Set(),
+            player_counts: new Set(),
+            languages: new Set(),
+            companies: new Set(),
+            genres: new Set()
+        };
+
+        let filter: any = undefined;
+        if (source) filter = eq(schema.games.source, source);
+        const local_metadata = await db.query.games.findMany({ columns: { metadata: true }, where: filter });
+
+        local_metadata.forEach(game =>
+        {
+            game.metadata.age_ratings?.forEach(r => filterSets.age_ratings.add(r));
+            game.metadata.genres?.forEach(r => filterSets.genres.add(r));
+            game.metadata.companies?.forEach(r => filterSets.companies.add(r));
+
+            if (game.metadata.player_count)
+                filterSets.player_counts.add(game.metadata.player_count);
+        });
+
+        await plugins.hooks.games.fetchFilters.promise({ filters: filterSets, source });
+
+        const filters: FrontEndFilterLists = {
             age_ratings: Array.from(filterSets.age_ratings),
             player_counts: Array.from(filterSets.player_counts),
             languages: Array.from(filterSets.languages),
@@ -350,34 +341,21 @@ export default new Elysia()
             genres: Array.from(filterSets.genres)
         };
 
-        return { games, filters: filterLists };
+        return filters;
     }, {
-        query: GameListFilterSchema,
+        query: z.object({ source: z.string().optional() })
     })
     .get('/rom/:source/:id', async ({ params: { id, source } }) =>
     {
-        const localGame = await db.query.games.findFirst({
-            where: getLocalGameMatch(id, source),
-            columns: { path_fs: true },
-            with: { platform: { columns: { es_slug: true } } }
-        });
+        const filePaths = await plugins.hooks.games.fetchRomFiles.promise({ source, id });
 
-        if (!localGame?.path_fs)
+        if (!filePaths || filePaths.length <= 0)
         {
-            return status("Not Found");
+            return status("Not Found", "No Valid Roms Found");
         }
 
-        const downloadPath = config.get('downloadPath');
-        const path_fs = path.join(downloadPath, localGame.path_fs);
+        return Bun.file(filePaths[0]);
 
-        const filesPaths = await getRomFilePaths(path_fs, localGame.platform.es_slug ?? undefined);
-
-        if (filesPaths.length <= 0)
-        {
-            throw new Error("No Valid Roms Found");
-        }
-
-        return Bun.file(filesPaths[0]);
     }, {
         params: z.object({ source: z.string(), id: z.string() })
     })
@@ -392,17 +370,12 @@ export default new Elysia()
                 const systemMapping = await emulatorsDb.query.systemMappings.findFirst({ where: and(eq(emulatorSchema.systemMappings.sourceSlug, sourceData.platform_slug), eq(emulatorSchema.systemMappings.source, 'romm')) });
                 if (systemMapping)
                 {
-                    const emulatorNames = await getEmulatorsForSystem(systemMapping.system);
-                    const emulators = await Promise.all(emulatorNames.map(n => getStoreEmulatorPackage(n).then(e => ({ name: n, data: e }))));
+                    const emulatorNames: string[] = [];
+                    await plugins.hooks.emulators.findEmulatorForSystem.promise({ system: systemMapping.system, emulators: emulatorNames });
 
-                    sourceData.emulators = await Promise.all(emulators.map(async ({ name, data }) =>
+                    sourceData.emulators = (await Promise.all(emulatorNames.map(async name =>
                     {
-                        if (data)
-                        {
-                            const systems = await buildStoreFrontendEmulatorSystems(data);
-                            return { ...await convertStoreEmulatorToFrontend(data, 0, systems), store_exists: true };
-                        }
-                        else if (name === 'EMULATORJS')
+                        if (name === 'EMULATORJS')
                         {
                             return {
                                 name: 'EMULATORJS',
@@ -424,22 +397,34 @@ export default new Elysia()
                                     return system;
                                 })),
                                 gameCount: 0,
-                                integrations: []
-                            } satisfies FrontEndGameTypeDetailedEmulator;
-                        }
-                        else
-                        {
-                            return {
-                                name: name,
-                                logo: "",
-                                systems: [],
-                                gameCount: 0,
-                                validSources: [],
+                                source: 'local',
                                 integrations: []
                             } satisfies FrontEndGameTypeDetailedEmulator;
                         }
 
-                    }));
+                        const foundEmulator = await plugins.hooks.store.fetchEmulator.promise({ id: name });
+
+                        const execPaths: EmulatorSourceEntryType[] = [];
+                        await plugins.hooks.emulators.findEmulatorSource.promise({ emulator: name, sources: execPaths });
+                        const integrations = findEmulatorPluginIntegration(id, execPaths);
+
+                        if (foundEmulator)
+                        {
+                            foundEmulator.validSources = execPaths;
+                            foundEmulator.integrations = integrations;
+                            return foundEmulator;
+                        }
+
+                        return {
+                            name: name,
+                            logo: "",
+                            source: 'local',
+                            systems: [],
+                            gameCount: 0,
+                            validSources: execPaths,
+                            integrations: integrations
+                        } satisfies FrontEndGameTypeDetailedEmulator;
+                    }))).filter(e => !!e);
                 }
             }
 
@@ -466,17 +451,18 @@ export default new Elysia()
     }, {
         params: z.object({ id: z.string(), source: z.string() }),
     })
-    .post('/game/:source/:id/install', async ({ params: { id, source } }) =>
+    .post('/game/:source/:id/install', async ({ params: { id, source }, query: { downloadId } }) =>
     {
         if (!taskQueue.findJob(InstallJob.query({ source, id }), InstallJob))
         {
-            return taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source));
+            return taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source, { downloadId }));
         } else
         {
             return status('Not Implemented');
         }
     }, {
         params: z.object({ id: z.string(), source: z.string() }),
+        query: z.object({ downloadId: z.string().optional() }),
         response: z.any()
     })
     .delete('/game/:source/:id/install', async ({ params: { id, source } }) =>
@@ -500,6 +486,10 @@ export default new Elysia()
     .post('/game/:source/:id/fix_source', async ({ params: { id, source } }) =>
     {
         return fixSource(source, id);
+    })
+    .post('/game/:source/:id/update', async ({ params: { id, source } }) =>
+    {
+        return update(source, id);
     })
     .post('/game/:source/:id/play', async ({ params: { id, source }, body, set }) =>
     {
@@ -559,8 +549,6 @@ export default new Elysia()
         const emulator = await getStoreEmulatorPackage(id);
         if (!emulator) return status("Not Found");
         const systems = await buildStoreFrontendEmulatorSystems(emulator);
-        const systemsIdSet = new Set(systems.map(s => s.id));
-
 
         const games: FrontEndGameType[] = [];
 
@@ -587,28 +575,6 @@ export default new Elysia()
         await plugins.hooks.games.fetchRecommendedGamesForEmulator.promise({ emulator, systems, games: remoteGames });
         games.push(...remoteGames.filter(g => !localGamesSet?.has(`${g.id.source}@${g.id.id}`)));
 
-        const gamesManifest = await getStoreGameManifest();
-        const storeGames = await Promise.all(gamesManifest
-            .filter(g => systemsIdSet.has(path.dirname(g.path)))
-            .map(async (e) =>
-            {
-                const system = path.dirname(e.path);
-                const id = path.basename(e.path, path.extname(e.path));
-
-                const localGame = await db.query.games.findFirst({ columns: { id: true }, where: and(eq(schema.games.source, 'store'), eq(schema.games.source_id, `${system}@${id}`)) });
-
-                if (localGame)
-                {
-                    return undefined;
-                }
-
-                const storeGame = await getStoreGameFromPath(e.path);
-
-                return convertStoreToFrontend(system, id, storeGame);
-            }));
-
-        games.push(...storeGames.filter(g => g !== undefined).slice(0, 3));
-
         return games;
     })
     .get('/recommended/games/game/:source/:id', async ({ params: { source, id } }) =>
@@ -619,7 +585,7 @@ export default new Elysia()
         const sourceCompaniesSet = new Set(sourceData.metadata.companies);
         const sourceGenresSet = new Set(sourceData.metadata.genres);
 
-        const esSystem = sourceData.platform_slug ? await emulatorsDb.query.systemMappings.findFirst({ where: and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.sourceSlug, sourceData.platform_slug)), columns: { system: true } }) : undefined;
+
 
         const games: (FrontEndGameType & { metadata?: any; })[] = [];
 
@@ -632,35 +598,7 @@ export default new Elysia()
 
         games.push(...localGames.map(g => convertLocalToFrontend(g)));
 
-        const shuffledGames = await getShuffledStoreGames();
-        const storeGames = await Promise.all(shuffledGames
-            .filter(g =>
-            {
-                const system = path.dirname(g.path);
-                const id = path.basename(g.path, path.extname(g.path));
 
-                if (localGamesSourceSet.has(`store@${system}@${id}`))
-                    return false;
-
-                if (esSystem)
-                {
-                    if (path.dirname(g.path) === esSystem.system) return true;
-                }
-
-                return false;
-            })
-            .map(async (e) =>
-            {
-                const system = path.dirname(e.path);
-                const id = path.basename(e.path, path.extname(e.path));
-                const storeGame = await getStoreGameFromPath(e.path);
-                return convertStoreToFrontend(system, id, storeGame);
-            }));
-
-        if (storeGames)
-        {
-            games.push(...storeGames.slice(0, 3));
-        }
 
         const remoteGames: (FrontEndGameType & { metadata?: any; })[] = [];
         plugins.hooks.games.fetchRecommendedGamesForGame.promise({

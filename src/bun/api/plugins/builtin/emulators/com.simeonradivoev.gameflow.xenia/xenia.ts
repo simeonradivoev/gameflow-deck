@@ -1,4 +1,4 @@
-import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
 import { GameflowHooks } from "@/bun/api/hooks/app";
 import { config } from "@/bun/api/app";
@@ -68,9 +68,10 @@ export default class XENIAIntegration implements PluginType
             if (ctx.autoValidCommand.metadata.romPath)
             {
                 finalSavesPath = await getXeniaSavePaths(ctx.autoValidCommand.metadata.romPath, savesPath);
+                return { args, savesPath: { xenia: { cwd: finalSavesPath } } };
             }
 
-            return { args, savesPath: finalSavesPath };
+            return { args };
         };
 
         return { args };
@@ -82,7 +83,7 @@ export default class XENIAIntegration implements PluginType
         return { id: desc.name, supportLevel: "full", capabilities: ["batch", "fullscreen", "saves"] };
     }
 
-    load (ctx: PluginContextType)
+    async load (ctx: PluginLoadingContextType)
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, this.handleEmulatorLaunchSupport);
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulatorEdge }, this.handleEmulatorLaunchSupport);
@@ -95,7 +96,7 @@ export default class XENIAIntegration implements PluginType
             if (command.emulator === this.emulator && saveFolderPath && command.metadata.romPath)
             {
                 const files = await fs.readdir(saveFolderPath, { recursive: true });
-                validChangedSaveFiles.push(...files.map(f => ({ subPath: f, cwd: saveFolderPath, shared: false } satisfies SaveFileChange)));
+                validChangedSaveFiles.gameflow = { cwd: saveFolderPath, subPath: files, shared: false };
             }
         });
     }

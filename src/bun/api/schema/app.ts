@@ -9,6 +9,7 @@ export const games = sqliteTable('games', {
     name: text("name"),
     ra_id: integer('ra_id').unique(),
     path_fs: text("path_fs"),
+    main_glob: text("main_glob"),
     last_played: integer("last_played", { mode: 'timestamp' }),
     created_at: integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
     metadata: text("metadata", { mode: 'json' }).default(sql`'{}'`).$type<{
@@ -24,7 +25,10 @@ export const games = sqliteTable('games', {
     platform_id: integer("platform_id").references(() => platforms.id, { onUpdate: 'cascade' }).notNull(),
     cover: blob("cover", { mode: 'buffer' }),
     cover_type: text('type'),
-    summary: text("summary")
+    summary: text("summary"),
+    version: text('version'),
+    version_source: text("version_source"),
+    version_system: text("version_system"),
 });
 
 export const gamesRelations = relations(games, ({ many, one }) => ({

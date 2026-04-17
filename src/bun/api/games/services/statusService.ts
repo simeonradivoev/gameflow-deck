@@ -1,21 +1,17 @@
-import { RPC_URL, } from "@shared/constants";
-import { config, db, emulatorsDb, plugins, taskQueue } from "../../app";
-import { findExecs, getValidLaunchCommands } from "./launchGameService";
-import * as emulatorSchema from '@schema/emulators';
-import { and, eq } from "drizzle-orm";
+import { config, db, plugins, taskQueue } from "../../app";
+import { eq } from "drizzle-orm";
 import { getErrorMessage } from "@/bun/utils";
-import { checkFiles, getLocalGameMatch } from "./utils";
+import { checkFiles, getLocalGameMatch, getSourceGameDetailed } from "./utils";
 import fs from 'node:fs/promises';
-import { getStoreGameFromId } from "../../store/services/gamesService";
-import { cores } from "../../emulatorjs/emulatorjs";
-import { host } from "@/bun/utils/host";
 import Elysia from "elysia";
 import z from "zod";
 import { InstallJob, InstallJobStates } from "../../jobs/install-job";
 import { LaunchGameJob } from "../../jobs/launch-game-job";
 import * as appSchema from "@schema/app";
+import { RPC_URL } from "@/shared/constants";
+import { host } from "@/bun/utils/host";
 
-class CommandSearchError extends Error
+export class CommandSearchError extends Error
 {
     constructor(status: GameStatusType, message: string)
     {
@@ -33,7 +29,8 @@ export async function getLocalGame (source: string, id: string)
             source: true,
             source_id: true,
             igdb_id: true,
-            ra_id: true
+            ra_id: true,
+            main_glob: true
         },
         where: getLocalGameMatch(id, source),
         with: {
@@ -42,6 +39,59 @@ export async function getLocalGame (source: string, id: string)
     });
 
     return localGame;
+}
+
+export async function update (source: string, id: string)
+{
+    const localGame = await getLocalGame(source, id);
+    if (!localGame) throw new Error("Could not find Local Game");
+    if (!localGame.source || !localGame.source_id) throw new Error("Game has not source defined");
+    const sourceGame = await getSourceGameDetailed(localGame.source, localGame.source_id, { sourceOnly: true });
+    if (!sourceGame) throw new Error("Could not find source game");
+
+    await db.transaction(async (tx) =>
+    {
+        await tx.delete(appSchema.screenshots).where(eq(appSchema.screenshots.game_id, localGame.id));
+
+        const paths_screenshots: string[] = [...sourceGame.paths_screenshots.map(s => `${RPC_URL(host)}${s}`)];
+        if (paths_screenshots.length <= 0 && sourceGame.igdb_id)
+        {
+            const igdbLookup = await plugins.hooks.games.gameLookup.promise({ source: 'igdb', id: String(sourceGame.igdb_id) });
+            if (igdbLookup)
+            {
+                paths_screenshots.push(...igdbLookup.screenshotUrls);
+            }
+        }
+
+        // pre-fetch screenshots
+        const screenshots = await Promise.all(paths_screenshots.map(s => fetch(s)));
+
+        if (screenshots.length > 0)
+        {
+            await tx.insert(appSchema.screenshots).values(await Promise.all(screenshots.map(async (response) =>
+            {
+                const screenshot: typeof appSchema.screenshots.$inferInsert = {
+                    game_id: localGame.id,
+                    content: Buffer.from(await response.arrayBuffer()),
+                    type: response.headers.get('content-type')
+                };
+
+                return screenshot;
+            })));
+        }
+
+        await tx.update(appSchema.games).set({
+            metadata: {
+                age_ratings: sourceGame.metadata.age_ratings,
+                genres: sourceGame.metadata.genres,
+                player_count: sourceGame.metadata.player_count ?? undefined,
+                companies: sourceGame.metadata.companies,
+                game_modes: sourceGame.metadata.game_modes,
+                average_rating: sourceGame.metadata.average_rating ?? undefined,
+                first_release_date: sourceGame.metadata.first_release_date?.getTime() ?? undefined,
+            }
+        }).where(eq(appSchema.games.id, localGame.id));
+    });
 }
 
 export async function fixSource (source: string, id: string)
@@ -94,12 +144,10 @@ export async function validateGameSource (source: string, id: string): Promise<{
     if (!localGame) return { valid: true };
     if (localGame.source && localGame.source_id)
     {
-        // Store should be immutable
-        if (localGame.source === 'store') return { valid: true, localGame };
-
         const sourceGame = await plugins.hooks.games.fetchGame.promise({ source: localGame.source, id: localGame.source_id });
         if (!sourceGame) return { valid: false, reason: "Source Missing", localGame };
-        if (sourceGame.imdb_id !== (localGame.igdb_id ?? undefined) && sourceGame.ra_id !== (localGame.ra_id ?? undefined))
+        // Store should be immutable
+        if (localGame.source !== 'store' && sourceGame.igdb_id !== (localGame.igdb_id ?? undefined) && sourceGame.ra_id !== (localGame.ra_id ?? undefined))
         {
             return { valid: false, reason: "Metadata Missmatch", localGame };
         }
@@ -115,79 +163,34 @@ export async function updateLocalLastPlayed (id: number)
 
 export async function getValidLaunchCommandsForGame (source: string, id: string): Promise<{ commands: CommandEntry[], gameId: FrontEndId, source?: string, sourceId?: string; } | Error | undefined>
 {
-    if (source === 'emulator')
-    {
-        const esEmulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, id) });
-        const allExecs = await findExecs(id, esEmulator);
-        return {
-            commands: allExecs.map(exec => ({
-                command: exec.binPath,
-                id: exec.type,
-                emulator: id,
-                emulatorSource: exec.type,
-                metadata: {
-                    emulatorBin: exec.binPath,
-                    emulatorDir: exec.rootPath
-                },
-                valid: true
-            } satisfies CommandEntry)),
-            gameId: { source: "emulator", id: id }
-        };
-    }
     const localGame = await getLocalGame(source, id);
     if (localGame)
     {
-        const rommPlatform = localGame.platform.slug;
-        const esPlatform = await emulatorsDb.query.systemMappings.findFirst({ where: and(eq(emulatorSchema.systemMappings.sourceSlug, rommPlatform), eq(emulatorSchema.systemMappings.source, 'romm')) });
+        const commands = await plugins.hooks.games.buildLaunchCommands.promise({
+            source: localGame.source,
+            sourceId: localGame.source_id,
+            id: { source: 'local', id: String(localGame.id) },
+            systemSlug: localGame.platform.slug,
+            gamePath: localGame.path_fs,
+            mainGlob: localGame.main_glob,
+        });
 
-        if (esPlatform)
+        if (commands instanceof Error || !commands) return commands;
+
+        const validCommand = commands.find(c => c.valid);
+        if (validCommand)
         {
-            if (localGame.path_fs)
-            {
-                try
-                {
-                    const commands = await getValidLaunchCommands({ systemSlug: esPlatform.system, gamePath: localGame.path_fs });
-
-                    if (cores[esPlatform.system])
-                    {
-                        const gameUrl = `${RPC_URL(host)}/api/romm/rom/${source}/${id}`;
-                        commands.push({
-                            id: 'EMULATORJS',
-                            label: "Emulator JS",
-                            command: `core=${cores[esPlatform.system]}&gameUrl=${encodeURIComponent(gameUrl)}`,
-                            valid: true,
-                            emulator: 'EMULATORJS',
-                            metadata: {
-                                romPath: gameUrl
-                            }
-                        });
-                    }
-
-                    const validCommand = commands.find(c => c.valid);
-                    if (validCommand)
-                    {
-                        return { commands: commands.filter(c => c.valid), gameId: { id: String(localGame.id), source: 'local' }, source: localGame.source ?? source, sourceId: String(localGame.source_id) ?? id };
-                    }
-                    else
-                    {
-                        return new CommandSearchError('missing-emulator', `Missing One Of Emulators: ${Array.from(new Set(commands.filter(e => e.emulator && e.emulator !== "OS-SHELL").map(e => e.emulator))).join(', ')}`);
-                    }
-                } catch (error)
-                {
-                    console.error(error);
-                    return new CommandSearchError('error', getErrorMessage(error));
-                }
-
-            } else
-            {
-                return new CommandSearchError('error', 'Missing Path');
-            }
+            return {
+                commands: commands.filter(c => c.valid),
+                gameId: { id: String(localGame.id), source: 'local' },
+                source: localGame.source ?? source,
+                sourceId: String(localGame.source_id) ?? id,
+            };
         }
         else
         {
-            return new CommandSearchError('error', `Missing Platform ${localGame.platform.slug}`);
+            return new CommandSearchError('missing-emulator', `Missing One Of Emulators: ${Array.from(new Set(commands.filter(e => e.emulator && e.emulator !== "OS-SHELL").map(e => e.emulator))).join(', ')}`);
         }
-
     }
 
     return undefined;
@@ -239,6 +242,7 @@ export default function buildStatusResponse ()
                 }
                 else
                 {
+                    const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(ws.data.params.id, ws.data.params.source) });
                     const validCommand = await getValidLaunchCommandsForGame(ws.data.params.source, ws.data.params.id);
                     if (validCommand)
                     {
@@ -255,9 +259,9 @@ export default function buildStatusResponse ()
                             });
                         }
 
-                    } else if (ws.data.params.source === 'store')
+                    } else if (!localGame && ws.data.params.source === 'store')
                     {
-                        const storeGame = await getStoreGameFromId(ws.data.params.id);
+                        /*const storeGame = await getStoreGame(ws.data.params.id);
                         const fileResponse = await fetch(storeGame.file, { method: 'HEAD' });
                         const size = Number(fileResponse.headers.get('content-length'));
                         const stats = await fs.statfs(config.get('downloadPath'));
@@ -268,8 +272,10 @@ export default function buildStatusResponse ()
                         } else
                         {
                             ws.send({ status: 'install', details: 'Install' });
-                        }
-                    } else
+                        }*/
+
+                        ws.send({ status: 'install', details: 'Install' });
+                    } else if (!localGame)
                     {
                         const files = await plugins.hooks.games.fetchDownloads.promise({
                             source: ws.data.params.source,
@@ -302,8 +308,9 @@ export default function buildStatusResponse ()
                                 ws.send({ status: 'install', details: 'Install' });
                             }
                         }
-
-
+                    } else
+                    {
+                        ws.send({ status: 'error', error: "No Way To Launch" });
                     }
                 }
             }

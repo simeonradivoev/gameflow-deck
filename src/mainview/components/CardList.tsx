@@ -20,9 +20,9 @@ export interface GameMetaExtra extends GameMeta
 function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusParams & InteractParams)
 {
   let preview: GameCardParams['preview'] = data.game.preview;
-  if (!preview && data.game.previewUrl)
+  if (!preview && data.game.previewUrls)
   {
-    preview = data.game.previewUrl;
+    preview = data.game.previewUrls;
   }
 
   const handleAction = (ctx: InteractParamsArgs) =>
@@ -40,7 +40,7 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusPara
       focusKey={data.game.focusKey}
       data-index={data.i}
       title={data.game.title}
-      subtitle={data.game.subtitle ?? ""}
+      subtitle={data.game.subtitle}
       srcset={data.game.previewSrcset}
       onFocus={(focusKey, node, details) =>
       {
@@ -69,8 +69,6 @@ export function CardList (data: {
 {
   const { ref, focusKey } = useFocusable({
     focusKey: data.id,
-    forceFocus: true,
-    autoRestoreFocus: true,
     focusable: data.games.length > 0,
     preferredChildFocusKey: data.focus
   });

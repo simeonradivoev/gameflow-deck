@@ -104,7 +104,7 @@ function Frame (data: { ref: RefObject<HTMLIFrameElement | null>; })
 
     const search = Route.useSearch();
     search['gameName'] = game.name;
-    search['backgroundImage'] = `${RPC_URL(__HOST__)}${game.path_cover}`;
+    search['backgroundImage'] = `${RPC_URL(__HOST__)}${game.path_covers[0]}`;
     search['backgroundBlur'] = "true";
 
     if (!__PUBLIC__)

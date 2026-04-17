@@ -4,7 +4,7 @@ import { OptionInput } from '../../components/options/OptionInput';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '../../components/options/Button';
-import { Check, ChevronDown, FileQuestion, FolderSearch, Plug, SearchAlert, Store, Trash } from 'lucide-react';
+import { Check, ChevronDown, FileQuestion, FolderSearch, HardDrive, Plug, SearchAlert, Store, Trash } from 'lucide-react';
 import { ContextDialog, ContextList, DialogEntry, OptionElement } from '../../components/ContextDialog';
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
@@ -248,7 +248,7 @@ function EmulatorBadge (data: {
     {data.emulator.validSources.length > 0 && <div className="divider">
       <div className='flex p-2 gap-1'>{data.emulator.validSources.map(s =>
       {
-        let icon = <FileQuestion />;
+        let icon = <HardDrive />;
         let action: (() => void) | undefined = undefined;
         let className = "bg-warning text-warning-content";
         switch (s.type)

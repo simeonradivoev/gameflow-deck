@@ -9,7 +9,6 @@ export const focusQueue: string[] = [];
 
 export default function App (data: { children: any; })
 {
-
     useEffect(() =>
     {
         const focusMap = new Map<number, string>();

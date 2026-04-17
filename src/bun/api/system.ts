@@ -2,7 +2,7 @@ import Elysia from "elysia";
 import open from 'open';
 import z from "zod";
 import os from 'node:os';
-import { cachePath, config, events } from "./app";
+import { cachePath, config, events, taskQueue } from "./app";
 import { isSteamDeck, openExternal } from "../utils";
 import fs from 'node:fs/promises';
 import buildNotificationsStream from "./notifications";
@@ -12,6 +12,22 @@ import { getDevices, getDevicesCurated } from "./drives";
 import getFolderSize from "get-folder-size";
 import si from 'systeminformation';
 import { getStoreFolder } from "./store/services/gamesService";
+import ReloadPluginsJob from "./jobs/reload-plugins-job";
+import { semver } from "bun";
+import packageDef from '~/package.json';
+
+async function checkUpdate ()
+{
+    const latest = await fetch('https://api.github.com/repos/simeonradivoev/gameflow-deck/releases/latest');
+    if (latest.ok)
+    {
+        const data = await latest.json();
+        const hasUpdate = semver.order(data.tag_name, packageDef.version);
+        return hasUpdate;
+    }
+
+    return 0;
+}
 
 export const system = new Elysia({ prefix: '/api/system' })
     .post('/show_keyboard', async ({ body: { XPosition, YPosition, Width, Height } }) =>
@@ -61,28 +77,63 @@ export const system = new Elysia({ prefix: '/api/system' })
         set.headers['connection'] = 'keep-alive';
         return new Response(buildNotificationsStream());
     })
+    .get('/notifications/all', ({ }) =>
+    {
+
+    })
     .ws('/info/system', {
         response: z.discriminatedUnion('type', [
             z.object({ type: z.literal('info'), data: SystemInfoSchema }),
-            z.object({ type: z.literal('focus') })
+            z.object({ type: z.literal('focus') }),
+            z.object({ type: z.literal('loading'), progress: z.number(), state: z.string().optional() }),
+            z.object({ type: z.literal('loaded') }),
         ]),
         async open (ws)
         {
-            const battery = await si.battery();
-            const wifi = await si.wifiConnections();
-            const bluetooth = await si.bluetoothDevices();
-            ws.send({
-                type: 'info',
-                data: {
-                    battery: battery,
-                    wifiConnections: wifi,
-                    bluetoothDevices: bluetooth
-                }
-            }, true);
+            const existingLoading = taskQueue.findJob(ReloadPluginsJob.id, ReloadPluginsJob);
+            if (existingLoading) ws.send({ type: 'loading', progress: existingLoading.progress, state: existingLoading.state });
+            else ws.send({ type: 'loaded' });
+
+            const startInfo = async () =>
+            {
+                const battery = await si.battery();
+                const wifi = await si.wifiConnections();
+                const bluetooth = await si.bluetoothDevices();
+                ws.send({
+                    type: 'info',
+                    data: {
+                        battery: battery,
+                        wifiConnections: wifi,
+                        bluetoothDevices: bluetooth
+                    }
+                }, true);
+            };
+            startInfo();
 
             const handleFocus = () => ws.send({ type: 'focus' });
             events.on('focus', handleFocus);
-            (ws.data as any).dispose = [() => events.removeListener('focus', handleFocus)];
+            const dispose: (() => void)[] = [];
+
+            dispose.push(taskQueue.on('progress', e =>
+            {
+                if (e.id !== ReloadPluginsJob.id) return;
+                ws.send({ type: "loading", progress: e.progress, state: e.state });
+            }));
+            dispose.push(taskQueue.on('started', e =>
+            {
+                if (e.id !== ReloadPluginsJob.id) return;
+                ws.send({ type: "loading", progress: 0 });
+            }));
+            dispose.push(taskQueue.on('ended', e =>
+            {
+                if (e.id !== ReloadPluginsJob.id) return;
+                ws.send({ type: "loaded" });
+            }));
+
+            (ws.data as any).dispose = [...dispose, () =>
+            {
+                events.removeListener('focus', handleFocus);
+            }];
             (ws.data as any).observer = setInterval(async () =>
             {
                 const battery = await si.battery();
@@ -209,4 +260,8 @@ export const system = new Elysia({ prefix: '/api/system' })
         await openExternal(url);
     }, {
         body: z.object({ url: z.string() })
+    })
+    .get('/update', async () =>
+    {
+        return checkUpdate();
     });

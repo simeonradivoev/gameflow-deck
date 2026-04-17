@@ -1,7 +1,8 @@
 import Elysia, { status } from "elysia";
-import { plugins } from "../app";
+import { plugins, taskQueue } from "../app";
 import z from "zod";
 import { toggleElementInConfig } from "@/bun/utils";
+import ReloadPluginsJob from "../jobs/reload-plugins-job";
 
 export default new Elysia({ prefix: '/plugins' })
     .get('/', async () =>
@@ -15,19 +16,31 @@ export default new Elysia({ prefix: '/plugins' })
                 description: p.description.description,
                 source: p.source,
                 version: p.description.version,
-                icon: p.description.icon
+                canDisable: p.description.canDisable ?? true,
+                icon: p.description.icon,
+                category: p.description.category,
+                hasSettings: !!p.config
             };
             return plugin;
         });
+    })
+    .get('/:id', async ({ params: { id } }) =>
+    {
+        const plugin = plugins.plugins[id];
+        return plugin.description;
     })
     .post('/:id', async ({ params: { id }, body: { enabled } }) =>
     {
         const plugin = plugins.plugins[id];
         if (plugin)
         {
+            if (plugin.description.canDisable === false)
+            {
+                return status("Forbidden");
+            }
             plugin.enabled = enabled;
             toggleElementInConfig('disabledPlugins', plugin.description.name, enabled);
-            plugins.reloadAll();
+            await taskQueue.enqueue(ReloadPluginsJob.id, new ReloadPluginsJob());
         } else
         {
             return status("Not Found");

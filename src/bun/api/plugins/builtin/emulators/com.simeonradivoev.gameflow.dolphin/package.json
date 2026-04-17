@@ -5,6 +5,7 @@
     "description": "DOLPHIN Emulator Integration",
     "main": "./dolphin.ts",
     "icon": "https://upload.wikimedia.org/wikipedia/commons/5/53/Dolphin_Emulator_Logo_Refresh.svg",
+    "category": "emulators",
     "keywords": [
         "integration",
         "emulator",

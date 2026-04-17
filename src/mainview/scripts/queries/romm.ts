@@ -1,6 +1,6 @@
 import { DefaultRommStaleTime, GameListFilterType, RommLoginDataSchema } from "@/shared/constants";
 import { rommApi, settingsApi } from "../clientApi";
-import { mutationOptions, QueryFilters, queryOptions, useMutation } from "@tanstack/react-query";
+import { InvalidateQueryFilters, mutationOptions, QueryFilters, queryOptions, useMutation } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
 
@@ -72,8 +72,8 @@ export const rommLoggedInQuery = queryOptions({
         return data;
     }
 });
-export const rommHostnameQuery = queryOptions({ queryKey: ['romm', 'auth', 'hostname'], queryFn: () => settingsApi.api.settings({ id: 'rommAddress' }).get().then(d => d.data?.value as string) });
-export const rommUsernameQuery = queryOptions({ queryKey: ['romm', 'auth', 'username'], queryFn: () => settingsApi.api.settings({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
+export const rommHostnameQuery = queryOptions({ queryKey: ['romm', 'auth', 'hostname'], queryFn: () => settingsApi.api.settings({ source: 'local' })({ id: 'rommAddress' }).get().then(d => d.data?.value as string) });
+export const rommUsernameQuery = queryOptions({ queryKey: ['romm', 'auth', 'username'], queryFn: () => settingsApi.api.settings({ source: 'local' })({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
 export const deleteGameMutation = (id: FrontEndId) => mutationOptions({
     mutationKey: ['delete', id],
     mutationFn: () => rommApi.api.romm.game({ source: id.source })({ id: id.id }).delete()
@@ -107,9 +107,9 @@ export const platformQuery = (source: string, id: string) => queryOptions({
 });
 export const installMutation = (source: string, id: string) => mutationOptions({
     mutationKey: ['install', source, id],
-    mutationFn: async () =>
+    mutationFn: async (init: { downloadId?: string; }) =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).install.post();
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).install.post({ query: { downloadId: init.downloadId } });
         if (error) throw error;
         return data;
     }
@@ -167,6 +167,47 @@ export const fixSourceMutation = mutationOptions({
     mutationKey: ['game', "fix_source"], mutationFn: async ({ source, id }: { source: string, id: string; }) =>
     {
         const { data, error } = await rommApi.api.romm.game({ source })({ id }).fix_source.post();
+        if (error) throw error;
+        return data;
+    }
+});
+export const updateSourceMutation = mutationOptions({
+    mutationKey: ['game', "update_source"], mutationFn: async ({ source, id }: { source: string, id: string; }) =>
+    {
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).update.post();
+        if (error) throw error;
+        return data;
+    }
+});
+export const updatePlatformMutation = (id: string) => mutationOptions({
+    mutationKey: ['platform', 'local', 'update', id],
+    mutationFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.platform.local({ id }).update.post();
+        if (error) throw error;
+        return data;
+    }
+});
+export const deletePlatformMutation = (id: string) => mutationOptions({
+    mutationKey: ['platform', 'local', 'delete', id],
+    mutationFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.platform.local({ id }).delete();
+        if (error) throw error;
+        return data;
+    }
+});
+export const localPlatformFilter = (id: string) => ({
+    predicate (query)
+    {
+        return query.queryKey.includes('platform') && ((query.queryKey.includes('local') && query.queryKey.includes(id)) || query.queryKey.includes('all'));
+    },
+} satisfies InvalidateQueryFilters as InvalidateQueryFilters);
+
+export const gameFiltersQuery = (filters: { source?: string; }) => queryOptions({
+    queryKey: ['game', 'filters', filters], queryFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.games.filters.get({ query: { source: filters.source } });
         if (error) throw error;
         return data;
     }

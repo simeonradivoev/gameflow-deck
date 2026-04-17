@@ -1,10 +1,10 @@
-import { deleteGameMutation, fixSourceMutation, gameInvalidationQuery, validateSourceQuery } from "@/mainview/scripts/queries/romm";
+import { deleteGameMutation, fixSourceMutation, gameInvalidationQuery, updateSourceMutation, validateSourceQuery } from "@/mainview/scripts/queries/romm";
 import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
 import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
-import { Hammer, Settings, Trash, Trophy } from "lucide-react";
+import { Hammer, RefreshCcw, Settings, Trash, Trophy } from "lucide-react";
 import MainActions from "./MainActions";
 import ActionButton from "./ActionButton";
 import { useLocalStorage } from "usehooks-ts";
@@ -34,7 +34,8 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
     const [, setDetailsSection] = useLocalStorage('details-section', 'screenshots');
 
     const fixMutation = useMutation({
-        ...fixSourceMutation, onSuccess (data, variables, onMutateResult, context)
+        ...fixSourceMutation,
+        onSuccess (data, variables, onMutateResult, context)
         {
             if (onMutateResult) toast.success("Updated Source");
             context.client.invalidateQueries(gameInvalidationQuery(variables.id, variables.source)).then(() => router.history.back());
@@ -42,6 +43,18 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
         onError (error)
         {
             toast.error(getErrorMessage(error) ?? "Error While Trying To Fix");
+        }
+    });
+    const updateMutation = useMutation({
+        ...updateSourceMutation,
+        onSuccess (data, variables, onMutateResult, context)
+        {
+            if (onMutateResult) toast.success("Updated Source");
+            context.client.invalidateQueries(gameInvalidationQuery(variables.id, variables.source));
+        },
+        onError (error)
+        {
+            toast.error(getErrorMessage(error) ?? "Error While Trying To Update");
         }
     });
     const { data: validation } = useQuery(validateSourceQuery(data.source, data.id));
@@ -62,7 +75,7 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
     useBlocker({
         shouldBlockFn: () =>
         {
-            return deleteMutation.isPending || fixMutation.isPending;
+            return deleteMutation.isPending || fixMutation.isPending || updateMutation.isPending;
         }
     });
 
@@ -85,14 +98,33 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
     {
         contextOptions.push({
             id: "fix_source",
-            action (ctx)
+            async action (ctx)
             {
-                if (data.game)
-                    fixMutation.mutate({ source: data.game.id.source, id: data.game.id.id });
+                if (!data.game) return;
+                await fixMutation.mutateAsync({ source: data.game.id.source, id: data.game.id.id });
+                ctx.close();
+                router.navigate({ replace: true });
             },
             icon: fixMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <Hammer />,
             content: "Try Fix Source",
             type: "warning"
+        });
+    } else if (data.game?.id.source === 'local')
+    {
+        contextOptions.push({
+            id: 'update_source',
+            async action (ctx)
+            {
+                if (data.game)
+                {
+                    await updateMutation.mutateAsync({ source: data.game.id.source, id: data.game.id.id });
+                    ctx.close();
+                    router.navigate({ replace: true });
+                }
+            },
+            icon: updateMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <RefreshCcw />,
+            content: "Update Metadata",
+            type: "primary"
         });
     }
 

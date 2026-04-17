@@ -69,7 +69,6 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
             {
                 const errorMessage = getErrorMessage(e.data.error);
                 if (!errorMessage) return;
-                toast.error(errorMessage);
                 setError(errorMessage);
             }
         });
@@ -137,7 +136,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         mainButton = <ActionButton
             key="error"
             tooltip={error}
-            tooltip-type="error"
+            tooltipType="error"
             type='error'
             onAction={() =>
             {
@@ -169,7 +168,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
                 {
                     case 'present':
                     case 'install':
-                        installMut.mutate();
+                        installMut.mutate({});
                         break;
                 }
             }}

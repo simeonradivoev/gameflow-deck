@@ -5,6 +5,7 @@
     "description": "PCSX2 Emulator Integration",
     "main": "./pcsx2.ts",
     "icon": "https://upload.wikimedia.org/wikipedia/commons/2/2b/PCSX2_logo4.png",
+    "category": "emulators",
     "keywords": [
         "integration",
         "emulator",

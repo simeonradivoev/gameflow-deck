@@ -22,6 +22,8 @@ export class EmulatorHooks
      * Triggered when emulator is downloaded or updated
      */
     emulatorPostInstall = new AsyncSeriesHook<[ctx: EmulatorPostInstallContext], { emulator: string; }>(['ctx']);
+    findEmulatorSource = new AsyncSeriesHook<[ctx: { emulator: string; sources: EmulatorSourceEntryType[]; }]>(['ctx']);
+    findEmulatorForSystem = new AsyncSeriesHook<[ctx: { system: string; emulators: string[]; }]>(['ctx']);
 
     constructor()
     {

@@ -1,0 +1,13 @@
+{
+    "name": "com.simeonradivoev.gameflow.es",
+    "displayName": "ES-DE Launcher",
+    "version": "0.0.1",
+    "description": "ES-DE Launch Configurations. Used as fallback",
+    "main": "./es-de.ts",
+    "icon": "https://impro.usercontent.one/appid/oneComWsb/domain/es-de.org/media/es-de.org/onewebmedia/ES-DE_logo.png",
+    "category": "launchers",
+    "keywords": [
+        "integration",
+        "es-de"
+    ]
+}

@@ -387,10 +387,11 @@ export function RouteComponent ()
                                     More Emulators
                                 </h2></>}
                             onFocus={scrollIntoViewHandler({ block: 'center' })}
-                            onSelect={(id, focus) =>
+                            onSelect={(em, focus) =>
                             {
+                                if (em.source === 'local') return;
                                 router.navigate({
-                                    to: '/store/details/emulator/$id', params: { id }
+                                    to: '/store/details/emulator/$id', params: { id: em.name }
                                 });
                             }}
                             emulators={recommendedEmulators} />

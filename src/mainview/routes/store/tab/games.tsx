@@ -2,7 +2,7 @@ import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/no
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { Gamepad2, HardDrive } from 'lucide-react';
 import { JSX, useContext, useEffect, useState } from 'react';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import FrontEndGameCard from '@/mainview/components/FrontEndGameCard';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import LoadMoreButton from '@/mainview/components/LoadMoreButton';
@@ -15,6 +15,7 @@ import { useSessionStorage } from 'usehooks-ts';
 import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
 import SideFilters from '@/mainview/components/SideFilters';
+import { gameFiltersQuery } from '@/mainview/scripts/queries/romm';
 
 export const Route = createFileRoute('/store/tab/games')({
   component: RouteComponent,
@@ -32,7 +33,7 @@ function RouteComponent ()
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "main-area", preferredChildFocusKey: focus });
   const [filter, setFilter] = useSessionStorage<GameListFilterType>('store-games-filters', {});
   const { data, fetchNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(storeGamesInfiniteQuery(filter));
-  const [filterValues, setFilterValues] = useState<FrontEndFilterLists>();
+  const { data: gameFilters } = useQuery(gameFiltersQuery({ source: 'store' }));
 
   useEffect(() =>
   {
@@ -86,23 +87,32 @@ function RouteComponent ()
                 badges.push(<HardDrive className="sm:size-4 md:size-8 md:p-1 m-1" />);
               }
 
-              const previewUrl = new URL(`${RPC_URL(__HOST__)}${g.path_cover}`);
-              previewUrl.searchParams.delete('ts');
+              const previewUrls = g.path_covers.map(c =>
+              {
+                const url = new URL(`${RPC_URL(__HOST__)}${c}`);
+                url.searchParams.delete('ts');
+                return url;
+              });
 
-              const platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
-              platformUrl.searchParams.set('width', "64");
+
+              let subtitle: string | JSX.Element | undefined = undefined;
+              if (g.path_platform_cover)
+              {
+                const platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
+                platformUrl.searchParams.set('width', "64");
+                subtitle = <div className="flex gap-1 items-center">
+                  {!!g.path_platform_cover && <img className="sm:hidden md:inline size-4" src={platformUrl.href} />}
+                  <p className="opacity-80">{g.platform_display_name}</p>
+                </div>;
+              }
+
 
               return {
                 id: `${g.id.source}@${g.id.id}`,
                 focusKey: `${g.id.source}@${g.id.id}`,
                 title: g.name ?? "",
-                subtitle: (
-                  <div className="flex gap-1 items-center">
-                    {!!g.path_platform_cover && <img className="sm:hidden md:inline size-4" src={platformUrl.href} />}
-                    <p className="opacity-80">{g.platform_display_name}</p>
-                  </div>
-                ),
-                previewUrl: previewUrl.href,
+                subtitle,
+                previewUrls,
                 badges: badges,
                 onSelect: () => handleDefaultSelect(g),
                 onFocus: (k, n, d) => handleFocus(k, n, d)
@@ -111,7 +121,7 @@ function RouteComponent ()
             ) ?? []} id={'store-games'} />
         </div>
         <div className='fixed left-2 top-52 bottom-0 sm:w-10 md:w-14 z-10'>
-          <SideFilters id='filter-btns' localFilter={filter} setLocalFilter={setFilter} filterValues={filterValues} filters={{ source: 'store' }} />
+          <SideFilters id='filter-btns' localFilter={filter} setLocalFilter={setFilter} filterValues={gameFilters} filters={{ source: 'store' }} />
         </div>
       </FocusContext>
     </section>

@@ -1,4 +1,4 @@
-import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
 import { config } from "@/bun/api/app";
 import configFilePathWin32 from './win32/ppsspp.ini' with { type: 'file' };
@@ -15,7 +15,7 @@ export default class PPSSPPIntegration implements PluginType
 {
     emulator = "PPSSPP";
 
-    load (ctx: PluginContextType)
+    async load (ctx: PluginLoadingContextType)
     {
         ctx.hooks.emulators.emulatorPostInstall.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
         {
@@ -114,7 +114,7 @@ export default class PPSSPPIntegration implements PluginType
                     await Bun.write(path.join(ppssppPath, 'controls.ini'), Mustache.render(controlsFileContents, {}));
                 }
 
-                return { args, savesPath: path.join(config.get('downloadPath'), 'saves', this.emulator, "PSP", "SAVEDATA") };
+                return { args, savesPath: { ppsspp: { cwd: path.join(config.get('downloadPath'), 'saves', this.emulator, "PSP", "SAVEDATA") } } };
             }
 
             return { args };

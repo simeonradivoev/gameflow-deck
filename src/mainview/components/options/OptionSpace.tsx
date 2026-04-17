@@ -1,4 +1,5 @@
 import { OptionContext } from "@/mainview/scripts/contexts";
+import { Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { Direction, FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { JSX, useContext, useEffect, useMemo, useState } from "react";
@@ -38,6 +39,8 @@ export function OptionSpace (data: {
     children?: any | any[];
     label?: string | JSX.Element | ((focused: boolean) => JSX.Element);
     saveLastFocusedChild?: boolean;
+    preferredChildFocusKey?: string;
+    shortcuts?: Shortcut[];
 })
 {
     const [focusBoundary, setFocusBoundary] = useState(false);
@@ -50,6 +53,7 @@ export function OptionSpace (data: {
         saveLastFocusedChild: data.saveLastFocusedChild ?? false,
         isFocusBoundary: focusBoundary,
         focusBoundaryDirections,
+        preferredChildFocusKey: data.preferredChildFocusKey,
         onFocus ()
         {
             (ref.current as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -59,6 +63,7 @@ export function OptionSpace (data: {
             eventTarget.dispatchEvent(new CustomEvent("onEnterPress"));
         },
     });
+    useShortcuts(focusKey, () => data.shortcuts ?? []);
     let labelElement: any = data.label;
     if (data.label instanceof Function)
     {

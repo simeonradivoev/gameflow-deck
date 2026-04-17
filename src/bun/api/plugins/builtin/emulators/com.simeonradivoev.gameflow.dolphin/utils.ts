@@ -128,10 +128,10 @@ async function getGCSavePaths (romPath: string, savesPath: string, location: Dol
     const cardPath = join(savesPath, "GC", region);
 
     const glob = new Bun.Glob(`${makerCode}-${gameCode}-*.gci`);
-    const saves: SaveFileChange[] = [];
+    const saves: string[] = [];
     for await (const file of glob.scan(cardPath))
     {
-        saves.push({ subPath: path.join("GC", region, file), cwd: savesPath, shared: false });
+        saves.push(path.join("GC", region, file));
     }
 
     return saves;
@@ -145,7 +145,7 @@ export async function getType (romPath: string, bundledEmulatorDir?: string): Pr
     return isGameCube ? "gamecube" : "wii";
 }
 
-export async function getSavePaths (romPath: string, savesPath: string, bundledEmulatorDir?: string): Promise<SaveFileChange[]>
+export async function getSavePaths (romPath: string, savesPath: string, bundledEmulatorDir?: string): Promise<string[]>
 {
     const location = await findDolphinTool(bundledEmulatorDir);
     const gameId = await readGameId(romPath, location);
@@ -159,6 +159,6 @@ export async function getSavePaths (romPath: string, savesPath: string, bundledE
         const folder = Buffer.from(gameId.slice(0, 4), "ascii").toString("hex").toUpperCase();
         const rootFolder = join(savesPath, "Wii", "title", "00010000", folder);
         const files = await fs.readdir(rootFolder, { recursive: true });
-        return files.map(f => ({ subPath: path.join("Wii", "title", "00010000", f), cwd: savesPath, shared: false }));
+        return files.map(f => path.join("Wii", "title", "00010000", f));
     }
 }

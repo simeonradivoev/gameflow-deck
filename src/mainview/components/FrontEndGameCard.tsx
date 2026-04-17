@@ -13,16 +13,24 @@ export default function FrontEndGameCard (data: { index: number, game: FrontEndG
         router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
     };
 
-    const platformUrl = new URL(`${RPC_URL(__HOST__)}${data.game.path_platform_cover}`);
-    platformUrl.searchParams.set('width', "64");
-    const subtitle = <div className="flex gap-1 items-center">
-        {!!data.game.path_platform_cover && <img className="sm:hidden md:inline size-4" src={platformUrl.href} />}
-        <p className="opacity-80">{data.game.platform_display_name}</p>
-    </div>;
+    let subtitle: any = undefined;
+    if (data.game.path_platform_cover)
+    {
+        const platformUrl = new URL(`${RPC_URL(__HOST__)}${data.game.path_platform_cover}`);
+        platformUrl.searchParams.set('width', "64");
+        subtitle = <div className="flex gap-1 items-center">
+            {!!data.game.path_platform_cover && <img className="sm:hidden md:inline size-4" src={platformUrl.href} />}
+            <p className="opacity-80">{data.game.platform_display_name}</p>
+        </div>;
+    }
 
-    const previewUrl = new URL(`${RPC_URL(__HOST__)}${data.game.path_cover}`);
-    previewUrl.searchParams.delete('ts');
-    previewUrl.searchParams.set('width', "640");
+    const previewUrls = data.game.path_covers.map(c =>
+    {
+        const url = new URL(`${RPC_URL(__HOST__)}${c}`);
+        url.searchParams.delete('ts');
+        url.searchParams.set('width', "640");
+        return url;
+    });
 
     const badges: JSX.Element[] = [];
 
@@ -53,7 +61,7 @@ export default function FrontEndGameCard (data: { index: number, game: FrontEndG
         badges={badges}
         onFocus={data.onFocus}
         onAction={(e) => data.onAction ? data.onAction(e) : handleDefaultSelect(data.game.id, data.game.source, data.game.source_id)}
-        preview={previewUrl.href}
+        preview={previewUrls}
         title={data.game.name ?? ""}
         subtitle={subtitle}
         focusKey={FOCUS_KEYS.GAME_CARD(data.game.id)}

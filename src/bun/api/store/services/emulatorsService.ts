@@ -1,34 +1,7 @@
-import { EmulatorDownloadInfoSchema, EmulatorDownloadInfoType, EmulatorPackageType, ScoopPackageSchema } from "@/shared/constants";
-import { config, emulatorsDb, plugins } from "../../app";
-import * as emulatorSchema from '@schema/emulators';
-import { findExecs } from "../../games/services/launchGameService";
-import { eq } from "drizzle-orm";
+import { EmulatorDownloadInfoType, EmulatorPackageType, ScoopPackageSchema } from "@/shared/constants";
+import { config, plugins } from "../../app";
 import { getOrCached, getOrCachedGithubRelease } from "../../cache";
 import path from "node:path";
-import fs from "node:fs/promises";
-
-export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageType, gameCount: number, systems: EmulatorSystem[])
-{
-    const execPaths: EmulatorSourceEntryType[] = [];
-    const esEmulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, emulator.name) });
-
-    if (esEmulator)
-    {
-        const allExecs = await findExecs(emulator.name, esEmulator);
-        execPaths.push(...allExecs);
-    }
-
-    const em: FrontEndEmulator = {
-        name: emulator.name,
-        logo: emulator.logo,
-        systems,
-        gameCount,
-        validSources: execPaths,
-        integrations: findEmulatorPluginIntegration(emulator.name, execPaths)
-    };
-
-    return em;
-}
 
 export function findEmulatorPluginIntegration (name: string, validSources: (EmulatorSourceEntryType | undefined)[]): EmulatorSupport[]
 {
@@ -50,29 +23,6 @@ export function findEmulatorPluginIntegration (name: string, validSources: (Emul
 export function getEmulatorPath (emulator: string)
 {
     return path.join(config.get('downloadPath'), "emulators", emulator);
-}
-
-export async function getExistingStoreEmulatorDownload (emulator: EmulatorPackageType): Promise<(EmulatorDownloadInfoType & { hasUpdate: boolean; }) | undefined>
-{
-    const existingPackagePath = `${getEmulatorPath(emulator.name)}.json`;
-    if (await fs.exists(existingPackagePath))
-    {
-        const existingPackage = await EmulatorDownloadInfoSchema.parseAsync(await Bun.file(existingPackagePath).json());
-        const download = await getEmulatorDownload(emulator, existingPackage.type).catch(d => undefined);
-        if (!download) return { ...existingPackage, hasUpdate: false };
-        if (download.info.version)
-        {
-            if (existingPackage.version !== download.info.version) return { ...existingPackage, hasUpdate: true };
-        } else if (existingPackage.id !== download.info.id)
-        {
-            return { ...existingPackage, hasUpdate: true };
-        }
-
-        return { ...existingPackage, hasUpdate: false };
-    }
-
-    // this should only happen if download info is missing maybe manually deleted or wasn't saved.
-    return undefined;
 }
 
 export async function getEmulatorDownload (emulator: EmulatorPackageType, source: string)

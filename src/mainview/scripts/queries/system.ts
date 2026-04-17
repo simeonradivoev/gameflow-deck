@@ -47,3 +47,13 @@ export const closeMutation = mutationOptions({
         if (error) throw error;
     }
 });
+export const hasUpdateQuery = queryOptions({
+    queryKey: ['update'],
+    queryFn: async () =>
+    {
+        const { data, error } = await systemApi.api.system.update.get();
+        if (error) throw error;
+        return data;
+    },
+    staleTime: 1000 * 60 * 30
+});

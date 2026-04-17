@@ -10,6 +10,7 @@ import { IJob } from "../task-queue";
 import { LaunchGameJob } from "./launch-game-job";
 import { BiosDownloadJob } from "./bios-download-job";
 import { InstallJob } from "./install-job";
+import ReloadPluginsJob from "./reload-plugins-job";
 
 function registerJob<
     const Path extends string,
@@ -107,4 +108,5 @@ export const jobs = new Elysia({ prefix: '/api/jobs' })
     .use(registerJob(UpdateStoreJob))
     .use(registerJob(BiosDownloadJob))
     .use(registerJob(InstallJob))
+    .use(registerJob(ReloadPluginsJob))
     .use(registerJob(EmulatorDownloadJob));

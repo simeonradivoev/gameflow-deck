@@ -1,6 +1,6 @@
 
 import { config } from "@/bun/api/app";
-import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import path from 'node:path';
 import desc from './package.json';
 import { ensureDir } from "fs-extra";
@@ -10,7 +10,7 @@ export default class DOLPHINIntegration implements PluginType
 {
     emulator = 'DOLPHIN';
 
-    load (ctx: PluginContextType)
+    async load (ctx: PluginLoadingContextType)
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
@@ -70,14 +70,18 @@ export default class DOLPHINIntegration implements PluginType
                 finalSavesPath = await getType(ctx.autoValidCommand.metadata.romPath, ctx.autoValidCommand.metadata.emulatorDir) === 'gamecube' ? savesPath : storageFolder;
             }
 
-            return { args, savesPath: finalSavesPath };
+            return { args, savesPath: { dolphin: { cwd: finalSavesPath } } };
         });
 
-        ctx.hooks.games.postPlay.tap({ name: desc.name, before: "com.simeonradivoev.gameflow.romm" }, async ({ validChangedSaveFiles, saveFolderPath, command, gameInfo }) =>
+        ctx.hooks.games.postPlay.tap({ name: desc.name, before: "com.simeonradivoev.gameflow.romm" }, async ({ validChangedSaveFiles, saveFolderSlots, command, gameInfo }) =>
         {
-            if (command.emulator === this.emulator && saveFolderPath && command.metadata.romPath)
+            if (command.emulator === this.emulator && saveFolderSlots && command.metadata.romPath)
             {
-                validChangedSaveFiles.push(...await getSavePaths(command.metadata.romPath, saveFolderPath, command.metadata.emulatorDir));
+                validChangedSaveFiles.dolphin = {
+                    cwd: saveFolderSlots.dolphin.cwd,
+                    subPath: await getSavePaths(command.metadata.romPath, saveFolderSlots.dolphin.cwd, command.metadata.emulatorDir),
+                    shared: false
+                };
             }
         });
     }

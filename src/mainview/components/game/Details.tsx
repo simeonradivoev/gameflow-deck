@@ -40,7 +40,7 @@ export default function Details (data: {
     const platformCoverImg = data.game?.path_platform_cover ? new URL(`${RPC_URL(__HOST__)}${data.game?.path_platform_cover}`) : undefined;
     if (platformCoverImg)
         platformCoverImg.searchParams.set("width", "64");
-    const gameCoverImg = data.game?.path_cover ? `${RPC_URL(__HOST__)}${data.game?.path_cover}` : undefined;
+    const gameCoverImg = data.game?.path_covers ? `${RPC_URL(__HOST__)}${data.game?.path_covers[0]}` : undefined;
 
     let fileSizeIcon: JSX.Element | undefined;
     if (!data.game)

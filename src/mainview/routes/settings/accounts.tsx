@@ -5,7 +5,7 @@ import
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import classNames from "classnames";
 import { Key, Link, Lock, LogIn, LogOut, ScanQrCode, User, X } from "lucide-react";
 import
@@ -90,6 +90,7 @@ function TwitchLogin ()
 function LoginControls (data: {})
 {
   const user = useQuery(rommUserQuery);
+  const router = useRouter();
   const loginMutation = useMutation(rommQrLoginMutation);
   const { data: statusValue, wsRef } = useJobStatus('login-job');
   const { data: loginStatusData } = useQuery(rommLoggedInQuery);
@@ -100,7 +101,8 @@ function LoginControls (data: {})
     onSuccess: async (d, v, r, c) =>
     {
       user.refetch();
-      c.client.invalidateQueries({ queryKey: ["romm", "auth"] });
+      await c.client.invalidateQueries({ queryKey: ["romm", "auth"] });
+      await router.navigate({ replace: true });
     }
   });
   return <div className="flex gap-2 items-center flex-wrap  justify-center-safe">

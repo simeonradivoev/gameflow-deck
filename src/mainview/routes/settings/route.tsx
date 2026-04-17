@@ -8,7 +8,9 @@ import
   Outlet,
   createFileRoute,
   useMatch,
+  useMatchRoute,
   useRouter,
+  useRouterState,
 } from "@tanstack/react-router";
 import { ViewTransitionOptions } from "@tanstack/router-core";
 import classNames from "classnames";
@@ -22,7 +24,7 @@ import
   MonitorCog,
   Puzzle,
 } from "lucide-react";
-import { JSX } from "react";
+import { JSX, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 import z from "zod";
 import { SettingsSchema } from "../../../shared/constants";
@@ -45,17 +47,23 @@ export const Route = createFileRoute("/settings")({
 
 function MenuItem (data: {
   route: string;
+  matchRoutes?: string[];
   return?: boolean;
   viewTransition?: boolean | ViewTransitionOptions;
   icon: JSX.Element;
   focusSelect?: boolean;
   className?: string;
   linkClassName?: string;
+  active?: boolean;
   label: string;
 })
 {
   const router = useRouter();
-  const acitve = !!useMatch({ from: data.route as any, shouldThrow: false });;
+  const routerState = useRouterState();
+  const matchRoute = useMatchRoute();
+
+  const acitve = useMemo(() => data.matchRoutes ? data.matchRoutes.some(r => !!matchRoute({ to: r })) : !!router.matchRoute({ to: data.route }),
+    [routerState, matchRoute, data.matchRoutes, data.route]);
   const handleNonFocusSelect = (e?: Event) =>
   {
     if (data.return)
@@ -114,10 +122,11 @@ function MenuItem (data: {
 
 function SettingsMenu (data: {})
 {
+  const router = useRouter();
   const { ref, focusKey } = useFocusable({
     focusable: true,
     focusKey: 'settings-menu',
-    preferredChildFocusKey: `menu-item-${location.hash.replaceAll(/#|(\?.+)/g, '')}`
+    preferredChildFocusKey: `menu-item-${router.history.location.pathname}`
   });
 
   return <ul
@@ -146,15 +155,16 @@ function SettingsMenu (data: {})
       />
       <MenuItem
         focusSelect
-        route="/settings/directories"
-        label="Directories"
-        icon={<HardDrive />}
-      />
-      <MenuItem
-        focusSelect
+        matchRoutes={["/settings/plugin/$source", "/settings/plugins"]}
         route="/settings/plugins"
         label="Plugins"
         icon={<Puzzle />}
+      />
+      <MenuItem
+        focusSelect
+        route="/settings/directories"
+        label="Directories"
+        icon={<HardDrive />}
       />
       <MenuItem
         focusSelect

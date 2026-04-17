@@ -1,4 +1,4 @@
-import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginContextType, PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
 import path from 'node:path';
 import { config } from "@/bun/api/app";
@@ -7,7 +7,7 @@ export default class CEMUIntegration implements PluginType
 {
     emulator = 'CEMU';
 
-    load (ctx: PluginContextType)
+    async load (ctx: PluginLoadingContextType)
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
@@ -29,7 +29,7 @@ export default class CEMUIntegration implements PluginType
                 args.push(`--game=${ctx.autoValidCommand.metadata.romPath}`);
             }
 
-            return { args, savesPath: savesPath };
+            return { args, savesPath: { cemu: { cwd: savesPath } } };
         });
     }
 }

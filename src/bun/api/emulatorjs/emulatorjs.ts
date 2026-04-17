@@ -70,13 +70,13 @@ export default new Elysia({ prefix: '/emulatorjs' })
         const localGame = await getLocalGame(source, id);
         if (!localGame) return status("Not Found");
 
-        const changedSaveFiles: SaveFileChange[] = [];
+        const changedSaveFiles: Record<string, SaveFileChange> = {};
         if (save)
         {
             const savesPath = path.join(config.get('downloadPath'), 'saves', "EMULATORJS");
             const saveFile = path.join(savesPath, save.name);
             await Bun.write(saveFile, save);
-            changedSaveFiles.push({ subPath: save.name, cwd: savesPath });
+            changedSaveFiles.gameflow = { subPath: save.name, cwd: savesPath, shared: false };
             events.emit('notification', { message: "Save Backed Up", type: "success", icon: "save" });
         }
         await updateLocalLastPlayed(localGame.id);
@@ -85,7 +85,7 @@ export default new Elysia({ prefix: '/emulatorjs' })
             id,
             saveFolderPath: path.join(config.get('downloadPath'), "saves", "EMULATORJS"),
             gameInfo: { platformSlug: localGame?.platform.slug },
-            changedSaveFiles: changedSaveFiles,
+            changedSaveFiles: [],
             validChangedSaveFiles: changedSaveFiles,
             command: {
                 id: "EMULATORJS",

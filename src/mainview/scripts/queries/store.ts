@@ -43,6 +43,7 @@ export const storeEmulatorDeleteMutation = mutationOptions({
         if (error) throw error;
     }
 });
+
 export const storeGamesInfiniteQuery = (filter: GameListFilterType) => infiniteQueryOptions<{ data: FrontEndGameType[], nextPage: number; }>({
     initialPageParam: 0,
     queryKey: ['store-games', filter],
@@ -55,6 +56,7 @@ export const storeGamesInfiniteQuery = (filter: GameListFilterType) => infiniteQ
         return { data: games.games, nextPage: pageParam + 1 };
     }
 });
+
 export const storeGetStatsQuery = queryOptions({
     queryKey: ['store', 'stats'], queryFn: async () =>
     {

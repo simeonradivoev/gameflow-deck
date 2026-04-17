@@ -20,6 +20,7 @@ beforeAll(async () =>
     process.env.CUSTOM_STORE_PATH = resolve('./src/tests/mock-store');
     process.env.CONFIG_CWD = resolve('./src/tests/mock-config');
     process.env.DEFAULT_DOWNLOAD_PATH = resolve('./src/tests/mock-roms');
+    process.env.PLUGIN_BLACKLIST = 'com.simeonradivoev.gameflow.rclone';
 });
 
 async function FileCleanup ()

@@ -37,7 +37,6 @@ export default function CollectionList (data: {
                     id: `${g.id.source}@${g.id.id}`,
                     title: g.name,
                     focusKey: `collection-${g.id}`,
-                    subtitle: "",
                     previewUrl: `${RPC_URL(__HOST__)}${g.path_platform_cover}`,
                     badges: [
                         <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">
@@ -46,7 +45,7 @@ export default function CollectionList (data: {
                     ],
                 } satisfies GameMetaExtra))}
             onSelectGame={data.onSelect ? data.onSelect : handleDefaultSelect}
-            onGameFocus={(id, node, details) =>
+            onFocus={(id, node, details) =>
             {
                 data.setBackground(
                     `https://picsum.photos/id/${10 + (id ?? 0)}/100/100.webp?blur=10`,

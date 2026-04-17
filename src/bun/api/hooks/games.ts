@@ -3,6 +3,14 @@ import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfal
 
 export class GameHooks
 {
+    buildLaunchCommands = new AsyncSeriesBailHook<[ctx: {
+        source: string | null;
+        sourceId: string | null;
+        id: FrontEndId;
+        systemSlug: string;
+        gamePath: string | null,
+        mainGlob?: string | null,
+    }], CommandEntry[] | Error | undefined>(['ctx']);
     /** override the launch command for an emulator
          * @param ctx.autoValidCommands The auto generated command for example based on the ES-DE listing
          * @param ctx.emulator The emulator ID if any
@@ -20,7 +28,7 @@ export class GameHooks
             id: FrontEndId;
             platformSlug?: string;
         };
-    }], { args: string[], savesPath?: string; } | undefined, { emulator: string; }>(['ctx']);
+    }], { args: string[], savesPath?: SaveSlots; env?: Record<string, string>; } | undefined, { emulator: string; }>(['ctx']);
     /**
      * Is the given emulator for the given command supported 
      * @returns The current support level. Partial means it can affect some functionality. Full means fully integrated for example with portable ones where you can control all aspects.
@@ -37,9 +45,9 @@ export class GameHooks
     fetchGames = new AsyncSeriesHook<[ctx: {
         query: GameListFilterType;
         games: FrontEndGameTypeWithIds[];
-        filters: FrontEndFilterSets;
     }]>(['ctx']);
     fetchFilters = new AsyncSeriesHook<[ctx: {
+        source?: string;
         filters: FrontEndFilterSets;
     }]>(['ctx']);
     fetchGame = new AsyncSeriesBailHook<[ctx: {
@@ -58,7 +66,12 @@ export class GameHooks
     fetchDownloads = new AsyncSeriesBailHook<[ctx: {
         source: string;
         id: string;
+        downloadId?: string;
     }], DownloadInfo | undefined>(['ctx']);
+    fetchRomFiles = new AsyncSeriesBailHook<[ctx: {
+        source: string;
+        id: string;
+    }], string[] | undefined>(['ctx']);
     fetchRecommendedGamesForGame = new AsyncSeriesHook<[ctx: {
         game: FrontEndGameTypeDetailed,
         games: (FrontEndGameType & { metadata?: any; })[];
@@ -73,28 +86,39 @@ export class GameHooks
         id: string;
     }], FrontEndPlatformType | undefined>(['ctx']);
     platformLookup = new AsyncSeriesBailHook<[ctx: {
-        source: string;
-        id: string;
-    }], { slug: string; } | undefined>(['ctx']);
+        source?: string;
+        id?: string;
+        slug?: string;
+    }], {
+        slug: string;
+        url_logo?: string | null;
+        name?: string;
+        family_name?: string;
+    } | undefined>(['ctx']);
+    gameLookup = new AsyncSeriesBailHook<[ctx: { source: string, id: string; }], { screenshotUrls: string[]; } | undefined>(['ctx']);
     fetchPlatforms = new AsyncSeriesHook<[ctx: {
         platforms: FrontEndPlatformType[];
     }]>(['ctx']);
     prePlay = new AsyncSeriesHook<[ctx: {
         source: string,
         id: string;
-        saveFolderPath?: string;
+        saveFolderSlots: Record<string, { cwd: string; }>;
         setProgress: (progress: number, state: string) => void,
         command: CommandEntry;
         gameInfo: {
             platformSlug?: string;
         };
     }]>(["ctx"]);
+    /** 
+     * @param changedSaveFiles Auto detected changed files. This is mainly used to see what changed during gameplay
+     * @param validChangedSaveFiles This will be final valid changes to be saved using save integrations like rclone
+     */
     postPlay = new AsyncSeriesHook<[ctx: {
         source: string,
         id: string;
-        saveFolderPath?: string;
-        changedSaveFiles: SaveFileChange[],
-        validChangedSaveFiles: SaveFileChange[],
+        saveFolderSlots?: Record<string, { cwd: string; }>;
+        changedSaveFiles: { subPath: string, cwd: string; }[],
+        validChangedSaveFiles: Record<string, SaveFileChange>,
         command: CommandEntry;
         gameInfo: {
             platformSlug?: string;

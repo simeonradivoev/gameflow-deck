@@ -20,7 +20,7 @@ function spawnServer ()
             HEADLESS: "true",
         },
         stdout: "pipe",
-        stderr: "inherit",
+        stderr: "pipe",
         stdin: "pipe",
         signal: abortController.signal,
         killSignal: 'SIGUSR1',
@@ -39,6 +39,11 @@ function spawnServer ()
         {
             console.log(e);
         }
+    });
+    const rle = createInterface({ input: Readable.fromWeb(s.stderr as any) });
+    rle.on('line', e =>
+    {
+        console.error(e);
     });
     return s;
 }

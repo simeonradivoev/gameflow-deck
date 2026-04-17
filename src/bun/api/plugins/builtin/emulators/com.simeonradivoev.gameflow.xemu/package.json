@@ -5,6 +5,7 @@
     "description": "XEMU Emulator Integration",
     "main": "./xemu.ts",
     "icon": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Xemu_logo_green.svg",
+    "category": "emulators",
     "keywords": [
         "integration",
         "emulator",

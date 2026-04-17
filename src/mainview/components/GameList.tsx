@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
 import { DefaultRommStaleTime, GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
@@ -19,7 +19,6 @@ export interface GameListParams extends FocusParams
     className?: string;
     finalElement?: JSX.Element;
     saveChildFocus?: "session" | "local";
-    setFilterValues?: (filters: FrontEndFilterLists) => void;
 }
 
 export function GameList (data: GameListParams)
@@ -37,7 +36,7 @@ export function GameList (data: GameListParams)
             try
             {
                 const screenshotUrl = game.paths_screenshots && game.paths_screenshots.length > 0 ? new URL(`${RPC_URL(__HOST__)}${game.paths_screenshots[new Date().getMinutes() % game.paths_screenshots.length]}`) : undefined;
-                const coverUrl = new URL(`${RPC_URL(__HOST__)}${game.path_cover}`);
+                const coverUrl = new URL(`${RPC_URL(__HOST__)}${game.path_covers[0]}`);
                 const previewUrl = blur ? coverUrl : (screenshotUrl ?? coverUrl);
                 previewUrl.searchParams.delete('ts');
                 data.setBackground?.(previewUrl.href) ?? backgroundContext.setBackground(previewUrl.href);
@@ -47,11 +46,6 @@ export function GameList (data: GameListParams)
             }
         }
     };
-
-    useEffect(() =>
-    {
-        data.setFilterValues?.(games.data.filters);
-    }, [games.data.filters]);
 
     function handleDefaultSelect (g: FrontEndGameType)
     {
@@ -79,23 +73,31 @@ export function GameList (data: GameListParams)
                                 badges.push(<HardDrive className="sm:size-4 md:size-8 md:p-1 m-1" />);
                             }
 
-                            const previewUrl = new URL(`${RPC_URL(__HOST__)}${g.path_cover}`);
-                            previewUrl.searchParams.delete('ts');
+                            const previewUrls = g.path_covers.map(c =>
+                            {
+                                const url = new URL(`${RPC_URL(__HOST__)}${c}`);
+                                url.searchParams.delete('ts');
+                                return url;
+                            });
 
-                            const platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
-                            platformUrl.searchParams.set('width', "64");
+                            let platformUrl: URL | undefined = undefined;
+                            if (g.path_platform_cover)
+                            {
+                                platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
+                                platformUrl.searchParams.set('width', "64");
+                            }
 
                             return {
                                 id: `${g.id.source}@${g.id.id}`,
-                                focusKey: g.slug ?? `game-${g.id}`,
+                                focusKey: `${data.id}-${g.id.source}@${g.id.id}`,
                                 title: g.name ?? "",
                                 subtitle: (
                                     <div className="flex gap-1 items-center">
-                                        {!!g.path_platform_cover && <img className="sm:hidden md:inline size-4" src={platformUrl.href} />}
+                                        <img className="sm:hidden md:inline size-4" src={platformUrl?.href} />
                                         <p className="opacity-80">{g.platform_display_name}</p>
                                     </div>
                                 ),
-                                previewUrl: previewUrl.href,
+                                previewUrls: previewUrls,
                                 badges: badges,
                                 onSelect: () => data.onGameSelect ? data.onGameSelect(g.id, g.source, g.source_id) : handleDefaultSelect(g),
                                 onFocus: () => handleFocus(g.id, g.source, g.source_id)

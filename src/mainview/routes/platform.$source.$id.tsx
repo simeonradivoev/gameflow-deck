@@ -1,11 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CollectionsDetail } from "../components/CollectionsDetail";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { GameListFilterSchema, GameListFilterType, RPC_URL } from "../../shared/constants";
-import { platformQuery } from "@queries/romm";
+import { deletePlatformMutation, localPlatformFilter, platformQuery, updatePlatformMutation } from "@queries/romm";
 import { zodValidator } from "@tanstack/zod-adapter";
 import z from "zod";
 import { useLocalStorage } from "usehooks-ts";
+import { RefreshCcw, Settings2 } from "lucide-react";
+import { ContextList, DialogEntry, useContextDialog } from "../components/ContextDialog";
+import toast from "react-hot-toast";
 
 export const Route = createFileRoute("/platform/$source/$id")({
   component: RouteComponent,
@@ -31,18 +34,77 @@ function PlatformTitle (data: {})
 function RouteComponent ()
 {
   const { source, id } = Route.useParams();
+  const router = useRouter();
   const { countHint } = Route.useSearch();
   const [filter, setFilter] = useLocalStorage<GameListFilterType>("platforms-filters", {});
+  const updatePlatform = useMutation({
+    ...updatePlatformMutation(id), onSuccess (data, variables, onMutateResult, context)
+    {
+      context.client.invalidateQueries(localPlatformFilter(id));
+    },
+  });
+  const deletePlatform = useMutation({
+    ...deletePlatformMutation(id),
+    onError (error, variables, onMutateResult, context)
+    {
+      toast.error(error.message);
+    },
+    onSuccess (data, variables, onMutateResult, context)
+    {
+      context.client.invalidateQueries(localPlatformFilter(id));
+      router.history.back();
+    },
+  });
+  const settingsOptions: DialogEntry[] = [];
+  if (source === 'local')
+  {
+    settingsOptions.push({
+      id: 'update-platform',
+      type: "primary",
+      content: "Update Platform",
+      icon: updatePlatform.isPending ? <span className="loading loading-spinner loading-lg"></span> : <RefreshCcw />,
+      async action (ctx)
+      {
+        await updatePlatform.mutateAsync();
+        ctx.close();
+        router.navigate({ replace: true });
+      },
+    });
+
+    settingsOptions.push({
+      id: 'update-platform',
+      type: "error",
+      content: "Delete",
+      icon: deletePlatform.isPending ? <span className="loading loading-spinner loading-lg"></span> : <RefreshCcw />,
+      action (ctx)
+      {
+        deletePlatform.mutateAsync();
+      },
+    });
+  }
+
+  const { dialog: platformSettingsDialog, setOpen: setPlatformSettingsOpen } = useContextDialog('platform-settings-dialog', {
+    content: <ContextList options={settingsOptions} />
+  });
 
   return (
     <div className="w-full h-full">
       <CollectionsDetail
         localFilter={filter}
         setLocalFilter={setFilter}
+        headerButtons={[{
+          id: 'open-platform-settings-btn',
+          icon: <Settings2 />,
+          action ()
+          {
+            setPlatformSettingsOpen(true);
+          },
+        }]}
         countHint={countHint}
         title={<PlatformTitle />}
         filters={{ platform_id: Number(id), platform_source: source }}
       />
+      {platformSettingsDialog}
     </div>
   );
 }

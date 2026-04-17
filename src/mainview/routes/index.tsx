@@ -156,7 +156,7 @@ function HomeList (data: {
           saveChildFocus="session"
           onFocus={(l, n, d) =>
           {
-            const [source, id] = l.split('@');
+            const [source, id] = l.split('@', 1);
             queryClient.prefetchQuery(gameQuery(source, id));
             handleNodeFocus(l, n, d);
           }}
@@ -238,17 +238,11 @@ function MainMenu ()
           label="Home"
           type="secondary"
         />
-        <CircleIcon icon={<MessageSquare />} label="News" />
         <CircleIcon type="info" icon={<Store />} onAction={(e) => router.navigate({ to: "/store/tab", state: { eventType: e?.event?.type } })} label="Shop" />
-        <CircleIcon icon={<Image />} label="Album" />
-        <CircleIcon
-          icon={<Gamepad2 />}
-          label="Controllers"
-        />
         <CircleIcon
           onAction={(e) =>
           {
-            router.navigate({ to: '/settings/accounts', state: { eventType: e?.event?.type } });
+            router.navigate({ to: '/settings/interface', state: { eventType: e?.event?.type } });
           }}
           icon={<Settings />}
           label="Settings"

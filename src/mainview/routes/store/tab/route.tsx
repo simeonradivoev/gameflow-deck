@@ -104,6 +104,7 @@ function RouteComponent ()
   {
     if (type === 'emulator')
     {
+      if (source === 'local') return;
       router.navigate({ to: '/store/details/emulator/$id', params: { id } });
     }
     else if (type === 'game')

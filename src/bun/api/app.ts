@@ -18,13 +18,13 @@ import EventEmitter from "node:events";
 import { appPath } from "../utils";
 import { DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
 import { ensureDir } from "fs-extra";
-import UpdateStoreJob from "./jobs/update-store";
 import { getStoreFolder } from "./store/services/gamesService";
 import { PluginManager } from "./plugins/plugin-manager";
 import registerPlugins from "./plugins/register-plugins";
 import controls from './controls/controls';
 import { RunAPIServer } from "./rpc";
 import { RunBunServer } from "../server";
+import ReloadPluginsJob from "./jobs/reload-plugins-job";
 
 export let config: Conf<SettingsType>;
 export let customEmulators: Conf<Record<string, string>>;
@@ -72,7 +72,6 @@ export async function load ()
     console.log("Config Path Located At: ", config.path);
     console.log("Custom Emulator Paths Located At: ", customEmulators.path);
     console.log("App Directory is ", process.env.APPDIR);
-    console.log("Store Directory is ", getStoreFolder());
 
     cachePath = path.join(os.tmpdir(), 'gameflow', 'cache.sqlite');
     fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path), 'cookies.json'));
@@ -84,14 +83,14 @@ export async function load ()
     emulatorsDb = drizzle(emulatorsSqlite, { schema: emulatorSchema });
     await reloadDatabase();
     plugins = new PluginManager();
-    await registerPlugins(plugins);
     api = await RunAPIServer();
+    await registerPlugins(plugins);
+    taskQueue.enqueue(ReloadPluginsJob.id, new ReloadPluginsJob());
     controlsHandle = await controls();
     if (!process.env.PUBLIC_ACCESS) bunServer = await RunBunServer();
 
     config.onDidChange('downloadPath', () => reloadDatabase());
     config.onDidChange('rommAddress', v => client.setConfig({ baseUrl: v }));
-    taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
 }
 
 export async function cleanup ()
@@ -120,6 +119,7 @@ export async function reloadDatabase ()
     db = drizzle(sqlite, { schema });
     cache = drizzle(cacheSqlite, { schema: cacheSchema });
     migrate(db!, { migrationsFolder: appPath("./drizzle") });
+    sqlite.run("PRAGMA foreign_keys = ON;");
     await cache.run(`
         CREATE TABLE IF NOT EXISTS item_cache (
             key TEXT PRIMARY KEY,

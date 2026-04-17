@@ -4,10 +4,10 @@ import path from "node:path";
 import { config, db, emulatorsDb, plugins } from "../../app";
 import { and, eq } from "drizzle-orm";
 import * as schema from "@schema/app";
-import { StoreGameType } from "@shared/constants";
-import * as emulatorSchema from "@schema/emulators";
-import { extractStoreGameSourceId, getStoreGame } from "../../store/services/gamesService";
+import { RPC_URL, StoreGameType } from "@shared/constants";
 import { hashFile } from "@/bun/utils";
+import { host } from "@/bun/utils/host";
+import secrets from "../../secrets";
 
 export async function calculateSize (installPath: string | null)
 {
@@ -19,6 +19,11 @@ export async function checkInstalled (installPath: string | null)
 {
     if (!installPath) return false;
     return fs.exists(path.join(config.get('downloadPath'), installPath));
+}
+
+export function getScreenshotLocalGameMatch (id: string, source: string)
+{
+    return source !== 'local' ? and(eq(schema.games.source_id, id), eq(schema.games.source, source)) : eq(schema.games.id, Number(id));
 }
 
 export function getLocalGameMatch (id: string, source: string)
@@ -35,7 +40,7 @@ export function convertLocalToFrontend (g: typeof schema.games.$inferSelect & {
         platform_display_name: g.platform?.name ?? null,
         id: { id: String(g.id), source: 'local' },
         updated_at: g.created_at,
-        path_cover: `/api/romm/game/local/${g.id}/cover`,
+        path_covers: [`/api/romm/game/local/${g.id}/cover`],
         source_id: g.source_id,
         source: g.source,
         path_platform_cover: `/api/romm/platform/local/${g.platform_id}/cover`,
@@ -67,7 +72,7 @@ export async function convertLocalToFrontendDetailed (g: typeof schema.games.$in
         platform_display_name: g.platform?.name ?? "Local",
         id: { id: String(g.id), source: 'local' },
         updated_at: g.created_at,
-        path_cover: `/api/romm/game/local/${g.id}/cover`,
+        path_covers: [`/api/romm/game/local/${g.id}/cover`],
         source_id: g.source_id,
         source: g.source,
         path_platform_cover: `/api/romm/platform/local/${g.platform_id}/cover`,
@@ -82,6 +87,11 @@ export async function convertLocalToFrontendDetailed (g: typeof schema.games.$in
         fs_size_bytes: fileSize,
         missing: !exists,
         local: true,
+        ra_id: g.ra_id,
+        version: g.version,
+        version_source: g.version_source,
+        version_system: g.version_system,
+        igdb_id: g.igdb_id,
         metadata: {
             genres: g.metadata.genres ?? [],
             companies: g.metadata.companies ?? [],
@@ -94,74 +104,6 @@ export async function convertLocalToFrontendDetailed (g: typeof schema.games.$in
     };
 
     return game;
-}
-
-export async function convertStoreToFrontend (system: string, id: string, storeGame: StoreGameType): Promise<FrontEndGameType>
-{
-    const rommSystem = await emulatorsDb.query.systemMappings.findFirst({
-        where: and(eq(emulatorSchema.systemMappings.system, system), eq(emulatorSchema.systemMappings.source, 'romm'))
-    });
-
-    const platformDef = await emulatorsDb.query.systems.findFirst({
-        where: eq(emulatorSchema.systems.name, system),
-        columns: { fullname: true }
-    });
-
-    const gameId = `${system}@${id}`;
-
-    const game: FrontEndGameType = {
-        platform_display_name: platformDef?.fullname ?? system,
-        path_platform_cover: `/api/romm/image/romm/assets/platforms/${rommSystem?.sourceSlug ?? system}.svg`,
-        id: { source: 'store', id: gameId },
-        source: null,
-        source_id: null,
-        path_fs: null,
-        path_cover: `/api/romm/image?url=${encodeURIComponent(storeGame.pictures.titlescreens?.[0])}`,
-        last_played: null,
-        updated_at: new Date(),
-        slug: null,
-        name: storeGame.title,
-        platform_id: null,
-        platform_slug: rommSystem?.sourceSlug ?? system,
-        paths_screenshots: storeGame.pictures.screenshots?.map((s: string) => `/api/romm/image?url=${encodeURIComponent(s)}`) ?? [],
-        metadata: {
-            first_release_date: null
-        }
-    };
-
-    return game;
-}
-
-export async function convertStoreToFrontendDetailed (system: string, id: string, storeGame: StoreGameType): Promise<FrontEndGameTypeDetailed>
-{
-    let size: number | null = null;
-    try
-    {
-        const fileResponse = await fetch(storeGame.file, { method: 'HEAD' });
-        size = Number(fileResponse.headers.get('content-length'));
-    } catch (error)
-    {
-        console.error(error);
-    }
-
-    const detailed: FrontEndGameTypeDetailed = {
-        ...await convertStoreToFrontend(system, id, storeGame),
-        summary: storeGame.description,
-        fs_size_bytes: size,
-        missing: false,
-        local: false,
-        metadata: {
-            genres: storeGame.tags,
-            companies: [],
-            game_modes: [],
-            age_ratings: [],
-            player_count: "",
-            average_rating: null,
-            first_release_date: null
-        }
-    };
-
-    return detailed;
 }
 
 export async function getLocalGameDetailed (match: any)
@@ -182,7 +124,7 @@ export async function getLocalGameDetailed (match: any)
     return undefined;
 }
 
-export async function getSourceGameDetailed (source: string, id: string)
+export async function getSourceGameDetailed (source: string, id: string, options?: { sourceOnly?: boolean; })
 {
     if (source === 'local')
     {
@@ -194,30 +136,13 @@ export async function getSourceGameDetailed (source: string, id: string)
     {
         const localGame = await getLocalGameDetailed(getLocalGameMatch(id, source));
 
-        if (source === 'store')
+        const remoteGame = await plugins.hooks.games.fetchGame.promise({ source, id, localGame });
+        if (localGame && options?.sourceOnly !== true)
         {
-            const gameId = extractStoreGameSourceId(id);
-            const storeGame = await getStoreGame(gameId.system, gameId.id);
-            if (!storeGame) return undefined;
-            const storeFrontendGame = await convertStoreToFrontendDetailed(gameId.system, gameId.id, storeGame);
-            if (localGame)
-            {
-                return { ...storeFrontendGame, ...localGame };
-            }
-            return storeFrontendGame;
-        } else
-        {
-            const remoteGame = await plugins.hooks.games.fetchGame.promise({ source, id, localGame });
-            if (remoteGame)
-            {
-                return remoteGame;
-            } else if (localGame)
-            {
-                return localGame;
-            }
+            return localGame;
         }
 
-        return undefined;
+        return remoteGame;
     }
 }
 

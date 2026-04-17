@@ -2,7 +2,7 @@ import { ContextList, DialogEntry, useContextDialog } from "./ContextDialog";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import { MatchRoute, useMatch, useMatchRoute, useNavigate, useRouterState } from "@tanstack/react-router";
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
-import { DoorOpen, Gamepad2, RefreshCcw, Settings, Store } from "lucide-react";
+import { DoorOpen, Gamepad2, Puzzle, RefreshCcw, Settings, Store } from "lucide-react";
 import { systemApi } from "../scripts/clientApi";
 import { FOCUS_KEYS } from "../scripts/types";
 
@@ -54,11 +54,23 @@ export default function SelectMenu (data: { rootFocusKey: string; })
             action (ctx)
             {
                 setOpen(false);
-                navigate({ to: "/settings/accounts" });
+                navigate({ to: "/settings/interface" });
             },
-            selected: !!matchRoute({ to: '/settings/accounts' }),
+            selected: !!matchRoute({ to: '/settings' }) && !matchRoute({ to: '/settings/plugins' }) && !matchRoute({ to: '/settings/plugin/$source' }),
             type: "accent",
             id: "settings-m"
+        },
+        {
+            content: "Plugins",
+            icon: <Puzzle />,
+            action (ctx)
+            {
+                setOpen(false);
+                navigate({ to: "/settings/plugins" });
+            },
+            selected: !!matchRoute({ to: '/settings/plugins' }) && !matchRoute({ to: '/settings/plugin/$source' }),
+            type: "accent",
+            id: "plugins-m"
         },
         {
             content: "Reload",

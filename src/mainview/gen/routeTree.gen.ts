@@ -22,6 +22,7 @@ import { Route as StoreTabRouteRouteImport } from './../routes/store/tab/route'
 import { Route as StoreTabIndexRouteImport } from './../routes/store/tab/index'
 import { Route as StoreTabGamesRouteImport } from './../routes/store/tab/games'
 import { Route as StoreTabEmulatorsRouteImport } from './../routes/store/tab/emulators'
+import { Route as SettingsPluginSourceRouteImport } from './../routes/settings/plugin.$source'
 import { Route as PlatformSourceIdRouteImport } from './../routes/platform.$source.$id'
 import { Route as LauncherSourceIdRouteImport } from './../routes/launcher.$source.$id'
 import { Route as GameSourceIdRouteImport } from './../routes/game/$source.$id'
@@ -94,6 +95,11 @@ const StoreTabEmulatorsRoute = StoreTabEmulatorsRouteImport.update({
   path: '/emulators',
   getParentRoute: () => StoreTabRouteRoute,
 } as any)
+const SettingsPluginSourceRoute = SettingsPluginSourceRouteImport.update({
+  id: '/plugin/$source',
+  path: '/plugin/$source',
+  getParentRoute: () => SettingsRouteRoute,
+} as any)
 const PlatformSourceIdRoute = PlatformSourceIdRouteImport.update({
   id: '/platform/$source/$id',
   path: '/platform/$source/$id',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
+  '/settings/plugin/$source': typeof SettingsPluginSourceRoute
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
   '/store/tab/': typeof StoreTabIndexRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
+  '/settings/plugin/$source': typeof SettingsPluginSourceRoute
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
   '/store/tab': typeof StoreTabIndexRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/game/$source/$id': typeof GameSourceIdRoute
   '/launcher/$source/$id': typeof LauncherSourceIdRoute
   '/platform/$source/$id': typeof PlatformSourceIdRoute
+  '/settings/plugin/$source': typeof SettingsPluginSourceRoute
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
   '/store/tab/': typeof StoreTabIndexRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
+    | '/settings/plugin/$source'
     | '/store/tab/emulators'
     | '/store/tab/games'
     | '/store/tab/'
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
+    | '/settings/plugin/$source'
     | '/store/tab/emulators'
     | '/store/tab/games'
     | '/store/tab'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/game/$source/$id'
     | '/launcher/$source/$id'
     | '/platform/$source/$id'
+    | '/settings/plugin/$source'
     | '/store/tab/emulators'
     | '/store/tab/games'
     | '/store/tab/'
@@ -359,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreTabEmulatorsRouteImport
       parentRoute: typeof StoreTabRouteRoute
     }
+    '/settings/plugin/$source': {
+      id: '/settings/plugin/$source'
+      path: '/plugin/$source'
+      fullPath: '/settings/plugin/$source'
+      preLoaderRoute: typeof SettingsPluginSourceRouteImport
+      parentRoute: typeof SettingsRouteRoute
+    }
     '/platform/$source/$id': {
       id: '/platform/$source/$id'
       path: '/platform/$source/$id'
@@ -411,6 +430,7 @@ interface SettingsRouteRouteChildren {
   SettingsEmulatorsRoute: typeof SettingsEmulatorsRoute
   SettingsInterfaceRoute: typeof SettingsInterfaceRoute
   SettingsPluginsRoute: typeof SettingsPluginsRoute
+  SettingsPluginSourceRoute: typeof SettingsPluginSourceRoute
 }
 
 const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
@@ -420,6 +440,7 @@ const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
   SettingsEmulatorsRoute: SettingsEmulatorsRoute,
   SettingsInterfaceRoute: SettingsInterfaceRoute,
   SettingsPluginsRoute: SettingsPluginsRoute,
+  SettingsPluginSourceRoute: SettingsPluginSourceRoute,
 }
 
 const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(

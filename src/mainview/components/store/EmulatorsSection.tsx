@@ -35,7 +35,7 @@ function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (detail
 export function EmulatorsSection (data: {
     id: string;
     emulators?: FrontEndEmulator[];
-    onSelect?: (id: string, focusKey: string) => void;
+    onSelect?: (em: FrontEndEmulator, focusKey: string) => void;
     header?: any;
 } & FocusParams)
 {
@@ -64,7 +64,7 @@ export function EmulatorsSection (data: {
 
                 <Carousel scrollRef={containerRef} className="flex *:min-w-[18rem] overflow-y-hidden overflow-x-scroll scrollbar-none py-2 pb-4 px-4 gap-4 select-none">
                     {data.emulators?.map((em) => (
-                        <StoreEmulatorCard id={`${data.id}-${em.name}`} key={em.name} emulator={em} onSelect={(id, focusKey) => data.onSelect?.(em.name, focusKey)} onFocus={({ node, details }) =>
+                        <StoreEmulatorCard id={`${data.id}-${em.name}`} key={em.name} emulator={em} onSelect={(id, focusKey) => data.onSelect?.(em, focusKey)} onFocus={({ node, details }) =>
                         {
                             scrollIntoNearestParent(node, { behavior: details.instant ? 'instant' : 'smooth' });
                         }} />

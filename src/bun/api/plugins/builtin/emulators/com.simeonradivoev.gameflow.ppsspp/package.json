@@ -5,6 +5,7 @@
     "description": "PPSSPP Emulator Integration",
     "main": "./ppsspp.ts",
     "icon": "https://www.ppsspp.org/static/img/platform/ppsspp-icon.png",
+    "category": "emulators",
     "keywords": [
         "integration",
         "emulator",

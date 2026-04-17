@@ -5,6 +5,7 @@
     "description": "XENIA Emulator Integration",
     "main": "./xenia.ts",
     "icon": "https://xenia.jp/images/logo-256x256.png",
+    "category": "emulators",
     "keywords": [
         "integration",
         "emulator",

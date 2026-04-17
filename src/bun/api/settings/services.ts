@@ -2,10 +2,9 @@
 import * as appSchema from '@schema/app';
 import * as emulatorSchema from "@schema/emulators";
 import { eq, inArray } from 'drizzle-orm';
-import { db, emulatorsDb } from '../app';
+import { db, emulatorsDb, plugins } from '../app';
 import { cores } from '../emulatorjs/emulatorjs';
 import { SERVER_URL } from '@/shared/constants';
-import { findExecsByName } from '../games/services/launchGameService';
 import { host } from '@/bun/utils/host';
 import { findEmulatorPluginIntegration } from '../store/services/emulatorsService';
 
@@ -54,7 +53,18 @@ export async function getRelevantEmulators ()
     const groupedEmulators = Map.groupBy(emulators, ({ emulator }) => emulator);
     const finalEmulators = await Promise.all(Array.from(groupedEmulators.entries()).map(async ([emulator, system_slug]) =>
     {
-        const execPaths = await findExecsByName(emulator);
+        const execPaths: EmulatorSourceEntryType[] = [];
+        await plugins.hooks.emulators.findEmulatorSource.promise({ emulator, sources: execPaths });
+        const integrations = findEmulatorPluginIntegration(emulator, execPaths);
+
+        const storeEmulator = await plugins.hooks.store.fetchEmulator.promise({ id: emulator });
+
+        if (storeEmulator)
+        {
+            storeEmulator.validSources = execPaths;
+            storeEmulator.integrations = integrations;
+            return storeEmulator;
+        }
 
         let platform: number | null | undefined = null;
         const validSystemSlug = system_slug.find(s => s.system);
@@ -75,7 +85,7 @@ export async function getRelevantEmulators ()
             gameCount: 0,
             isCritical: false,
             validSources: execPaths,
-            integrations: findEmulatorPluginIntegration(emulator, execPaths)
+            integrations
         };
 
         return em;

@@ -1,6 +1,6 @@
 import Elysia, { status } from "elysia";
 import z from "zod";
-import { and, count, eq, getTableColumns, not } from "drizzle-orm";
+import { and, count, eq, getTableColumns, not, notExists } from "drizzle-orm";
 import { db, plugins } from "../app";
 import * as schema from "@schema/app";
 
@@ -93,7 +93,8 @@ export default new Elysia()
             if (!remotePlatform) return status("Not Found");
             return remotePlatform;
         }
-    }, { params: z.object({ source: z.string(), id: z.string() }) }).get('/platform/local/:id/cover', async ({ params: { id }, set }) =>
+    }, { params: z.object({ source: z.string(), id: z.string() }) })
+    .get('/platform/local/:id/cover', async ({ params: { id }, set }) =>
     {
         set.headers["cross-origin-resource-policy"] = 'cross-origin';
 
@@ -112,4 +113,35 @@ export default new Elysia()
             set.headers["content-type"] = coverBlob.cover_type;
         }
         return status(200, coverBlob.cover);
-    }, { response: { 200: z.instanceof(Buffer<ArrayBufferLike>), 404: z.any() }, params: z.object({ id: z.coerce.number() }) });
+    }, { response: { 200: z.instanceof(Buffer<ArrayBufferLike>), 404: z.any() }, params: z.object({ id: z.coerce.number() }) })
+    .post('/platform/local/:id/update', async ({ params: { id } }) =>
+    {
+        const localPlatform = await db.query.platforms.findFirst({ where: eq(schema.platforms.id, Number(id)) });
+        if (!localPlatform) return status("Not Found");
+
+        const platformLookup = await plugins.hooks.games.platformLookup.promise({
+            slug: localPlatform.slug
+        });
+        let platformCover = await fetch(`https://demo.romm.app/assets/platforms/${localPlatform.slug}.svg`);
+        if (!platformCover.ok && platformLookup?.url_logo)
+        {
+            platformCover = await fetch(platformLookup.url_logo);
+        }
+
+        await db.update(schema.platforms).set({
+            name: platformLookup?.name,
+            cover: Buffer.from(await platformCover.arrayBuffer()),
+            cover_type: platformCover.headers.get('content-type'),
+        }).where(eq(schema.platforms.id, localPlatform.id));
+    })
+    .delete('/platform/local/:id', async ({ params: { id } }) =>
+    {
+        const deleted = await db.delete(schema.platforms).where(and(eq(schema.platforms.id, Number(id)),
+            notExists(
+                db
+                    .select()
+                    .from(schema.games)
+                    .where(eq(schema.games.platform_id, Number(id)))
+            ))).returning();
+        if (deleted.length <= 0) return status("Not Found");
+    });

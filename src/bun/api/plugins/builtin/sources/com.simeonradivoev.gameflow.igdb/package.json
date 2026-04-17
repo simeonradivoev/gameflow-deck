@@ -1,0 +1,13 @@
+{
+    "name": "com.simeonradivoev.gameflow.igdb",
+    "displayName": "IGDB Integration",
+    "version": "0.0.1",
+    "description": "IGDB Metadata Integration",
+    "main": "./igdb.ts",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/IGDB_logo.svg/1920px-IGDB_logo.svg.png",
+    "category": "sources",
+    "keywords": [
+        "integration",
+        "igdb"
+    ]
+}

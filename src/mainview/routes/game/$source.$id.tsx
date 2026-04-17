@@ -23,6 +23,7 @@ import { GamesSection } from "@/mainview/components/store/GamesSection";
 import Details from "@/mainview/components/game/Details";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import SelectMenu from "@/mainview/components/SelectMenu";
+import { en } from "zod/v4/locales";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>
@@ -145,7 +146,7 @@ function RouteComponent ()
   const [, setUpdate] = useState(0);
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details", preferredChildFocusKey: "main-details", forceFocus: true });
   const headerRef = useRef(null);
-  const backgroundImage = data ? new URL(`${RPC_URL(__HOST__)}${data.path_cover}`) : undefined;
+  const backgroundImage = data ? new URL(`${RPC_URL(__HOST__)}${data.path_covers[0]}`) : undefined;
   const { data: recommendedGames } = useQuery({ ...gamesRecommendedBasedOnGameQuery(data?.id.source ?? source, data?.id.id ?? id), enabled: !!data && recommendedGamesVisible });
 
   useShortcuts(focusKey, () => [{
@@ -185,9 +186,10 @@ function RouteComponent ()
                     Related Emulators
                   </h2></>}
                 onFocus={scrollIntoViewHandler({ block: 'center' })}
-                onSelect={(id, focus) =>
+                onSelect={(em, focus) =>
                 {
-                  router.navigate({ to: '/store/details/emulator/$id', params: { id } });
+                  if (em.source === 'local') return;
+                  router.navigate({ to: '/store/details/emulator/$id', params: { id: em.name } });
                 }}
                 emulators={recommendedEmulators} />}
 

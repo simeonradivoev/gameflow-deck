@@ -1,19 +1,18 @@
 
 import Elysia, { status } from "elysia";
-import { config, db, taskQueue } from "../app";
+import { config, db, plugins, taskQueue } from "../app";
 import path from "node:path";
 import fs from 'node:fs/promises';
-import { EmulatorDownloadInfoSchema, StoreGameSchema } from "@/shared/constants";
-import { findExecsByName } from "../games/services/launchGameService";
+import { EmulatorDownloadInfoSchema } from "@/shared/constants";
 import * as appSchema from '@schema/app';
 import z from "zod";
-import { convertLocalToFrontendDetailed, convertStoreToFrontendDetailed, getLocalGameMatch } from "../games/services/utils";
+import { convertLocalToFrontendDetailed, getLocalGameMatch } from "../games/services/utils";
 import { getPlatformsApiPlatformsGet } from "@/clients/romm";
 import { CACHE_KEYS, getOrCached } from "../cache";
-import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "./services/gamesService";
+import { getStoreFolder } from "./services/gamesService";
 import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
-import { convertStoreEmulatorToFrontend, findEmulatorPluginIntegration, getEmulatorDownload, getExistingStoreEmulatorDownload } from "./services/emulatorsService";
 import { BiosDownloadJob } from "../jobs/bios-download-job";
+import { findEmulatorPluginIntegration } from "./services/emulatorsService";
 
 export const store = new Elysia({ prefix: '/api/store' })
     .get('/emulators', async ({ query }) =>
@@ -23,42 +22,32 @@ export const store = new Elysia({ prefix: '/api/store' })
             console.error(e);
             return undefined;
         });
-        const emulatesParsed = await getAllStoreEmulatorPackages();
-        let frontEndEmulators = await Promise.all(emulatesParsed
-            .filter(e =>
+
+
+        let frontEndEmulators: FrontEndEmulator[] = [];
+        await plugins.hooks.store.fetchEmulators.promise({ emulators: frontEndEmulators, search: query.search });
+
+        await Promise.all(frontEndEmulators.map(async e =>
+        {
+            const gameCounts = e.systems.map((s) =>
             {
-                if (!e.os.includes(process.platform as any)) return false;
-                if (query.search)
+                const romPlatform = rommPlatforms?.find(p => p.slug === (s.romm_slug ?? s.id));
+                if (romPlatform)
                 {
-                    const lowerCaseSearch = query.search.toLocaleLowerCase();
-
-                    if (e.name.toLocaleLowerCase().includes(lowerCaseSearch) || e.systems.some(s => s.toLocaleLowerCase().includes(lowerCaseSearch)) || e.keywords?.some(k => k.toLocaleLowerCase().includes(lowerCaseSearch)))
-                    {
-                        return true;
-                    }
-
-                    return false;
+                    return romPlatform.rom_count;
                 }
-                return true;
-            })
-            .map(async (emulator) =>
-            {
-                const systems = await buildStoreFrontendEmulatorSystems(emulator);
-                const gameCounts = await Promise.all(systems.map(async (s) =>
-                {
-                    const romPlatform = rommPlatforms?.find(p => p.slug === (s.romm_slug ?? s.id));
-                    if (romPlatform)
-                    {
-                        return romPlatform.rom_count;
-                    }
 
-                    return 0;
+                return 0;
 
-                }));
+            });
 
-                const gameCount = gameCounts.reduce((a, c) => a + c);
-                return convertStoreEmulatorToFrontend(emulator, gameCount, systems);
-            }));
+            const execPaths: EmulatorSourceEntryType[] = [];
+            await plugins.hooks.emulators.findEmulatorSource.promise({ emulator: e.name, sources: execPaths });
+            const integrations = findEmulatorPluginIntegration(e.name, execPaths);
+
+            e.gameCount = gameCounts.reduce((a, c) => a + c);
+            e.integrations = integrations;
+        }));
 
         if (query.missing)
         {
@@ -98,24 +87,30 @@ export const store = new Elysia({ prefix: '/api/store' })
         })
     .get('/games/featured', async () =>
     {
-        const response = await fetch('https://cdn.jsdelivr.net/gh/dragoonDorise/EmuDeck/store/featured.json');
-        const games = await z.object({ featured: z.array(StoreGameSchema) }).parseAsync(await response.json());
-        return Promise.all(games.featured.map(async g =>
+        const games: FrontEndGameTypeDetailed[] = [];
+        await plugins.hooks.store.fetchFeaturedGames.promise({ games });
+
+        return Promise.all(games.map(async g =>
         {
-            const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(`${g.system}@${g.title}`, 'store') });
+            const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(g.id.id, g.id.source) });
             if (localGame) return convertLocalToFrontendDetailed(localGame);
-            return convertStoreToFrontendDetailed(g.system, g.title, g);
+            return g;
         }));
     })
     .get('/stats', async () =>
     {
-        const emulatesParsed = await getAllStoreEmulatorPackages();
-        const storeEmulatorCount = emulatesParsed.filter(e => e.os.includes(process.platform as any)).length;
+        let frontEndEmulators: FrontEndEmulator[] = [];
+        await plugins.hooks.store.fetchEmulators.promise({ emulators: frontEndEmulators });
+        const storeEmulatorCount = frontEndEmulators.length;
         const gameCount = await db.$count(appSchema.games);
         return {
             storeEmulatorCount,
             gameCount
         };
+    })
+    .get('/media/*', async ({ params }) =>
+    {
+        return Bun.file(path.join(getStoreFolder(), params["*"]));
     })
     .get('/screenshot/emulator/:id/:name', async ({ params: { id, name } }) =>
     {
@@ -124,49 +119,14 @@ export const store = new Elysia({ prefix: '/api/store' })
         { params: z.object({ id: z.string(), name: z.string() }) })
     .get('/emulator/:id/update', async ({ params: { id } }) =>
     {
-        const emulatorPackage = await getStoreEmulatorPackage(id);
-        const downloadInfo = await getExistingStoreEmulatorDownload(emulatorPackage!);
-        return downloadInfo;
+        return plugins.hooks.store.fetchDownload.promise({ id });
     },
         {
             response: z.union([z.intersection(EmulatorDownloadInfoSchema, z.object({ hasUpdate: z.boolean() })), z.undefined()])
         })
     .get('/emulator/:id', async ({ params: { id } }) =>
     {
-        const emulatorPackage = await getStoreEmulatorPackage(id);
-        if (!emulatorPackage) return status("Not Found");
-
-        const systems = await buildStoreFrontendEmulatorSystems(emulatorPackage);
-
-        const execPaths = await findExecsByName(emulatorPackage.name);
-
-        const emulatorScreenshotsPath = path.join(getStoreFolder(), "media", "screenshots", id);
-        const screenshots = await fs.exists(emulatorScreenshotsPath) ? await fs.readdir(emulatorScreenshotsPath) : [];
-        const biosDirPath = path.join(config.get('downloadPath'), 'bios', id);
-        const biosFiles = await fs.exists(biosDirPath) ? await fs.readdir(biosDirPath) : [];
-        const storeDownloadInfo = await getExistingStoreEmulatorDownload(emulatorPackage);
-
-        const emulator: FrontEndEmulatorDetailed = {
-            name: emulatorPackage.name,
-            description: emulatorPackage.description,
-            systems,
-            validSources: execPaths,
-            screenshots: screenshots.map(s => `/api/store/screenshot/emulator/${id}/${s}`),
-            gameCount: 0,
-            homepage: emulatorPackage.homepage,
-            downloads: (await Promise.all(emulatorPackage.downloads?.[`${process.platform}:${process.arch}`].map(async d =>
-            {
-                const download = await getEmulatorDownload(emulatorPackage, d.type).catch(e => undefined);
-                return download?.info;
-            }) ?? [])).filter(d => !!d).map(d => ({ name: d.type, type: d.type, version: d.version })),
-            logo: emulatorPackage.logo,
-            biosRequirement: emulatorPackage.bios,
-            bios: biosFiles,
-            integrations: findEmulatorPluginIntegration(emulatorPackage.name, execPaths),
-            storeDownloadInfo: storeDownloadInfo
-        };
-
-        return emulator;
+        return plugins.hooks.store.fetchEmulator.promise({ id });
     }, { params: z.object({ id: z.string() }) })
     .post('/install/emulator/:id/:source', async ({ params: { source, id }, body: { isUpdate } }) =>
     {

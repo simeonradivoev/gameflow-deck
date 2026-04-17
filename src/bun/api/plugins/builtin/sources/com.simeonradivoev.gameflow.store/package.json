@@ -1,0 +1,13 @@
+{
+    "name": "com.simeonradivoev.gameflow.store",
+    "displayName": "Gameflow Store",
+    "version": "0.0.1",
+    "description": "The internal gameflow store",
+    "main": "./store.ts",
+    "category": "sources",
+    "canDisable": false,
+    "keywords": [
+        "internal",
+        "store"
+    ]
+}

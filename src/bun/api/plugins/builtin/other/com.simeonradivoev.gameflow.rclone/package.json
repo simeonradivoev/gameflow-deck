@@ -1,0 +1,13 @@
+{
+    "name": "com.simeonradivoev.gameflow.rclone",
+    "displayName": "Rclone Integration",
+    "version": "0.0.1",
+    "description": "Rclone integration for syncing saves",
+    "main": "./rclone.ts",
+    "icon": "https://forum.rclone.org/uploads/default/original/2X/8/8a14ccd453604987a64820f56c6afa75c229aa17.png",
+    "category": "saves",
+    "keywords": [
+        "integration",
+        "rclone"
+    ]
+}

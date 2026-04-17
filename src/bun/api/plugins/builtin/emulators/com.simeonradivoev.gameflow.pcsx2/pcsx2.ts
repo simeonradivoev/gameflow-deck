@@ -1,6 +1,6 @@
 
 import { config } from "@/bun/api/app";
-import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import defaultConfig from './PCSX2.ini' with { type: 'file' };
 import path from 'node:path';
 import { ensureDir } from "fs-extra";
@@ -11,7 +11,7 @@ export default class PCSX2Integration implements PluginType
 {
     emulator = "PCSX2";
 
-    load (ctx: PluginContextType)
+    async load (ctx: PluginLoadingContextType)
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
@@ -103,7 +103,7 @@ export default class PCSX2Integration implements PluginType
 
                 await Bun.write(configPath, ini.stringify(configFile));
 
-                return { args, savesPath: paths.MEMORY_CARDS_PATH };
+                return { args, savesPath: { pcsx2: { cwd: paths.MEMORY_CARDS_PATH } } };
             }
 
             return { args };

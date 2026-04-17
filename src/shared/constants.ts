@@ -1,6 +1,5 @@
 
 
-import { FocusDetails } from '@noriginmedia/norigin-spatial-navigation';
 import { JSX } from 'react';
 import * as z from 'zod';
 
@@ -14,7 +13,6 @@ export const RPC_PORT = 8787;
 export const RPC_URL = (host: string) => `http://${host}:${RPC_PORT}`;
 export const EMULATORJS_URL = (host: string) => `http://${host}:${EMULATORJS_PORT}`;
 export const SOCKETS_URL = (host: string) => `ws://${host}:${RPC_PORT}`;
-export const STORE_VERSION = "^0";
 
 export const DefaultRommStaleTime = 60 * 1000; // A minute
 export interface GameMeta extends FocusParams
@@ -22,8 +20,8 @@ export interface GameMeta extends FocusParams
     id: string,
     onSelect?: () => void,
     title: string,
-    subtitle: string | JSX.Element,
-    previewUrl?: string;
+    subtitle?: string | JSX.Element,
+    previewUrls?: string | URL[];
     previewSrcset?: string;
 };
 
@@ -88,17 +86,46 @@ export const GithubManifestSchema = z.object({
     }))
 });
 
-export const StoreGameSchema = z.object({
-    system: z.string(),
-    title: z.string(),
-    url: z.string().optional(),
-    file: z.url(),
-    description: z.string(),
-    pictures: z.object({
-        screenshots: z.array(z.string()),
-        titlescreens: z.array(z.string())
+export const StoreGameSaveSchema = z.object({
+    cwd: z.string(),
+    globs: z.string().array()
+});
+
+export const StoreDownloadSchema = z.discriminatedUnion('type', [
+    z.object({
+        type: z.literal('direct'),
+        url: z.url(),
+        name: z.string().optional(),
+        system: z.string(),
+        main: z.string().optional(),
+        saves: z.record(z.string(), StoreGameSaveSchema).optional()
     }),
-    tags: z.array(z.string())
+    z.object({
+        type: z.literal("itch"),
+        path: z.string(),
+        name: z.string().optional(),
+        system: z.string(),
+        saves: z.record(z.string(), StoreGameSaveSchema).optional()
+    })
+]);
+
+export const StoreGameSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    version: z.string(),
+    homepage: z.string().optional(),
+    keywords: z.string().array().optional(),
+    genres: z.string().array().optional(),
+    companies: z.string().array().optional(),
+    screenshots: z.string().array().optional(),
+    covers: z.string().array().optional(),
+    igdb_id: z.number().optional(),
+    ra_id: z.number().optional(),
+    sgdb_id: z.number().optional(),
+    first_release_date: z.union([z.number(), z.date()]).optional(),
+    player_count: z.string().optional(),
+    saves: z.record(z.string(), z.record(z.string(), StoreGameSaveSchema)).optional(),
+    downloads: z.record(z.string(), StoreDownloadSchema)
 });
 
 export const EmulatorPackageSchema = z.object({
@@ -175,6 +202,7 @@ export const EmulatorDownloadInfoSchema = z.object({
 
 export type EmulatorPackageType = z.infer<typeof EmulatorPackageSchema>;
 export type StoreGameType = z.infer<typeof StoreGameSchema>;
+export type StoreDownloadType = z.infer<typeof StoreDownloadSchema>;
 export type SettingsType = z.infer<typeof SettingsSchema>;
 export type LocalSettingsType = z.infer<typeof LocalSettingsSchema>;
 export const PlatformSchema = z.object({ slug: z.string() });

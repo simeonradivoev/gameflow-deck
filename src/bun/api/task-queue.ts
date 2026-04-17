@@ -1,7 +1,8 @@
 
 
+import { and } from 'drizzle-orm';
 import EventEmitter from 'node:events';
-import z from 'zod';
+import z, { any } from 'zod';
 
 export class TaskQueue
 {
@@ -121,29 +122,29 @@ export interface EventsList
     queued: [e: BaseEvent];
 }
 
-interface BaseEvent
+export interface BaseEvent
 {
     id: string;
     job: IPublicJob<any, string, any>;
 }
 
-interface ErrorEvent extends BaseEvent
+export interface ErrorEvent extends BaseEvent
 {
     error: unknown;
 }
 
-interface AbortEvent extends BaseEvent
+export interface AbortEvent extends BaseEvent
 {
     reason?: any;
 }
 
-interface ProgressEvent extends BaseEvent
+export interface ProgressEvent extends BaseEvent
 {
     progress: number;
     state?: string;
 }
 
-interface CompletedEvent extends BaseEvent
+export interface CompletedEvent extends BaseEvent
 {
 
 }

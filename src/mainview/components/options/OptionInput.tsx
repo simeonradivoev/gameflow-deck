@@ -19,6 +19,7 @@ export function OptionInput (data: {
     step?: number;
     defaultValue?: string | boolean | number;
     autocomplete?: HTMLInputAutoCompleteAttribute;
+    compact?: boolean;
     onBlur?: FocusEventHandler<HTMLInputElement>;
     onChange?: (value: string | number | boolean) => void;
 })
@@ -121,7 +122,7 @@ export function OptionInput (data: {
     };
 
     return (
-        <label ref={ref} className={`flex items-center gap-3 rounded-full sm:flex-2 md:flex-1 divide-accent group-focusable`}>
+        <label ref={ref} className={twMerge(`flex items-center gap-3 rounded-full divide-accent group-focusable`, data.compact !== true ? "sm:flex-2 md:flex-1" : "")}>
             {!!data.icon && <span className="text-base-content/80">{data.icon}</span>}
             {data.type !== 'checkbox' && <input
                 ref={inputRef}

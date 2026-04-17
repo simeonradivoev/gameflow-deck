@@ -5,7 +5,6 @@ import * as schema from "@schema/app";
 import * as emulatorSchema from "@schema/emulators";
 import path, { join } from 'node:path';
 import { config, db, emulatorsDb, events, plugins } from "../app";
-import { extractStoreGameSourceId, getStoreGameFromId } from "../store/services/gamesService";
 import * as igdb from 'ts-igdb-client';
 import secrets from "../secrets";
 import { simulateProgress } from "@/bun/utils";
@@ -13,17 +12,16 @@ import { Downloader } from "@/bun/utils/downloader";
 import Seven from 'node-7z';
 import z from "zod";
 import { checkFiles } from "../games/services/utils";
-import { ensureDir, existsSync } from "fs-extra";
+import { ensureDir, move } from "fs-extra";
 import { path7za } from "7zip-bin";
-import slugify from 'slugify';
 import StreamZip from 'node-stream-zip';
-import { createExtractorFromFile } from 'node-unrar-js';
 import { which } from "bun";
 
 interface JobConfig
 {
     dryRun?: boolean;
     dryDownload?: boolean;
+    downloadId?: string;
 }
 
 export type InstallJobStates = 'download' | 'extract';
@@ -55,34 +53,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
         const downloadPath = config.get('downloadPath');
         let info: DownloadInfo | undefined;
 
-        switch (this.source)
-        {
-            case 'store':
-                const game = await getStoreGameFromId(this.gameId);
-                const gameId = extractStoreGameSourceId(this.gameId);
-                info = {
-                    coverUrl: game.pictures.titlescreens[0],
-                    screenshotUrls: game.pictures.screenshots,
-                    files: [{
-                        url: new URL(game.file),
-                        file_path: `roms/${game.system}`,
-                        file_name: path.basename(decodeURI(game.file)),
-                        size: 0
-                    }],
-                    slug: this.gameId,
-                    source_id: this.gameId,
-                    name: game.title,
-                    summary: game.description,
-                    system_slug: gameId.system,
-                    path_fs: path.join('roms', gameId.system, slugify(game.title)),
-                    extract_path: '.',
-                };
-
-                break;
-            default:
-                info = await plugins.hooks.games.fetchDownloads.promise({ source: this.source, id: this.gameId });
-                break;
-        }
+        info = await plugins.hooks.games.fetchDownloads.promise({ source: this.source, id: this.gameId, downloadId: this.config?.downloadId });
 
         if (!info) throw new Error(`Could not find downloader for source ${this.source}`);
 
@@ -116,9 +87,10 @@ export class InstallJob implements IJob<never, InstallJobStates>
                 {
                     let progress = 0;
                     const progressDelta = 1 / downloadedFiles.length;
+                    const extractPath = path.join(config.get('downloadPath'), info.path_fs ?? '', info.extract_path);
+
                     for (const filePath of downloadedFiles)
                     {
-                        const extractPath = path.join(config.get('downloadPath'), info.path_fs ?? '', info.extract_path);
                         await new Promise(async (resolve, reject) =>
                         {
                             let sevenZipPath = process.env.ZIP7_PATH ?? path7za;
@@ -176,7 +148,22 @@ export class InstallJob implements IJob<never, InstallJobStates>
                                 throw e;
                             }
                         });
+
                         progress += progressDelta * 100;
+                    }
+
+                    // check if 1 root folder we need to get rid of
+                    const contents = await fs.readdir(extractPath);
+                    if (contents.length === 1)
+                    {
+                        const stat = await fs.stat(path.join(extractPath, contents[0]));
+                        if (stat.isDirectory())
+                        {
+                            console.log("Found 1 root folder, using that instead");
+                            const tmpGameFolder = `${extractPath} (1)`;
+                            await move(path.join(extractPath, contents[0]), tmpGameFolder, { overwrite: true });
+                            await move(tmpGameFolder, extractPath, { overwrite: true });
+                        }
                     }
                 }
             }
@@ -221,7 +208,15 @@ export class InstallJob implements IJob<never, InstallJobStates>
                 if (!existingPlatform)
                 {
                     // TODO: use something else than the romm demo as CDN
-                    const platformCover = await fetch(`https://demo.romm.app/assets/platforms/${info.system_slug}.svg`);
+
+                    const platformLookup = await plugins.hooks.games.platformLookup.promise({
+                        slug: info.platform?.slug ?? info.system_slug
+                    });
+                    let platformCover = await fetch(`https://demo.romm.app/assets/platforms/${info.platform?.slug ?? info.system_slug}.svg`);
+                    if (!platformCover.ok && platformLookup?.url_logo)
+                    {
+                        platformCover = await fetch(platformLookup.url_logo);
+                    }
 
                     if (!esPlatform && !info.platform)
                     {
@@ -251,7 +246,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
                             cover_type: platformCover.headers.get('content-type'),
                             name: info.platform?.name ?? esPlatform?.system.fullname ?? '',
                             family_name: info.platform?.family_name,
-                            es_slug: esPlatform?.system.name ?? undefined
+                            es_slug: esPlatform?.system.name ?? undefined,
                         };
 
                         // TODO: add ES slug once I have better way to query ES
@@ -278,22 +273,20 @@ export class InstallJob implements IJob<never, InstallJobStates>
                     name: info.name,
                     cover,
                     cover_type: coverResponse.headers.get('content-type'),
-                    metadata: info.metadata
+                    metadata: info.metadata,
+                    main_glob: info.main_glob,
+                    version: info.version,
+                    version_source: info.version_source,
+                    version_system: info.version_system
                 };
 
                 const [{ id }] = await tx.insert(schema.games).values(game).returning({ id: schema.games.id });
 
-                if (info.screenshotUrls.length <= 0 && process.env.TWITCH_CLIENT_ID)
+                if (info.screenshotUrls.length <= 0 && info.igdb_id)
                 {
-                    const access_token = await secrets.get({ service: 'gamflow_twitch', name: 'access_token' });
-                    if (access_token)
-                    {
-                        const client = igdb.igdb(process.env.TWITCH_CLIENT_ID, access_token);
-
-                        const { data } = await client.request('artworks').pipe(igdb.fields(['game', 'url']), igdb.where('game', '=', info.igdb_id)).execute();
-
-                        info.screenshotUrls.push(...data.filter(s => s.url).map(s => s.url!));
-                    }
+                    const igdbLookup = await plugins.hooks.games.gameLookup.promise({ source: 'igdb', id: String(info.igdb_id) });
+                    if (igdbLookup) return igdbLookup.screenshotUrls;
+                    return [];
                 }
 
                 // pre-fetch screenshots

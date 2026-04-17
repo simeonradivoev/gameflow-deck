@@ -1,6 +1,15 @@
 import { GameflowHooks } from "../hooks/app";
-import { PluginContextType, PluginDescriptionType, PluginType } from "../../types/typesc.schema";
+import { PluginDescriptionType, PluginLoadingContextType, PluginType } from "../../types/typesc.schema";
 import { config } from "../app";
+import Conf from "conf";
+import projectPackage from '~/package.json';
+import z from "zod";
+import { EventEmitter } from "node:stream";
+
+export const pluginZodRegistry = z.registry<{
+    requiresRestart?: boolean;
+    readOnly?: boolean;
+}>();
 
 export class PluginManager
 {
@@ -11,10 +20,11 @@ export class PluginManager
         plugin: PluginType;
         description: PluginDescriptionType,
         source: PluginSourceType;
+        config?: Conf;
 
     }> = {};
 
-    async register (plugin: PluginType, description: PluginDescriptionType, source: PluginSourceType)
+    register (plugin: PluginType, description: PluginDescriptionType, source: PluginSourceType)
     {
         try
         {
@@ -24,15 +34,29 @@ export class PluginManager
             }
             else
             {
-                if (plugin.setup) await plugin.setup();
+                let pluginConfig: Conf | undefined = undefined;
+                if (plugin.settingsSchema)
+                {
+                    pluginConfig = new Conf({
+                        projectName: projectPackage.name,
+                        configName: description.name,
+                        projectSuffix: 'bun',
+                        cwd: process.env.CONFIG_CWD,
+                        schema: Object.fromEntries(Object.entries(plugin.settingsSchema.shape).map(([key, schema]) => [key, (schema as z.ZodObject).toJSONSchema() as any])) as any,
+                        defaults: plugin.settingsSchema.parse({}),
+                        migrations: plugin.settingsMigrations as any,
+                        projectVersion: description.version
+                    });
+                }
+
                 this.plugins[description.name] = {
                     enabled: !config.get('disabledPlugins').includes(description.name),
                     loaded: false,
                     plugin: plugin,
                     source: source,
-                    description: description
+                    description: description,
+                    config: pluginConfig
                 };
-                this.reload(description.name);
                 console.log("Plugin", description.name, "registered");
             }
 
@@ -44,24 +68,29 @@ export class PluginManager
         };
     }
 
-    private reload (name: string)
+    private async reload (name: string, reloadCtx: { setProgress: (progress: number, state: string) => void; })
     {
         const plugin = this.plugins[name];
         if (plugin)
         {
-            const ctx: PluginContextType = { hooks: this.hooks };
+            const ctx: PluginLoadingContextType = {
+                hooks: this.hooks,
+                setProgress: reloadCtx.setProgress.bind(reloadCtx),
+                config: plugin.config as any,
+                zodRegistry: pluginZodRegistry
+            };
 
             if (plugin.loaded)
             {
-                plugin.plugin.onBeforeReload?.(ctx);
+                await plugin.plugin.cleanup?.();
                 plugin.loaded = false;
             }
 
             try
             {
-                if (plugin.enabled)
+                if (plugin.enabled || plugin.description.canDisable === false)
                 {
-                    plugin.plugin.load(ctx);
+                    await plugin.plugin.load(ctx);
                     plugin.loaded = true;
                 }
             } catch (error)
@@ -72,10 +101,14 @@ export class PluginManager
         }
     }
 
-    reloadAll ()
+    async reloadAll (ctx: { setProgress: (progress: number, state: string) => void; })
     {
         this.hooks = new GameflowHooks();
-        Object.keys(this.plugins).forEach(id => this.reload(id));
+        for await (const id of Object.keys(this.plugins))
+        {
+            ctx.setProgress(0, `Loading ${id}`);
+            await this.reload(id, ctx);
+        }
     }
 
     async cleanup ()
@@ -84,7 +117,10 @@ export class PluginManager
         {
             try
             {
-                await p.plugin.cleanup!();
+                if (p.loaded)
+                {
+                    await p.plugin.cleanup!();
+                }
             } catch (error)
             {
                 console.log("Error for plugin", p.description.name, "while cleaning up");

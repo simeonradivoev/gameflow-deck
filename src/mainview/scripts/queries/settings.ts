@@ -113,7 +113,7 @@ export const setSettingMutation = (id?: string) => mutationOptions({
     mutationKey: ["setting", id],
     mutationFn: async (value: any) =>
     {
-        const response = await settingsApi.api.settings({ id: id! }).post({ value });
+        const response = await settingsApi.api.settings.local({ id: id! }).post({ value });
         if (response.error) throw response.error;
         return response.data;
     }
@@ -123,9 +123,58 @@ export const getSettingQuery = (id: string | undefined) => queryOptions({
     queryKey: ["setting", id],
     queryFn: async () =>
     {
-        const { data: value, error } = await settingsApi.api.settings({ id: id! }).get();
+        const { data: value, error } = await settingsApi.api.settings.local({ id: id! }).get();
         if (error) throw error;
 
         return value.value;
+    },
+});
+export const getPluginSettingsDefinitionQuery = (source: string) => queryOptions({
+    queryKey: ['settings', source, 'definitions'],
+    queryFn: async () =>
+    {
+        const { data: value, error } = await settingsApi.api.settings.definitions({ source }).get();
+        if (error) throw error;
+
+        return value;
+    }
+});
+export const getPluginSettingQuery = (source: string, id: string) => queryOptions({
+    queryKey: ["setting", source, id],
+    queryFn: async () =>
+    {
+        const { data, error } = await settingsApi.api.settings({ source })({ id }).get();
+        if (error) throw error;
+
+        return data;
+    },
+});
+export const setPluginSettingMutation = (source: string, id: string) => mutationOptions({
+    mutationKey: ["setting", source, id],
+    mutationFn: async (value: any) =>
+    {
+        const { data, error } = await settingsApi.api.settings({ source })({ id }).put({ value });
+        if (error) throw error;
+
+        return data;
+    },
+});
+export const getPluginActionsQuery = (source: string) => queryOptions({
+    queryKey: ['plugin', source, 'actions'], queryFn: async () =>
+    {
+        const { data, error } = await settingsApi.api.settings.actions({ source }).get();
+        if (error) throw error;
+
+        return data;
+    }
+});
+export const pluginActionMutation = (source: string, id: string) => mutationOptions({
+    mutationKey: ["plugin", source, "action"],
+    mutationFn: async () =>
+    {
+        const { data, error, response } = await settingsApi.api.settings.actions({ source })({ id }).post();
+        if (error) throw error;
+
+        return { data: data as any, response };
     },
 });

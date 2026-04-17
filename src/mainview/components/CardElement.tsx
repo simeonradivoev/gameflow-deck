@@ -4,6 +4,7 @@ import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
 import useActiveControl from "../scripts/gamepads";
 import { oneShot } from "../scripts/audio/audio";
+import ImageWithFallbacks from "./ImageWithFallbacks";
 
 export function GameCardSkeleton ()
 {
@@ -21,8 +22,8 @@ export function GameCardSkeleton ()
 export interface GameCardParams extends FocusParams
 {
   title: string;
-  subtitle: string | JSX.Element;
-  preview?: string | JSX.Element | ((p: { focused: boolean; }) => JSX.Element);
+  subtitle?: string | JSX.Element;
+  preview?: string | JSX.Element | URL[] | ((p: { focused: boolean; }) => JSX.Element);
   srcset?: string;
   focusKey: string;
   index: number;
@@ -48,6 +49,21 @@ export default function CardElement (data: GameCardParams & InteractParams)
     onBlur: () => data.onBlur?.(data.id),
   });
   const { isPointer } = useActiveControl();
+
+  let preview: any = undefined;
+  if (typeof data.preview === "string")
+  {
+    preview = <img draggable={false} srcSet={data.srcset} className={classNames("object-cover aspect-3/4", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>;
+  } else if (Array.isArray(data.preview))
+  {
+    preview = <ImageWithFallbacks src={data.preview} draggable={false} className={classNames("object-cover aspect-3/4 w-full h-full", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} />;
+  } else if (typeof data.preview === 'function')
+  {
+    preview = data.preview({ focused });
+  } else
+  {
+    preview = data.preview;
+  }
 
   return (
     <li
@@ -76,11 +92,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
         focused ? "md:mt-2 md:mx-2" : "md:mt-2 md:mx-2",
         classNames({ "h-full": typeof data.preview === "string" })
       )}>
-        {typeof data.preview === "string" ? (
-          <img draggable={false} srcSet={data.srcset} className={classNames("object-cover aspect-3/4", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>
-        ) : (
-          typeof data.preview === 'function' ? data.preview({ focused }) : data.preview
-        )}
+        {preview}
       </div>
 
       <div className="h-0 flex pr-2 justify-end items-center sm:gap-1 md:gap-2 z-2">

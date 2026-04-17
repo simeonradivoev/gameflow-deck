@@ -11,6 +11,15 @@ export const getAllPluginsQuery = queryOptions({
     }
 });
 
+export const getPluginDetailsQuery = (source: string) => queryOptions({
+    queryKey: ['plugins', source], queryFn: async () =>
+    {
+        const { data, error } = await pluginsApi.plugins({ id: source }).get();
+        if (error) throw error;
+        return data;
+    }
+});
+
 export const enablePluginMutation = mutationOptions({
     mutationKey: ['plugin', 'enable'],
     mutationFn: async (vars: { id: string, enabled: boolean; }) =>

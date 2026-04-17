@@ -11,6 +11,7 @@ declare interface EmulatorSourceEntryType
 declare interface FrontEndEmulator
 {
     name: string;
+    source: string;
     logo: string;
     systems: EmulatorSystem[];
     description?: string;
@@ -57,14 +58,15 @@ declare interface FrontEndGameTypeDetailedEmulator extends FrontEndEmulator
 
 }
 
-declare interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameType, "metadata">
+declare interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameTypeWithIds, "metadata">
 {
     summary: string | null;
     fs_size_bytes: number | null;
     missing: boolean;
     local: boolean;
-    imdb_id?: number;
-    ra_id?: number;
+    version?: string | null;
+    version_system?: string | null;
+    version_source?: string | null;
     metadata: FrontEndGameMetadataDetailed,
     emulators?: FrontEndGameTypeDetailedEmulator[],
     achievements?: {
@@ -118,6 +120,8 @@ declare interface CommandEntry
     label?: string;
     /** Compiled command to be executed */
     command: string;
+    /** Environment variables */
+    env?: Record<string, string>,
     /** The path the spawned process will start at */
     startDir?: string;
     /** Is the command valid, for example does the executable exists */
@@ -201,7 +205,7 @@ declare interface FrontEndGameType
     source: string | null,
     source_id: string | null,
     path_fs: string | null,
-    path_cover: string | null,
+    path_covers: string[],
     last_played: Date | null,
     updated_at: Date,
     metadata: FrontEndGameMetadata,
@@ -231,8 +235,11 @@ declare interface FrontendPlugin
     name: string;
     displayName: string;
     description: string;
+    category: string;
     enabled: boolean;
+    canDisable: boolean;
     source: PluginSourceType;
+    hasSettings: boolean;
     version: string;
     icon?: string;
 }
@@ -250,6 +257,7 @@ declare interface DownloadInfo
     platform?: DownloadPlatform;
     slug?: string;
     path_fs?: string;
+    main_glob?: string;
     summary?: string;
     name: string;
     last_played?: Date;
@@ -261,6 +269,9 @@ declare interface DownloadInfo
     metadata?: any;
     files: DownloadFileEntry[];
     auth?: string;
+    version?: string;
+    version_source?: string;
+    version_system?: string;
 }
 
 declare interface DownloadPlatform
@@ -315,9 +326,18 @@ declare interface EmulatorSupport
     capabilities?: EmulatorCapabilities[];
 }
 
-declare interface SaveFileChange
+declare interface AutoSaveChange
 {
     subPath: string;
     cwd: string;
+}
+
+declare interface SaveFileChange
+{
+    subPath: string | string[];
+    isGlob?: true;
+    cwd: string;
     shared: boolean;
 }
+
+declare type SaveSlots = Record<string, { cwd: string; }>;

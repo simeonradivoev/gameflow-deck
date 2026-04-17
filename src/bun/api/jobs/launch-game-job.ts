@@ -19,8 +19,8 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
     validCommand: CommandEntry;
     gameSource?: string;
     gameSourceId?: string;
-    changedSaveFiles: Map<string, SaveFileChange>;
-    saveFolderPath?: string;
+    changedSaveFiles: Map<string, { subPath: string, cwd: string; }>;
+    saveSlots: SaveSlots = {};
 
     constructor(gameId: FrontEndId, validCommand: CommandEntry, source?: string, sourceId?: string)
     {
@@ -47,9 +47,8 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 source,
                 id,
                 command: this.validCommand,
-                saveFolderPath: this.saveFolderPath,
                 changedSaveFiles: Array.from(this.changedSaveFiles.values()),
-                validChangedSaveFiles: [],
+                validChangedSaveFiles: {},
                 gameInfo
             }).catch(e => console.error(e));
     }
@@ -59,7 +58,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
         return plugins.hooks.games.prePlay.promise({
             source: this.gameSource ?? this.gameId.source,
             id: this.gameSourceId ?? this.gameId.id,
-            saveFolderPath: this.saveFolderPath,
+            saveFolderSlots: this.saveSlots,
             command: this.validCommand,
             setProgress: setProgress,
             gameInfo
@@ -125,7 +124,9 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                         cwd: this.validCommand.startDir,
                         signal: context.abortSignal,
                         env: {
-                        }
+                            ...process.env,
+                            ...this.validCommand.env
+                        },
                     });
 
                     context.setProgress(0, "playing");
@@ -138,14 +139,14 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                     spawnGame.on('error', e =>
                     {
                         console.error(e);
-                        reject(e);
+                        resolve(1);
                     });
 
                     game = spawnGame;
                 }
                 else if (this.validCommand.metadata.emulatorBin)
                 {
-                    this.saveFolderPath = commandArgs.savesPath;
+                    this.saveSlots = commandArgs.savesPath ?? {};
 
                     await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug });
 
@@ -154,12 +155,15 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                         cwd: this.validCommand.startDir,
                         signal: context.abortSignal,
                         env: {
+                            ...process.env,
+                            ...commandArgs.env
                         }
                     });
 
                     context.setProgress(0, "playing");
 
-                    if (commandArgs.savesPath && await fs.exists(commandArgs.savesPath))
+                    // TODO: this isn't really useful, maybe add it later if needed
+                    /*if (commandArgs.savesPath && await fs.exists(commandArgs.savesPath))
                     {
                         const savesWatcher = watch(commandArgs.savesPath, { recursive: true, signal: context.abortSignal });
                         console.log("Starting To Watch", commandArgs.savesPath, "for save file changes");
@@ -168,7 +172,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                             if (typeof filename === 'string')
                             {
                                 console.log("Save File Changed", filename);
-                                this.changedSaveFiles.set(filename, { subPath: filename, cwd: commandArgs.savesPath!, shared: true });
+                                this.changedSaveFiles.set(filename, { subPath: filename, cwd: commandArgs.savesPath! });
                             }
                         });
 
@@ -177,7 +181,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                             savesWatcher.close();
                             console.log("Closing Save File Watching for", commandArgs.savesPath);
                         });
-                    }
+                    }*/
 
                     bunGame.exited.then(e =>
                     {

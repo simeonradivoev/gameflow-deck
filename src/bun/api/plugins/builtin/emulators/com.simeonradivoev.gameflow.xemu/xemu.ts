@@ -1,4 +1,4 @@
-import { PluginContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
 import { config } from "@/bun/api/app";
 import path from "node:path";
@@ -10,7 +10,7 @@ export default class XEMUIntegration implements PluginType
 {
     emulator = 'XEMU';
 
-    load (ctx: PluginContextType)
+    async load (ctx: PluginLoadingContextType)
     {
         ctx.hooks.games.emulatorLaunchSupport.tap({ name: desc.name, emulator: this.emulator }, (ctx) =>
         {
