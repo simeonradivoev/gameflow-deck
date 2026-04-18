@@ -1,7 +1,6 @@
 import { ensureDir } from "fs-extra";
 import { IJob, JobContext } from "../task-queue";
 import { getStoreRootFolder } from "../store/services/gamesService";
-import { STORE_VERSION } from "@/shared/constants";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import z from "zod";
@@ -18,7 +17,7 @@ export default class UpdateStoreJob implements IJob<never, never>
     {
         this.packageName = process.env.STORE_PACKAGE_NAME ?? "@simeonradivoev/gameflow-store";
         this.registry = new URL(process.env.STORE_REGISTRY ?? "https://registry.npmjs.org");
-        this.storeVersion = process.env.STORE_VERSION ?? STORE_VERSION;
+        this.storeVersion = process.env.STORE_VERSION ?? "^0.1.0";
     }
 
     async start (context: JobContext<UpdateStoreJob, never, never>)
