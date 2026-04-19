@@ -53,7 +53,8 @@ export class InstallJob implements IJob<never, InstallJobStates>
         const downloadPath = config.get('downloadPath');
         let info: DownloadInfo | undefined;
 
-        info = await plugins.hooks.games.fetchDownloads.promise({ source: this.source, id: this.gameId, downloadId: this.config?.downloadId });
+        const allDownloads = await plugins.hooks.games.fetchDownloads.promise({ source: this.source, id: this.gameId, downloadId: this.config?.downloadId });
+        info = allDownloads?.[0];
 
         if (!info) throw new Error(`Could not find downloader for source ${this.source}`);
 
@@ -137,12 +138,21 @@ export class InstallJob implements IJob<never, InstallJobStates>
                         {
                             if (filePath.endsWith('.zip'))
                             {
+                                cx.setProgress(0, "extract");
                                 console.warn("Could not extract", filePath, "with 7zip trying zip extractor");
                                 await ensureDir(extractPath);
                                 const zip = new StreamZip.async({ file: filePath });
+                                let entryCount = await zip.entriesCount;
+                                let entryCounter = entryCount;
+                                zip.on('extract', (entry, outPath) =>
+                                {
+                                    entryCounter--;
+                                    cx.setProgress(progress + (1 - (entryCounter / entryCount)) * 100 * progressDelta, "extract");
+                                });
                                 const count = await zip.extract(null, extractPath);
                                 console.log(`Extracted ${count} entries`);
                                 await zip.close();
+                                await fs.rm(filePath);
                             } else
                             {
                                 throw e;

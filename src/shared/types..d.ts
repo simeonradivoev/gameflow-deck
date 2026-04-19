@@ -126,6 +126,8 @@ declare interface CommandEntry
     startDir?: string;
     /** Is the command valid, for example does the executable exists */
     valid: boolean;
+    /** Run the command as shell. Defaults is true */
+    shell?: boolean;
     /** For what emulator is the command */
     emulator?: string;
     /** Where the emulator came from */
@@ -252,6 +254,7 @@ declare type KeysWithValueAssignableTo<T, Value> = {
 
 declare interface DownloadInfo
 {
+    id: string;
     screenshotUrls: string[];
     coverUrl: string;
     platform?: DownloadPlatform;

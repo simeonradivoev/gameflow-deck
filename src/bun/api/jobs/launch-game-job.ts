@@ -120,7 +120,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                     // ES-DE commands require shell execution. Some emulators fail otherwise.
                     const spawnGame = spawn(this.validCommand.command, {
-                        shell: true,
+                        shell: this.validCommand.shell ?? true,
                         cwd: this.validCommand.startDir,
                         signal: context.abortSignal,
                         env: {
@@ -151,6 +151,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                     await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug });
 
                     // We have full control over launching integrated emulators better to use bun spawn
+                    await fs.chmod(this.validCommand.metadata.emulatorBin, 0o755);
                     const bunGame = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs.args], {
                         cwd: this.validCommand.startDir,
                         signal: context.abortSignal,

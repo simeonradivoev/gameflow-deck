@@ -1,22 +1,17 @@
 import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
 import path, { basename, dirname } from 'node:path';
-import { StoreDownloadType, StoreGameSchema, StoreGameType } from "@/shared/constants";
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
 import { Glob, pathToFileURL } from "bun";
-import { getOrCached } from "@/bun/api/cache";
-import { shuffleInPlace } from "@/bun/utils";
 import { and, eq } from "drizzle-orm";
 import * as emulatorSchema from '@schema/emulators';
 
-import { config, db, emulatorsDb, plugins, taskQueue } from "@/bun/api/app";
+import { config, emulatorsDb, taskQueue } from "@/bun/api/app";
 import fs from "node:fs/promises";
 import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
-import mustache from "mustache";
-import os from 'node:os';
 import UpdateStoreJob from "@/bun/api/jobs/update-store";
 import { getEmulatorDownload } from "@/bun/api/store/services/emulatorsService";
-import { buildFilters, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownload } from "./services";
+import { buildFilters, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
 
 export default class RommIntegration implements PluginType
 {
@@ -29,11 +24,13 @@ export default class RommIntegration implements PluginType
 
     async load (ctx: PluginLoadingContextType)
     {
+        await this.setup(ctx);
 
         ctx.hooks.store.fetchDownload.tapPromise(desc.name, async ({ id }) =>
         {
             const emulatorPackage = await getStoreEmulatorPackage(id);
-            const downloadInfo = await getExistingStoreEmulatorDownload(emulatorPackage!);
+            if (!emulatorPackage) return;
+            const downloadInfo = await getExistingStoreEmulatorDownload(emulatorPackage);
             return downloadInfo;
         });
 
@@ -131,7 +128,7 @@ export default class RommIntegration implements PluginType
 
         ctx.hooks.games.buildLaunchCommands.tapPromise({ name: desc.name, before: 'com.simeonradivoev.gameflow.es' }, async ({ gamePath, source, sourceId, systemSlug, mainGlob }) =>
         {
-            if (source !== 'store' || !gamePath || systemSlug !== 'win') return;
+            if (source !== 'store' || !gamePath) return;
             const downloadPath = config.get('downloadPath');
             const gamePathAbsolute = path.join(downloadPath, gamePath);
             if (!(await fs.exists(gamePathAbsolute))) return;
@@ -139,13 +136,15 @@ export default class RommIntegration implements PluginType
 
             if (gamePathStat.isDirectory())
             {
+                if (!mainGlob && systemSlug !== 'win') return;
                 const fileGlob = new Glob(mainGlob ?? '**/*.exe');
                 for await (const file of fileGlob.scan({ cwd: path.join(downloadPath, gamePath) }))
                 {
                     return [{
                         startDir: path.join(downloadPath, gamePath, dirname(file)),
-                        command: basename(file),
-                        id: 'store-win',
+                        command: `./${basename(file)}`,
+                        id: `store-${process.platform}`,
+                        shell: false,
                         valid: true,
                         env: {
                             XDG_DATA_HOME: path.join(config.get('downloadPath'), 'save', source, sourceId ?? '')
@@ -160,12 +159,13 @@ export default class RommIntegration implements PluginType
             {
                 return [{
                     startDir: path.join(downloadPath, dirname(gamePath)),
-                    command: basename(gamePath),
+                    command: `./${basename(gamePath)}`,
                     env: {
                         XDG_DATA_HOME: path.join(config.get('downloadPath'), 'save', source, sourceId ?? '')
                     },
-                    id: 'store-win',
+                    id: `store-${process.platform}`,
                     valid: true,
+                    shell: false,
                     metadata: {
                         romPath: path.join(downloadPath, gamePath)
                     }
@@ -272,14 +272,15 @@ export default class RommIntegration implements PluginType
             const game = await getStoreGame(id);
             if (!game) throw new Error("Missing Store Game");
 
-            const validDownload = getValidDownload(game, downloadId);
+            const validDownloads = getValidDownloads(game, downloadId);
 
-            if (validDownload)
+            return validDownloads.map(validDownload =>
             {
                 let system = validDownload.system.split(":")[0];
                 if (system === 'win32') system = 'win';
 
                 const info: DownloadInfo = {
+                    id: validDownload.id,
                     coverUrl: game.covers?.[0] ? game.covers[0].startsWith('http') ? game.covers[0] : pathToFileURL(path.join(getStoreFolder(), game.covers[0])).href : "",
                     screenshotUrls: game.screenshots ?? [],
                     files: [{
@@ -306,7 +307,7 @@ export default class RommIntegration implements PluginType
                 };
 
                 return info;
-            }
+            });
         });
     }
 }

@@ -4,11 +4,11 @@ import { getErrorMessage } from "@/bun/utils";
 import { checkFiles, getLocalGameMatch, getSourceGameDetailed } from "./utils";
 import fs from 'node:fs/promises';
 import Elysia from "elysia";
-import z from "zod";
+import z, { string } from "zod";
 import { InstallJob, InstallJobStates } from "../../jobs/install-job";
 import { LaunchGameJob } from "../../jobs/launch-game-job";
 import * as appSchema from "@schema/app";
-import { RPC_URL } from "@/shared/constants";
+import { DownloadSourceSchema, RPC_URL } from "@/shared/constants";
 import { host } from "@/bun/utils/host";
 
 export class CommandSearchError extends Error
@@ -205,7 +205,7 @@ export default function buildStatusResponse ()
             z.object({ status: z.literal('refresh'), localId: z.number().optional() }),
             z.object({ status: z.literal(['queued']) }),
             z.object({ status: z.literal('playing'), details: z.string() }),
-            z.object({ status: z.literal('install'), details: z.string() }),
+            z.object({ status: z.literal('install'), details: z.string(), sources: DownloadSourceSchema.array() }),
             z.object({ status: z.literal('present'), details: z.string() }),
             z.object({ status: z.literal(['download', 'extract']), progress: z.number() }),
         ]),
@@ -261,6 +261,8 @@ export default function buildStatusResponse ()
 
                     } else if (!localGame && ws.data.params.source === 'store')
                     {
+                        const downloads = await plugins.hooks.games.fetchDownloads.promise({ source: ws.data.params.source, id: ws.data.params.id });
+                        const sources = downloads?.map(d => ({ id: d.id, name: d.id })) ?? [];
                         /*const storeGame = await getStoreGame(ws.data.params.id);
                         const fileResponse = await fetch(storeGame.file, { method: 'HEAD' });
                         const size = Number(fileResponse.headers.get('content-length'));
@@ -274,19 +276,20 @@ export default function buildStatusResponse ()
                             ws.send({ status: 'install', details: 'Install' });
                         }*/
 
-                        ws.send({ status: 'install', details: 'Install' });
+                        ws.send({ status: 'install', details: 'Install', sources });
                     } else if (!localGame)
                     {
                         const files = await plugins.hooks.games.fetchDownloads.promise({
                             source: ws.data.params.source,
                             id: ws.data.params.id
                         });
+                        const sources = files?.map(d => ({ id: d.id, name: d.id })) ?? [];
 
                         let filesChecked: LocalDownloadFileEntry[] | undefined;
 
-                        if (files)
+                        if (files && files.length)
                         {
-                            filesChecked = await checkFiles(files.files, !!files.extract_path);
+                            filesChecked = await checkFiles(files[0].files, !!files[0].extract_path);
                         }
 
                         if (filesChecked && !filesChecked.some(f => f.exists === false || f.matches === false))
@@ -301,11 +304,11 @@ export default function buildStatusResponse ()
                                 ws.send({ status: 'error', error: "Not Enough Free Space" });
                             } else if (filesChecked?.some(f => f.exists === true && f.matches === false))
                             {
-                                ws.send({ status: 'install', details: 'Some Files Present, Install' });
+                                ws.send({ status: 'install', details: 'Some Files Present, Install', sources });
                             }
                             else
                             {
-                                ws.send({ status: 'install', details: 'Install' });
+                                ws.send({ status: 'install', details: 'Install', sources });
                             }
                         }
                     } else

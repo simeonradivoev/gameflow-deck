@@ -156,7 +156,7 @@ function HomeList (data: {
           saveChildFocus="session"
           onFocus={(l, n, d) =>
           {
-            const [source, id] = l.split('@', 1);
+            const [source, id] = d.id?.split('@', 2);
             queryClient.prefetchQuery(gameQuery(source, id));
             handleNodeFocus(l, n, d);
           }}

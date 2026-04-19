@@ -3,16 +3,13 @@ import desc from './package.json';
 import { config, events } from "@/bun/api/app";
 import path, { dirname } from 'node:path';
 import unzip from 'unzip-stream';
-import { ensureDir } from "fs-extra";
+import { chmodSync, ensureDir } from "fs-extra";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import fs from 'node:fs/promises';
 import { randomUUIDv7, sleep } from "bun";
 import z from "zod";
 import { createInterface } from "node:readline";
-import { redirect } from "elysia";
-import { getErrorMessage } from "@/bun/utils";
-import { id } from "zod/v4/locales";
 
 const SettingsSchema = z.object({
     runWebGui: z.boolean()
@@ -75,7 +72,13 @@ export default class RcloneIntegration implements PluginType<SettingsType>
         ctx.zodRegistry.add(SettingsSchema.shape.globalConfig, { requiresRestart: true });
 
         const toolsPath = path.join(config.get('downloadPath'), "tools");
-        const existingRclones = await Array.fromAsync(fs.glob('**/rclone.exe', { cwd: toolsPath }));
+        await ensureDir(toolsPath);
+        const binaryMap: Record<string, string> = {
+            win32: '**/rclone.exe',
+            linux: '**/rclone',
+            darwin: '**/rclone'
+        };
+        const existingRclones = await Array.fromAsync(fs.glob(binaryMap[process.platform], { cwd: toolsPath }));
         if (existingRclones[0])
         {
             this.rclonePath = path.join(toolsPath, existingRclones[0]);
@@ -83,13 +86,19 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             return;
         }
 
-        if (await fs.exists(path.join(toolsPath, 'rclone-current-windows-amd64')))
-        {
-            return;
-        }
-
         ctx.setProgress(0.5, "Downloading RClone");
-        const rcCloseZip = await fetch(`https://downloads.rclone.org/rclone-current-windows-amd64.zip`);
+        const platformMap: Record<string, string> = {
+            linux: "linux",
+            win32: "windows",
+            darwin: "osx"
+        };
+        const archMap: Record<string, string> = {
+            x64: "amd64",
+            arm64: "arm64"
+        };
+        const downloadUrl = `https://downloads.rclone.org/rclone-current-${platformMap[process.platform]}-${archMap[process.arch]}.zip`;
+        console.log("Starting Download", downloadUrl);
+        const rcCloseZip = await fetch(downloadUrl);
 
         await ensureDir(toolsPath);
         await pipeline(Readable.fromWeb(rcCloseZip.body as any), unzip.Extract({ path: toolsPath }));
@@ -97,6 +106,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
         if (dests[0])
         {
             this.rclonePath = path.join(toolsPath, dests[0]);
+            await fs.chmod(this.rclonePath, 0o755);
             await this.startServer(ctx);
             return;
         }
@@ -139,7 +149,12 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             if (data.level === 'error')
             {
                 console.error(data.msg);
-            } else
+            } else if (data.level === 'critical')
+            {
+                console.error(data.msg);
+            }
+
+            else
             {
                 console.log(e);
                 if (loginTokenUrlRegex.test(data.msg))
@@ -150,7 +165,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
         });
 
-        await new Promise((resolve) =>
+        await new Promise((resolve, reject) =>
         {
             const handleResolve = (line: string) =>
             {
@@ -160,6 +175,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
                 resolve(data);
             };
             rl.on('line', handleResolve);
+            setTimeout(() => { reject("Timeout"); }, 5000);
         });
 
         await this.refresh();

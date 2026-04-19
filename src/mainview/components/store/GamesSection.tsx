@@ -44,7 +44,7 @@ export function GamesSection (data: {
                 <Carousel controlsClassName="z-20" scrollRef={containerRef} className="flex *:w-[18rem] *:min-w-[18rem] *:h-[21rem] overflow-y-hidden overflow-x-auto hide-scrollbar p-4 gap-4 justify-center-safe">
                     {data.games?.map((g, i) => <FrontEndGameCard
                         showSource={data.showSources}
-                        key={g.id.id}
+                        key={i}
                         game={g}
                         onAction={() => data.onSelect?.(g.id, FOCUS_KEYS.GAME_CARD(g.id))}
                         onFocus={(key, node, details) => scrollIntoNearestParent(node, { behavior: details.instant ? 'instant' : 'smooth' })}

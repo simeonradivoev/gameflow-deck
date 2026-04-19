@@ -1,4 +1,4 @@
-import { spawnSync } from "bun";
+import { Glob, spawnSync } from "bun";
 import { platform } from "node:os";
 import { RunBrowserType } from "./browser-spawner";
 import path from 'node:path';
@@ -48,12 +48,17 @@ const ARCH_MAP: Record<string, Record<string, string>> = {
 };
 
 /** The expected binary path per platform after extraction */
-function getBundledBinaryPath (outDir: string, version: string, platform: string, arch: string): string
+async function getBundledBinaryPath (outDir: string, version: string, platform: string, arch: string): Promise<string | undefined>
 {
-  const subFolder = `ungoogled-chromium_${version}_${PLATFORM_MAP[platform]}_${ARCH_MAP[platform][arch]}`;
-  if (platform === "linux") return path.join(outDir, subFolder, "chrome");
-  if (platform === "darwin") return path.join(outDir, "Chromium.app");
-  return path.join(outDir, subFolder, "chrome.exe");
+  let glob: Glob | undefined = undefined;
+  if (platform === "linux") glob = new Glob(`**/chrome`);
+  else if (platform === "darwin") glob = new Glob(`**/Chromium.app`);
+  else glob = new Glob(`**/chrome.exe`);
+
+  for await (const bin of glob.scan({ cwd: outDir }))
+  {
+    return path.join(outDir, bin);
+  }
 }
 
 /**
@@ -101,10 +106,14 @@ export async function getBrowserPath (config?: BrowserPriorityConfig): Promise<B
     if (await versionFile.exists())
     {
       const getVerstion = await versionFile.text();
-      const binPath = getBundledBinaryPath("./bin/chromium", getVerstion, process.platform, process.arch);
-      if (await Bun.file(binPath).exists())
+      const binPath = await getBundledBinaryPath("./bin/chromium", getVerstion, process.platform, process.arch);
+      if (binPath)
       {
-        return { path: binPath, type: "chromium", source: "bundled" };
+        console.log("Found Bundled Chromium Version", binPath);
+        if (await Bun.file(binPath).exists())
+        {
+          return { path: binPath, type: "chromium", source: "bundled" };
+        }
       }
     }
 

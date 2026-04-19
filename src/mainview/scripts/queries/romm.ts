@@ -109,7 +109,7 @@ export const installMutation = (source: string, id: string) => mutationOptions({
     mutationKey: ['install', source, id],
     mutationFn: async (init: { downloadId?: string; }) =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).install.post({ query: { downloadId: init.downloadId } });
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).install.post({ downloadId: init.downloadId });
         if (error) throw error;
         return data;
     }

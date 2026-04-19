@@ -67,7 +67,7 @@ export class GameHooks
         source: string;
         id: string;
         downloadId?: string;
-    }], DownloadInfo | undefined>(['ctx']);
+    }], DownloadInfo[] | undefined>(['ctx']);
     fetchRomFiles = new AsyncSeriesBailHook<[ctx: {
         source: string;
         id: string;

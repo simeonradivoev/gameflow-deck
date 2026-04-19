@@ -65,6 +65,11 @@ export const GameListFilterSchema = z.object({
     keywords: z.union([z.string().array(), z.string().transform(v => [v])]).optional(),
 });
 
+export const DownloadSourceSchema = z.object({
+    id: z.string(),
+    name: z.string()
+});
+
 export const RommLoginDataSchema = z.object({ hostname: z.url(), username: z.string(), password: z.string() });
 
 export type GameListFilterType = z.infer<typeof GameListFilterSchema>;
@@ -208,3 +213,4 @@ export type LocalSettingsType = z.infer<typeof LocalSettingsSchema>;
 export const PlatformSchema = z.object({ slug: z.string() });
 export type SystemInfoType = z.infer<typeof SystemInfoSchema>;
 export type EmulatorDownloadInfoType = z.infer<typeof EmulatorDownloadInfoSchema>;
+export type DownloadSourceType = z.infer<typeof DownloadSourceSchema>;

@@ -5,10 +5,11 @@ import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
 import { useLocalStorage } from "usehooks-ts";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
-import { Clock, Download, EllipsisVertical, Import, PackageOpen, Play, TriangleAlert } from "lucide-react";
+import { Clock, Crosshair, Download, EllipsisVertical, Import, PackageOpen, Play, TriangleAlert } from "lucide-react";
 import { gameInvalidationQuery, installMutation, playMutation } from "@/mainview/scripts/queries/romm";
 import ActionButton from "./ActionButton";
 import { useRouter } from "@tanstack/react-router";
+import { DownloadSourceType } from "@/shared/constants";
 
 export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {
@@ -29,6 +30,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
     const [status, setStatus] = useState<string | undefined>(undefined);
     const [error, setError] = useState<string | undefined>(undefined);
     const [details, setDetails] = useState<string | undefined>(undefined);
+    const [installSources, setInstallSources] = useState<DownloadSourceType[] | undefined>(undefined);
     const [commands, setCommands] = useState<CommandEntry[] | undefined>(undefined);
     const [preferredCommand, setPreferredCommand] = useLocalStorage<string | number | undefined>(`${data.game?.source ?? data.game?.id.source}-${data.game?.source_id ?? data.game?.id.id}-preferred-command`, undefined);
     const queryClient = useQueryClient();
@@ -51,6 +53,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
             setProgress((e.data as any).progress);
             setDetails((e.data as any).details);
             setCommands((e.data as any).commands);
+            setInstallSources((e.data as any).sources);
 
             if (e.data.status === 'refresh')
             {
@@ -154,7 +157,11 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         let icon = <span className="loading loading-spinner loading-lg"></span>;
         if (status === 'install')
         {
-            icon = <Download />;
+            if (installSources && installSources.length > 1)
+                icon = <Crosshair />;
+            else
+                icon = <Download />;
+
         } else if (status === 'present')
         {
             icon = <Import />;
@@ -168,7 +175,14 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
                 {
                     case 'present':
                     case 'install':
-                        installMut.mutate({});
+                        if (installSources && installSources.length > 1)
+                        {
+                            showInstallSource(true, 'mainAction');
+                        } else
+                        {
+                            installMut.mutate({});
+                        }
+
                         break;
                 }
             }}
@@ -211,6 +225,19 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         }]} />
     });
 
+    const { dialog: installSourcesDialog, setOpen: showInstallSource } = useContextDialog('install-source-dialog', {
+        content: <ContextList options={installSources?.map(s => ({
+            content: s.name,
+            action (ctx)
+            {
+                installMut.mutate({ downloadId: s.id });
+                ctx.close();
+            },
+            type: 'primary',
+            id: s.id
+        } satisfies DialogEntry)) ?? []} />
+    });
+
     return <div className="flex gap-2">
         {mainButton}
         <div className="divider divider-horizontal m-0"></div>
@@ -222,6 +249,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
                 <progress className="progress progress-secondary w-full" value={progress} max="100"></progress>
             </div>
         </ActionButton>}
+        {installSourcesDialog}
         {installOptionsDialog}
         {allCommandDialog}
     </div>;

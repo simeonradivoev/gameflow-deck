@@ -451,7 +451,7 @@ export default new Elysia()
     }, {
         params: z.object({ id: z.string(), source: z.string() }),
     })
-    .post('/game/:source/:id/install', async ({ params: { id, source }, query: { downloadId } }) =>
+    .post('/game/:source/:id/install', async ({ params: { id, source }, body: { downloadId } }) =>
     {
         if (!taskQueue.findJob(InstallJob.query({ source, id }), InstallJob))
         {
@@ -462,7 +462,7 @@ export default new Elysia()
         }
     }, {
         params: z.object({ id: z.string(), source: z.string() }),
-        query: z.object({ downloadId: z.string().optional() }),
+        body: z.object({ downloadId: z.string().optional() }),
         response: z.any()
     })
     .delete('/game/:source/:id/install', async ({ params: { id, source } }) =>

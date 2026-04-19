@@ -31,6 +31,12 @@ export default class RommIntegration implements PluginType<SettingsType>
         release: "metadatum.first_release_date"
     };
 
+    async checkRemote ()
+    {
+        if (!config.has('rommAddress')) return false;
+        return true;
+    }
+
     async updateClient ()
     {
         client.setConfig({
@@ -141,6 +147,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchGames.tapPromise(desc.name, async ({ query, games }) =>
         {
+            if (!await this.checkRemote()) return;
             if (((!query.platform_source || query.platform_source === 'romm') || !!query.collection_id) && (!query.source || query.source === 'romm'))
             {
 
@@ -173,6 +180,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchFilters.tapPromise(desc.name, async ({ filters, source }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source && source !== 'romm') return;
 
             const rommFilters = await getRomFiltersApiRomsFiltersGet({ throwOnError: true });
@@ -185,12 +193,14 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.auth.loginComplete.tapPromise(desc.name, async ({ service }) =>
         {
+            if (!await this.checkRemote()) return;
             if (service !== 'romm') return;
             await this.updateClient();
         });
 
         ctx.hooks.games.fetchGame.tapPromise(desc.name, async ({ source, id }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source !== 'romm') return;
 
             const rom = await getRomApiRomsIdGet({ path: { id: Number(id) } });
@@ -205,6 +215,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchDownloads.tapPromise(desc.name, async ({ source, id }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source !== 'romm') return;
 
             const rom = (await getRomApiRomsIdGet({ path: { id: Number(id) }, throwOnError: true })).data;
@@ -260,12 +271,13 @@ export default class RommIntegration implements PluginType<SettingsType>
                 extract_path
             };
 
-            return info;
+            return [info];
 
         });
 
         ctx.hooks.emulators.fetchBiosDownload.tapPromise(desc.name, async ({ systems, biosFolder }) =>
         {
+            if (!await this.checkRemote()) return;
             const files: DownloadFileEntry[] = [];
             const allRommPlatforms = await this.getAllRommPlatforms();
 
@@ -296,6 +308,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchRecommendedGamesForGame.tapPromise(desc.name, async ({ game, games }) =>
         {
+            if (!await this.checkRemote()) return;
             const rommPlatforms = await this.getAllRommPlatforms();
             if (rommPlatforms)
             {
@@ -313,7 +326,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchRecommendedGamesForEmulator.tapPromise(desc.name, async ({ emulator, games, systems }) =>
         {
-
+            if (!await this.checkRemote()) return;
             const rommPlatforms = await this.getAllRommPlatforms();
             const systemsRommSlugSet = new Set(systems.filter(s => s.romm_slug).map(s => s.romm_slug!));
             if (rommPlatforms)
@@ -343,6 +356,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchPlatform.tapPromise(desc.name, async ({ source, id }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source !== 'romm') return;
             const { data: rommPlatform } = await getPlatformApiPlatformsIdGet({ path: { id: Number(id) } });
             if (rommPlatform)
@@ -365,7 +379,13 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchPlatforms.tapPromise(desc.name, async ({ platforms }) =>
         {
-            const rommPlatforms = await this.getAllRommPlatforms();
+            if (!await this.checkRemote()) return;
+            const rommPlatforms = await this.getAllRommPlatforms().catch(e =>
+            {
+                console.error(e);
+                return undefined;
+            });
+
             if (rommPlatforms)
             {
                 const frontEndPlatforms = await Promise.all(rommPlatforms.map(async p =>
@@ -401,6 +421,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.prePlay.tapPromise(desc.name, async ({ source, id, saveFolderSlots, setProgress }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source !== 'romm' || !ctx.config.get('savesSync')) return;
             if (!saveFolderSlots) return;
 
@@ -445,6 +466,7 @@ export default class RommIntegration implements PluginType<SettingsType>
         // Should run after emulators decide on saves
         ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles, command }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source !== 'romm' || !ctx.config.get('savesSync')) return;
 
             const sourceValidation = await validateGameSource(source, id);
@@ -529,6 +551,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchCollections.tapPromise(desc.name, async ({ collections }) =>
         {
+            if (!await this.checkRemote()) return;
             const rommCollections = await getCollectionsApiCollectionsGet();
             if (rommCollections.response.ok && rommCollections.data)
             {
@@ -549,6 +572,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.fetchCollection.tapPromise(desc.name, async ({ source, id }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source !== 'romm') return;
             const collection = await getCollectionApiCollectionsIdGet({ path: { id: Number(id) } });
             if (collection.data)
@@ -567,6 +591,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.platformLookup.tapPromise(desc.name, async ({ source, id, slug }) =>
         {
+            if (!await this.checkRemote()) return;
             let platform: PlatformSchema | undefined = undefined;
 
             if (id && source)
@@ -587,6 +612,7 @@ export default class RommIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.searchGame.tapPromise(desc.name, async ({ source, igdb_id, ra_id }) =>
         {
+            if (!await this.checkRemote()) return;
             if (source !== 'romm') return;
             const roms = await getRomByMetadataProviderApiRomsByMetadataProviderGet({ query: { igdb_id, ra_id } });
             if (roms.error) throw roms.error;

@@ -126,7 +126,14 @@ export const store = new Elysia({ prefix: '/api/store' })
         })
     .get('/emulator/:id', async ({ params: { id } }) =>
     {
-        return plugins.hooks.store.fetchEmulator.promise({ id });
+        const emulator = await plugins.hooks.store.fetchEmulator.promise({ id });
+        if (!emulator) return status("Not Found");
+        const sources: EmulatorSourceEntryType[] = [];
+        await plugins.hooks.emulators.findEmulatorSource.promise({ emulator: emulator.name, sources });
+        const integrations = findEmulatorPluginIntegration(emulator.name, sources);
+        emulator.validSources = sources;
+        emulator.integrations = integrations;
+        return emulator;
     }, { params: z.object({ id: z.string() }) })
     .post('/install/emulator/:id/:source', async ({ params: { source, id }, body: { isUpdate } }) =>
     {

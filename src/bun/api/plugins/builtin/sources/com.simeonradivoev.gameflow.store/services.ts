@@ -50,16 +50,16 @@ function convertStoreMediaToPath (c: string)
 
 export async function convertStoreToFrontend (id: string, storeGame: StoreGameType): Promise<FrontEndGameType>
 {
-    const validDownload = getValidDownload(storeGame);
+    const validDownloads = getValidDownloads(storeGame);
 
     let platform_slug: string | null = null;
     let platform_id: number | null = null;
     let platform_display_name: string | null = null;
     let path_platform_cover: string | null = null;
 
-    if (validDownload?.system)
+    if (validDownloads.length > 0 && validDownloads[0].system)
     {
-        let system = validDownload.system.split(':')[0];
+        let system = validDownloads[0].system.split(':')[0];
         if (system === 'win32') system = 'win';
 
         const localPlatform = await db.query.platforms.findFirst({ where: eq(appSchema.platforms.slug, system), columns: { id: true, slug: true, name: true } });
@@ -130,13 +130,13 @@ export async function convertStoreToFrontend (id: string, storeGame: StoreGameTy
 
 export async function convertStoreToFrontendDetailed (id: string, storeGame: StoreGameType): Promise<FrontEndGameTypeDetailed>
 {
-    const validDownload = getValidDownload(storeGame);
+    const validDownloads = getValidDownloads(storeGame);
     let size: number | null = null;
-    if (validDownload?.url)
+    if (validDownloads.length > 0 && validDownloads[0].url)
     {
         try
         {
-            const fileResponse = await fetch(validDownload?.url, { method: 'HEAD' });
+            const fileResponse = await fetch(validDownloads[0]?.url, { method: 'HEAD' });
             size = Number(fileResponse.headers.get('content-length'));
         } catch (error)
         {
@@ -167,25 +167,32 @@ export async function convertStoreToFrontendDetailed (id: string, storeGame: Sto
     return detailed;
 }
 
-export function getValidDownload (game: StoreGameType, downloadId?: string)
+export function getValidDownloads (game: StoreGameType, downloadId?: string)
 {
     const downloads = Object.entries(game.downloads).map(([k, d]) => ({ id: k, ...d }));
     const supportedDownloads = downloads.filter(d => d.type === 'direct');
 
     if (downloadId)
     {
-        return supportedDownloads.find(d => d.id === downloadId);
+        return supportedDownloads.filter(d => d.id === downloadId);
     } else
     {
-        return supportedDownloads.find(d => d.system === `${process.platform}:${process.arch}`)
-            ?? supportedDownloads.find(d =>
-            {
-                // Linux supports proton, can run windows games
-                if (process.platform === 'linux') return d.system === `win32:${process.arch}`;
-                return false;
-            })
-            // Fallback to emulator platforms
-            ?? supportedDownloads.find(d => !d.system.includes(':'));
+        return supportedDownloads.filter(d =>
+        {
+            if (d.system === `${process.platform}:${process.arch}`) return true;
+
+            // TODO: Add linux proton support
+            //if (process.platform === 'linux' && d.system === `win32:${process.arch}`) return true;
+
+            // emulator fallback
+            return !d.system.includes(':');
+        }).toSorted((a, b) =>
+        {
+            const bScore = b.system.includes(':') ? 0 : 1;
+            const aScore = a.system.includes(':') ? 0 : 1;
+
+            return bScore - aScore;
+        });
     }
 }
 
@@ -283,7 +290,8 @@ export async function convertStoreEmulatorToFrontend (emulator: EmulatorPackageT
         systems,
         gameCount: 0,
         validSources: execPaths,
-        integrations: []
+        integrations: [],
+        source: "store"
     };
 
     return em;

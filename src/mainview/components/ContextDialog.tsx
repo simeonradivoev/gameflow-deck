@@ -18,7 +18,7 @@ export function ContextList (data: {
 {
     const context = useContext(ContextDialogContext);
     return <ul className={twMerge("list gap-1", data.className)}>
-        {data.options?.map(o => <OptionElement className="list-row" key={o.id} {...o} />)}
+        {data.options?.map((o, i) => <OptionElement className="list-row" key={i} {...o} />)}
         {data.showCloseButton !== false && <div className="divider m-0 "></div>}
         {data.showCloseButton !== false && <OptionElement disabled={data.disableCloseButton} className="list-row" type='accent' icon={<X />} action={() => context.close()} id="close-context-dialog" content="Close" />}
     </ul>;

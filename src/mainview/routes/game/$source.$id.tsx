@@ -155,7 +155,7 @@ function RouteComponent ()
 
   useOnNavigateBack((s) => s.sound = 'returnDetails');
 
-  const recommendedEmulators = data?.emulators?.filter(e => e.validSources.some(em => em.exists));
+  const recommendedEmulators = data?.emulators?.filter(e => e.validSources.some(em => em.exists) || e.source === 'store');
 
   const { ref: intersct } = useIntersectionObserver({
     onChange: (isIntersecting, entry) =>

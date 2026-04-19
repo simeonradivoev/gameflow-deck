@@ -45,7 +45,7 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusPara
       onFocus={(focusKey, node, details) =>
       {
         data.game.onFocus?.(focusKey, node, details);
-        data.onFocus?.(focusKey, node, details);
+        data.onFocus?.(focusKey, node, { ...details, id: data.game.id });
       }}
       onAction={handleAction}
       preview={preview}

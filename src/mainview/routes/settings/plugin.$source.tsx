@@ -114,7 +114,7 @@ function Settings ()
                 return "settings";
             })).map(([cat, data]) =>
             {
-                return <div className='flex flex-col gap-1'>
+                return <div key={cat} className='flex flex-col gap-1'>
                     <div className="divider">{cat !== "settings" ? cat : <><Settings2 className='size-14' /> Settings</>}</div>
                     {data?.map(([key, prop]) =>
                     {
