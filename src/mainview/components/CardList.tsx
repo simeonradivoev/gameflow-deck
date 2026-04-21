@@ -63,7 +63,7 @@ export function CardList (data: {
   onSelectGame?: (id: string) => void;
   focus?: string;
   className?: string;
-  finalElement?: JSX.Element;
+  finalElement?: JSX.Element | JSX.Element[];
   saveChildFocus?: 'session' | 'local';
 } & FocusParams)
 {

@@ -15,18 +15,22 @@ import { getStoreFolder } from "./store/services/gamesService";
 import ReloadPluginsJob from "./jobs/reload-plugins-job";
 import { semver } from "bun";
 import packageDef from '~/package.json';
+import { getOrCached, githubRequestQueue } from "./cache";
 
 async function checkUpdate ()
 {
-    const latest = await fetch('https://api.github.com/repos/simeonradivoev/gameflow-deck/releases/latest');
-    if (latest.ok)
+    return getOrCached('check-for-update', async () => githubRequestQueue.add(async () =>
     {
-        const data = await latest.json();
-        const hasUpdate = semver.order(data.tag_name, packageDef.version);
-        return hasUpdate;
-    }
+        const latest = await fetch('https://api.github.com/repos/simeonradivoev/gameflow-deck/releases/latest');
+        if (latest.ok)
+        {
+            const data = await latest.json();
+            const hasUpdate = semver.order(data.tag_name, packageDef.version);
+            return hasUpdate;
+        }
 
-    return 0;
+        return 0;
+    }), { expireMs: 1000 * 60 * 60 });
 }
 
 export const system = new Elysia({ prefix: '/api/system' })

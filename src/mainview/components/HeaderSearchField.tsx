@@ -1,10 +1,13 @@
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { Ref, RefObject, useEffect, useRef, useState } from "react";
+import { FocusEventHandler, Ref, RefObject, useEffect, useRef, useState } from "react";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import { oneShot } from "../scripts/audio/audio";
 import { Search } from "lucide-react";
 import { RoundButton } from "./RoundButton";
 import { useEventListener } from "usehooks-ts";
+import { systemApi } from "../scripts/clientApi";
+import { showKeyboardHandler } from "../scripts/utils";
+import useActiveControl from "../scripts/gamepads";
 
 function SearchInput (data: {
     id: string;
@@ -16,6 +19,7 @@ function SearchInput (data: {
     onSubmit: (search: string | undefined) => void;
 } & FocusParams)
 {
+    const { control } = useActiveControl();
     const { ref, focusKey } = useFocusable({
         onBlur: () => inputRef.current?.blur(),
         onFocus: (l, p, d) =>
@@ -59,6 +63,8 @@ function SearchInput (data: {
         data.onSubmit?.(undefined);
     }, inputRef as any);
 
+    const handlInputFocus: FocusEventHandler<HTMLInputElement> = e => showKeyboardHandler(control as any, e.target);
+
     return <label ref={ref} onFocus={data.onInputFocus} className='input rounded-full input-lg w-full max-w-xs has-focus:bg-base-300 ring-primary focused:ring-7 has-focus:ring-7 has-focus:ring-base-content'>
         <Search />
         <input
@@ -68,6 +74,7 @@ function SearchInput (data: {
                 setLocalSearch(data.search);
             }}
             autoFocus={data.compact}
+            onFocus={handlInputFocus}
             ref={inputRef}
             value={localSearch ?? ""}
             onChange={v => setLocalSearch(v.target.value)}

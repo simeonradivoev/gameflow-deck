@@ -2,12 +2,15 @@ import { eq } from "drizzle-orm";
 import { cache } from "./app";
 import cacheSchema from "@schema/cache";
 import { GithubReleaseSchema } from "@/shared/constants";
+import PQueue from "p-queue";
 
 export const CACHE_KEYS = {
     ROM_PLATFORMS: 'rom-platforms',
     STORE_GAME: (path: string) => `store-game-${path}`,
     STORE_GAME_MANIFEST: 'store-game-manifest'
 } as const;
+
+export const githubRequestQueue = new PQueue({ intervalCap: 10, interval: 1000 * 60 * 10, strict: true });
 
 export async function getOrCached<T> (key: string, getter: () => Promise<T>, options?: { expireMs?: number; }): Promise<T>
 {
@@ -37,10 +40,10 @@ export async function getOrCached<T> (key: string, getter: () => Promise<T>, opt
 
 export async function getOrCachedGithubRelease (path: string)
 {
-    return getOrCached(`github-release-${path}`, async () =>
+    return getOrCached(`github-release-${path}`, async () => githubRequestQueue.add(async () =>
     {
         const response = await fetch(`https://api.github.com/repos/${path}/releases/latest`, { method: "GET" });
         if (!response.ok) throw new Error(response.statusText);
         return GithubReleaseSchema.parseAsync(await response.json());
-    });
+    }), { expireMs: 1000 * 60 * 60 });
 }

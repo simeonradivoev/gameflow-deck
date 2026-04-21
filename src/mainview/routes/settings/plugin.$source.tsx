@@ -42,7 +42,7 @@ function PluginAction (data: { id: string, title: string | undefined, descriptio
                 <div>{data.title ?? data.id}</div>
                 <div className='text-sm text-base-content/40 text-wrap'>{data.description}</div>
             </div>}>
-        <Button id={`${data.id}-btn`} onAction={e => action.mutate()} >{data.action}</Button>
+        <Button id={`${data.id}-btn`} onAction={e => action.mutate()} >{action.isPending && <span className="loading loading-spinner loading-lg"></span>}{data.action}</Button>
     </OptionSpace>;
 }
 

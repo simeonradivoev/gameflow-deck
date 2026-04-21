@@ -1,6 +1,6 @@
 import { EmulatorPackageSchema, EmulatorPackageType, GithubManifestSchema, StoreGameSchema } from "@/shared/constants";
 import { CACHE_KEYS, getOrCached } from "../../cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { config, emulatorsDb } from '../../app';
 import path from "node:path";
 import fs from 'node:fs/promises';
@@ -46,10 +46,10 @@ export async function buildStoreFrontendEmulatorSystems (emulator: EmulatorPacka
     const systems = await Promise.all(emulator.systems.map(async system =>
     {
         const rommSystem = await emulatorsDb.query.systemMappings.findFirst({
-            where: and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.system, system))
+            where: or(and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.system, system)), and(eq(emulatorSchema.systemMappings.source, 'romm'), eq(emulatorSchema.systemMappings.sourceSlug, system)))
         });
 
-        const esSystem = await emulatorsDb.query.systems.findFirst({ where: eq(emulatorSchema.emulators.name, system), columns: { fullname: true } });
+        const esSystem = await emulatorsDb.query.systems.findFirst({ where: or(eq(emulatorSchema.emulators.name, system), eq(emulatorSchema.emulators.name, rommSystem?.system ?? '')), columns: { fullname: true } });
 
         let icon: string = `/api/romm/image/romm/assets/platforms/${rommSystem?.sourceSlug ?? system}.svg`;
 

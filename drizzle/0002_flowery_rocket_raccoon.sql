@@ -22,7 +22,7 @@ CREATE TABLE `__new_games` (
 	FOREIGN KEY (`platform_id`) REFERENCES `platforms`(`id`) ON UPDATE cascade ON DELETE no action
 );
 --> statement-breakpoint
-INSERT INTO `__new_games`("id", "source_id", "source", "igdb_id", "name", "ra_id", "path_fs", "main_glob", "last_played", "created_at", "metadata", "slug", "platform_id", "cover", "type", "summary", "version", "version_source", "version_system") SELECT "id", "source_id", "source", "igdb_id", "name", "ra_id", "path_fs", "main_glob", "last_played", "created_at", "metadata", "slug", "platform_id", "cover", "type", "summary", "version", "version_source", "version_system" FROM `games`;--> statement-breakpoint
+INSERT INTO `__new_games`("id", "source_id", "source", "igdb_id", "name", "ra_id", "path_fs", "main_glob", "last_played", "created_at", "metadata", "slug", "platform_id", "cover", "type", "summary", "version", "version_source", "version_system") SELECT "id", "source_id", "source", "igdb_id", "name", "ra_id", "path_fs", NULL, "last_played", "created_at", "metadata", "slug", "platform_id", "cover", "type", "summary", NULL, NULL, NULL FROM `games`;--> statement-breakpoint
 DROP TABLE `games`;--> statement-breakpoint
 ALTER TABLE `__new_games` RENAME TO `games`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint

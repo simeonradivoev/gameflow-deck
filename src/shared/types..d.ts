@@ -119,7 +119,7 @@ declare interface CommandEntry
     /** The front end label for the command. Mainly gotten from ES-DE list */
     label?: string;
     /** Compiled command to be executed */
-    command: string;
+    command: string | string[];
     /** Environment variables */
     env?: Record<string, string>,
     /** The path the spawned process will start at */

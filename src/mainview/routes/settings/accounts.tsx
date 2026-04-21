@@ -24,7 +24,7 @@ import { useJobStatus } from "@/mainview/scripts/utils";
 import { useInterval } from "usehooks-ts";
 import { TwitchIcon } from "@/mainview/scripts/brandIcons";
 import { twitchLoginMutation, twitchLoginVerificationQuery, twitchLogoutMutation } from "@queries/settings";
-import { rommGetOptionsQuery, rommLoggedInQuery, rommHostnameQuery, rommLoginMutation, rommLogoutMutation, rommQrLoginMutation, rommUsernameQuery, rommUserQuery } from "@queries/romm";
+import { rommGetOptionsQuery, rommLoggedInQuery, rommHostnameQuery, rommLoginMutation, rommLogoutMutation, rommQrLoginMutation, rommUsernameQuery, rommUserQuery, invalidateLogin } from "@queries/romm";
 import { systemApi } from "@/mainview/scripts/clientApi";
 
 export const Route = createFileRoute("/settings/accounts")({
@@ -59,10 +59,7 @@ function TwitchLogin ()
 {
   const loginStatus = useQuery(twitchLoginVerificationQuery);
 
-  const loginMutation = useMutation({
-    ...twitchLoginMutation,
-    onSuccess: () => loginStatus.refetch()
-  });
+  const loginMutation = useMutation(twitchLoginMutation);
 
   const logoutMutation = useMutation({ ...twitchLogoutMutation, onSuccess: () => loginStatus.refetch() });
 
@@ -100,8 +97,8 @@ function LoginControls (data: {})
     ...rommLogoutMutation,
     onSuccess: async (d, v, r, c) =>
     {
-      user.refetch();
-      await c.client.invalidateQueries({ queryKey: ["romm", "auth"] });
+      await user.refetch();
+      await invalidateLogin(c.client);
       await router.navigate({ replace: true });
     }
   });

@@ -145,15 +145,18 @@ export const EmulatorPackageSchema = z.object({
         z.object({
             type: z.literal(['github', 'gitlab']),
             pattern: z.string(),
-            path: z.string()
+            path: z.string(),
+            bin: z.string().optional()
         }),
         z.object({
             type: z.literal('direct'),
             url: z.url(),
+            bin: z.string().optional()
         }),
         z.object({
             type: z.literal('scoop'),
             url: z.url(),
+            bin: z.string().optional()
         })
     ]))).optional(),
     systems: z.array(z.string()),

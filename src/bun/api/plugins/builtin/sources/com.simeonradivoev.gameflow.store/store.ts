@@ -10,11 +10,24 @@ import { config, emulatorsDb, taskQueue } from "@/bun/api/app";
 import fs from "node:fs/promises";
 import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
 import UpdateStoreJob from "@/bun/api/jobs/update-store";
-import { getEmulatorDownload } from "@/bun/api/store/services/emulatorsService";
-import { buildFilters, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
+import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
+import { buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
+import { path7za } from "7zip-bin";
 
 export default class RommIntegration implements PluginType
 {
+    eventsNames = [{ id: 'updateStore', title: "Update Store", description: "Update the Store Manifest", action: "Update" }];
+
+    async onEvent (e: string)
+    {
+        switch (e)
+        {
+            case 'updateStore':
+                await taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
+                return { reload: true };
+        }
+    }
+
     async setup (ctx: PluginLoadingContextType)
     {
         console.log("Store Directory is ", getStoreFolder());
@@ -126,52 +139,52 @@ export default class RommIntegration implements PluginType
             saves?.forEach(([key, val]) => validChangedSaveFiles[key] = val);
         });
 
+        ctx.hooks.emulators.findEmulatorSource.tapPromise(desc.name, async ({ emulator, sources }) =>
+        {
+            const emulatorPackage = await getStoreEmulatorPackage(emulator);
+            if (!emulatorPackage) return undefined;
+            const storeDownloadInfo = await getExistingStoreEmulatorDownload(emulatorPackage);
+            if (!storeDownloadInfo) return;
+            const emulatorPath = getEmulatorPath(emulator);
+            if (!await fs.exists(emulatorPath)) return;
+            const validDownload = emulatorPackage.downloads?.[`${process.platform}:${process.arch}`].find(d => d.type === storeDownloadInfo?.type);
+            if (!validDownload || !validDownload.bin) return;
+            const glob = new Glob(validDownload.bin);
+            const files = await Array.fromAsync(glob.scan({ cwd: emulatorPath }));
+            if (files.length > 0)
+            {
+                sources.push({ binPath: path.join(emulatorPath, files[0]), exists: true, rootPath: emulatorPath, type: 'store' });
+            }
+        });
+
+        ctx.hooks.emulators.emulatorPostInstall.tapPromise({ name: desc.name, emulator: 'UMU' }, async ({ path: emulatorPath }) =>
+        {
+            const pathStat = await fs.stat(emulatorPath);
+            if (pathStat.isFile())
+            {
+                await fs.chmod(emulatorPath, 0o755);
+            }
+        });
+
+        ctx.hooks.games.postInstall.tapPromise(desc.name, async ({ source, id, files, info }) =>
+        {
+            if (source !== 'store') return;
+            if (files.length === 1)
+            {
+                const command = await buildLaunchCommand({ gamePath: files[0], systemSlug: info.system_slug, mainGlob: info.main_glob });
+                if (command && command.metadata.romPath)
+                {
+                    await fs.chmod(command.metadata.romPath, 0o755);
+                }
+            }
+        });
+
         ctx.hooks.games.buildLaunchCommands.tapPromise({ name: desc.name, before: 'com.simeonradivoev.gameflow.es' }, async ({ gamePath, source, sourceId, systemSlug, mainGlob }) =>
         {
             if (source !== 'store' || !gamePath) return;
-            const downloadPath = config.get('downloadPath');
-            const gamePathAbsolute = path.join(downloadPath, gamePath);
-            if (!(await fs.exists(gamePathAbsolute))) return;
-            const gamePathStat = await fs.stat(gamePathAbsolute);
-
-            if (gamePathStat.isDirectory())
-            {
-                if (!mainGlob && systemSlug !== 'win') return;
-                const fileGlob = new Glob(mainGlob ?? '**/*.exe');
-                for await (const file of fileGlob.scan({ cwd: path.join(downloadPath, gamePath) }))
-                {
-                    return [{
-                        startDir: path.join(downloadPath, gamePath, dirname(file)),
-                        command: `./${basename(file)}`,
-                        id: `store-${process.platform}`,
-                        shell: false,
-                        valid: true,
-                        env: {
-                            XDG_DATA_HOME: path.join(config.get('downloadPath'), 'save', source, sourceId ?? '')
-                        },
-                        metadata: {
-                            romPath: path.join(downloadPath, gamePath, file)
-                        }
-                    }];
-                }
-
-            } else
-            {
-                return [{
-                    startDir: path.join(downloadPath, dirname(gamePath)),
-                    command: `./${basename(gamePath)}`,
-                    env: {
-                        XDG_DATA_HOME: path.join(config.get('downloadPath'), 'save', source, sourceId ?? '')
-                    },
-                    id: `store-${process.platform}`,
-                    valid: true,
-                    shell: false,
-                    metadata: {
-                        romPath: path.join(downloadPath, gamePath)
-                    }
-                }];
-            }
-
+            const command = await buildLaunchCommand({ gamePath, systemSlug, mainGlob });
+            if (!command) return;
+            return [command];
         });
 
         ctx.hooks.games.fetchFilters.tapPromise(desc.name, async ({ filters, source }) =>

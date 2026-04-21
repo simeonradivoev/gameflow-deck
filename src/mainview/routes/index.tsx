@@ -10,6 +10,9 @@ import
   OctagonAlert,
   Maximize,
   Store,
+  LayoutGrid,
+  PlusCircle,
+  Plus,
 } from "lucide-react";
 import
 {
@@ -39,7 +42,7 @@ import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/
 import z from "zod";
 import CollectionList from "../components/CollectionList";
 import { zodValidator } from '@tanstack/zod-adapter';
-import { mobileCheck, useDragScroll } from "../scripts/utils";
+import { mobileCheck, scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import Carousel from "../components/Carousel";
 import { closeMutation } from "@queries/system";
@@ -48,6 +51,7 @@ import { oneShot } from "../scripts/audio/audio";
 import { FloatingShortcuts } from "../components/Shortcuts";
 import SelectMenu from "../components/SelectMenu";
 import HeaderSearchField from "../components/HeaderSearchField";
+import CardElement from "../components/CardElement";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -91,6 +95,35 @@ function HomeListError (data: { focused: boolean; })
   </div></div>;
 }
 
+function Preview (data: { index: number; children?: any; })
+{
+  const isMobile = mobileCheck();
+  return <div
+    className="flex p-6 bg-base-100 justify-center items-center aspect-3/4"
+    style={{
+      background: `linear-gradient(
+      color-mix(in srgb, var(--color-base-content) 60%, transparent), 
+      color-mix(in srgb, var(--color-base-300) 60%, transparent)
+    ), url(https://picsum.photos/id/${10 + data.index}/100/100.webp?blur=10) center / cover`,
+
+      backgroundBlendMode: isMobile ? undefined : "screen",
+      boxShadow: isMobile ? undefined : 'inset 0 0 32px rgba(0,0,0,0.6)'
+    }}
+  >
+    {data.children}
+  </div>;
+}
+
+function GetStoreGamesCard ()
+{
+  const router = useRouter();
+  const handleNavigate = () =>
+  {
+    router.navigate({ to: '/store/tab/games' });
+  };
+  return <CardElement onFocus={scrollIntoViewHandler({ behavior: "smooth", inline: "center" })} badges={[<Search className="size-8" />]} onAction={handleNavigate} title="Gameflow Store" subtitle="Get Free Games" preview={<Preview index={43} ><Store className="not-mobile:drop-shadow-md in-focus:animate-rotate size-32" /></Preview>} focusKey='store-games-btn' index={0} id="store-games-btn" />;
+}
+
 function ShowAllGamesCard ()
 {
   const router = useRouter();
@@ -98,8 +131,7 @@ function ShowAllGamesCard ()
   {
     router.navigate({ to: '/games' });
   };
-  const { ref } = useFocusable({ focusKey: 'all-games-btn', onEnterPress: handleNavigate });
-  return <div ref={ref} onClick={handleNavigate} className="flex focusable focusable-primary justify-center items-center bg-base-300/80 rounded-3xl font-semibold w-(--game-card-width) h-(--game-card-height) focusable-hover cursor-pointer">All Games</div>;
+  return <CardElement onFocus={scrollIntoViewHandler({ behavior: "smooth", inline: "center" })} onAction={handleNavigate} title="All Games" preview={<Preview index={17} ><LayoutGrid className="not-mobile:drop-shadow-md in-focus:animate-rotate size-32" /></Preview>} focusKey='all-games-btn' index={0} id="all-games-btn" />;
 }
 
 function HomeList (data: {
@@ -165,7 +197,8 @@ function HomeList (data: {
           id="games-list"
           setBackground={bg.setBackground}
           filters={{ limit: 12, orderBy: 'activity' }}
-          finalElement={<ShowAllGamesCard />}
+          finalElement={[<GetStoreGamesCard />, <ShowAllGamesCard />]}
+          emptyElement={[]}
         />
         <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
       </>;

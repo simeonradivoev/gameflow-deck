@@ -1,7 +1,7 @@
 import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
-import { DependencyList, RefObject, useEffect, useRef, useState } from "react";
+import { DependencyList, FocusEventHandler, RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
-import { jobsApi } from "./clientApi";
+import { jobsApi, systemApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";
 import { AnyRouter, useRouter } from "@tanstack/react-router";
 import { soundMap } from "./audio/audioConstants";
@@ -369,3 +369,17 @@ export function useOnNavigateBack (callback: (state: { sound?: keyof typeof soun
     return unsub;
   }, [router]);
 }
+
+export function showKeyboardHandler (activeControl: string, node?: HTMLInputElement)
+{
+  if (node && node.type !== 'checkbox' && (activeControl === 'gamepad' || activeControl === 'touch'))
+  {
+    var rect = node.getBoundingClientRect();
+    systemApi.api.system.show_keyboard.post({
+      XPosition: rect.x,
+      YPosition: rect.y,
+      Width: rect.width,
+      Height: rect.height
+    });
+  }
+};

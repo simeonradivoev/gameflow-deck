@@ -5,6 +5,7 @@
     "description": "ES-DE Launch Configurations. Used as fallback",
     "main": "./es-de.ts",
     "icon": "https://impro.usercontent.one/appid/oneComWsb/domain/es-de.org/media/es-de.org/onewebmedia/ES-DE_logo.png",
+    "canDisable": false,
     "category": "launchers",
     "keywords": [
         "integration",

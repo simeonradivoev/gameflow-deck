@@ -13,6 +13,7 @@ import { getAuthToken } from "@/clients/romm/core/auth.gen";
 import { client } from "@/clients/romm/client.gen";
 import { validateGameSource } from "@/bun/api/games/services/statusService";
 import z from "zod";
+import { checkLoginAndRefreshRomm } from "@/bun/api/auth";
 
 const SettingsSchema = z.object({
     savesSync: z.boolean().default(false).describe("Experimental save sync support")
@@ -143,6 +144,8 @@ export default class RommIntegration implements PluginType<SettingsType>
     async load (ctx: PluginLoadingContextType<SettingsType>)
     {
         this.isSteamDeck = isSteamDeckGameMode();
+        ctx.setProgress(0, "Logging Into Romm");
+        await checkLoginAndRefreshRomm();
         await this.updateClient();
 
         ctx.hooks.games.fetchGames.tapPromise(desc.name, async ({ query, games }) =>
@@ -150,7 +153,6 @@ export default class RommIntegration implements PluginType<SettingsType>
             if (!await this.checkRemote()) return;
             if (((!query.platform_source || query.platform_source === 'romm') || !!query.collection_id) && (!query.source || query.source === 'romm'))
             {
-
                 const rommGames = await getRomsApiRomsGet({
                     query: {
                         platform_ids: query.platform_id ? [query.platform_id] : undefined,

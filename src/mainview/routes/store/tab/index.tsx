@@ -80,11 +80,11 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
                             <div className='flex sm:portrait:flex-wrap sm:portrait:grow gap-4 max-h-full justify-center'>
                                 <div className='relative rounded-3xl max-w-xs h-48 overflow-hidden  shadow-lg'>
                                     <div className='flex absolute bottom-4 left-4 size-8 bg-base-content text-base-100 rounded-full items-center justify-center shadow-lg '><HardDrive /></div>
-                                    {!!data.games && <img className='object-cover w-full h-full ' src={`${RPC_URL(__HOST__)}${data.games[selectedGame].path_covers[0]}`} />}
+                                    {!!data.games && <img className='object-cover w-full h-full' src={`${RPC_URL(__HOST__)}${data.games[selectedGame].path_covers[0]}`} />}
                                 </div>
                                 <div className='flex flex-col gap-2 py-3 max-w-md'>
                                     <h1 className='font-semibold text-3xl text-shadow-md'>{game.name}</h1>
-                                    <p className='overflow-hidden text-wrap text-ellipsis text-base-content/60 text-shadow-md'>{game.summary}</p>
+                                    <p className='overflow-hidden text-wrap text-ellipsis wrap-anywhere max-h-24 text-base-content/60 text-shadow-md'>{game.summary}</p>
                                 </div>
                             </div>
                         </div>

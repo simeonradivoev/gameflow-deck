@@ -4,7 +4,7 @@ A Cross-Platform open source Retro gaming frontend designed for handheld and con
 Focused on building a simple user experience and intuitive UI as a curated community driven experience.
 
 > [!WARNING]
-> This app is actively in development, it doesn't have most of its major features implemented yet.
+> This app is actively in development, it is contantly chaning and improving.
 > It will have an opinionated design and will be used as an experiment in discovering a good UX.
 
 ## Features
@@ -13,6 +13,8 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 
 - **[ROMM](https://github.com/rommapp/romm)** - download, sync and update roms and platforms.
 - **[Emulator JS](https://github.com/EmulatorJS/EmulatorJS)** - play your games with emulator js right within the app. Uses RetroArch cores.
+- **[RClone](https://github.com/rclone/rclone)** - sync saves between devices or cloud.
+- **[UMU](https://github.com/Open-Wine-Components/umu-launcher)** - UMU Launcher for playing windows games on linux without needing steam. (Only used for store games for now)
 
 ### Store
 
@@ -32,6 +34,7 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 - **Automatic Emulator Discovery** - Using the configs of the excellent ES-DE to discover installed emulators and launch games.
   - Easy fallback configuration with built in file browser.
 - **Responsive Layout** - Optimized mainly for the steam deck with responsive layout support and dynamic switching of inputs.
+- **Cloud/Device Save Sync** - For supported games and emulators.
 
 ## Screenshots
 

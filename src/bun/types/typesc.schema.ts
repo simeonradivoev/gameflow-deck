@@ -36,7 +36,10 @@ export const PluginSchema = z.object({
         description: z.string().optional(),
         action: z.string()
     }).array().optional(),
-    onEvent: z.function().input([z.string()]).output(z.any()).optional()
+    onEvent: z.function().input([z.string()]).output(z.object({
+        openTab: z.string().optional(),
+        reload: z.boolean().optional()
+    }).or(z.record(z.string(), z.any()))).optional()
 });
 
 export type PluginType<T extends Record<string, any> = Record<string, any>> = Omit<z.infer<typeof PluginSchema>, "load" | 'settingsMigrations'> & {
@@ -55,6 +58,6 @@ export const ActiveGameSchema = z.object({
     source: z.string().optional(),
     sourceId: z.string().optional(),
     name: z.string(),
-    command: z.object({ command: z.string(), startDir: z.string().optional() })
+    command: z.object({ command: z.string().or(z.string().array()), startDir: z.string().optional() })
 });
 export type ActiveGameType = z.infer<typeof ActiveGameSchema>;

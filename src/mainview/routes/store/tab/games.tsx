@@ -71,6 +71,7 @@ function RouteComponent ()
         </div>
         <div className="pl-12">
           <CardList grid finalElement={<LoadMoreButton
+            hidden
             lastId={data?.pages.at(-1)?.data.at(-1)?.id}
             onFocus={handleFocus}
             isFetching={isFetchingNextPage || isFetching}
