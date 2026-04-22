@@ -41,6 +41,7 @@
   },
   "include": [
     "src",
+    "scripts",
     "vite.config.ts",
     "vite-env-override.d.ts"
   ]

@@ -3,6 +3,9 @@ import { BrowserParams, BuildParams } from './utils/browser-params';
 import os from 'node:os';
 import { EventEmitter } from 'node:stream';
 import { dlopen, FFIType, Pointer } from "bun:ffi";
+import { SERVER_URL } from '@/shared/constants';
+import { host } from './utils/host';
+import fs from 'node:fs/promises';
 
 export default async function init (events: EventEmitter, forceBrowser: boolean, params: BrowserParams)
 {
@@ -19,6 +22,8 @@ export default async function init (events: EventEmitter, forceBrowser: boolean,
             await runBrowser(events, params);
         }
     }
+
+    await runNW(events, params);
 }
 
 function focusWindow (id: Pointer)
@@ -44,8 +49,28 @@ function focusWindow (id: Pointer)
     }
 }
 
+async function runNW (events: EventEmitter, params: BrowserParams)
+{
+    const path = process.platform === 'win32' ? './bin/nw/nw.exe' : './bin/nw/nw';
+    if (!await fs.exists(path))
+    {
+        console.error("Could not find NW.js");
+        return;
+    }
+    const signalHandler = new AbortController();
+    events.on('exitapp', () => signalHandler.abort());
+    const args = [path, `--url=${SERVER_URL(host)}`];
+    if (process.env.NODE_ENV !== 'development') args.push("--disable-devtools");
+    const nwProcess = Bun.spawn(args, { signal: signalHandler.signal });
+    await nwProcess.exited;
+}
+
 async function runWebview (events: EventEmitter, params: BrowserParams)
 {
+    if (process.platform !== 'win32')
+    {
+        throw new Error("Webview only supported on windows");
+    }
     const webviewPath = process.env.IS_BINARY ? `./webview/${os.platform()}` : new URL(`./webview/${os.platform()}`, import.meta.url).href;
     console.log("Launching Webview Worker at: ", webviewPath);
     const config: Record<string, string> = {};

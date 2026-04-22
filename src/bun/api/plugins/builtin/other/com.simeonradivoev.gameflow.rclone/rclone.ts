@@ -250,8 +250,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
                         UseJSONLog: true,
                         LogLevel: "DEBUG",
                         HumanReadable: true,
-                        Progress: true,
-                        DryRun: true
+                        Progress: true
                     }
                 });
                 console.log(data);
