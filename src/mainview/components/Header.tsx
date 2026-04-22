@@ -153,7 +153,7 @@ function WiFiStatus ()
   return systemContext && systemContext.wifiConnections.length > 0 ? <div>
     {systemContext.wifiConnections.map(w =>
     {
-      const className = "w-6 h-6";
+      const className = "w-10 h-10";
       let icon = <Wifi className={className} />;
       if (w.signalLevel >= -60)
         icon = <Wifi className={className} />;
@@ -164,7 +164,7 @@ function WiFiStatus ()
       else if (w.signalLevel >= -90)
         icon = <WifiZero className={className} />;
 
-      return <div className="tooltip" data-tip={w.signalLevel}>
+      return <div className="tooltip tooltip-bottom" data-tip={w.signalLevel}>
         {icon}
       </div>;
     })}

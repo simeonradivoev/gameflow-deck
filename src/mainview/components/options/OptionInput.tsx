@@ -6,6 +6,8 @@ import { systemApi } from "../../scripts/clientApi";
 import { CheckIcon, X } from "lucide-react";
 import { oneShot } from "@/mainview/scripts/audio/audio";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
+import { showKeyboardHandler } from "@/mainview/scripts/utils";
+import useActiveControl from "@/mainview/scripts/gamepads";
 
 export function OptionInput (data: {
     name: string;
@@ -35,6 +37,7 @@ export function OptionInput (data: {
         }
         oneShot('click');
     };
+    const { control } = useActiveControl();
     const [inputFocused, setInputFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { ref, focusKey } = useFocusable({
@@ -99,20 +102,11 @@ export function OptionInput (data: {
         return shortcuts;
     }, [inputFocused, data.type]);
 
-    const handleInputFocus = () =>
+    const handleInputFocus: FocusEventHandler<HTMLInputElement> = (e) =>
     {
         option.focus();
         setInputFocused(true);
-        if (inputRef.current)
-        {
-            var rect = inputRef.current?.getBoundingClientRect();
-            systemApi.api.system.show_keyboard.post({
-                XPosition: rect.x,
-                YPosition: rect.y,
-                Width: rect.width,
-                Height: rect.height
-            });
-        }
+        showKeyboardHandler(control as any, e.target);
     };
 
     const handleInputBlur = (e: any) =>

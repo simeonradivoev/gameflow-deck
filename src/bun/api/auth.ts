@@ -46,67 +46,7 @@ export default new Elysia()
 
         return status(res.status, res.statusText);
     })
-    .get('/login/twitch', async () =>
-    {
-        const access_token = await secrets.get({ service: 'gamflow_twitch', name: 'access_token' });
-        if (!access_token)
-        {
-            return status('Not Found', "Not Logged In");
-        }
-
-        const res = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${access_token}` } });
-        if (res.ok)
-        {
-            return await res.json() as { login: string, expires_in: number; client_id: string, user_id: string; };
-        }
-
-        if (!process.env.TWITCH_CLIENT_ID)
-        {
-            return status("Not Found", "Twitch Client ID not set");
-        }
-
-        const refresh_token = await secrets.get({ service: 'gamflow_twitch', name: "refresh_token" });
-        if (!refresh_token)
-        {
-            return status("Not Found", "Refresh Token Not Found");
-        }
-
-        // refresh token
-        const refreshResponse = await fetch('https://id.twitch.tv/oauth2/token', {
-            method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({
-                client_id: process.env.TWITCH_CLIENT_ID,
-                access_token,
-                grant_type: "refresh_token",
-                refresh_token
-            })
-        });
-
-        if (refreshResponse.ok)
-        {
-            const data: {
-                access_token: string,
-                refresh_token: string,
-                token_type: string;
-                expires_in: number;
-            } = await refreshResponse.json();
-
-            await secrets.set({ service: 'gamflow_twitch', name: 'access_token', value: data.access_token });
-            await secrets.set({ service: 'gamflow_twitch', name: 'refresh_token', value: data.refresh_token });
-            await secrets.set({ service: 'gamflow_twitch', name: 'expires_in', value: new Date(new Date().getTime() + data.expires_in).toString() });
-
-            await plugins.hooks.auth.loginComplete.promise({ service: 'twitch' });
-
-            events.emit('notification', { message: "Twitch Refresh Successful", type: 'success' });
-
-            const res = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${data.access_token}` } });
-            if (res.ok)
-            {
-                return await res.json() as { login: string, expires_in: number; client_id: string, user_id: string; };
-            }
-        }
-
-        return status(400, res.statusText);
-    })
+    .get('/login/twitch', checkLoginAndRefreshTwitch)
     .post('/login/romm/qr', async () =>
     {
         if (taskQueue.hasActiveOfType(LoginJob))
@@ -123,47 +63,7 @@ export default new Elysia()
         return data.data as UserSchema;
     })
     .post('/login/romm', async ({ body }) => tryLoginAndSave(body), { body: z.object({ host: z.url(), username: z.string(), password: z.string() }) })
-    .get('/login/romm', async () =>
-    {
-        const access_token = await secrets.get({ service: 'gameflow', name: 'romm_access_token' });
-        if (!access_token)
-        {
-            return { hasLogin: false };
-        }
-
-        const expires_in = await secrets.get({ service: 'gameflow', name: "romm_expires_in" });
-        if (expires_in)
-        {
-            const date = new Date(expires_in);
-            if (date > new Date())
-            {
-                return { hasLogin: true };
-            }
-        }
-
-        const refresh_token = await secrets.get({ service: 'gameflow', name: "romm_refresh_token" });
-        if (!refresh_token)
-        {
-            return { hasLogin: false };
-        }
-
-        const refreshResponse = await tokenApiTokenPost({ body: { grant_type: "refresh_token", refresh_token: refresh_token } });
-
-        if (refreshResponse.response.ok && refreshResponse.data)
-        {
-            await secrets.set({ service: 'gameflow', name: 'romm_access_token', value: refreshResponse.data.access_token });
-            if (refreshResponse.data.refresh_token)
-                await secrets.set({ service: 'gameflow', name: 'romm_refresh_token', value: refreshResponse.data.refresh_token });
-            await secrets.set({ service: 'gameflow', name: 'romm_expires_in', value: new Date(new Date().getTime() + refreshResponse.data.expires * 1000).toString() });
-
-            await plugins.hooks.auth.loginComplete.promise({ service: 'romm' });
-
-            events.emit('notification', { message: "Romm Refresh Successful", type: 'success' });
-            return { hasLogin: true };
-        }
-
-        return status(refreshResponse.response.status, refreshResponse.response.statusText) as any;
-    },
+    .get('/login/romm', checkLoginAndRefreshRomm,
         { response: z.object({ hasLogin: z.boolean() }) })
     .post('/logout/romm', async () =>
     {
@@ -174,6 +74,109 @@ export default new Elysia()
     }, { response: z.any() });
 
 
+export async function checkLoginAndRefreshTwitch ()
+{
+    const access_token = await secrets.get({ service: 'gamflow_twitch', name: 'access_token' });
+    if (!access_token)
+    {
+        return status('Not Found', "Not Logged In");
+    }
+
+    const res = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${access_token}` } });
+    if (res.ok)
+    {
+        return await res.json() as { login: string, expires_in: number; client_id: string, user_id: string; };
+    }
+
+    if (!process.env.TWITCH_CLIENT_ID)
+    {
+        return status("Not Found", "Twitch Client ID not set");
+    }
+
+    const refresh_token = await secrets.get({ service: 'gamflow_twitch', name: "refresh_token" });
+    if (!refresh_token)
+    {
+        return status("Not Found", "Refresh Token Not Found");
+    }
+
+    // refresh token
+    const refreshResponse = await fetch('https://id.twitch.tv/oauth2/token', {
+        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({
+            client_id: process.env.TWITCH_CLIENT_ID,
+            access_token,
+            grant_type: "refresh_token",
+            refresh_token
+        })
+    });
+
+    if (refreshResponse.ok)
+    {
+        const data: {
+            access_token: string,
+            refresh_token: string,
+            token_type: string;
+            expires_in: number;
+        } = await refreshResponse.json();
+
+        await secrets.set({ service: 'gamflow_twitch', name: 'access_token', value: data.access_token });
+        await secrets.set({ service: 'gamflow_twitch', name: 'refresh_token', value: data.refresh_token });
+        await secrets.set({ service: 'gamflow_twitch', name: 'expires_in', value: new Date(new Date().getTime() + data.expires_in).toString() });
+
+        await plugins.hooks.auth.loginComplete.promise({ service: 'twitch' });
+
+        events.emit('notification', { message: "Twitch Refresh Successful", type: 'success' });
+
+        const res = await fetch('https://id.twitch.tv/oauth2/validate', { headers: { Authorization: `OAuth ${data.access_token}` } });
+        if (res.ok)
+        {
+            return await res.json() as { login: string, expires_in: number; client_id: string, user_id: string; };
+        }
+    }
+
+    return status(400, res.statusText);
+}
+
+export async function checkLoginAndRefreshRomm ()
+{
+    const access_token = await secrets.get({ service: 'gameflow', name: 'romm_access_token' });
+    if (!access_token)
+    {
+        return { hasLogin: false };
+    }
+
+    const expires_in = await secrets.get({ service: 'gameflow', name: "romm_expires_in" });
+    if (expires_in)
+    {
+        const date = new Date(expires_in);
+        if (date > new Date())
+        {
+            return { hasLogin: true };
+        }
+    }
+
+    const refresh_token = await secrets.get({ service: 'gameflow', name: "romm_refresh_token" });
+    if (!refresh_token)
+    {
+        return { hasLogin: false };
+    }
+
+    const refreshResponse = await tokenApiTokenPost({ body: { grant_type: "refresh_token", refresh_token: refresh_token } });
+
+    if (refreshResponse.response.ok && refreshResponse.data)
+    {
+        await secrets.set({ service: 'gameflow', name: 'romm_access_token', value: refreshResponse.data.access_token });
+        if (refreshResponse.data.refresh_token)
+            await secrets.set({ service: 'gameflow', name: 'romm_refresh_token', value: refreshResponse.data.refresh_token });
+        await secrets.set({ service: 'gameflow', name: 'romm_expires_in', value: new Date(new Date().getTime() + refreshResponse.data.expires * 1000).toString() });
+
+        await plugins.hooks.auth.loginComplete.promise({ service: 'romm' });
+
+        events.emit('notification', { message: "Romm Refresh Successful", type: 'success' });
+        return { hasLogin: true };
+    }
+
+    return status(refreshResponse.response.status, refreshResponse.response.statusText) as any;
+}
 
 export async function tryLoginAndSave ({ host, username, password }: { host: string, username: string, password: string; })
 {

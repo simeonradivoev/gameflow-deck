@@ -3,6 +3,7 @@ import desc from './package.json';
 import secrets from "@/bun/api/secrets";
 import PQueue from 'p-queue';
 import * as igdb from '@phalcode/ts-igdb-client';
+import { checkLoginAndRefreshTwitch } from "@/bun/api/auth";
 
 export default class IgdbIntegration implements PluginType
 {
@@ -39,6 +40,8 @@ export default class IgdbIntegration implements PluginType
 
     async load (ctx: PluginLoadingContextType)
     {
+        await checkLoginAndRefreshTwitch();
+
         ctx.hooks.games.gameLookup.tapPromise(desc.name, async ({ source, id }) =>
         {
             if (!process.env.TWITCH_CLIENT_ID) return;

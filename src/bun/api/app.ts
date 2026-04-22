@@ -72,6 +72,7 @@ export async function load ()
     console.log("Config Path Located At: ", config.path);
     console.log("Custom Emulator Paths Located At: ", customEmulators.path);
     console.log("App Directory is ", process.env.APPDIR);
+    console.log("Cache Path is ", cachePath);
 
     cachePath = path.join(os.tmpdir(), 'gameflow', 'cache.sqlite');
     fileCookieStore = new FileCookieStore(path.join(path.dirname(config.path), 'cookies.json'));

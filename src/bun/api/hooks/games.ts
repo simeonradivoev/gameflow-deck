@@ -124,6 +124,12 @@ export class GameHooks
             platformSlug?: string;
         };
     }]>(["ctx"]);
+    postInstall = new AsyncSeriesHook<[ctx: {
+        source: string,
+        id: string;
+        files: string[];
+        info: DownloadInfo;
+    }]>(['ctx']);
     fetchCollections = new AsyncSeriesHook<[ctx: { collections: FrontEndCollection[]; }]>(['ctx']);
     fetchCollection = new AsyncSeriesBailHook<[ctx: { source: string, id: string; }], FrontEndCollection | undefined>(['ctx']);
 

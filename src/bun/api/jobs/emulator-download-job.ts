@@ -11,6 +11,7 @@ import { ensureDir, move } from "fs-extra";
 import { simulateProgress } from "@/bun/utils";
 import { path7za } from "7zip-bin";
 import { getEmulatorDownload, getEmulatorPath } from "../store/services/emulatorsService";
+import { $ } from "bun";
 
 type EmulatorDownloadStates = "download" | "extract";
 
@@ -61,7 +62,7 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
             const destinationPaths = await downloader.start();
             if (destinationPaths)
             {
-                const isArchive = destinationPaths[0].endsWith('.7z') || destinationPaths[0].endsWith('.zip');
+                const isArchive = destinationPaths[0].endsWith('.7z') || destinationPaths[0].endsWith('.zip') || destinationPaths[0].endsWith('.tar');
                 const isAppImage = destinationPaths[0].endsWith(".AppImage");
 
                 if (!isArchive && !isAppImage)
@@ -74,14 +75,23 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
                     if (destinationPaths[0])
                     {
                         let destinationPath = destinationPaths[0];
-                        await new Promise((resolve, reject) =>
+                        if (destinationPath.endsWith('.tar'))
                         {
-                            const seven = Seven.extractFull(destinationPath, emulatorsFolder, { $bin: process.env.ZIP7_PATH ?? path7za, $progress: true, noRootDuplication: true });
-                            seven.on('progress', p => context.setProgress(p.percent, "extract"));
-                            seven.on('error', e => reject(e));
-                            seven.on('end', () => resolve(true));
-                        });
-                        await fs.rm(destinationPath, { recursive: true });
+                            context.setProgress(0, "extract");
+                            await ensureDir(emulatorsFolder);
+                            await $`tar -xf ${destinationPath} -C ${emulatorsFolder}`;
+                            await fs.rm(destinationPath, { recursive: true });
+                        } else
+                        {
+                            await new Promise((resolve, reject) =>
+                            {
+                                const seven = Seven.extractFull(destinationPath, emulatorsFolder, { $bin: process.env.ZIP7_PATH ?? path7za, $progress: true, noRootDuplication: true });
+                                seven.on('progress', p => context.setProgress(p.percent, "extract"));
+                                seven.on('error', e => reject(e));
+                                seven.on('end', () => resolve(true));
+                            });
+                            await fs.rm(destinationPath, { recursive: true });
+                        }
 
                         // check if 1 root folder we need to get rid of
                         const contents = await fs.readdir(emulatorsFolder);
@@ -106,15 +116,18 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
                     }
                 }
 
+                await Bun.write(`${emulatorsFolder}.json`, JSON.stringify(info, null, 3));
+
+                const execs: EmulatorSourceEntryType[] = [];
+                await plugins.hooks.emulators.findEmulatorSource.promise({ emulator: this.emulator, sources: execs });
+
                 await plugins.hooks.emulators.emulatorPostInstall.promise({
                     emulator: this.emulator,
                     emulatorPackage: this.emulatorPackage,
-                    path: emulatorsFolder,
+                    path: execs.find(e => e.type === 'store')?.binPath ?? emulatorsFolder,
                     info,
                     update: this.isUpdate
                 });
-
-                await Bun.write(`${emulatorsFolder}.json`, JSON.stringify(info, null, 3));
             }
         }
 

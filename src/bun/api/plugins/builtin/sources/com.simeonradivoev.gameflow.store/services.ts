@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from "node:path";
 import * as appSchema from '@schema/app';
 import * as emulatorSchema from '@schema/emulators';
-import { db, emulatorsDb, plugins } from "@/bun/api/app";
+import { config, db, emulatorsDb, plugins } from "@/bun/api/app";
 import { and, eq } from "drizzle-orm";
 import { getOrCached } from "@/bun/api/cache";
 import { Glob } from "bun";
@@ -318,4 +318,47 @@ export async function getExistingStoreEmulatorDownload (emulator: EmulatorPackag
 
     // this should only happen if download info is missing maybe manually deleted or wasn't saved.
     return undefined;
+}
+
+export async function buildLaunchCommand (ctx: { gamePath: string; systemSlug: string; mainGlob?: string | null; }): Promise<CommandEntry | undefined>
+{
+    if (ctx.systemSlug !== 'win' && ctx.systemSlug !== 'linux' && ctx.systemSlug !== 'mac') return;
+    const downloadPath = config.get('downloadPath');
+    const gamePathAbsolute = path.join(downloadPath, ctx.gamePath);
+    if (!(await fs.exists(gamePathAbsolute))) return;
+    const gamePathStat = await fs.stat(gamePathAbsolute);
+
+    if (gamePathStat.isDirectory())
+    {
+        let mainGlob = ctx.mainGlob;
+        if (!mainGlob && ctx.systemSlug === 'win') mainGlob = '**/*.exe';
+        if (!mainGlob) return;
+        const fileGlob = new Glob(mainGlob);
+        for await (const file of fileGlob.scan({ cwd: path.join(downloadPath, ctx.gamePath) }))
+        {
+            return {
+                startDir: path.join(downloadPath, ctx.gamePath, path.dirname(file)),
+                command: [`./${path.basename(file)}`],
+                id: `store-${process.platform}`,
+                shell: false,
+                valid: true,
+                metadata: {
+                    romPath: path.join(downloadPath, ctx.gamePath, file)
+                }
+            };
+        }
+
+    } else
+    {
+        return {
+            startDir: path.join(downloadPath, path.dirname(ctx.gamePath)),
+            command: [`./${path.basename(ctx.gamePath)}`],
+            id: `store-${process.platform}`,
+            valid: true,
+            shell: false,
+            metadata: {
+                romPath: path.join(downloadPath, ctx.gamePath),
+            }
+        };
+    }
 }

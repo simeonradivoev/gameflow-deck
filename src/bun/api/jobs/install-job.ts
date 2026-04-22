@@ -59,6 +59,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
         if (!info) throw new Error(`Could not find downloader for source ${this.source}`);
 
         const files = await checkFiles(info.files, !!info.extract_path);
+        const finalFiles: string[] = [];
 
         if (this.config?.dryRun !== true)
         {
@@ -84,6 +85,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
                 {
                     return;
                 }
+
                 if (info.extract_path && downloadedFiles)
                 {
                     let progress = 0;
@@ -139,6 +141,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
                             if (filePath.endsWith('.zip'))
                             {
                                 cx.setProgress(0, "extract");
+                                console.error(e);
                                 console.warn("Could not extract", filePath, "with 7zip trying zip extractor");
                                 await ensureDir(extractPath);
                                 const zip = new StreamZip.async({ file: filePath });
@@ -175,6 +178,12 @@ export class InstallJob implements IJob<never, InstallJobStates>
                             await move(tmpGameFolder, extractPath, { overwrite: true });
                         }
                     }
+
+                    finalFiles.push(extractPath);
+
+                } else
+                {
+                    finalFiles.push(...downloadedFiles);
                 }
             }
 
@@ -323,6 +332,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
             await simulateProgress(p => cx.setProgress(p, "download"), cx.abortSignal);
         }
 
+        await plugins.hooks.games.postInstall.promise({ source: this.source, id: this.gameId, files: finalFiles, info });
 
         events.emit('notification', { message: `${info.name}: Installed`, type: 'success', duration: 8000 });
     }

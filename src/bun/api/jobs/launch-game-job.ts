@@ -5,9 +5,9 @@ import { db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq } from "drizzle-orm";
 import { spawn } from 'node:child_process';
-import { watch } from "node:fs";
 import fs from "node:fs/promises";
 import { updateLocalLastPlayed } from "../games/services/statusService";
+import { getErrorMessage } from "@/bun/utils";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, string>
 {
@@ -42,15 +42,24 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
         const source = this.gameSource ?? this.gameId.source;
         const id = this.gameSourceId ?? this.gameId.id;
 
-        await plugins.hooks.games.postPlay.promise(
-            {
-                source,
-                id,
-                command: this.validCommand,
-                changedSaveFiles: Array.from(this.changedSaveFiles.values()),
-                validChangedSaveFiles: {},
-                gameInfo
-            }).catch(e => console.error(e));
+        await new Promise(async (resolve) =>
+        {
+            await plugins.hooks.games.postPlay.promise(
+                {
+                    source,
+                    id,
+                    command: this.validCommand,
+                    changedSaveFiles: Array.from(this.changedSaveFiles.values()),
+                    validChangedSaveFiles: {},
+                    gameInfo
+                }).catch(e =>
+                {
+                    console.error(e);
+                    events.emit('notification', { message: getErrorMessage(e), type: 'error' });
+                }).then(() => resolve(false));
+            const timeoutHandler = () => resolve(false);
+            setTimeout(timeoutHandler, 5000);
+        });
     }
 
     prePlay (setProgress: (progress: number, state: string) => void, gameInfo: { platformSlug?: string; })
@@ -118,31 +127,58 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 {
                     await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug }).catch(e => reject(e));
 
-                    // ES-DE commands require shell execution. Some emulators fail otherwise.
-                    const spawnGame = spawn(this.validCommand.command, {
-                        shell: this.validCommand.shell ?? true,
-                        cwd: this.validCommand.startDir,
-                        signal: context.abortSignal,
-                        env: {
-                            ...process.env,
-                            ...this.validCommand.env
-                        },
-                    });
-
-                    context.setProgress(0, "playing");
-
-                    spawnGame.stdout.on('data', data => console.log(data));
-                    spawnGame.on('close', (code) =>
+                    if (Array.isArray(this.validCommand.command))
                     {
-                        resolve(code);
-                    });
-                    spawnGame.on('error', e =>
-                    {
-                        console.error(e);
-                        resolve(1);
-                    });
+                        const bunGame = Bun.spawn(this.validCommand.command, {
+                            cwd: this.validCommand.startDir,
+                            signal: context.abortSignal,
+                            env: {
+                                ...process.env,
+                                ...this.validCommand.env
+                            }
+                        });
 
-                    game = spawnGame;
+                        context.setProgress(0, "playing");
+
+                        bunGame.exited.then(e =>
+                        {
+                            resolve(true);
+                        }).catch(e =>
+                        {
+                            console.error(e);
+                            reject(e);
+                        });
+
+                        game = bunGame;
+                    } else
+                    {
+                        // ES-DE commands require shell execution. Some emulators fail otherwise.
+                        const spawnGame = spawn(this.validCommand.command, {
+                            shell: this.validCommand.shell ?? true,
+                            cwd: this.validCommand.startDir,
+                            signal: context.abortSignal,
+                            env: {
+                                ...process.env,
+                                ...this.validCommand.env
+                            },
+                        });
+
+                        context.setProgress(0, "playing");
+
+                        spawnGame.stdout.on('data', data => console.log(data));
+                        spawnGame.on('close', (code) =>
+                        {
+                            resolve(code);
+                        });
+                        spawnGame.on('error', e =>
+                        {
+                            console.error(e);
+                            resolve(1);
+                        });
+
+                        game = spawnGame;
+                    }
+
                 }
                 else if (this.validCommand.metadata.emulatorBin)
                 {
@@ -151,7 +187,6 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                     await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug });
 
                     // We have full control over launching integrated emulators better to use bun spawn
-                    await fs.chmod(this.validCommand.metadata.emulatorBin, 0o755);
                     const bunGame = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs.args], {
                         cwd: this.validCommand.startDir,
                         signal: context.abortSignal,
@@ -212,7 +247,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
             } catch (e)
             {
                 context.abort(e);
-                reject(e);
+                resolve(e);
             }
         });
 

@@ -2,6 +2,7 @@ import { mutationOptions, queryOptions } from "@tanstack/react-query";
 import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
 import { rommApi, settingsApi } from "../clientApi";
+import { invalidateLogin } from "./romm";
 
 export const changeDownloadsMutation = mutationOptions({
     mutationKey: ["setting", "downloads"],
@@ -29,21 +30,25 @@ export const autoEmulatorsQuery = queryOptions({
     }
 });
 export const twitchLogoutMutation = mutationOptions({
-    mutationKey: ['twitch', 'logout'],
+    mutationKey: ['twitch', 'auth', 'logout'],
     mutationFn: () =>
     {
         return rommApi.api.romm.logout.twitch.post();
     }
 });
 export const twitchLoginMutation = mutationOptions({
-    mutationKey: ['twitch', 'login'],
+    mutationKey: ['twitch', 'auth', 'login'],
     mutationFn: (openInBrowser: boolean) =>
     {
         return rommApi.api.romm.login.twitch.post({ openInBrowser });
-    }
+    },
+    onSuccess (data, variables, onMutateResult, context)
+    {
+        invalidateLogin(context.client);
+    },
 });
 export const twitchLoginVerificationQuery = queryOptions({
-    queryKey: ['twitch', 'login', 'status'],
+    queryKey: ['twitch', 'login', 'status', 'auth'],
     retry (failureCount, error)
     {
         if ((error as any).status === 404)

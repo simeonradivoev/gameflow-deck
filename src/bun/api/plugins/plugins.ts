@@ -19,7 +19,7 @@ export default new Elysia({ prefix: '/plugins' })
                 canDisable: p.description.canDisable ?? true,
                 icon: p.description.icon,
                 category: p.description.category,
-                hasSettings: !!p.config
+                hasSettings: !!p.config || !!p.plugin.eventsNames
             };
             return plugin;
         });

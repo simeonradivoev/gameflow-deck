@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry } from "./ContextDialog";
 import { systemApi } from "../scripts/clientApi";
-import { useContext, useRef, useState } from "react";
+import { FocusEventHandler, useContext, useRef, useState } from "react";
 import path from "pathe";
 import { Check, File, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import { FilePickerContext } from "../scripts/contexts";
 import useActiveControl from "../scripts/gamepads";
 import { createFolderMutation, drivesQuery, filesQuery } from "@queries/system";
+import { showKeyboardHandler } from "../scripts/utils";
 
 function List (data: {
     id: string,
@@ -87,15 +88,16 @@ function List (data: {
 function NewFolderInput (data: { id: string, name: string | undefined, setName: (name: string) => void; className?: string; })
 {
     const inputRef = useRef<HTMLInputElement>(null);
+    const { control } = useActiveControl();
     const { ref, focused, focusSelf } = useFocusable({
         focusKey: data.id,
         onEnterPress: () => inputRef.current?.focus(),
         onBlur: () => inputRef.current?.blur(),
     });
-    const handleFocus = () =>
+    const handleFocus: FocusEventHandler<HTMLInputElement> = (e) =>
     {
         focusSelf();
-        systemApi.api.system.show_keyboard.post();
+        showKeyboardHandler(control as any, e.target);
     };
     return <div className={data.className} ref={ref}>
         <input ref={inputRef}

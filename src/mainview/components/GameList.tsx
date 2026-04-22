@@ -17,7 +17,8 @@ export interface GameListParams extends FocusParams
     onGameSelect?: (id: FrontEndId, source: string | null, sourceId: string | null) => void;
     focus?: string;
     className?: string;
-    finalElement?: JSX.Element;
+    finalElement?: JSX.Element | JSX.Element[];
+    emptyElement?: JSX.Element | JSX.Element[];
     saveChildFocus?: "session" | "local";
 }
 
@@ -52,6 +53,25 @@ export function GameList (data: GameListParams)
         navigator({ to: '/game/$source/$id', params: { id: String(g.source_id ?? g.id.id), source: g.source ?? g.id.source } });
     };
 
+    const finalElement: JSX.Element[] = [];
+    if (!games.isFetching && !!games.data && games.data.games.length <= 0)
+    {
+        if (Array.isArray(data.emptyElement))
+        {
+            finalElement.push(...data.emptyElement);
+        } else if (data.emptyElement)
+        {
+            finalElement.push(data.emptyElement);
+        }
+    }
+    if (Array.isArray(data.finalElement))
+    {
+        finalElement.push(...data.finalElement);
+    } else if (data.finalElement)
+    {
+        finalElement.push(data.finalElement);
+    }
+
     return (
         <>
             <CardList
@@ -60,7 +80,7 @@ export function GameList (data: GameListParams)
                 grid={data.grid}
                 className={data.className}
                 onFocus={data.onFocus}
-                finalElement={data.finalElement}
+                finalElement={finalElement}
                 saveChildFocus={data.saveChildFocus}
                 focus={data.focus}
                 games={games.data?.games

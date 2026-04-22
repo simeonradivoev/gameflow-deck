@@ -22,7 +22,9 @@ const SettingsSchema = z.object({
     verboseLog: z.boolean()
         .default(false)
         .describe("Show detailed log of operation for debugging")
-        .meta({ $comment: JSON.stringify({ category: "debug" }) })
+        .meta({ $comment: JSON.stringify({ category: "debug" }) }),
+    importSaves: z.boolean().default(true).describe("Import Saves From the Destination. This will override local saves"),
+    exportSaves: z.boolean().default(true).describe("Export saves to remove. This will sync current saves with remote")
 });
 
 type SettingsType = z.infer<typeof SettingsSchema>;
@@ -75,8 +77,8 @@ export default class RcloneIntegration implements PluginType<SettingsType>
         await ensureDir(toolsPath);
         const binaryMap: Record<string, string> = {
             win32: '**/rclone.exe',
-            linux: '**/rclone',
-            darwin: '**/rclone'
+            linux: 'rclone-*/rclone',
+            darwin: 'rclone-*/rclone'
         };
         const existingRclones = await Array.fromAsync(fs.glob(binaryMap[process.platform], { cwd: toolsPath }));
         if (existingRclones[0])
@@ -102,7 +104,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
         await ensureDir(toolsPath);
         await pipeline(Readable.fromWeb(rcCloseZip.body as any), unzip.Extract({ path: toolsPath }));
-        const dests = await Array.fromAsync(fs.glob('**/rclone.exe', { cwd: toolsPath }));
+        const dests = await Array.fromAsync(fs.glob(binaryMap[process.platform], { cwd: toolsPath }));
         if (dests[0])
         {
             this.rclonePath = path.join(toolsPath, dests[0]);
@@ -218,7 +220,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.prePlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, setProgress, saveFolderSlots }) =>
         {
-            if (source !== 'store' || !this.rclonePath || !saveFolderSlots) return;
+            if (source !== 'store' || !this.rclonePath || !saveFolderSlots || !ctx.config.get('importSaves')) return;
 
             for await (const [slot, { cwd }] of Object.entries(saveFolderSlots))
             {
@@ -260,7 +262,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
         ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles }) =>
         {
-            if (source !== 'store' || !this.rclonePath) return;
+            if (source !== 'store' || !this.rclonePath || !ctx.config.get('exportSaves')) return;
             console.log("Save Files", Object.values(validChangedSaveFiles).flatMap(c => Array.isArray(c.subPath) ? c.subPath : [c.subPath]).join(","));
 
             await Promise.all(Object.entries(validChangedSaveFiles).map(async ([slot, change]) =>

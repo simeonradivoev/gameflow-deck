@@ -1,6 +1,6 @@
 import { DefaultRommStaleTime, GameListFilterType, RommLoginDataSchema } from "@/shared/constants";
 import { rommApi, settingsApi } from "../clientApi";
-import { InvalidateQueryFilters, mutationOptions, QueryFilters, queryOptions, useMutation } from "@tanstack/react-query";
+import { InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions, useMutation } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
 
@@ -23,6 +23,20 @@ export const gameQuery = (source: string, id: string) => queryOptions({
     },
 });
 export const rommLogoutMutation = mutationOptions({ mutationKey: ["romm", "auth", "logout"], mutationFn: () => rommApi.api.romm.logout.romm.post() });
+export const invalidateLogin = (client: QueryClient) =>
+{
+    return client.invalidateQueries({
+        predicate (query)
+        {
+            return query.queryKey.includes('auth')
+                || query.queryKey.includes('games')
+                || query.queryKey.includes('game')
+                || query.queryKey.includes('platform')
+                || query.queryKey.includes('platforms')
+                || query.queryKey.includes('collections');
+        },
+    });
+};
 export const rommQrLoginMutation = mutationOptions({
     mutationKey: ['login', 'qr', 'cancel'],
     mutationFn: async () =>
@@ -30,7 +44,11 @@ export const rommQrLoginMutation = mutationOptions({
         const { data, error } = await rommApi.api.romm.login.romm.qr.post();
         if (error) throw error;
         return data;
-    }
+    },
+    onSuccess: (d, v, r, c) =>
+    {
+        invalidateLogin(c.client);
+    },
 });
 export const rommLoginMutation = mutationOptions({
     mutationKey: ["romm", "login"],
@@ -41,7 +59,7 @@ export const rommLoginMutation = mutationOptions({
     },
     onSuccess: (d, v, r, c) =>
     {
-        c.client.invalidateQueries({ queryKey: ['romm', 'auth'] });
+        invalidateLogin(c.client);
     },
     onError: (e) =>
     {

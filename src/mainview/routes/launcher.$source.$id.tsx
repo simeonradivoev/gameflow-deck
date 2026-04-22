@@ -10,7 +10,8 @@ import { useRef } from 'react';
 export const Route = createFileRoute('/launcher/$source/$id')({
   component: RouteComponent,
   staticData: {
-    enterSound: 'launch'
+    enterSound: 'launch',
+    missNavSound: false
   },
 });
 

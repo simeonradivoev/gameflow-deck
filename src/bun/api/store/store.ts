@@ -12,7 +12,7 @@ import { CACHE_KEYS, getOrCached } from "../cache";
 import { getStoreFolder } from "./services/gamesService";
 import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
 import { BiosDownloadJob } from "../jobs/bios-download-job";
-import { findEmulatorPluginIntegration } from "./services/emulatorsService";
+import { findEmulatorPluginIntegration, getEmulatorPath } from "./services/emulatorsService";
 
 export const store = new Elysia({ prefix: '/api/store' })
     .get('/emulators', async ({ query }) =>
@@ -148,13 +148,22 @@ export const store = new Elysia({ prefix: '/api/store' })
     })
     .delete('/emulator/:id', async ({ params: { id } }) =>
     {
-        const storeEmulatorFolder = path.join(config.get('downloadPath'), 'emulators', id);
+        const storeEmulatorFolder = getEmulatorPath(id);
+        const existingPackagePath = `${storeEmulatorFolder}.json`;
+        let hadDelete = false;
+        if (await fs.exists(existingPackagePath))
+        {
+            await fs.rm(existingPackagePath);
+            hadDelete = true;
+        }
+
         if (await fs.exists(storeEmulatorFolder))
         {
             fs.rm(storeEmulatorFolder, { recursive: true });
-            return status("OK");
+            hadDelete = true;
         }
-        return status("Not Found");
+
+        return hadDelete ? status("OK") : status("Not Found");
     })
     .post('/download/bios/:id', async ({ params: { id } }) =>
     {

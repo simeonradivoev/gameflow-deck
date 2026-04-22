@@ -175,7 +175,7 @@ export default class IgdbIntegration implements PluginType
         const emulator = await emulatorsDb.query.emulators.findFirst({ where: eq(emulatorSchema.emulators.name, emulatorName) });
         if (!emulator)
         {
-            throw new Error(`Could not find emulator ${emulatorName}`);
+            return [];
         }
         return this.findExecs(emulatorName, emulator);
     }
