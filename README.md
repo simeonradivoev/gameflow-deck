@@ -13,37 +13,41 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 
 - **[ROMM](https://github.com/rommapp/romm)** - download, sync and update roms and platforms.
 - **[Emulator JS](https://github.com/EmulatorJS/EmulatorJS)** - play your games with emulator js right within the app. Uses RetroArch cores.
-- **[RClone](https://github.com/rclone/rclone)** - sync saves between devices or cloud.
+- **[RClone](https://github.com/rclone/rclone)** - sync saves between devices or cloud. Some Emulators and store games support it.
 - **[UMU](https://github.com/Open-Wine-Components/umu-launcher)** - UMU Launcher for playing windows games on linux without needing steam. (Only used for store games for now)
 
 ### Store
 
-- **Emulators** - (WIP) Download and install emulators and automatically configure them
+- **Emulators** - (WIP) Download and install emulators and automatically configure them from a list of supported in the store. Some even come with advanced features like cloud saves.
 - **Free Curated Games** - Download free curreted games and homebrew roms without ever leaving the app
 
 ### Others
 
 - **Cross Platform** - Can run on multiple platforms. Built with web technologies and bun backend.
 - **Steam Deck Support** - Extensively tested with the steam deck. It can use flatpak installed browsers.
-- **Lightweight** - It uses the existing system browser to launch the front end, so no need to include a whole web browser.
+- **Lightweight** - It uses the window's webview as a frontend, reducing build size and ram usage.
   - On Windows it first uses webview2 then your browser
-  - On linux it uses WebKitGTK or a browser even from flatpak
+  - On linux it does ship with NW.js to work on most distros. A big one is the steam deck missing WebKitGTK.
   - Not tested on Mac yet
 - **Great for Controllers** - The UI is inspired by the switch and works great with joysticks and dpads.
 - **Automatic Downloads** - Downloads roms from ROMM automatically
-- **Automatic Emulator Discovery** - Using the configs of the excellent ES-DE to discover installed emulators and launch games.
+- **Automatic Emulator Discovery** - Using the configs of the excellent ES-DE to discover installed emulators and launch roms. You can bring your existing configurations.
   - Easy fallback configuration with built in file browser.
 - **Responsive Layout** - Optimized mainly for the steam deck with responsive layout support and dynamic switching of inputs.
 - **Cloud/Device Save Sync** - For supported games and emulators.
+- **Dark and Light** - Dark and light themes for your preference.
 
 ## Screenshots
 
-<img src=".github/screenshots/Pkazk0RufB.png" width="25%"></img>
-<img src=".github/screenshots/3nhuKCK6E3.jpg" width="25%"></img>
-<img src=".github/screenshots/yObFD2LySH.jpg" width="25%"></img>
-<img src=".github/screenshots/GL7SkQbHIY.png" width="25%"></img>
-<img src=".github/screenshots/CpBLzTNM6N.png" width="25%"></img>
-<img src=".github/screenshots/xNj7scPEDQ.png" width="25%"></img>
+<img src=".github/screenshots/Pkazk0RufB.png" title="Home Screen Showing games sorted by latest activity" width="25%"></img>
+<img src=".github/screenshots/3nhuKCK6E3.png" title="Game Details." width="25%"></img>
+<img src=".github/screenshots/yObFD2LySH.jpg" title="Home Screen in dark mode" width="25%"></img>
+<img src=".github/screenshots/GL7SkQbHIY.png" title="Plugins Page" width="25%"></img>
+<img src=".github/screenshots/CpBLzTNM6N.png" title="Store Home Page" width="25%"></img>
+<img src=".github/screenshots/xNj7scPEDQ.png" title="Store emulator details" width="25%"></img>
+<img src=".github/screenshots/zEQxtzhPGx.png" title="Store Emulators in dark mode" width="25%"></img>
+<img src=".github/screenshots/MMeJxl4IXr.png" title="Store Emulators in light mode" width="25%"></img>
+<img src=".github/screenshots/EWPHmIBEE5.png" title="Platform Grouping List" width="25%"></img>
 
 ## Goals
 
@@ -51,6 +55,7 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 - I plan to add a free store where you can download all your needed emulators, the goal is to not have to leave the UI for anything.
 - I really want to add matrix chat support in the app for engaging with your favorite community. Having access to so many nodejs libraries would make it quite straight forward.
 - I'm sick of closed source and private store fronts, and want a way to share community currated free experiences. I'm also sick of the profit driven nature of games and promotions.
+- Being self contained, I want to avoid writing as little as possible to system and contain and manage settings in a custom changeable directory. This was mainly a side-effect of having the low storage steam deck and always running out of space on my internal hard drive.
 
 ## Development
 
@@ -81,6 +86,9 @@ Focused on building a simple user experience and intuitive UI as a curated commu
    - `bun run openapi-ts` generated the openapi client calls from romm's API
    - `bun run package:windows` builds an package to be distributed on windows
    - `bun run package:linux` builds an AppImage to be distributed on linux
+   - `bun run test` run tests
+   - `bun run download:chromium` downloads degoogled chromium to use as the frontend
+   - `bun run download:nwjs` downloads NW.js to use as a frontend.
 
 ### Tech Stack
 
