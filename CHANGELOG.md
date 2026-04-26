@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.3.0...v1.4.0) (2026-04-26)
+
+
+### Features
+
+* Added more ways to detect duplicates ([05fafce](https://github.com/simeonradivoev/gameflow-deck/commit/05fafced07c853deb656d7c17d05184c42ee507c))
+* added update notes and moved update to own tab ([cf84f40](https://github.com/simeonradivoev/gameflow-deck/commit/cf84f40a174b8f242ca58fb6fe02eefab46ff442))
+* Added way to update the local games from romm when IDs change based on IGDB or Retro Achievement ID ([4806f34](https://github.com/simeonradivoev/gameflow-deck/commit/4806f3487a577ab8e7c66907e5b640d95ab8a46c)), closes [#2](https://github.com/simeonradivoev/gameflow-deck/issues/2)
+* Bundled NW.js with appimages ([813785f](https://github.com/simeonradivoev/gameflow-deck/commit/813785f4f3d292a87cc4a6b86dc152c43572d2c8))
+* Implemented audio effects ([edbc390](https://github.com/simeonradivoev/gameflow-deck/commit/edbc390d144bf44da35d0f5383ec36eb25c34d1b))
+* Implemented dolphin integration ([a69147a](https://github.com/simeonradivoev/gameflow-deck/commit/a69147a4f73cf626b92622a8ee22b54f538d41a9))
+* Implemented emulator launching ([09b8b9c](https://github.com/simeonradivoev/gameflow-deck/commit/09b8b9c6f850cea3b897308925faf9be02cefa1a)), closes [#1](https://github.com/simeonradivoev/gameflow-deck/issues/1)
+* Implemented emulator versions and updating ([34db717](https://github.com/simeonradivoev/gameflow-deck/commit/34db717ec5cbcf8b1ae54fbda33bf9a78f01bd17))
+* Implemented filtering and searching ([444d8c4](https://github.com/simeonradivoev/gameflow-deck/commit/444d8c4c278c6032b37f44a884cb6d7bf0b54c85))
+* implemented haptics ([54dd925](https://github.com/simeonradivoev/gameflow-deck/commit/54dd9256e361877d0950a84061d9402616706352))
+* Implemented romm saves for dolphin and xenia ([7948bd2](https://github.com/simeonradivoev/gameflow-deck/commit/7948bd24fabfc01b7be358f06fcd58c8795826c7))
+
+
+### Bug Fixes
+
+* Fixed a bunch of issues on linux ([6aacec2](https://github.com/simeonradivoev/gameflow-deck/commit/6aacec2c0de253a71599e261e07aff53055cdb1e))
+* Fixed emulator details buttons not showing ([04d5856](https://github.com/simeonradivoev/gameflow-deck/commit/04d5856f7d71c944c82877d2a1457facea4b6d31))
+* Fixed tests ([c09fbd3](https://github.com/simeonradivoev/gameflow-deck/commit/c09fbd3dc88891227eda2b9f3bd9ac45621c00ea))
+* logins now refresh on plugins load ([7bd0ebd](https://github.com/simeonradivoev/gameflow-deck/commit/7bd0ebdcca1843076911547ec1098cbaae9e2414))
+* Made self update work on windows ([ae196e1](https://github.com/simeonradivoev/gameflow-deck/commit/ae196e11d616b9813dba11f64e7c844077686db8))
+* Made store downloads extract in their own folder ([764691f](https://github.com/simeonradivoev/gameflow-deck/commit/764691fc8610fafebc93a69ca24f74bcac42a898))
+
 ## [1.3.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.2.1...v1.3.0) (2026-03-31)
 
 
