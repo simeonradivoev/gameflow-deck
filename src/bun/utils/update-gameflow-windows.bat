@@ -1,6 +1,19 @@
 @echo off
+echo Waiting for app to close...
 timeout /t 2 /nobreak
-powershell -Command "Expand-Archive -Force '{{{tempFile}}}' '{{{installDir}}}'"
+echo.
+if exist "{{{extractDir}}}" (
+    echo Cleaning up previous update files...
+    rmdir /S /Q "{{{extractDir}}}"
+)
+echo Extracting update...
+mkdir "{{{extractDir}}}"
+tar -xf "{{{tempFile}}}" -C "{{{extractDir}}}"
+echo Installing update...
+for /d %%i in ("{{{extractDir}}}\*") do xcopy /E /Y /I "%%i\*" "{{{installDir}}}\" >nul
+echo Cleaning up...
+rmdir /S /Q "{{{extractDir}}}"
 del "{{{tempFile}}}"
+echo Done! Restarting...
 start "" /D "{{{installDir}}}" "{{{exePath}}}"
 del "%~f0"

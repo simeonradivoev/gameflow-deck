@@ -48,6 +48,10 @@ export default class SelfUpdateJob implements IJob<never, string>
             {
                 case "win32":
                     validAsset = data.assets.find((e: any) => new Bun.Glob(`Gameflow-${process.platform}-${process.arch}.zip`).match(e.name));
+                    if (!validAsset)
+                    {
+                        validAsset = data.assets.find((e: any) => new Bun.Glob(`Gameflow-*.zip`).match(e.name));
+                    }
                     break;
                 case "linux":
                     validAsset = data.assets.find((e: any) => new Bun.Glob(`Gameflow-${process.platform}-${process.arch}.AppImage`).match(e.name));
@@ -100,13 +104,13 @@ export default class SelfUpdateJob implements IJob<never, string>
                     const batPath = path.join(os.tmpdir(), "update-gameflow.bat");
                     await Bun.write(batPath, mustache.render(winUpdateScript, {
                         tempFile: winDownloads[0],
-                        extractDir: path.dirname(process.execPath),
+                        installDir: path.dirname(process.execPath),
+                        extractDir: path.join(os.tmpdir(), 'gameflow-update-extract'),
                         exePath: `${pkg.bin}.exe`
                     }));
                     context.setProgress(0, "Restarting App To Update");
-                    await cleanup();
                     events.emit('exitapp');
-                    Bun.spawn(["cmd", "/c", batPath], { detached: true });
+                    Bun.spawn(["cmd", "/c", "start", "cmd", "/c", batPath], { detached: true });
                     process.exit(0);
             }
 
