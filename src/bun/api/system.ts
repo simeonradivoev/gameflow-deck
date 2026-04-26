@@ -20,9 +20,12 @@ import SelfUpdateJob from "./jobs/self-update-job";
 async function checkUpdate (force?: boolean)
 {
     const latest = await getOrCachedGithubRelease('simeonradivoev/gameflow-deck', force);
-    if (!latest || !latest.tag_name) return { hasUpdate: 0, version: getAppVersion() };
+    if (!latest || !latest.tag_name) return {
+        hasUpdate: 0,
+        version: getAppVersion()
+    };
     const hasUpdate = semver.order(latest.tag_name, getAppVersion());
-    return { hasUpdate, version: latest.tag_name };
+    return { hasUpdate, version: latest.tag_name, info: latest.body };
 }
 
 export const system = new Elysia({ prefix: '/api/system' })

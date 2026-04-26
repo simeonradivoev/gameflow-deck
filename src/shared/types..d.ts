@@ -38,7 +38,7 @@ declare interface FrontEndEmulatorDetailed extends FrontEndEmulator
     screenshots: string[];
     biosRequirement?: "required" | "optional";
     bios?: string[];
-    storeDownloadInfo?: { hasUpdate: boolean; version?: string, type: string; };
+    storeDownloadInfo?: { hasUpdate: boolean; version?: string, type: string; description?: string; };
 }
 
 declare interface FrontEndGameTypeDetailedAchievement

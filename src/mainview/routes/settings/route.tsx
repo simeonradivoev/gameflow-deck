@@ -23,6 +23,7 @@ import
   Joystick,
   MonitorCog,
   Puzzle,
+  RefreshCcw,
 } from "lucide-react";
 import { JSX, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
@@ -165,6 +166,12 @@ function SettingsMenu (data: {})
         route="/settings/directories"
         label="Directories"
         icon={<HardDrive />}
+      />
+      <MenuItem
+        focusSelect
+        route="/settings/update"
+        label="Updates"
+        icon={<RefreshCcw />}
       />
       <MenuItem
         focusSelect

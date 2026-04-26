@@ -25,7 +25,6 @@ async function shutdown (code: number)
 
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
-process.on('SIGUSR1', () => shutdown(3));
 
 if (process.env.HEADLESS)
 {

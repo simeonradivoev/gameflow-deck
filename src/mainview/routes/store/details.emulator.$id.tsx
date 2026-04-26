@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import
 {
     useFocusable,
@@ -27,6 +27,8 @@ import { deleteBiosMutation, downloadBiosMutation, installEmulatorMutation, stor
 import { gamesRecommendedBasedOnEmulatorQuery } from "@queries/romm";
 import FocusTooltip from "@/mainview/components/FocusTooltip";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
+import { FilterUI } from "@/mainview/components/Filters";
+import Markdown from "react-markdown";
 
 export const Route = createFileRoute('/store/details/emulator/$id')({
     component: RouteComponent,
@@ -330,6 +332,16 @@ const capabilityIconMap: Record<string, any> = {
     batch: <Terminal />
 };
 
+function InfoTabs (data: { tabs: Record<string, FilterOption>, selectTab: (v: string) => void; })
+{
+    const { ref, focusKey } = useFocusable({ focusKey: 'emulator-info-tabs-section', onFocus: (l, p, d) => scrollIntoViewHandler({ block: 'start' })(focusKey, ref.current, d) });
+    return <div ref={ref} className="divider scroll-mt-48">
+        <FocusContext value={focusKey}>
+            <FilterUI id="emulator-info-tabs" options={data.tabs} setSelected={v => data.selectTab(v)} />
+        </FocusContext>
+    </div>;
+}
+
 export function RouteComponent ()
 {
     const { id } = Route.useParams();
@@ -343,6 +355,7 @@ export function RouteComponent ()
     const { data: emulator, isPending: isEmulatorPending } = useQuery(storeEmulatorDetailsQuery(id));
     const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery(id));
     const { data: recommendedGames } = useQuery(gamesRecommendedBasedOnEmulatorQuery(id));
+    const [infoTab, setInfoTab] = useState("stats");
 
     useShortcuts(focusKey, () => [{
         label: "Return",
@@ -389,7 +402,15 @@ export function RouteComponent ()
             stats.push({
                 label: "Bios", content: emulator.bios && emulator.bios.length > 0 ? emulator.bios : <div className="text-warning font-semibold">Missing</div>
             });
+    }
 
+    const infoTabs: Record<string, FilterOption> = {
+        stats: { label: "Stats", selected: infoTab === 'stats', icon: <Info /> },
+    };
+
+    if (emulator?.storeDownloadInfo?.hasUpdate)
+    {
+        infoTabs.update = { label: "Update", icon: <CircleFadingArrowUp />, selected: infoTab === 'update' };
     }
 
     return (
@@ -411,8 +432,9 @@ export function RouteComponent ()
                     </div>
                 </div>
                 <div className="flex flex-col bg-base-100 py-4 gap-12 z-10">
-                    <div className="divider"> <Info className="size-12" /> Stats</div>
-                    <StatList id="emulator-details-stats" stats={stats} onFocus={scrollIntoViewHandler({ block: 'center' })} />
+                    <InfoTabs tabs={infoTabs} selectTab={setInfoTab} />
+                    {infoTab === 'stats' && <StatList id="emulator-details-stats" stats={stats} focusable={false} />}
+                    {infoTab === 'update' && <Markdown>{emulator?.storeDownloadInfo?.description}</Markdown>}
                     {recommendedEmulators && <div className="relative bg-base-200">
                         <div className="bg-dots z-0"></div>
                         <EmulatorsSection

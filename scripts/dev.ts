@@ -3,8 +3,10 @@ import browser from '../src/bun/browser';
 import { tmpdir } from "os";
 import path from "path";
 import { watch } from "fs";
+import { sleep } from "bun";
 const events = new EventEmitter();
 const abortController = new AbortController();
+let restarting = false;
 
 process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222";
 process.env.NODE_ENV = "development";
@@ -33,7 +35,7 @@ function spawnServer ()
         },
         onExit (subprocess, exitCode, signalCode)
         {
-            if (exitCode !== 3)
+            if (!restarting)
             {
                 console.log("Existing Dev With", exitCode);
                 process.exit();
@@ -63,18 +65,22 @@ async function restart ()
 {
     if (server)
     {
-        server.kill("SIGUSR1");
+        restarting = true;
+        server.kill();
         await server.exited;
         server = undefined;
-        console.log("Server Restarted");
+        console.log("Old Server stopped");
     }
 
     server = spawnServer();
-    console.log("Server Restarted");
+    await sleep(1000);
+    console.log("New Server started");
+    restarting = false;
 }
 
 watch("./src/bun", { recursive: true }, (event, filename) =>
 {
+    if (restarting) return;
     console.log(`[watcher] ${event}: ${filename} — restarting...`);
     restart();
 });

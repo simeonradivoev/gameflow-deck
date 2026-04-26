@@ -89,7 +89,7 @@ function UpdateStatus ()
 {
   const handleSelect = () =>
   {
-    navigate({ to: '/settings/about' });
+    navigate({ to: '/settings/update' });
   };
   const hasUnread = false;
   const navigate = useNavigate();

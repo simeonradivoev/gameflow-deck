@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './../routes/__root'
 import { Route as GamesRouteImport } from './../routes/games'
 import { Route as SettingsRouteRouteImport } from './../routes/settings/route'
 import { Route as IndexRouteImport } from './../routes/index'
+import { Route as SettingsUpdateRouteImport } from './../routes/settings/update'
 import { Route as SettingsPluginsRouteImport } from './../routes/settings/plugins'
 import { Route as SettingsInterfaceRouteImport } from './../routes/settings/interface'
 import { Route as SettingsEmulatorsRouteImport } from './../routes/settings/emulators'
@@ -44,6 +45,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUpdateRoute = SettingsUpdateRouteImport.update({
+  id: '/update',
+  path: '/update',
+  getParentRoute: () => SettingsRouteRoute,
 } as any)
 const SettingsPluginsRoute = SettingsPluginsRouteImport.update({
   id: '/plugins',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
   '/settings/plugins': typeof SettingsPluginsRoute
+  '/settings/update': typeof SettingsUpdateRoute
   '/collection/$source/$id': typeof CollectionSourceIdRoute
   '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
   '/settings/plugins': typeof SettingsPluginsRoute
+  '/settings/update': typeof SettingsUpdateRoute
   '/collection/$source/$id': typeof CollectionSourceIdRoute
   '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/settings/emulators': typeof SettingsEmulatorsRoute
   '/settings/interface': typeof SettingsInterfaceRoute
   '/settings/plugins': typeof SettingsPluginsRoute
+  '/settings/update': typeof SettingsUpdateRoute
   '/collection/$source/$id': typeof CollectionSourceIdRoute
   '/embedded/$source/$id': typeof EmbeddedSourceIdRoute
   '/game/$source/$id': typeof GameSourceIdRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/settings/emulators'
     | '/settings/interface'
     | '/settings/plugins'
+    | '/settings/update'
     | '/collection/$source/$id'
     | '/embedded/$source/$id'
     | '/game/$source/$id'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/settings/emulators'
     | '/settings/interface'
     | '/settings/plugins'
+    | '/settings/update'
     | '/collection/$source/$id'
     | '/embedded/$source/$id'
     | '/game/$source/$id'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/settings/emulators'
     | '/settings/interface'
     | '/settings/plugins'
+    | '/settings/update'
     | '/collection/$source/$id'
     | '/embedded/$source/$id'
     | '/game/$source/$id'
@@ -300,6 +312,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/settings/update': {
+      id: '/settings/update'
+      path: '/update'
+      fullPath: '/settings/update'
+      preLoaderRoute: typeof SettingsUpdateRouteImport
+      parentRoute: typeof SettingsRouteRoute
     }
     '/settings/plugins': {
       id: '/settings/plugins'
@@ -430,6 +449,7 @@ interface SettingsRouteRouteChildren {
   SettingsEmulatorsRoute: typeof SettingsEmulatorsRoute
   SettingsInterfaceRoute: typeof SettingsInterfaceRoute
   SettingsPluginsRoute: typeof SettingsPluginsRoute
+  SettingsUpdateRoute: typeof SettingsUpdateRoute
   SettingsPluginSourceRoute: typeof SettingsPluginSourceRoute
 }
 
@@ -440,6 +460,7 @@ const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
   SettingsEmulatorsRoute: SettingsEmulatorsRoute,
   SettingsInterfaceRoute: SettingsInterfaceRoute,
   SettingsPluginsRoute: SettingsPluginsRoute,
+  SettingsUpdateRoute: SettingsUpdateRoute,
   SettingsPluginSourceRoute: SettingsPluginSourceRoute,
 }
 
