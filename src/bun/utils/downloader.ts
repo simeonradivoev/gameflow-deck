@@ -27,15 +27,22 @@ export class Downloader
     onProgress?: (stats: ProgressStats) => void;
     signal?: AbortSignal;
     activeFile?: DownloadFileEntry;
-    downloadPath: string;
+    downloadPath: string | undefined;
     id: string;
     tmpPath: string;
     tmpPathMeta: string;
 
+    /**
+     * 
+     * @param id Id of the download. Should be unique
+     * @param files All the files to download
+     * @param downloadPath The destination path when all downloads are complete they will bemoved here. If undefined they will remain in the tmp path.
+     */
     constructor(
         id: string,
         files: DownloadFileEntry[],
-        downloadPath: string, init?: {
+        downloadPath: string | undefined,
+        init?: {
             headers?: Record<string, string>,
             onProgress?: (stats: ProgressStats) => void;
             signal?: AbortSignal;
@@ -210,11 +217,19 @@ export class Downloader
             });
         }
 
-        await moveAllFiles(this.tmpPath, this.downloadPath);
-        if (await fs.exists(this.tmpPath))
-            await fs.rm(this.tmpPath, { recursive: true });
-        await fs.rm(this.tmpPathMeta);
+        if (this.downloadPath === undefined)
+        {
+            await fs.rm(this.tmpPathMeta);
+            return this.files.map(f => path.join(this.tmpPath, f.file_path, f.file_name));
+        } else
+        {
+            await moveAllFiles(this.tmpPath, this.downloadPath);
+            if (await fs.exists(this.tmpPath))
+                await fs.rm(this.tmpPath, { recursive: true });
+            await fs.rm(this.tmpPathMeta);
 
-        return this.files.map(f => path.join(this.downloadPath, f.file_path, f.file_name));
+            return this.files.map(f => path.join(this.downloadPath!, f.file_path, f.file_name));
+        }
+
     }
 }

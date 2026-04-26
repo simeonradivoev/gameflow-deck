@@ -1,0 +1,10 @@
+[Desktop Entry]
+X-AppImage-Name={{APP_NAME}}
+X-AppImage-Version={{VERSION}}
+X-AppImage-Arch={{ARCH}}
+Name={{APP_NAME}}
+Comment={{DESCRIPTION}}
+Exec=gameflow
+Icon=gameflow
+Type=Application
+Categories=Game;

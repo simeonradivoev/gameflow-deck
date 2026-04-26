@@ -5,7 +5,8 @@ import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import Shortcuts, { FloatingShortcuts } from '../components/Shortcuts';
 import { useJobStatus } from '../scripts/utils';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { rommApi } from '../scripts/clientApi';
 
 export const Route = createFileRoute('/launcher/$source/$id')({
   component: RouteComponent,
@@ -39,7 +40,7 @@ function RouteComponent ()
 
   useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
 
-  const { data, state } = useJobStatus('launch-game', {
+  const { state, data } = useJobStatus('launch-game', {
     onProgress (process, data)
     {
       if (progressRef.current)
@@ -54,6 +55,7 @@ function RouteComponent ()
       HandleGoBack();
     },
   }, [progressRef.current, HandleGoBack]);
+
 
   useBlocker({ shouldBlockFn: () => !!data });
 

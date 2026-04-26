@@ -145,6 +145,7 @@ export default class RommIntegration implements PluginType<SettingsType>
     {
         this.isSteamDeck = isSteamDeckGameMode();
         ctx.setProgress(0, "Logging Into Romm");
+        await this.updateClient();
         await checkLoginAndRefreshRomm();
         await this.updateClient();
 
@@ -270,7 +271,8 @@ export default class RommIntegration implements PluginType<SettingsType>
                 metadata: rom.metadatum,
                 files,
                 auth: await this.getAuthToken(),
-                extract_path
+                extract_path,
+                id: "romm"
             };
 
             return [info];

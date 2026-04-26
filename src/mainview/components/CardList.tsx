@@ -32,7 +32,7 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusPara
     oneShot('click');
   };
 
-  useShortcuts(data.game.focusKey, () => [{ label: "Select", button: GamePadButtonCode.A, action: event => handleAction({ event, focusKey: data.game.focusKey }) }]);
+  useShortcuts(data.game.focusKey, () => [{ label: "Details", button: GamePadButtonCode.A, action: event => handleAction({ event, focusKey: data.game.focusKey }) }]);
 
   return (
     <CardElement
@@ -69,7 +69,7 @@ export function CardList (data: {
 {
   const { ref, focusKey } = useFocusable({
     focusKey: data.id,
-    focusable: data.games.length > 0,
+    focusable: data.games.length > 0 || (!!data.finalElement && (Array.isArray(data.finalElement) ? data.finalElement.length > 0 : !!data.finalElement)),
     preferredChildFocusKey: data.focus
   });
 

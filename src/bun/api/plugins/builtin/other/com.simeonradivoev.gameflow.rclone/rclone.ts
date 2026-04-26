@@ -1,6 +1,6 @@
 import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
-import { config, events } from "@/bun/api/app";
+import { config, db, events } from "@/bun/api/app";
 import path, { dirname } from 'node:path';
 import unzip from 'unzip-stream';
 import { chmodSync, ensureDir } from "fs-extra";
@@ -10,6 +10,10 @@ import fs from 'node:fs/promises';
 import { randomUUIDv7, sleep } from "bun";
 import z from "zod";
 import { createInterface } from "node:readline";
+import { getLocalGameMatch } from "@/bun/api/games/services/utils";
+import { getErrorMessage } from "@/bun/utils";
+
+const DefaultLocalName = "Default_Local";
 
 const SettingsSchema = z.object({
     runWebGui: z.boolean()
@@ -18,7 +22,7 @@ const SettingsSchema = z.object({
         .meta({ title: "Run Web GUI" }),
     globalConfig: z.boolean().default(false).describe("Use the Global Config file if already setup"),
     webGuiPassword: z.string().optional().readonly().describe("Randomly Generated. Read Only. Username is gameflow"),
-    remoteName: z.string().default(""),
+    remoteName: z.string().default(DefaultLocalName),
     verboseLog: z.boolean()
         .default(false)
         .describe("Show detailed log of operation for debugging")
@@ -116,8 +120,21 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
     async refresh ()
     {
-        const data = await this.request('/config/listremotes', {});
-        z.globalRegistry.add(SettingsSchema.shape.remoteName, { examples: data.remotes, description: "The name of the remote to sync with" });
+        try
+        {
+            const data = await this.request('/config/listremotes', {});
+            z.globalRegistry.add(SettingsSchema.shape.remoteName, {
+                examples: [''].concat(...data.remotes),
+                description: "The name of the remote to sync with"
+            });
+        } catch (error)
+        {
+            events.emit('notification', { message: getErrorMessage(error), type: 'error' });
+            z.globalRegistry.add(SettingsSchema.shape.remoteName, {
+                examples: [''],
+                description: "The name of the remote to sync with"
+            });
+        }
     }
 
     async startServer (ctx: PluginLoadingContextType<SettingsType>)
@@ -146,23 +163,29 @@ export default class RcloneIntegration implements PluginType<SettingsType>
         const rl = createInterface({ input: Readable.fromWeb(this.server.stderr as any) });
         rl.on('line', e =>
         {
-            const data = JSON.parse(e);
-
-            if (data.level === 'error')
+            try
             {
-                console.error(data.msg);
-            } else if (data.level === 'critical')
-            {
-                console.error(data.msg);
-            }
+                const data = JSON.parse(e);
 
-            else
+                if (data.level === 'error')
+                {
+                    console.error(data.msg);
+                } else if (data.level === 'critical')
+                {
+                    console.error(data.msg);
+                }
+
+                else
+                {
+                    console.log(e);
+                    if (loginTokenUrlRegex.test(data.msg))
+                    {
+                        this.loginUrl = (data.msg as string).match(loginTokenUrlRegex)?.find(e => e);
+                    }
+                }
+            } catch (error)
             {
                 console.log(e);
-                if (loginTokenUrlRegex.test(data.msg))
-                {
-                    this.loginUrl = (data.msg as string).match(loginTokenUrlRegex)?.find(e => e);
-                }
             }
 
         });
@@ -171,10 +194,16 @@ export default class RcloneIntegration implements PluginType<SettingsType>
         {
             const handleResolve = (line: string) =>
             {
-                const data = JSON.parse(line);
-                if (!loginTokenUrlRegex.test(data.msg)) return;
-                rl.off('line', handleResolve);
-                resolve(data);
+                try
+                {
+                    const data = JSON.parse(line);
+                    if (!loginTokenUrlRegex.test(data.msg)) return;
+                    rl.off('line', handleResolve);
+                    resolve(data);
+                } catch (error)
+                {
+
+                }
             };
             rl.on('line', handleResolve);
             setTimeout(() => { reject("Timeout"); }, 5000);
@@ -206,100 +235,235 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
     async cleanup ()
     {
-        await this.request('/core/quit', {}).catch(e =>
+        await new Promise((resolve) =>
         {
-            this.server?.kill("SIGKILL");
+            this.request('/core/quit', {}).catch(e =>
+            {
+                this.server?.kill("SIGKILL");
+                this.server = undefined;
+            });
+
+            setTimeout(() =>
+            {
+                this.request('/core/quit', { exitCode: 9 }).then(e =>
+                {
+                    resolve(false);
+                    this.server = undefined;
+                }).catch(e =>
+                {
+                    resolve(false);
+                    this.server?.kill("SIGKILL");
+                    this.server = undefined;
+                });
+
+
+            }, 5000);
+
+            this.server?.exited.then(() => resolve(true));
         });
 
-        await this.server?.exited;
     }
 
     async load (ctx: PluginLoadingContextType<SettingsType>)
     {
         await this.setup(ctx);
 
-        ctx.hooks.games.prePlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, setProgress, saveFolderSlots }) =>
+        ctx.hooks.games.prePlay.tapPromise({
+            name: desc.name,
+            stage: 10,
+        }, async ({ source, id, setProgress, saveFolderSlots, command }) =>
         {
-            if (source !== 'store' || !this.rclonePath || !saveFolderSlots || !ctx.config.get('importSaves')) return;
+            if (!this.rclonePath || !saveFolderSlots || !ctx.config.get('importSaves')) return;
+
+            const destination = source === 'store' ? [source, id] : command.emulator ? [command.emulator] : undefined;
+            if (!destination) return;
+
+            const remoteName = ctx.config.get('remoteName');
 
             for await (const [slot, { cwd }] of Object.entries(saveFolderSlots))
             {
-
+                let supportsMetadata = true;
                 let src: string;
-                if (ctx.config.get('remoteName'))
+
+                if (remoteName && remoteName !== DefaultLocalName)
                 {
-                    src = `${ctx.config.get('remoteName')}:gameflow/saves/${source}/${id}/${slot}`;
+                    src = `${remoteName}:gameflow/saves/${destination.join('/')}/${slot}`;
 
                     const exists = await this.request('/operations/stat', {
-                        fs: `${ctx.config.get('remoteName')}:`,
-                        remote: `gameflow/saves/${source}/${id}/${slot}`
+                        fs: `${remoteName}:`,
+                        remote: `gameflow/saves/${destination.join('/')}/${slot}`
                     }).catch(e => undefined);
                     if (!exists || !exists.item) return;
-
+                    const remote = await this.request('/operations/fsinfo', {
+                        fs: `${remoteName}:`
+                    });
+                    supportsMetadata = !remote.ReadMetadata;
+                    if (supportsMetadata)
+                    {
+                        console.warn("Remote", remoteName, "does not support metadata");
+                    }
                 } else
                 {
-                    src = path.join(config.get('downloadPath'), 'saves', source, id, slot);
-                    if (!await fs.exists(path.join(config.get('downloadPath'), 'saves', source, id, slot))) return;
+                    src = path.join(config.get('downloadPath'), 'saves', ...destination, slot);
+                    if (!await fs.exists(path.join(config.get('downloadPath'), 'saves', ...destination, slot))) return;
                 }
 
-                setProgress(0.5, "RClone: Syncing Saves");
-
-                const data = await this.request('/sync/copy', {
+                const job = await this.request('/sync/copy', {
                     srcFs: src,
                     dstFs: cwd,
                     createEmptySrcDirs: true,
+                    _async: true,
                     _config: {
-                        UseJSONLog: true,
-                        LogLevel: "DEBUG",
-                        HumanReadable: true,
-                        Progress: true
-                    }
-                });
-                console.log(data);
-            }
-
-        });
-
-        ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles }) =>
-        {
-            if (source !== 'store' || !this.rclonePath || !ctx.config.get('exportSaves')) return;
-            console.log("Save Files", Object.values(validChangedSaveFiles).flatMap(c => Array.isArray(c.subPath) ? c.subPath : [c.subPath]).join(","));
-
-            await Promise.all(Object.entries(validChangedSaveFiles).map(async ([slot, change]) =>
-            {
-                let dest: string;
-                if (ctx.config.get('remoteName'))
-                {
-                    dest = `${ctx.config.get('remoteName')}:gameflow/saves/${source}/${id}/${slot}`;
-                } else
-                {
-                    dest = path.join(config.get('downloadPath'), 'saves', source, id, slot);
-                }
-
-                const data = await this.request('/sync/sync', {
-                    srcFs: change.cwd,
-                    dstFs: dest,
-                    createEmptySrcDirs: true,
-                    _config: {
-                        UseJSONLog: true,
-                        LogLevel: "DEBUG",
-                        HumanReadable: true,
-                        Progress: true
-                    },
-                    _filter: {
-                        IncludeRule: Array.isArray(change.subPath) ? change.subPath.map(s =>
-                        {
-                            if (change.isGlob) return s;
-                            else s.replaceAll('\\', '/');
-                        }) : change.isGlob ? change.subPath : change.subPath.replaceAll('\\', '/')
+                        CheckFirst: true,
+                        Metadata: true,
+                        NoCheckDest: supportsMetadata
                     }
                 }).catch(e =>
                 {
                     events.emit('notification', { message: `RClone: ${e.cause?.error ?? e.message ?? e}`, type: 'error' });
                     return undefined;
+                });;
+
+                await new Promise(async (resolve, reject) =>
+                {
+                    setProgress(0, "RClone: Syncing Saves");
+
+                    const checkInterval = setInterval(async () =>
+                    {
+                        const stat = await this.request('/job/status', { jobid: job.jobid });
+                        if (stat.finished)
+                        {
+                            clearInterval(checkInterval);
+                            console.log(stat.output);
+                            resolve(true);
+
+                        } else if (stat.error)
+                        {
+                            reject(stat.error);
+                        } else
+                        {
+                            setProgress(stat.progress, "RClone: Syncing Saves");
+                        }
+                    }, 500);
+                });
+            }
+
+        });
+
+        ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles, command }) =>
+        {
+            if (!this.rclonePath || !ctx.config.get('exportSaves')) return;
+            const local = await db.query.games.findFirst({ where: getLocalGameMatch(id, source) });
+            console.log("Save Files", Object.values(validChangedSaveFiles).flatMap(c => Array.isArray(c.subPath) ? c.subPath : [c.subPath]).join(","));
+
+            const destination = source === 'store' ? [source, id] : command.emulator ? [command.emulator] : undefined;
+            if (!destination) return;
+
+            const remoteName = ctx.config.get('remoteName');
+
+            await Promise.all(Object.entries(validChangedSaveFiles).map(async ([slot, change]) =>
+            {
+                let suportsMetadata = false;
+                let dest: string;
+                if (remoteName && remoteName !== DefaultLocalName)
+                {
+                    dest = `${remoteName}:gameflow/saves/${destination.join('/')}/${slot}`;
+                    const remote = await this.request('/operations/fsinfo', {
+                        fs: `${remoteName}:`
+                    });
+                    suportsMetadata = !remote.ReadMetadata;
+                    if (suportsMetadata)
+                    {
+                        console.warn("Remote", remoteName, "does not support metadata");
+                    }
+                } else
+                {
+                    dest = path.join(config.get('downloadPath'), 'saves', ...destination, slot);
+                }
+
+                const filter = {
+                    IncludeRule: Array.isArray(change.subPath) ?
+                        change.subPath.map(s =>
+                        {
+                            if (change.isGlob) return s;
+                            else s.replaceAll('\\', '/');
+                        }) :
+                        [change.isGlob ? change.subPath : change.subPath.replaceAll('\\', '/')]
+                };
+
+                let jobid: number | undefined = undefined;
+
+                if (change.fixedSize)
+                {
+                    await this.request('/sync/copy', {
+                        srcFs: change.cwd,
+                        dstFs: dest,
+                        createEmptySrcDirs: true,
+                        _async: true,
+                        _config: {
+                            NoCheckDest: true
+                        },
+                        _filter: filter
+                    })
+                        .then(job => jobid = job.jobid)
+                        .catch(e =>
+                        {
+                            events.emit('notification', { message: `RClone: ${e.cause?.error ?? e.message ?? e}`, type: 'error' });
+                            return undefined;
+                        });
+                } else
+                {
+                    await this.request('/sync/sync', {
+                        srcFs: change.cwd,
+                        dstFs: dest,
+                        createEmptySrcDirs: true,
+                        _async: true,
+                        _config: {
+                            CheckSum: true,
+                            CheckFirst: true,
+                            Metadata: true,
+                            MetadataSet: {
+                                igdb_id: local?.igdb_id ? String(local?.igdb_id) : undefined,
+                                ra_id: local?.ra_id ? String(local?.ra_id) : undefined
+                            }
+                        },
+                        _filter: filter
+                    })
+                        .then(job => jobid = job.jobid)
+                        .catch(e =>
+                        {
+                            events.emit('notification', { message: `RClone: ${e.cause?.error ?? e.message ?? e}`, type: 'error' });
+                            return undefined;
+                        });
+                }
+
+                if (!jobid) return;
+                await new Promise(async (resolve, reject) =>
+                {
+                    const checkInterval = setInterval(async () =>
+                    {
+                        const stat = await this.request('/job/status', { jobid });
+                        if (stat.finished)
+                        {
+                            clearInterval(checkInterval);
+                            console.log(stat.output);
+                            resolve(true);
+
+                        } else if (stat.error)
+                        {
+                            reject(stat.error);
+                        } else
+                        {
+
+                        }
+                    }, 500);
                 });
 
-                if (data)
+                const stats = await this.request('/core/stats', {
+                    group: `job/${jobid}`
+                });
+
+                if (stats.transfers > 0)
                 {
                     events.emit('notification', { message: "RClone: Save Synced", type: 'success', icon: 'save' });
                 }

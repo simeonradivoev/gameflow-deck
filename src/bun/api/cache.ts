@@ -3,6 +3,7 @@ import { cache } from "./app";
 import cacheSchema from "@schema/cache";
 import { GithubReleaseSchema } from "@/shared/constants";
 import PQueue from "p-queue";
+import z from "zod";
 
 export const CACHE_KEYS = {
     ROM_PLATFORMS: 'rom-platforms',
@@ -12,17 +13,17 @@ export const CACHE_KEYS = {
 
 export const githubRequestQueue = new PQueue({ intervalCap: 10, interval: 1000 * 60 * 10, strict: true });
 
-export async function getOrCached<T> (key: string, getter: () => Promise<T>, options?: { expireMs?: number; }): Promise<T>
+export async function getOrCached<T> (key: string, getter: (lastValue: T | undefined) => Promise<T>, options?: { expireMs?: number; force?: boolean; }): Promise<T>
 {
     const cached = await cache.query.item_cache.findFirst({ where: eq(cacheSchema.item_cache.key, key) });
     const updated_at = new Date();
 
-    if (cached && cached.expire_at > updated_at)
+    if (cached && cached.expire_at > updated_at && !options?.force)
     {
         return cached.data as T;
     }
 
-    const data = await getter();
+    const data = await getter(cached?.data as T);
     if (data === undefined) return data;
 
     const expire_at = options?.expireMs ? new Date(updated_at.getTime() + options.expireMs) : new Date(updated_at.getTime() + 24 * 60 * 60 * 1000);
@@ -38,12 +39,15 @@ export async function getOrCached<T> (key: string, getter: () => Promise<T>, opt
     return data;
 }
 
-export async function getOrCachedGithubRelease (path: string)
+export async function getOrCachedGithubRelease (path: string, forceCheck?: boolean)
 {
-    return getOrCached(`github-release-${path}`, async () => githubRequestQueue.add(async () =>
+    return getOrCached<z.infer<typeof GithubReleaseSchema>>(`github-release-${path}`, () => githubRequestQueue.add(async () =>
     {
-        const response = await fetch(`https://api.github.com/repos/${path}/releases/latest`, { method: "GET" });
+        const response = await fetch(`https://api.github.com/repos/${path}/releases/latest`, {
+            method: "GET"
+        });
         if (!response.ok) throw new Error(response.statusText);
-        return GithubReleaseSchema.parseAsync(await response.json());
-    }), { expireMs: 1000 * 60 * 60 });
+        const release = await GithubReleaseSchema.parseAsync(await response.json());
+        return release;
+    }), { expireMs: 1000 * 60 * 60, force: forceCheck });
 }

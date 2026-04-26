@@ -2,48 +2,43 @@ import EventEmitter from "events";
 import browser from '../src/bun/browser';
 import { tmpdir } from "os";
 import path from "path";
-import { createInterface } from "readline";
-import { Readable } from "stream";
+import { watch } from "fs";
 const events = new EventEmitter();
 const abortController = new AbortController();
 
 process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222";
 process.env.NODE_ENV = "development";
 
-let retries = 0;
-
 function spawnServer ()
 {
-    const s = Bun.spawn(["bun", '--watch', '--install=fallback', "run", "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
+    const s = Bun.spawn(["bun", '--install=fallback', "run", "--inspect=127.0.0.1:9228/fixed-session", "./src/bun/index.ts"], {
         env: {
             ...process.env,
             HEADLESS: "true",
         },
-        stdout: "pipe",
-        stderr: "pipe",
-        stdin: "pipe",
+        stdout: 'inherit',
+        stderr: 'inherit',
+        stdin: 'inherit',
         signal: abortController.signal,
         killSignal: 'SIGUSR1',
+        ipc (message, subprocess, handle)
+        {
+            if (message === 'focus')
+            {
+                events.emit('focus');
+            } else if (message === 'exitapp')
+            {
+                events.emit('exitapp');
+            }
+        },
         onExit (subprocess, exitCode, signalCode)
         {
-            process.exit();
+            if (exitCode !== 3)
+            {
+                console.log("Existing Dev With", exitCode);
+                process.exit();
+            }
         }
-    });
-    const rl = createInterface({ input: Readable.fromWeb(s.stdout as any) });
-    rl.on('line', e =>
-    {
-        if (e === 'focus')
-        {
-            events.emit('focus');
-        } else
-        {
-            console.log(e);
-        }
-    });
-    const rle = createInterface({ input: Readable.fromWeb(s.stderr as any) });
-    rle.on('line', e =>
-    {
-        console.error(e);
     });
     return s;
 }
@@ -53,9 +48,10 @@ function spawnBrowser ()
     try
     {
 
-        return browser(events, process.env.FORCE_BROWSER === "true", {
+        return browser(events, {
             configPath: path.join(tmpdir(), 'gameflow'),
-            isSteamDeckGameMode: false
+            isSteamDeckGameMode: false,
+            forceBrowser: process.env.FORCE_BROWSER === "true"
         });
     } catch (error)
     {
@@ -63,13 +59,33 @@ function spawnBrowser ()
     };
 }
 
-let server = spawnServer();
+async function restart ()
+{
+    if (server)
+    {
+        server.kill("SIGUSR1");
+        await server.exited;
+        server = undefined;
+        console.log("Server Restarted");
+    }
+
+    server = spawnServer();
+    console.log("Server Restarted");
+}
+
+watch("./src/bun", { recursive: true }, (event, filename) =>
+{
+    console.log(`[watcher] ${event}: ${filename} — restarting...`);
+    restart();
+});
+
+let server: Bun.Subprocess | undefined = spawnServer();
 if (!process.env.HEADLESS)
 {
     spawnBrowser()?.then(async e =>
     {
-        console.log("Sending exit Signal to server");
-        await server.stdin.write('shutdown\n');
-        await server.stdin.flush();
+        if (!server) return;
+        server.kill("SIGUSR1");
+        await server.exited;
     });
 }

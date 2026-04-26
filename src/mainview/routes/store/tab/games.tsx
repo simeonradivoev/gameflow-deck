@@ -30,7 +30,7 @@ function RouteComponent ()
   const { focus } = Route.useSearch();
   const [search] = useSessionStorage<string | undefined>(`${Route.to}-search`, undefined);
   const navigator = useNavigate();
-  const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "main-area", preferredChildFocusKey: focus });
+  const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "main-area", preferredChildFocusKey: focus ?? 'store-games' });
   const [filter, setFilter] = useSessionStorage<GameListFilterType>('store-games-filters', {});
   const { data, fetchNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(storeGamesInfiniteQuery(filter));
   const { data: gameFilters } = useQuery(gameFiltersQuery({ source: 'store' }));
@@ -80,7 +80,8 @@ function RouteComponent ()
               if (isFetchingNextPage || isFetching)
                 return;
               fetchNextPage();
-            }} />} games={data?.pages.flatMap((page) => page.data.map((g) =>
+            }} />}
+            games={data?.pages.flatMap((page) => page.data.map((g) =>
             {
               const badges: JSX.Element[] = [];
               if (g.id.source === 'local')
@@ -119,7 +120,8 @@ function RouteComponent ()
                 onFocus: (k, n, d) => handleFocus(k, n, d)
               } satisfies GameMetaExtra as GameMetaExtra;
             })
-            ) ?? []} id={'store-games'} />
+            ) ?? []}
+            id={'store-games'} />
         </div>
         <div className='fixed left-2 top-52 bottom-0 sm:w-10 md:w-14 z-10'>
           <SideFilters id='filter-btns' localFilter={filter} setLocalFilter={setFilter} filterValues={gameFilters} filters={{ source: 'store' }} />

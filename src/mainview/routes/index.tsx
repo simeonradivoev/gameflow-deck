@@ -13,10 +13,13 @@ import
   LayoutGrid,
   PlusCircle,
   Plus,
+  LucideIcon,
 } from "lucide-react";
 import
 {
   createFileRoute,
+  PathParamOptions,
+  ToPathOption,
   useRouter,
 } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -52,6 +55,7 @@ import { FloatingShortcuts } from "../components/Shortcuts";
 import SelectMenu from "../components/SelectMenu";
 import HeaderSearchField from "../components/HeaderSearchField";
 import CardElement from "../components/CardElement";
+import { Router } from "..";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -114,24 +118,30 @@ function Preview (data: { index: number; children?: any; })
   </div>;
 }
 
-function GetStoreGamesCard ()
+function AdditionalCard (data: {
+  id: string,
+  route: keyof typeof Router.routesByPath,
+  title: string,
+  subTitle: string,
+  index: number,
+  actionLabel: string;
+  icon: LucideIcon | string;
+  badgeIcon?: LucideIcon;
+})
 {
   const router = useRouter();
-  const handleNavigate = () =>
-  {
-    router.navigate({ to: '/store/tab/games' });
-  };
-  return <CardElement onFocus={scrollIntoViewHandler({ behavior: "smooth", inline: "center" })} badges={[<Search className="size-8" />]} onAction={handleNavigate} title="Gameflow Store" subtitle="Get Free Games" preview={<Preview index={43} ><Store className="not-mobile:drop-shadow-md in-focus:animate-rotate size-32" /></Preview>} focusKey='store-games-btn' index={0} id="store-games-btn" />;
-}
 
-function ShowAllGamesCard ()
-{
-  const router = useRouter();
   const handleNavigate = () =>
   {
-    router.navigate({ to: '/games' });
+    router.navigate({ to: data.route as any });
   };
-  return <CardElement onFocus={scrollIntoViewHandler({ behavior: "smooth", inline: "center" })} onAction={handleNavigate} title="All Games" preview={<Preview index={17} ><LayoutGrid className="not-mobile:drop-shadow-md in-focus:animate-rotate size-32" /></Preview>} focusKey='all-games-btn' index={0} id="all-games-btn" />;
+  useShortcuts(data.id, () => [{ label: data.actionLabel, button: GamePadButtonCode.A, action: handleNavigate }]);
+  return <CardElement onFocus={scrollIntoViewHandler({ behavior: "smooth", inline: "center" })} badges={data.badgeIcon ? [<data.badgeIcon className="size-8" />] : undefined} onAction={handleNavigate} title={data.title} subtitle={data.subTitle} preview={<Preview index={data.index} >
+    {typeof data.icon === 'string' ?
+      <img className="not-mobile:drop-shadow-md" src={data.icon} /> :
+      <data.icon className="not-mobile:drop-shadow-md in-focus:animate-rotate size-32" />
+    }
+  </Preview>} focusKey={data.id} index={0} id={data.id} />;
 }
 
 function HomeList (data: {
@@ -197,8 +207,13 @@ function HomeList (data: {
           id="games-list"
           setBackground={bg.setBackground}
           filters={{ limit: 12, orderBy: 'activity' }}
-          finalElement={[<GetStoreGamesCard />, <ShowAllGamesCard />]}
-          emptyElement={[]}
+          finalElement={[
+            <AdditionalCard key='store-games-btn' icon={Store} badgeIcon={Search} route='/store/tab/games' id='store-games-btn' title="Gameflow Store" subTitle="Get Free Games" index={43} actionLabel="Go To Store" />,
+            <AdditionalCard key='all-games-btn' icon={LayoutGrid} route='/games' id='all-games-btn' title="All Games" subTitle="All Owned Games" index={17} actionLabel="All Games" />
+          ]}
+          emptyElement={[
+            <AdditionalCard key='romm-setup-btn' icon={'https://romm.app/_ipx/q_80/images/blocks/logos/romm.svg'} route='/settings/accounts' id='romm-setup-btn' title="Setup Romm" subTitle="To Import Games" index={18} actionLabel="Setup Romm" />
+          ]}
         />
         <AutoFocus parentKey={focusKey} focus={focusSelf} delay={10} />
       </>;

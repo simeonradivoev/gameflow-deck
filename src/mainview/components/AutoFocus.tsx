@@ -1,5 +1,5 @@
 import { doesFocusableExist, FocusDetails, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
-import { useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 
 export function AutoFocus (data: {
     parentKey?: string;
@@ -8,11 +8,15 @@ export function AutoFocus (data: {
     delay?: number;
 })
 {
-    useLayoutEffect(() =>
+    useEffect(() =>
     {
         let delayTimeout: number | undefined;
 
-        if (data.force || !getCurrentFocusKey() || getCurrentFocusKey() === data.parentKey || !doesFocusableExist(getCurrentFocusKey()))
+        const focusDoesntExist = !doesFocusableExist(getCurrentFocusKey());
+        const parentFocus = getCurrentFocusKey() === data.parentKey;
+        const noFocus = !getCurrentFocusKey();
+
+        if (data.force || noFocus || parentFocus || focusDoesntExist)
         {
             if (data.delay)
             {
@@ -21,8 +25,8 @@ export function AutoFocus (data: {
             {
                 data.focus({ instant: true });
             }
-
         }
+
         return () =>
         {
             if (delayTimeout)

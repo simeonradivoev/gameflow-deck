@@ -13,7 +13,20 @@ export default function ImageWithFallbacks (data: {
         {
             img.dataset.index = String(nextIndex);
             img.src = data.src[nextIndex].href;
+
         }
     };
-    return <img draggable={data.draggable} className={data.className} src={data.src[0].href} data-index={0} onError={handleError}></img>;
+    return <img
+        draggable={data.draggable}
+        className={data.className}
+        src={data.src[0].href}
+        data-index={0}
+        onError={handleError}
+        onLoad={e =>
+        {
+            e.currentTarget.dataset.loaded = "true";
+        }}
+    >
+
+    </img>;
 }

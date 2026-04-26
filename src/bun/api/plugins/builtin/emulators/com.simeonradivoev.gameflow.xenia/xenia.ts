@@ -68,7 +68,7 @@ export default class XENIAIntegration implements PluginType
             if (ctx.autoValidCommand.metadata.romPath)
             {
                 finalSavesPath = await getXeniaSavePaths(ctx.autoValidCommand.metadata.romPath, savesPath);
-                return { args, savesPath: { xenia: { cwd: finalSavesPath } } };
+                return { args, savesPath: { [this.emulator]: { cwd: finalSavesPath } } };
             }
 
             return { args };
@@ -91,13 +91,12 @@ export default class XENIAIntegration implements PluginType
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, this.handleLaunch);
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulatorEdge }, this.handleLaunch);
 
-        ctx.hooks.games.postPlay.tap({ name: desc.name, before: "com.simeonradivoev.gameflow.romm" }, async ({ validChangedSaveFiles, saveFolderPath, command, gameInfo }) =>
+        ctx.hooks.games.postPlay.tap({ name: desc.name }, async ({ validChangedSaveFiles, saveFolderSlots, command }) =>
         {
-            if (command.emulator === this.emulator && saveFolderPath && command.metadata.romPath)
-            {
-                const files = await fs.readdir(saveFolderPath, { recursive: true });
-                validChangedSaveFiles.gameflow = { cwd: saveFolderPath, subPath: files, shared: false };
-            }
+            if (command.emulator !== this.emulator || !(saveFolderSlots?.[this.emulator]) || !command.metadata.romPath) return;
+            const files = await fs.readdir(saveFolderSlots[this.emulator].cwd, { recursive: true });
+            validChangedSaveFiles.xenia = { cwd: saveFolderSlots[this.emulator].cwd, subPath: files, shared: false };
+
         });
     }
 }

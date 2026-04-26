@@ -6,6 +6,7 @@
   "icon": "./src/mainview/assets/icon.svg",
   "main": "./src/bun/index.ts",
   "bin": "gameflow",
+  "license": "AGPL-3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/simeonradivoev/gameflow-deck"
@@ -22,7 +23,6 @@
     "build:dev:vite": "NODE_ENV=development bun run build:vite",
     "build": "bun run build:vite && bun run ./scripts/package-bun.ts",
     "build:prod": "NODE_ENV=production bun run build",
-    "build:prod:dynamic": "NODE_ENV=production NON_COMPILED=true bun run build",
     "build:linux": "TARGET=bun-linux-x64 bun run build",
     "openapi-ts": "bun run ./scripts/romm/openapi-ts.ts",
     "run:build-action": "act workflow_dispatch --artifact-server-path artifacts --env ACTIONS_RUNTIME_TOKEN=foo -W .forgejo/workflows/build.yml",
@@ -33,7 +33,7 @@
     "flatpak:generate-sources": "bun run ./scripts/generate-flatpak-sources.ts",
     "flatpak:override": "flatpak override org.flatpak.Builder --filesystem=host --device=all",
     "flatpak:restore": "flatpak override --reset --user org.flatpak.Builder",
-    "flatpak:build": "flatpak run org.flatpak.Builder build/flatpak flatpak/com.simeonradivoev.gameflow-deck.json --repo=.config/flatpak/repo --force-clean",
+    "flatpak:build": "FLATPAK_BUILD=true NODE_ENV=production NON_COMPILED=true bun run build && flatpak run org.flatpak.Builder ../gameflow-flatpak/build/flatpak .config/flatpak/com.simeonradivoev.gameflow-deck.json --repo=.config/flatpak/repo --state-dir=../gameflow-flatpak/state --force-clean",
     "flatpak:install": "bun run flatpak:build && flatpak --user install --reinstall \"$PWD/.config/flatpak/repo\" com.simeonradivoev.gameflow-deck",
     "build:prod:appimage": "bun run build:prod && bun run ./scripts/build-appimage.ts",
     "build:dev:appimage": "bun run build && bun run ./scripts/build-appimage.ts",
@@ -41,6 +41,7 @@
     "package:Linux": "bun run build:prod:appimage",
     "package:Windows": "bun run build:prod",
     "download:chromium": "bun scripts/download-chromium.ts --out=./bin/chromium",
+    "download:nwjs": "bun scripts/download-nw.ts",
     "build:audiosprites": "bun ./scripts/generate-audio-sprites.ts",
     "tsc": "tsc --noEmit"
   },

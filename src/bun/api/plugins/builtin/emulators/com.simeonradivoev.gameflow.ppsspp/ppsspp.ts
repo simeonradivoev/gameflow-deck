@@ -10,6 +10,7 @@ import Mustache from "mustache";
 import { ensureDir } from "fs-extra";
 import { homedir } from "node:os";
 import ini from 'ini';
+import fs from 'node:fs/promises';
 
 export default class PPSSPPIntegration implements PluginType
 {
@@ -19,10 +20,14 @@ export default class PPSSPPIntegration implements PluginType
     {
         ctx.hooks.emulators.emulatorPostInstall.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
         {
-            await Bun.write(path.join(ctx.path, "portable.txt"), "");
-            if (process.platform === 'win32')
+            const stat = await fs.stat(ctx.path);
+            if (stat.isDirectory())
             {
-                await Bun.write(path.join(ctx.path, "installed.txt"), path.join(config.get('downloadPath'), 'saves', this.emulator));
+                await Bun.write(path.join(ctx.path, "portable.txt"), "");
+                if (process.platform === 'win32')
+                {
+                    await Bun.write(path.join(ctx.path, "installed.txt"), path.join(config.get('downloadPath'), 'saves', this.emulator));
+                }
             }
         });
 
@@ -42,6 +47,17 @@ export default class PPSSPPIntegration implements PluginType
             {
                 return { id: desc.name, supportLevel: "partial", capabilities: [...baseCapabilities] };
             }
+        });
+
+        ctx.hooks.games.postPlay.tapPromise({ name: desc.name }, async ({ saveFolderSlots, validChangedSaveFiles, command }) =>
+        {
+            if (command.emulator !== this.emulator || !(saveFolderSlots?.[this.emulator]) || !command.metadata.romPath) return;
+            validChangedSaveFiles[this.emulator] = {
+                cwd: saveFolderSlots[this.emulator].cwd,
+                shared: true,
+                subPath: '*.{SFO,sfo,PNG,png}',
+                isGlob: true
+            };
         });
 
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
@@ -114,7 +130,14 @@ export default class PPSSPPIntegration implements PluginType
                     await Bun.write(path.join(ppssppPath, 'controls.ini'), Mustache.render(controlsFileContents, {}));
                 }
 
-                return { args, savesPath: { ppsspp: { cwd: path.join(config.get('downloadPath'), 'saves', this.emulator, "PSP", "SAVEDATA") } } };
+                return {
+                    args,
+                    savesPath: {
+                        [this.emulator]: {
+                            cwd: path.join(config.get('downloadPath'), 'saves', this.emulator, "PSP", "SAVEDATA")
+                        }
+                    }
+                };
             }
 
             return { args };

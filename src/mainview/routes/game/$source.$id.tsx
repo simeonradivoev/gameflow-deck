@@ -166,7 +166,6 @@ function RouteComponent ()
 
   return (
     <AnimatedBackground ref={ref} backgroundKey="game-details" backgroundUrl={backgroundImage} scrolling>
-      <AutoFocus focus={focusSelf} />
       <GameDetailsContext value={{
         update: () => setUpdate(v => v + 1)
       }} >
@@ -214,6 +213,7 @@ function RouteComponent ()
         </div>
         <FloatingShortcuts />
       </GameDetailsContext>
+      <AutoFocus focus={focusSelf} />
     </AnimatedBackground>
   );
 }

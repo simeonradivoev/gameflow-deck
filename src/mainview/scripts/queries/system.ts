@@ -57,3 +57,23 @@ export const hasUpdateQuery = queryOptions({
     },
     staleTime: 1000 * 60 * 30
 });
+
+export const checkUpdateMutation = mutationOptions({
+    mutationKey: ['update', 'check'],
+    mutationFn: async () =>
+    {
+        const { data, error } = await systemApi.api.system.update.check.post();
+        if (error) throw error;
+        return data;
+    },
+});
+
+export const updateMutation = mutationOptions({
+    mutationKey: ['update'],
+    mutationFn: async () =>
+    {
+        const { data, error } = await systemApi.api.system.update.post();
+        if (error) throw error;
+        return data;
+    },
+});

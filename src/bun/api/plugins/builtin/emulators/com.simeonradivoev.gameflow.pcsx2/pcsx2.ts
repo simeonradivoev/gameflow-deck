@@ -31,6 +31,18 @@ export default class PCSX2Integration implements PluginType
             }
         });
 
+        ctx.hooks.games.postPlay.tapPromise({ name: desc.name }, async ({ saveFolderSlots, validChangedSaveFiles, command }) =>
+        {
+            if (command.emulator !== this.emulator || !(saveFolderSlots?.[this.emulator]) || !command.metadata.romPath) return;
+            validChangedSaveFiles[this.emulator] = {
+                cwd: saveFolderSlots[this.emulator].cwd,
+                shared: true,
+                subPath: '*.ps2',
+                isGlob: true,
+                fixedSize: true
+            };
+        });
+
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
         {
             const args: string[] = [];
@@ -103,7 +115,7 @@ export default class PCSX2Integration implements PluginType
 
                 await Bun.write(configPath, ini.stringify(configFile));
 
-                return { args, savesPath: { pcsx2: { cwd: paths.MEMORY_CARDS_PATH } } };
+                return { args, savesPath: { [this.emulator]: { cwd: paths.MEMORY_CARDS_PATH } } };
             }
 
             return { args };

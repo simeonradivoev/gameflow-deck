@@ -90,7 +90,9 @@ export class PluginManager
             {
                 if (plugin.enabled || plugin.description.canDisable === false)
                 {
+                    console.log("Loading Plugin", plugin.description.name);
                     await plugin.plugin.load(ctx);
+                    console.log("Loaded Plugin", plugin.description.name);
                     plugin.loaded = true;
                 }
             } catch (error)
@@ -119,11 +121,13 @@ export class PluginManager
             {
                 if (p.loaded)
                 {
+                    console.log("Starting", p.description.name, "plugin cleanup");
                     await p.plugin.cleanup!();
+                    console.log(p.description.name, "cleanup complete");
                 }
             } catch (error)
             {
-                console.log("Error for plugin", p.description.name, "while cleaning up");
+                console.error("Error for plugin", p.description.name, "while cleaning up");
                 console.error(error);
             }
         }));

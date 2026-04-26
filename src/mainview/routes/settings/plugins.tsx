@@ -1,3 +1,4 @@
+import { AutoFocus } from '@/mainview/components/AutoFocus';
 import { pluginCategoryIcons, pluginCategoryPriorities } from '@/mainview/components/Constants';
 import { Button } from '@/mainview/components/options/Button';
 import { OptionInput } from '@/mainview/components/options/OptionInput';
@@ -62,7 +63,7 @@ function Plugin (data: {
 function RouteComponent ()
 {
     const { data: plugins, refetch: refetchPlugins } = useQuery(getAllPluginsQuery);
-    const { ref, focusKey } = useFocusable({ focusKey: 'plugins' });
+    const { ref, focusKey, focusSelf } = useFocusable({ focusKey: 'plugins' });
     const pluginMutation = useMutation({
         ...enablePluginMutation, onSuccess (data, variables, onMutateResult, context)
         {
@@ -84,6 +85,7 @@ function RouteComponent ()
                         </div>
                     </div>;
                 })}
+            <AutoFocus focus={focusSelf} />
         </FocusContext>
     </div>;
 }

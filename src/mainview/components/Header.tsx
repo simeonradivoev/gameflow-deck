@@ -30,7 +30,7 @@ import { TwitchIcon } from "../scripts/brandIcons";
 import { rommLoggedInQuery } from "../scripts/queries/romm";
 import { twitchLoginVerificationQuery } from "../scripts/queries/settings";
 import { SystemInfoContext } from "../scripts/contexts";
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { oneShot } from "../scripts/audio/audio";
 import { hasUpdateQuery } from "../scripts/queries/system";
 
@@ -87,16 +87,24 @@ export interface HeaderAccount
 
 function UpdateStatus ()
 {
+  const handleSelect = () =>
+  {
+    navigate({ to: '/settings/about' });
+  };
   const hasUnread = false;
-  return <div className={classNames("tooltip tooltip-bottom tooltip-warning p-2 rounded-full", { "bg-warning text-warning-content": hasUnread })} data-tip="Update Available">
-    <CircleFadingArrowUp className="sm:size-4 md:size-8 text-warning" />
+  const navigate = useNavigate();
+  const { ref } = useFocusable({
+    focusKey: 'update-bt', onEnterPress: handleSelect
+  });
+  return <div onClick={handleSelect} ref={ref} className={classNames("tooltip tooltip-bottom tooltip-warning p-2 rounded-full focusable focusable-primary focusable-hover focused:bg-warning cursor-pointer", { "bg-warning text-warning-content ": hasUnread })} data-tip="Update Available">
+    <CircleFadingArrowUp className="sm:size-4 md:size-8 text-warning in-focused:text-warning-content" />
   </div>;
 }
 
 function NotificationStatus ()
 {
   const hasUnread = false;
-  return <div className={classNames("p-2 rounded-full", { "bg-warning text-warning-content": hasUnread })}>
+  return <div className={classNames("p-2 rounded-full focused:bg-base-300", { "bg-warning text-warning-content": hasUnread })}>
     <Bell className="sm:size-4 md:size-8" />
   </div>;
 }
@@ -219,13 +227,16 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
     router.navigate({ to: '/settings/accounts' });
     oneShot('click');
   };
-  const { ref } = useFocusable({
-    focusKey: 'accounts', onEnterPress: handleSelect
-  });
 
   const accounts: HeaderAccount[] = [];
   if (data.accounts) accounts.push(...data.accounts);
   const router = useRouter();
+
+  const { ref } = useFocusable({
+    focusKey: 'accounts',
+    onEnterPress: handleSelect,
+    focusable: accounts.length > 0
+  });
 
   if (rommUser.data?.hasLogin || rommUser.isError)
   {
@@ -259,7 +270,7 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElements?: JSX.Element[] | JSX.Element; })
 {
   const { ref, focusKey } = useFocusable({ focusKey: 'header-status-bar' });
-  const { data: hasUpdate } = useQuery(hasUpdateQuery);
+  const { data: update } = useQuery(hasUpdateQuery);
   return <div ref={ref} className="flex items-center sm:gap-1 md:gap-2 text drop-shadow-sm">
     <FocusContext value={focusKey}>
       <div className="flex gap-2 items-center" style={{ viewTransitionName: 'status-bar-icons' }}>
@@ -267,7 +278,7 @@ export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElement
         <WiFiStatus />
         <BluetoothStatus />
         <NotificationStatus />
-        {!!hasUpdate && hasUpdate >= 1 && <UpdateStatus />}
+        {!!update && update.hasUpdate >= 1 && <UpdateStatus />}
         <BatteryStatus />
       </div>
       {!!data.buttons && <div className="divider divider-horizontal mx-0"></div>}

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+    <id>{{APP_ID}}</id>
+    <metadata_license>CC0-1.0</metadata_license>
+    <project_license>{{LICENSE}}</project_license>
+    <name>{{APP_NAME}}</name>
+    <summary>Retro gaming frontend designed for handheld and controllers</summary>
+    <developer id="com.simeonradivoev">
+        <name>Simeon Radivoev</name>
+    </developer>
+    <description>
+        <p>A Cross-Platform Retro gaming frontend designed for handheld and controllers. Focused on building a simple user experience and intuitive UI.</p>
+    </description>
+    <categories>
+        <category>Game</category>
+    </categories>
+    <recommends>
+        <internet>always</internet>
+    </recommends>
+    <launchable type="desktop-id">{{APP_ID}}.desktop</launchable>
+    <url type="homepage">https://github.com/simeonradivoev/gameflow-deck</url>
+    <url type="bugtracker">https://github.com/simeonradivoev/gameflow-deck/issues</url>
+    <url type="donation">https://github.com/sponsors/simeonradivoev</url>
+    <screenshots>
+        <screenshot type="default">
+            <image>https://media.githubusercontent.com/media/simeonradivoev/gameflow-deck/master/.github/screenshots/yObFD2LySH.jpg</image>
+        </screenshot>
+        <screenshot>
+            <caption>Game Details</caption>
+            <image>https://media.githubusercontent.com/media/simeonradivoev/gameflow-deck/master/.github/screenshots/3nhuKCK6E3.jpg</image>
+        </screenshot>
+        <screenshot>
+            <caption>The Settings Panel</caption>
+            <image>https://media.githubusercontent.com/media/simeonradivoev/gameflow-deck/master/.github/screenshots/GL7SkQbHIY.png</image>
+        </screenshot>
+        <screenshot>
+            <caption>Emulator Details</caption>
+            <image>https://media.githubusercontent.com/media/simeonradivoev/gameflow-deck/master/.github/screenshots/xNj7scPEDQ.png</image>
+        </screenshot>
+        <screenshot>
+            <caption>Gameflow Store</caption>
+            <image>https://media.githubusercontent.com/media/simeonradivoev/gameflow-deck/master/.github/screenshots/CpBLzTNM6N.png</image>
+        </screenshot>
+    </screenshots>
+    <releases>
+{{{RELEASES}}}
+    </releases>
+    <content_rating type="oars-1.0" />
+    <provides>
+        <id>{{APP_ID}}.desktop</id>
+        <binary>gameflow</binary>
+    </provides>
+</component>

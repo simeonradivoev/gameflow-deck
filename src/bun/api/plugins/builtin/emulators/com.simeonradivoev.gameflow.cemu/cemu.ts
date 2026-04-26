@@ -14,6 +14,17 @@ export default class CEMUIntegration implements PluginType
             return { id: desc.name, supportLevel: "full", capabilities: ["batch", "fullscreen"] };
         });
 
+        ctx.hooks.games.postPlay.tapPromise({ name: desc.name }, async ({ saveFolderSlots, validChangedSaveFiles, command }) =>
+        {
+            if (command.emulator !== this.emulator || !(saveFolderSlots?.[this.emulator]) || !command.metadata.romPath) return;
+            validChangedSaveFiles[this.emulator] = {
+                cwd: saveFolderSlots[this.emulator].cwd,
+                shared: true,
+                subPath: '*.{tga,xml,dat}',
+                isGlob: true
+            };
+        });
+
         ctx.hooks.games.emulatorLaunch.tapPromise({ name: desc.name, emulator: this.emulator }, async (ctx) =>
         {
             const args: string[] = [];
@@ -29,7 +40,7 @@ export default class CEMUIntegration implements PluginType
                 args.push(`--game=${ctx.autoValidCommand.metadata.romPath}`);
             }
 
-            return { args, savesPath: { cemu: { cwd: savesPath } } };
+            return { args, savesPath: { [this.emulator]: { cwd: savesPath } } };
         });
     }
 }

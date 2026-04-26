@@ -1,7 +1,7 @@
 import z from "zod";
 import { IJob, JobContext } from "../task-queue";
 import { ActiveGameSchema, ActiveGameType } from "@/bun/types/typesc.schema";
-import { db, events, plugins } from "../app";
+import { config, db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq } from "drizzle-orm";
 import { spawn } from 'node:child_process';
@@ -51,6 +51,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                     command: this.validCommand,
                     changedSaveFiles: Array.from(this.changedSaveFiles.values()),
                     validChangedSaveFiles: {},
+                    saveFolderSlots: this.saveSlots,
                     gameInfo
                 }).catch(e =>
                 {
@@ -129,31 +130,41 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                     if (Array.isArray(this.validCommand.command))
                     {
-                        const bunGame = Bun.spawn(this.validCommand.command, {
+                        let command = this.validCommand.command;
+                        if (process.env.FLATPAK_BUILD) command = ['flatpak-spawn', '--host', `--directory=${config.get('downloadPath')}`, ...command];
+
+                        const bunGame = Bun.spawn(command, {
                             cwd: this.validCommand.startDir,
                             signal: context.abortSignal,
                             env: {
                                 ...process.env,
                                 ...this.validCommand.env
-                            }
+                            },
+                            onExit (subprocess, exitCode, signalCode, error)
+                            {
+                                if (error)
+                                {
+                                    console.error(error);
+                                    reject(error);
+                                } else
+                                {
+                                    resolve(true);
+                                }
+                            },
                         });
 
                         context.setProgress(0, "playing");
 
-                        bunGame.exited.then(e =>
-                        {
-                            resolve(true);
-                        }).catch(e =>
-                        {
-                            console.error(e);
-                            reject(e);
-                        });
-
                         game = bunGame;
                     } else
                     {
+
+                        let command = this.validCommand.command;
+
+                        if (process.env.FLATPAK_BUILD) command = `flatpak-spawn --host --directory=${config.get('downloadPath')} ${command}`;
+
                         // ES-DE commands require shell execution. Some emulators fail otherwise.
-                        const spawnGame = spawn(this.validCommand.command, {
+                        const spawnGame = spawn(command, {
                             shell: this.validCommand.shell ?? true,
                             cwd: this.validCommand.startDir,
                             signal: context.abortSignal,
@@ -178,7 +189,6 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                         game = spawnGame;
                     }
-
                 }
                 else if (this.validCommand.metadata.emulatorBin)
                 {
@@ -186,14 +196,28 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                     await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug });
 
+                    let command = [this.validCommand.metadata.emulatorBin, ...commandArgs.args];
+                    if (process.env.FLATPAK_BUILD) command = ['flatpak-spawn', '--host', `--directory=${config.get('downloadPath')}`, ...command];
+
                     // We have full control over launching integrated emulators better to use bun spawn
-                    const bunGame = Bun.spawn([this.validCommand.metadata.emulatorBin, ...commandArgs.args], {
+                    const bunGame = Bun.spawn(command, {
                         cwd: this.validCommand.startDir,
                         signal: context.abortSignal,
                         env: {
                             ...process.env,
                             ...commandArgs.env
-                        }
+                        },
+                        onExit (subprocess, exitCode, signalCode, error)
+                        {
+                            if (error)
+                            {
+                                console.error(error);
+                                reject(error);
+                            } else
+                            {
+                                resolve(true);
+                            }
+                        },
                     });
 
                     context.setProgress(0, "playing");
@@ -218,15 +242,6 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                             console.log("Closing Save File Watching for", commandArgs.savesPath);
                         });
                     }*/
-
-                    bunGame.exited.then(e =>
-                    {
-                        resolve(true);
-                    }).catch(e =>
-                    {
-                        console.error(e);
-                        reject(e);
-                    });
 
                     game = bunGame;
 

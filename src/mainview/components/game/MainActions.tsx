@@ -109,7 +109,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         if (!cmd) return;
         if (cmd.emulator === 'EMULATORJS')
         {
-            const params = new URLSearchParams(cmd.command);
+            const params = new URLSearchParams(Array.isArray(cmd.command) ? cmd.command[0] : cmd.command);
             router.navigate({ to: '/embedded/$source/$id', params: { source: data.source, id: data.id }, search: Object.fromEntries(params.entries()) });
         } else
         {
@@ -120,14 +120,15 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
     let mainButton: any | undefined = undefined;
     if (status === 'installed')
     {
-        mainButton = <div className="flex gap-2"><ActionButton onAction={() => handlePlay(validDefaultCommand)} tooltip={validDefaultCommand?.label ?? details}
-            key="primary"
-            type='primary'
-            id="mainAction"
-        >
-            <Play />
+        mainButton = <div className="flex gap-2">
+            <ActionButton onAction={() => handlePlay(validDefaultCommand)} tooltip={validDefaultCommand?.label ?? details}
+                key="primary"
+                type='primary'
+                id="mainAction"
+            >
+                <Play />
 
-        </ActionButton>
+            </ActionButton>
 
             {validCommands.length > 1 &&
                 <ActionButton className="size-11! header-icon-small" tooltip={"All Commands"} type="base" id="allActionsBtn" onAction={() => showAllCommands(true, 'allActionsBtn')}>

@@ -1,4 +1,5 @@
 import { AutoFocus } from '@/mainview/components/AutoFocus';
+import DotsLoading from '@/mainview/components/backgrounds/dots';
 import { Button } from '@/mainview/components/options/Button';
 import { OptionDropdown } from '@/mainview/components/options/OptionDropdown';
 import { OptionInput } from '@/mainview/components/options/OptionInput';
@@ -7,15 +8,33 @@ import { RoundButton } from '@/mainview/components/RoundButton';
 import { getAllPluginsQuery, getPluginDetailsQuery } from '@/mainview/scripts/queries/plugins';
 import { getPluginActionsQuery, getPluginSettingQuery, getPluginSettingsDefinitionQuery, pluginActionMutation, setPluginSettingMutation } from '@/mainview/scripts/queries/settings';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
+import { scrollIntoViewHandler } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { JSONSchema7 } from 'json-schema';
 import { ArrowLeft, CirclePlay, Play, Settings2, SettingsIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 export const Route = createFileRoute('/settings/plugin/$source')({
     component: RouteComponent,
+    pendingComponent: Loading,
+    async loader (ctx)
+    {
+        const definitions = await ctx.context.queryClient.fetchQuery(getPluginSettingsDefinitionQuery(ctx.params.source));
+        const actions = await ctx.context.queryClient.fetchQuery(getPluginActionsQuery(ctx.params.source));
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return { definitions, actions };
+    },
 });
+
+function Loading ()
+{
+    const { ref, focusSelf } = useFocusable({ focusKey: 'plugins' });
+    return <>
+        <DotsLoading ref={ref} />
+        <AutoFocus focus={focusSelf} />
+    </>;
+}
 
 function PluginAction (data: { id: string, title: string | undefined, description: string | undefined; action: string; reload: () => void; })
 {
@@ -91,15 +110,19 @@ function PluginOption (data: { name: string, title?: string, prop: JSONSchema7; 
 
 function Settings ()
 {
+    const { definitions, actions } = Route.useLoaderData();
     const { source } = Route.useParams();
-    const { data: definitions, refetch: refetchDefinitions } = useQuery(getPluginSettingsDefinitionQuery(source));
-    const { data: actions, refetch: referchActions } = useQuery(getPluginActionsQuery(source));
+    const queryClient = useQueryClient();
+
     const handleReload = () =>
     {
-        referchActions();
-        refetchDefinitions();
+        queryClient.refetchQueries(getPluginSettingsDefinitionQuery(source));
+        queryClient.refetchQueries(getPluginActionsQuery(source));
     };
-    const { ref, focusKey } = useFocusable({ focusKey: 'plugin-settings' });
+    const { ref, focusKey } = useFocusable({
+        focusKey: 'plugin-settings',
+        focusable: (definitions?.properties && Object.keys(definitions?.properties).length > 0) || actions.length > 0
+    });
     return <div ref={ref}>
         <FocusContext value={focusKey}>
             {!!definitions?.properties && Object.entries(Object.groupBy(Object.entries(definitions?.properties)
@@ -142,16 +165,19 @@ function RouteComponent ()
 
     return <div ref={ref}>
         <FocusContext value={focusKey}>
-            <RoundButton className='absolute' id='return-to-plugins' onAction={handleReturn}><ArrowLeft /></RoundButton>
+
             <div className='flex flex-col gap-4'>
                 <div className='flex text-2xl font-bold gap-2 grow items-center justify-center'>
+                    <RoundButton onFocus={scrollIntoViewHandler({ inline: 'end' })} id='return-to-plugins' onAction={handleReturn}><ArrowLeft /></RoundButton>
                     <img className='h-12' src={data?.icon}></img>
                     {data?.displayName}
                 </div>
                 <ul className='flex gap-2 justify-center'>{data?.keywords?.map((k, i) => <li key={i} className='bg-base-200 rounded-full p-2 px-4'>{k}</li>)}</ul>
                 <div className='bg-base-200 p-4 rounded-2xl'>{data?.description}</div>
             </div>
+
             <Settings />
+
         </FocusContext>
         <AutoFocus focus={focusSelf} />
     </div>;

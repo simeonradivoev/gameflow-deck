@@ -11,6 +11,8 @@ export interface BrowserParams
     windowPosition?: { x: number, y: number; };
     windowSize?: { width?: number, height?: number; };
     isSteamDeckGameMode: boolean;
+    forceBrowser?: boolean;
+    forceNWJS?: boolean;
 }
 
 export async function BuildParams (data: BrowserParams)
@@ -53,6 +55,13 @@ export async function BuildParams (data: BrowserParams)
         args.push('--disable-component-update');
         args.push('--allow-insecure-localhost');
         args.push('--auto-accept-camera-and-microphone-capture');
+
+        if (process.env.FLATPAK_BUILD)
+        {
+            args.push('--no-sandbox');
+            args.push('--disable-gpu-sandbox');
+            args.push('--test-type');
+        }
 
         if (data.isSteamDeckGameMode)
         {

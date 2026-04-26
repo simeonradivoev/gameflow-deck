@@ -1,5 +1,6 @@
 declare const __HOST__: string;
 declare const __PUBLIC__: boolean;
+declare const __FLATPAK__: boolean;
 declare const __EMULATORS__: Record<string, string>;
 declare module "@emulators" {
   const data: Record<string, string>;

@@ -37,6 +37,10 @@ export default function AppCommunication (data: { children: any; })
         });
 
         document.documentElement.dataset.loaded = "true";
+        return () =>
+        {
+            sub.close();
+        };
     }, []);
 
     return <SystemInfoContext value={systemInfo}>

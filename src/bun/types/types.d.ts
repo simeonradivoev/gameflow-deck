@@ -30,3 +30,13 @@ declare interface AppEventMap
     notification: [FrontendNotification];
     focus: [];
 }
+
+declare module '*.bat' {
+    const content: string;
+    export default content;
+}
+
+declare module '*.sh' {
+    const content: string;
+    export default content;
+}

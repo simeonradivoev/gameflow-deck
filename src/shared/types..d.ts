@@ -341,6 +341,7 @@ declare interface SaveFileChange
     isGlob?: true;
     cwd: string;
     shared: boolean;
+    fixedSize?: boolean;
 }
 
 declare type SaveSlots = Record<string, { cwd: string; }>;

@@ -5,13 +5,27 @@ import { dirname } from 'pathe';
 import { createInterface } from 'readline';
 import { isSteamDeckGameMode } from './utils';
 
-async function cleanup ()
+async function cleanup (code: number)
 {
-  await app.cleanup();
-  process.exit(0);
+  app.cleanup()
+    .then(() =>
+    {
+      process.exit(code);
+    })
+    .catch(e => console.error);
 }
 
 await app.load();
+
+async function shutdown (code: number)
+{
+  console.log("Graceful Shutdown");
+  await cleanup(code);
+}
+
+process.on("SIGINT", () => shutdown(0));
+process.on("SIGTERM", () => shutdown(0));
+process.on('SIGUSR1', () => shutdown(3));
 
 if (process.env.HEADLESS)
 {
@@ -22,7 +36,7 @@ if (process.env.HEADLESS)
     if (line.trim() === "shutdown")
     {
       console.log("Graceful Shutdown");
-      await cleanup();
+      await cleanup(0);
     }
   });
 
@@ -30,23 +44,23 @@ if (process.env.HEADLESS)
   app.events.on('exitapp', () =>
   {
     process.stdout.write('exitapp\n');
-    cleanup();
+    process.send?.("exitapp");
+    cleanup(0);
   });
   app.events.on('focus', () =>
   {
     process.stdout.write("focus\n");
+    process.send?.("focus");
   });
 } else
 {
-  await init(app.events, process.env.FORCE_BROWSER === "true", {
+  await init(app.events, {
     configPath: dirname(app.config.path),
     windowPosition: app.config.get('windowPosition'),
     windowSize: app.config.get('windowSize'),
-    isSteamDeckGameMode: isSteamDeckGameMode()
+    isSteamDeckGameMode: isSteamDeckGameMode(),
+    forceBrowser: process.env.FORCE_BROWSER === "true",
+    forceNWJS: process.env.FORCE_NWJS === "true"
   });
-  await cleanup();
+  await cleanup(0);
 }
-
-
-
-

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { SettingsType } from '@/shared/constants';
 import { config } from './api/app';
 import fs from 'node:fs/promises';
+import packageDef from '~/package.json';
 
 export function checkRunning (pid: number)
 {
@@ -172,4 +173,9 @@ export async function moveAllFiles (srcDir: string, destDir: string)
             });
         }
     }
+}
+
+export function getAppVersion ()
+{
+    return process.env.VERSION_OVERRIDE ?? packageDef.version;
 }

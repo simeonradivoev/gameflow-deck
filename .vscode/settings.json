@@ -6,17 +6,22 @@
   "files.watcherExclude": {
     "**/*.gen.*": true,
     "src/mainview/gen/*": true,
+    "**/build": true,
+    "**/.config/flatpack/repo/**": true,
+    "**/.flatpak-builder/**": true,
   },
   "search.exclude": {
     "**/*.gen.*": true,
-    ".flatpak-builder/**/*": true,
+    "**/.flatpak-builder": true,
+    "**/.config/flatpack/repo/**": true,
+    "**/build": true,
     "src/mainview/gen/*": true,
   },
   "npm.scriptRunner": "bun",
   "npm.exclude": [
     "**/.flatpak-builder/**/*",
     "**/build/flatpack/**",
-    "**/flatpack/repo/**",
+    "**/.config/flatpack/repo/**",
   ],
   "editor.formatOnSave": true,
   "[typescriptreact]": {

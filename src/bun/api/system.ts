@@ -2,8 +2,8 @@ import Elysia from "elysia";
 import open from 'open';
 import z from "zod";
 import os from 'node:os';
-import { cachePath, config, events, taskQueue } from "./app";
-import { isSteamDeck, openExternal } from "../utils";
+import { cache, cachePath, config, events, taskQueue } from "./app";
+import { getAppVersion, isSteamDeck, openExternal } from "../utils";
 import fs from 'node:fs/promises';
 import buildNotificationsStream from "./notifications";
 import path, { dirname } from "node:path";
@@ -14,23 +14,15 @@ import si from 'systeminformation';
 import { getStoreFolder } from "./store/services/gamesService";
 import ReloadPluginsJob from "./jobs/reload-plugins-job";
 import { semver } from "bun";
-import packageDef from '~/package.json';
-import { getOrCached, githubRequestQueue } from "./cache";
+import { getOrCached, getOrCachedGithubRelease, githubRequestQueue } from "./cache";
+import SelfUpdateJob from "./jobs/self-update-job";
 
-async function checkUpdate ()
+async function checkUpdate (force?: boolean)
 {
-    return getOrCached('check-for-update', async () => githubRequestQueue.add(async () =>
-    {
-        const latest = await fetch('https://api.github.com/repos/simeonradivoev/gameflow-deck/releases/latest');
-        if (latest.ok)
-        {
-            const data = await latest.json();
-            const hasUpdate = semver.order(data.tag_name, packageDef.version);
-            return hasUpdate;
-        }
-
-        return 0;
-    }), { expireMs: 1000 * 60 * 60 });
+    const latest = await getOrCachedGithubRelease('simeonradivoev/gameflow-deck', force);
+    if (!latest || !latest.tag_name) return { hasUpdate: 0, version: getAppVersion() };
+    const hasUpdate = semver.order(latest.tag_name, getAppVersion());
+    return { hasUpdate, version: latest.tag_name };
 }
 
 export const system = new Elysia({ prefix: '/api/system' })
@@ -71,7 +63,8 @@ export const system = new Elysia({ prefix: '/api/system' })
             machine: os.machine(),
             source,
             cacheSize: (await fs.stat(cachePath)).size,
-            storeSize: (await getFolderSize(getStoreFolder())).size
+            storeSize: (await getFolderSize(getStoreFolder())).size,
+            version: getAppVersion()
         };
     })
     .get('/notifications', ({ set }) =>
@@ -120,17 +113,25 @@ export const system = new Elysia({ prefix: '/api/system' })
 
             dispose.push(taskQueue.on('progress', e =>
             {
-                if (e.id !== ReloadPluginsJob.id) return;
-                ws.send({ type: "loading", progress: e.progress, state: e.state });
+                if (e.id === ReloadPluginsJob.id)
+                {
+                    ws.send({ type: "loading", progress: e.progress, state: e.state });
+                }
+                else if (e.id === SelfUpdateJob.id)
+                {
+                    ws.send({ type: "loading", progress: e.progress, state: e.state });
+                }
             }));
             dispose.push(taskQueue.on('started', e =>
             {
-                if (e.id !== ReloadPluginsJob.id) return;
-                ws.send({ type: "loading", progress: 0 });
+                if (e.id === ReloadPluginsJob.id)
+                    ws.send({ type: "loading", progress: e.job.progress, state: e.job.state });
+                else if (e.id === SelfUpdateJob.id)
+                    ws.send({ type: "loading", progress: e.job.progress, state: e.job.state });
             }));
             dispose.push(taskQueue.on('ended', e =>
             {
-                if (e.id !== ReloadPluginsJob.id) return;
+                if (e.id !== ReloadPluginsJob.id && e.id !== SelfUpdateJob.id) return;
                 ws.send({ type: "loaded" });
             }));
 
@@ -268,4 +269,12 @@ export const system = new Elysia({ prefix: '/api/system' })
     .get('/update', async () =>
     {
         return checkUpdate();
+    })
+    .post('/update', async () =>
+    {
+        return taskQueue.enqueue(SelfUpdateJob.id, new SelfUpdateJob());
+    })
+    .post('/update/check', async () =>
+    {
+        return checkUpdate(true);
     });

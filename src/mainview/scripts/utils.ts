@@ -272,6 +272,7 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
     onEnded?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
     onCompleted?: (data: ExtractField<JobResponse<JOB>, "completed" | "ended", 'data'>) => void;
     onError?: (error: string) => void;
+    onClosed?: () => void;
   },
   deps?: DependencyList
 )
@@ -289,6 +290,7 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
     const sub = jobsApi.api.jobs[id].subscribe({ query: init?.query });
     ref.current = sub as any;
 
+    sub.on('close', () => init?.onClosed?.());
     sub.subscribe(({ data }) =>
     {
       switch (data.type)
@@ -326,7 +328,7 @@ export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api
       sub.close();
       ref.current = null;
     };
-  }, [id, init?.query, init?.onEnded, init?.onCompleted, init?.onProgress, init?.onError, ...(deps ?? [])]);
+  }, [id, init?.query]);
 
   return { data, state, error, wsRef: ref };
 }

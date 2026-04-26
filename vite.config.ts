@@ -102,7 +102,8 @@ export default defineConfig(({ command }) =>
     },
     define: {
       __HOST__: JSON.stringify(host),
-      __PUBLIC__: process.env.PUBLIC_ACCESS ? true : false
+      __PUBLIC__: process.env.PUBLIC_ACCESS ? true : false,
+      __FLATPAK__: process.env.FLATPAK_BUILD ? true : false
     }
   };
 });

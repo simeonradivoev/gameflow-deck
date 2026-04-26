@@ -68,21 +68,20 @@ export default class DOLPHINIntegration implements PluginType
                 args.push(`--exec=${ctx.autoValidCommand.metadata.romPath}`);
 
                 finalSavesPath = await getType(ctx.autoValidCommand.metadata.romPath, ctx.autoValidCommand.metadata.emulatorDir) === 'gamecube' ? savesPath : storageFolder;
+                return { args, savesPath: { [this.emulator]: { cwd: finalSavesPath } } };
             }
 
-            return { args, savesPath: { dolphin: { cwd: finalSavesPath } } };
+            return { args };
         });
 
-        ctx.hooks.games.postPlay.tap({ name: desc.name, before: "com.simeonradivoev.gameflow.romm" }, async ({ validChangedSaveFiles, saveFolderSlots, command, gameInfo }) =>
+        ctx.hooks.games.postPlay.tap({ name: desc.name }, async ({ validChangedSaveFiles, saveFolderSlots, command }) =>
         {
-            if (command.emulator === this.emulator && saveFolderSlots && command.metadata.romPath)
-            {
-                validChangedSaveFiles.dolphin = {
-                    cwd: saveFolderSlots.dolphin.cwd,
-                    subPath: await getSavePaths(command.metadata.romPath, saveFolderSlots.dolphin.cwd, command.metadata.emulatorDir),
-                    shared: false
-                };
-            }
+            if (command.emulator !== this.emulator || !(saveFolderSlots?.[this.emulator]) || !command.metadata.romPath) return;
+            validChangedSaveFiles[this.emulator] = {
+                cwd: saveFolderSlots[this.emulator].cwd,
+                subPath: await getSavePaths(command.metadata.romPath, saveFolderSlots.dolphin.cwd, command.metadata.emulatorDir),
+                shared: false
+            };
         });
     }
 }

@@ -106,7 +106,18 @@ export class TaskQueue
     {
         this.queue = [];
         this.activeQueue.forEach(c => c.abort());
-        return Promise.all(this.activeQueue.map(c => c.promise.promise.catch(e => console.error("Error During Task Queue Closing"))));
+        return Promise.all(this.activeQueue.map(c =>
+        {
+            return new Promise(resolve =>
+            {
+                c.promise.promise.then(resolve).catch(e =>
+                {
+                    console.error("Error During Task Queue Closing");
+                    resolve(false);
+                });
+                setTimeout(resolve, 5000);
+            });
+        }));
     }
 }
 

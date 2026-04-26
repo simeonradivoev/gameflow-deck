@@ -18,7 +18,6 @@ import EventEmitter from "node:events";
 import { appPath } from "../utils";
 import { DrizzleSqliteDODatabase } from "drizzle-orm/durable-sqlite";
 import { ensureDir } from "fs-extra";
-import { getStoreFolder } from "./store/services/gamesService";
 import { PluginManager } from "./plugins/plugin-manager";
 import registerPlugins from "./plugins/register-plugins";
 import controls from './controls/controls';
@@ -43,6 +42,8 @@ export let events: EventEmitter<AppEventMap>;
 let controlsHandle: { cleanup: () => void; };
 let api: { cleanup: () => Promise<void>; };
 let bunServer: { cleanup: () => Promise<void>; } | undefined;
+let cleannedUp = false;
+let cleaningUp = false;
 
 export async function load ()
 {
@@ -56,6 +57,7 @@ export async function load ()
             windowSize: { width: 1280, height: 800 }
         }),
     });
+
     customEmulators = new Conf<Record<string, string>>({
         projectName: projectPackage.name,
         projectSuffix: 'bun',
@@ -96,6 +98,9 @@ export async function load ()
 
 export async function cleanup ()
 {
+    if (cleaningUp) throw new Error("Already Cleaning Up");
+    cleaningUp = true;
+    if (cleannedUp) throw new Error("Already Cleaned Up. Skipping");
     console.log("Cleaning Up");
     await bunServer?.cleanup();
     await api.cleanup();
@@ -108,6 +113,7 @@ export async function cleanup ()
     config._closeWatcher();
     customEmulators._closeWatcher();
     console.log("Finished Cleaning Up");
+    cleannedUp = true;
 }
 
 export async function reloadDatabase ()

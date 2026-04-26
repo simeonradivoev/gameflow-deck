@@ -6,24 +6,42 @@ import { dlopen, FFIType, Pointer } from "bun:ffi";
 import { SERVER_URL } from '@/shared/constants';
 import { host } from './utils/host';
 import fs from 'node:fs/promises';
+import { ensureDir } from 'fs-extra';
+import path from 'node:path';
 
-export default async function init (events: EventEmitter, forceBrowser: boolean, params: BrowserParams)
+export default async function init (events: EventEmitter, params: BrowserParams)
 {
-    if (forceBrowser)
+    if (params.forceNWJS)
     {
-        await runBrowser(events, params);
-    } else
-    {
-        try
-        {
-            await runWebview(events, params);
-        } catch (error)
-        {
-            await runBrowser(events, params);
-        }
+        await runNW(events, params);
+        return;
     }
 
-    await runNW(events, params);
+    if (params.forceBrowser)
+    {
+        await runBrowser(events, params);
+        return;
+    }
+
+    try
+    {
+        await runWebview(events, params);
+        return;
+    } catch (error)
+    {
+        console.error(error);
+    }
+
+    try
+    {
+        await runNW(events, params);
+        return;
+    } catch (error)
+    {
+        console.error(error);
+    }
+
+    await runBrowser(events, params);
 }
 
 function focusWindow (id: Pointer)
@@ -51,17 +69,50 @@ function focusWindow (id: Pointer)
 
 async function runNW (events: EventEmitter, params: BrowserParams)
 {
-    const path = process.platform === 'win32' ? './bin/nw/nw.exe' : './bin/nw/nw';
-    if (!await fs.exists(path))
+    let nwPath = process.platform === 'win32' ? './bin/nw/nw.exe' : './bin/nw/nw';
+    if (process.env.FLATPAK_BUILD)
     {
-        console.error("Could not find NW.js");
-        return;
+        nwPath = '/app/bin/nw/nw';
+    } else if (process.env.APPIMAGE)
+    {
+        nwPath = path.join(process.env.APPDIR ?? '', 'usr', 'bin', 'nw');
+    }
+
+    if (!await fs.exists(nwPath))
+    {
+        throw new Error(`Could not find NW.js at ${nwPath}`);
     }
     const signalHandler = new AbortController();
+    const chromeArgs: string[] = ['--in-process-gpu'];
+    if (params.isSteamDeckGameMode)
+    {
+        chromeArgs.push('--kiosk');
+        chromeArgs.push(`--window-size=1280,800`);
+    } else if (params.windowSize)
+    {
+        chromeArgs.push(`--window-size=${params.windowSize.width},${params.windowSize.height}`);
+    }
+    if (params.windowPosition) chromeArgs.push(`--window-position=${params.windowPosition.x},${params.windowPosition.y}`);
     events.on('exitapp', () => signalHandler.abort());
-    const args = [path, `--url=${SERVER_URL(host)}`];
-    if (process.env.NODE_ENV !== 'development') args.push("--disable-devtools");
-    const nwProcess = Bun.spawn(args, { signal: signalHandler.signal });
+    const configPath = path.join(params.configPath, 'nw-user-data');
+    await ensureDir(configPath);
+    console.log("NW config path at:", configPath);
+    const args = [nwPath, `--url=${SERVER_URL(host)}`, `--user-data-dir=${configPath}`];
+
+    if (process.env.NODE_ENV !== 'development')
+    {
+        console.log("Disabling devtools");
+        args.push("--disable-devtools");
+    }
+    console.log("Launching NW.js");
+    const nwProcess = Bun.spawn(args, {
+        signal: signalHandler.signal,
+        killSignal: "SIGKILL",
+        env: {
+            ...process.env,
+            NW_PRE_ARGS: chromeArgs.join(" ")
+        }
+    });
     await nwProcess.exited;
 }
 
@@ -131,8 +182,7 @@ async function runBrowser (events: EventEmitter, params: BrowserParams)
     const browserParams = await BuildParams(params);
     if (!browserParams)
     {
-        console.error("Could not find valid browser");
-        return Promise.resolve();
+        throw new Error("Could not find valid browser");
     }
     else if (!Bun.env.HEADLESS)
     {

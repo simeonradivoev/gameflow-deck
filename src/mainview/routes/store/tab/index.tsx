@@ -15,6 +15,7 @@ import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { useQuery } from '@tanstack/react-query';
 import { autoEmulatorsQuery } from '@queries/settings';
 import { storeEmulatorsRecommendedQuery, storeFeaturedGamesQuery } from '@queries/store';
+import ImageWithFallbacks from '@/mainview/components/ImageWithFallbacks';
 
 export const Route = createFileRoute('/store/tab/')({
     component: RouteComponent
@@ -64,16 +65,7 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
             {game ? <div key={selectedGame} className="flex transition-all duration-500 flex-col rounded-3xl overflow-hidden shadow-black/5 shadow-md w-full ring-6 ring-base-200 border-6 border-base-200">
                 <div className='flex relative h-full overflow-hidden'>
                     <div className='absolute w-full h-full z-0  bg-base-200'>
-                        <picture key={selectedGame}
-                            className='w-full h-full object-cover transition-all duration-500 ease-out scale-110 opacity-0 light:data-loaded:opacity-40 dark:data-loaded:opacity-80 z-0'
-                            onLoad={(e) =>
-                            {
-                                e.currentTarget.dataset.loaded = "true";
-                                e.currentTarget.classList.toggle('scale-110', false);
-                            }}
-                        >
-                            {previewUrls?.map((u, i) => <source key={i} src={u.href} />)}
-                        </picture>
+                        <ImageWithFallbacks src={previewUrls ?? []} className='w-full h-full transition-all duration-500 ease-out scale-110 opacity-0 light:data-loaded:opacity-40 dark:data-loaded:opacity-40 z-0 object-cover' />
                     </div>
                     <div key={selectedGame} className='flex sm:flex-wrap md:flex-nowrap grow z-1 p-8 opacity-0 animate-fade-in h-full items-end gap-4 sm:justify-end md:justify-between'>
                         <div className='flex gap-4 max-h-full z-1 grow md:h-full'>
@@ -89,7 +81,7 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
                             </div>
                         </div>
 
-                        <Button onAction={() => storeContext.showDetails('game', game.id.source, game.id.id, focusKey)} className='px-6 py-3 text-2xl! z-1 gap-2 focusable focusable-primary' id={'play-featured-btn'}> <Search /> Details</Button>
+                        <Button onAction={() => storeContext.showDetails('game', game.id.source, game.id.id, focusKey)} className='px-6 py-3 text-2xl! z-1 gap-2 drop-shadow-md focusable focusable-primary' id={'play-featured-btn'}> <Search /> Details</Button>
                     </div>
                 </div>
             </div> : <div className='skeleton w-full rounded-3xl grow sm:h-64 z-15' />}

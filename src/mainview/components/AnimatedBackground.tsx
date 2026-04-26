@@ -25,17 +25,13 @@ export function AnimatedBackground (data: {
         )
         : useState<string | undefined>();
 
-    const [lastBackgroundUrl, setLastBackgroundUrl] = useState<string | undefined>(undefined);
     const backgroundElementRef = useRef<HTMLDivElement>(null);
 
     useEffect(() =>
     {
-        const lastBg = backgroundUrl;
-
         if (data.backgroundUrl != backgroundUrl)
         {
             setBackgroundUrl(data.backgroundUrl ? (data.backgroundUrl instanceof URL ? data.backgroundUrl.href : data.backgroundUrl) : undefined);
-            setLastBackgroundUrl(lastBg);
         }
     }, [data.backgroundUrl]);
 
@@ -44,13 +40,6 @@ export function AnimatedBackground (data: {
     {
         finalBackgroundUrl = backgroundUrl ? new URL(backgroundUrl) : undefined;
     } catch { }
-
-    let finalLastBackgroundUrl: URL | undefined;
-    try
-    {
-        finalLastBackgroundUrl = lastBackgroundUrl ? new URL(lastBackgroundUrl) : undefined;
-    } catch { }
-
     const blur = useLocalSetting('backgroundBlur');
     if (blur)
     {
@@ -59,13 +48,7 @@ export function AnimatedBackground (data: {
             finalBackgroundUrl?.searchParams.set('blur', String(24));
         }
 
-        if (!finalLastBackgroundUrl?.searchParams.has('blur'))
-        {
-            finalLastBackgroundUrl?.searchParams.set('blur', String(24));
-        }
-
         finalBackgroundUrl?.searchParams.set('height', String(320));
-        finalLastBackgroundUrl?.searchParams.set('height', String(320));
     }
 
     useEffect(() =>
@@ -90,8 +73,6 @@ export function AnimatedBackground (data: {
 
     function handleSetBackground (url: string)
     {
-
-        setLastBackgroundUrl(backgroundUrl);
         setBackgroundUrl(url);
     }
 
@@ -120,7 +101,7 @@ export function AnimatedBackground (data: {
             >
                 {!data.scrolling && <div className='absolute top-0 left-0 right-0 bottom-0 overflow-hidden'>
                     <div className='absolute w-full h-full bg-radial from-base-100 to-base-300 -z-5'></div>
-                    {blur && finalLastBackgroundUrl && <img className='absolute w-full h-full object-cover object-center -z-4 mask-radial-at-center mask-radial-from-0 mask-radial-farthest-corner' src={finalLastBackgroundUrl.href}></img>}
+
                     {finalBackgroundUrl ? <img
                         decoding="async"
                         key={finalBackgroundUrl?.href}

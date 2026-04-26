@@ -30,3 +30,4 @@ gameflow-deck.code-workspace
 src/tests/mock-roms/db.sqlite
 src/tests/mock-config
 bin
+.config/flatpak/repo

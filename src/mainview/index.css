@@ -7,7 +7,7 @@
 
 @theme {
     --breakpoint-sm: 0px;
-    --breakpoint-md: 1280px;
+    --breakpoint-md: 1024px;
     --page-scroll-bg: transparent;
     --animation-size: 1;
 
