@@ -1,7 +1,8 @@
 import { EmulatorPackageType, GameListFilterType } from '@/shared/constants';
-import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook } from 'tapable';
+import { CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSlots } from '@/shared/types';
+import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, Hook } from 'tapable';
 
-export class GameHooks
+export default class GameHooks
 {
     buildLaunchCommands = new AsyncSeriesBailHook<[ctx: {
         source: string | null;
@@ -121,7 +122,7 @@ export class GameHooks
     postPlay = new AsyncSeriesHook<[ctx: {
         source: string,
         id: string;
-        saveFolderSlots?: Record<string, { cwd: string; }>;
+        saveFolderSlots?: SaveSlots;
         changedSaveFiles: { subPath: string, cwd: string; }[],
         validChangedSaveFiles: Record<string, SaveFileChange>,
         command: CommandEntry;

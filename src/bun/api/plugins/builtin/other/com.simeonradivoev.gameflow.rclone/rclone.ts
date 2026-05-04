@@ -1,13 +1,13 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
 import desc from './package.json';
 import { config, db, events } from "@/bun/api/app";
-import path, { dirname } from 'node:path';
+import path from 'node:path';
 import unzip from 'unzip-stream';
-import { chmodSync, ensureDir } from "fs-extra";
+import { ensureDir } from "fs-extra";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import fs from 'node:fs/promises';
-import { randomUUIDv7, sleep } from "bun";
+import { randomUUIDv7 } from "bun";
 import z from "zod";
 import { createInterface } from "node:readline";
 import { getLocalGameMatch } from "@/bun/api/games/services/utils";

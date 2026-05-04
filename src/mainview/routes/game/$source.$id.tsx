@@ -6,8 +6,8 @@ import { Calendar, Folder, Gamepad2, Image, Info, TriangleAlert, Trophy } from "
 import { HeaderUI, StickyHeaderUI } from "../../components/Header";
 import { AnimatedBackground } from "../../components/AnimatedBackground";
 import { useQuery } from "@tanstack/react-query";
-import Shortcuts, { FloatingShortcuts } from "../../components/Shortcuts";
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
+import { FloatingShortcuts } from "../../components/Shortcuts";
+import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Screenshots from "@/mainview/components/Screenshots";
 import { HandleGoBack, scrollIntoViewHandler, useOnNavigateBack } from "@/mainview/scripts/utils";
 import { FilterUI } from "@/mainview/components/Filters";
@@ -23,8 +23,8 @@ import { GamesSection } from "@/mainview/components/store/GamesSection";
 import Details from "@/mainview/components/game/Details";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import SelectMenu from "@/mainview/components/SelectMenu";
-import { en } from "zod/v4/locales";
 import { IGDBIcon } from "@/mainview/scripts/brandIcons";
+import { FrontEndGameTypeDetailed } from "@/shared/types";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>

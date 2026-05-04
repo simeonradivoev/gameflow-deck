@@ -1,10 +1,10 @@
-import { GameflowHooks } from "../hooks/app";
-import { PluginDescriptionType, PluginLoadingContextType, PluginType } from "../../types/typesc.schema";
+import GameflowHooks from "../hooks/app";
+import { PluginDescriptionType, PluginLoadingContextType, PluginType } from "../../types/types.schema";
 import { config } from "../app";
 import Conf from "conf";
 import projectPackage from '~/package.json';
 import z from "zod";
-import { EventEmitter } from "node:stream";
+import { PluginSourceType } from "@/shared/types";
 
 export const pluginZodRegistry = z.registry<{
     requiresRestart?: boolean;

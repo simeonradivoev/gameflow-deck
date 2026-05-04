@@ -3,6 +3,7 @@ import { rommApi, settingsApi } from "../clientApi";
 import { InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
+import { FrontEndId } from "@/shared/types";
 
 export const allGamesQuery = (filter?: GameListFilterType) => queryOptions({
     queryKey: ['games', filter ?? 'all'],
@@ -180,7 +181,7 @@ export const gameInvalidationQuery = (source: string, id: string): QueryFilters 
 export const validateSourceQuery = (source: string, id: string) => queryOptions({
     queryKey: ["game", source, id, "validate"], queryFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).validate.get();
+        const { data } = await rommApi.api.romm.game({ source })({ id }).validate.get();
         return data;
     }
 });
@@ -237,7 +238,7 @@ export const gameFiltersQuery = (filters: { source?: string; }) => queryOptions(
     }
 });
 
-export const gameLookup = (search: string | undefined) => queryOptions({
+export const gameLookupQuery = (search: string | undefined) => queryOptions({
     queryKey: ['game', 'lookup', search],
     queryFn: async () =>
     {

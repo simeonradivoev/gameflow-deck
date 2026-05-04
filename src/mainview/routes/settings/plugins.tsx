@@ -1,11 +1,11 @@
 import { AutoFocus } from '@/mainview/components/AutoFocus';
 import { pluginCategoryIcons, pluginCategoryPriorities } from '@/mainview/components/Constants';
-import { Button } from '@/mainview/components/options/Button';
 import { OptionInput } from '@/mainview/components/options/OptionInput';
 import { OptionSpace } from '@/mainview/components/options/OptionSpace';
 import { RoundButton } from '@/mainview/components/RoundButton';
 import { enablePluginMutation, getAllPluginsQuery } from '@/mainview/scripts/queries/plugins';
 import { GamePadButtonCode, Shortcut } from '@/mainview/scripts/shortcuts';
+import { FrontendPlugin } from '@/shared/types';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';

@@ -7,7 +7,6 @@ import
 {
   Outlet,
   createFileRoute,
-  useMatch,
   useMatchRoute,
   useRouter,
   useRouterState,
@@ -29,8 +28,8 @@ import { JSX, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 import z from "zod";
 import { SettingsSchema } from "../../../shared/constants";
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
-import Shortcuts, { FloatingShortcuts } from "@/mainview/components/Shortcuts";
+import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
+import Shortcuts from "@/mainview/components/Shortcuts";
 import { HandleGoBack } from "@/mainview/scripts/utils";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import { oneShot } from "@/mainview/scripts/audio/audio";

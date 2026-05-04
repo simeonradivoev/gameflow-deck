@@ -12,6 +12,7 @@ import { simulateProgress } from "@/bun/utils";
 import { path7za } from "7zip-bin";
 import { getEmulatorDownload, getEmulatorPath } from "../store/services/emulatorsService";
 import { $ } from "bun";
+import { EmulatorSourceEntryType } from "@/shared/types";
 
 type EmulatorDownloadStates = "download" | "extract";
 

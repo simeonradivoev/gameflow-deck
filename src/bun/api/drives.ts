@@ -1,6 +1,7 @@
 import si from 'systeminformation';
 import fs from 'node:fs';
 import os from "node:os";
+import { Drive } from '@/shared/types';
 
 async function getAccess (path: string)
 {

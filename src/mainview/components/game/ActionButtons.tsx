@@ -10,6 +10,7 @@ import ActionButton from "./ActionButton";
 import { useLocalStorage } from "usehooks-ts";
 import FocusTooltip from "../FocusTooltip";
 import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
+import { FrontEndGameTypeDetailed } from "@/shared/types";
 
 function AchievementsInfo (data: { game: FrontEndGameTypeDetailed; } & InteractParams)
 {

@@ -1,9 +1,10 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
 import desc from './package.json';
 import secrets from "@/bun/api/secrets";
 import PQueue from 'p-queue';
 import * as igdb from '@phalcode/ts-igdb-client';
 import { checkLoginAndRefreshTwitch } from "@/bun/api/auth";
+import { GameLookup } from "@/shared/types";
 
 export default class IgdbIntegration implements PluginType
 {
@@ -80,7 +81,7 @@ export default class IgdbIntegration implements PluginType
                             first_release_date: g.first_release_date ? g.first_release_date * 1000 : undefined,
                             average_rating: g.rating ?? undefined,
                             keywords: g.keywords?.map(k => k.name!) ?? [],
-                            igdb_id: g.id,
+                            igdb_id: g.id ?? undefined,
                             platforms: g.platforms?.map(p => ({ id: p.id!, name: p.abbreviation, displayName: p.name!, slug: p.slug! })) ?? [],
                             slug: g.slug
                         };

@@ -1,16 +1,8 @@
-import { EmulatorDownloadInfoType, EmulatorPackageType } from "@/shared/constants";
+import { EmulatorPostInstallContext } from "@/bun/types/types";
+import { DownloadFileEntry, EmulatorSourceEntryType, EmulatorSystem } from "@/shared/types";
 import { AsyncSeriesBailHook, AsyncSeriesHook } from "tapable";
 
-interface EmulatorPostInstallContext
-{
-    emulator: string;
-    emulatorPackage?: EmulatorPackageType;
-    path: string;
-    update: boolean;
-    info: EmulatorDownloadInfoType;
-}
-
-export class EmulatorHooks
+export default class EmulatorHooks
 {
     fetchBiosDownload = new AsyncSeriesBailHook<[ctx: {
         emulator: string;

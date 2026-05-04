@@ -1,12 +1,13 @@
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
 import { DefaultRommStaleTime, GameListFilterType, RPC_URL } from "@shared/constants";
 import { useNavigate } from "@tanstack/react-router";
 import { HardDrive } from "lucide-react";
-import { JSX, Ref, useContext, useEffect } from "react";
+import { JSX, useContext } from "react";
 import { useLocalSetting } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import { allGamesQuery } from "@queries/romm";
+import { FrontEndGameType, FrontEndId } from "@/shared/types";
 
 export interface GameListParams extends FocusParams
 {
@@ -95,7 +96,7 @@ export function GameList (data: GameListParams)
 
                             const previewUrls = g.path_covers.map(c =>
                             {
-                                const url = new URL(`${RPC_URL(__HOST__)}${c}`);
+                                const url = c.startsWith("http") ? new URL(c) : new URL(`${RPC_URL(__HOST__)}${c}`);
                                 url.searchParams.delete('ts');
                                 return url;
                             });
@@ -103,7 +104,7 @@ export function GameList (data: GameListParams)
                             let platformUrl: URL | undefined = undefined;
                             if (g.path_platform_cover)
                             {
-                                platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
+                                platformUrl = g.path_platform_cover.startsWith("http") ? new URL(g.path_platform_cover) : new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
                                 platformUrl.searchParams.set('width', "64");
                             }
 

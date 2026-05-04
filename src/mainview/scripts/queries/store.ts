@@ -1,6 +1,7 @@
 import { infiniteQueryOptions, mutationOptions, queryOptions } from "@tanstack/react-query";
 import { rommApi, storeApi } from "../clientApi";
 import { GameListFilterType } from "@/shared/constants";
+import { FrontEndGameType } from "@/shared/types";
 
 
 export const storeEmulatorsQuery = (filters: { search?: string; }) => queryOptions({

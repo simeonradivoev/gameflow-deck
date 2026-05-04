@@ -86,7 +86,6 @@ function List (data: {
 function NewFolderInput (data: { id: string, name: string | undefined, setName: (name: string) => void; className?: string; })
 {
     const inputRef = useRef<HTMLInputElement>(null);
-    const { control } = useActiveControl();
     const { ref, focused, focusSelf } = useFocusable({
         focusKey: data.id,
         onEnterPress: () => inputRef.current?.focus(),

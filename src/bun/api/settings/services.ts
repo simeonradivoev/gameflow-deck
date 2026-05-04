@@ -7,6 +7,7 @@ import { cores } from '../emulatorjs/emulatorjs';
 import { SERVER_URL } from '@/shared/constants';
 import { host } from '@/bun/utils/host';
 import { findEmulatorPluginIntegration } from '../store/services/emulatorsService';
+import { EmulatorSourceEntryType, FrontEndEmulator } from '@/shared/types';
 
 /** 
  * Get emulators based on local games. Only the ones we probably need. 

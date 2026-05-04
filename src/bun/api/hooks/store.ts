@@ -1,7 +1,8 @@
 import { EmulatorDownloadInfoType } from "@/shared/constants";
+import { FrontEndEmulator, FrontEndEmulatorDetailed, FrontEndGameTypeDetailed } from "@/shared/types";
 import { AsyncSeriesBailHook, AsyncSeriesHook } from "tapable";
 
-export class StoreHooks
+export default class StoreHooks
 {
     fetchFeaturedGames = new AsyncSeriesHook<[ctx: { games: FrontEndGameTypeDetailed[]; }]>(['ctx']);
     fetchEmulators = new AsyncSeriesHook<[ctx: { emulators: FrontEndEmulator[]; search?: string; }]>(['ctx']);

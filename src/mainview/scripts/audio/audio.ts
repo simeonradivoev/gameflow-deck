@@ -37,10 +37,6 @@ function sinRandom ()
     return Math.sin(new Date().getMilliseconds() / 1000 * Math.PI);
 }
 
-function cosRandom ()
-{
-    return Math.sin(new Date().getMilliseconds() / 1000 * Math.PI);
-}
 
 function random ()
 {

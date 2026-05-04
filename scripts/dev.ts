@@ -22,7 +22,7 @@ function spawnServer ()
         stderr: 'inherit',
         stdin: 'inherit',
         signal: abortController.signal,
-        killSignal: 'SIGUSR1',
+        killSignal: 'SIGKILL',
         ipc (message, subprocess, handle)
         {
             if (message === 'focus')
@@ -91,7 +91,7 @@ if (!process.env.HEADLESS)
     spawnBrowser()?.then(async e =>
     {
         if (!server) return;
-        server.kill("SIGUSR1");
+        abortController.abort();
         await server.exited;
     });
 }

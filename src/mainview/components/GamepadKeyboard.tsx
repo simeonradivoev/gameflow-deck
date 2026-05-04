@@ -40,7 +40,7 @@ const KeyElements: Record<string, JSX.Element> = {
     '←': <ArrowLeft />,
     '→': <ArrowRight />,
 };
-const DZ = 0.22, TH = 0.85, NS = 'http://www.w3.org/2000/svg';
+const DZ = 0.22;
 
 function ang (x: number, y: number)
 {

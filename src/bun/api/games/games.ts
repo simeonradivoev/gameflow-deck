@@ -22,6 +22,7 @@ import { LaunchGameJob } from "../jobs/launch-game-job";
 import { cores } from "../emulatorjs/emulatorjs";
 import { findEmulatorPluginIntegration } from "../store/services/emulatorsService";
 import { ImportJob } from "../jobs/import-job";
+import { EmulatorSourceEntryType, EmulatorSystem, FrontEndFilterLists, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailedEmulator, FrontEndGameTypeWithIds, FrontEndId, GameLookup } from "@/shared/types";
 
 // A custom jimp that supports webp
 const Jimp = createJimp({

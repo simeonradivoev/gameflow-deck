@@ -5,7 +5,6 @@ import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { CheckIcon, X } from "lucide-react";
 import { oneShot } from "@/mainview/scripts/audio/audio";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
-import useActiveControl from "@/mainview/scripts/gamepads";
 
 export function OptionInput (data: {
     name: string;
@@ -35,7 +34,6 @@ export function OptionInput (data: {
         }
         oneShot('click');
     };
-    const { control } = useActiveControl();
     const [inputFocused, setInputFocused] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { ref, focusKey } = useFocusable({

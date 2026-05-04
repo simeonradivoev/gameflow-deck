@@ -1,13 +1,13 @@
 import z from "zod";
 import { IJob, JobContext } from "../task-queue";
-import { ActiveGameSchema, ActiveGameType } from "@/bun/types/typesc.schema";
+import { ActiveGameSchema, ActiveGameType } from "@/bun/types/types.schema";
 import { config, db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq } from "drizzle-orm";
 import { spawn } from 'node:child_process';
-import fs from "node:fs/promises";
 import { updateLocalLastPlayed } from "../games/services/statusService";
 import { getErrorMessage } from "@/bun/utils";
+import { CommandEntry, FrontEndId, SaveSlots } from "@/shared/types";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, string>
 {

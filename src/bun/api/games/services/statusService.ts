@@ -10,6 +10,7 @@ import { LaunchGameJob } from "../../jobs/launch-game-job";
 import * as appSchema from "@schema/app";
 import { DownloadSourceSchema, RPC_URL } from "@/shared/constants";
 import { host } from "@/bun/utils/host";
+import { CommandEntry, FrontEndId, GameLookup, GameStatusType, LocalDownloadFileEntry } from "@/shared/types";
 
 export class CommandSearchError extends Error
 {

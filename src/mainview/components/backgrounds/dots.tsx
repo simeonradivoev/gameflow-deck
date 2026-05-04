@@ -1,4 +1,4 @@
-import { Ref, RefObject } from 'react';
+import { Ref } from 'react';
 import './dots.css';
 
 export default function DotsLoading (data: { ref?: Ref<any>; })

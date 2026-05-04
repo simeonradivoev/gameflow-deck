@@ -4,6 +4,7 @@ import * as app from '@/bun/api/app';
 import fs from 'node:fs/promises';
 import path from "node:path";
 import AdmZip from "adm-zip";
+import { DownloadInfo } from '@/shared/types';
 
 describe("Download Tests", () =>
 {
@@ -50,17 +51,18 @@ describe("Download Tests", () =>
     {
         const mock = jest.fn();
         app.plugins.hooks.games.fetchDownloads.tap('test2', mock);
-        app.plugins.hooks.games.fetchDownloads.tapPromise('test', async ({ source, id }) =>
+        app.plugins.hooks.games.fetchDownloads.tapPromise('test', async ({ source }) =>
         {
             if (source !== 'test') return;
-            return {
+            return [{
                 files: [{ file_name: "Test File.txt", file_path: 'test/files', url: new URL(`${server.url.href}download/single_file.txt`) }],
                 coverUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/SIPI_Jelly_Beans_4.1.07.tiff/lossy-page1-256px-SIPI_Jelly_Beans_4.1.07.tiff.jpg",
                 name: "Test Game",
                 screenshotUrls: [],
                 system_slug: 'ps2',
-                source_id: "0"
-            };
+                source_id: "0",
+                id: 'test'
+            } satisfies DownloadInfo];
         });
 
         const res = await client.rommApi.api.romm.game({ source: 'test' })({ id: '0' }).install.post();
@@ -77,7 +79,7 @@ describe("Download Tests", () =>
         app.plugins.hooks.games.fetchDownloads.tapPromise('test', async ({ source, id }) =>
         {
             if (source !== 'test') return;
-            return {
+            return [{
                 files: [
                     { file_name: "Test File.txt", file_path: 'test/files', url: new URL(`${server.url.href}download/single_file.txt`) },
                     { file_name: "Test File 2.txt", file_path: 'test/files', url: new URL(`${server.url.href}download/single_file_2.txt`) }],
@@ -85,8 +87,9 @@ describe("Download Tests", () =>
                 name: "Test Game",
                 screenshotUrls: [],
                 system_slug: 'ps2',
-                source_id: "0"
-            };
+                source_id: "0",
+                id: 'test'
+            } satisfies DownloadInfo];
         });
 
         const res = await client.rommApi.api.romm.game({ source: 'test' })({ id: '0' }).install.post();
@@ -104,7 +107,7 @@ describe("Download Tests", () =>
         app.plugins.hooks.games.fetchDownloads.tapPromise('test', async ({ source, id }) =>
         {
             if (source !== 'test') return;
-            return {
+            return [{
                 files: [
                     { file_name: "zip_file_with_single_file.zip", file_path: 'test', url: new URL(`${server.url.href}download/zip_file_with_single_file.zip`) }],
                 coverUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/SIPI_Jelly_Beans_4.1.07.tiff/lossy-page1-256px-SIPI_Jelly_Beans_4.1.07.tiff.jpg",
@@ -112,8 +115,9 @@ describe("Download Tests", () =>
                 screenshotUrls: [],
                 system_slug: 'ps2',
                 source_id: "0",
-                extract_path: 'test/files'
-            };
+                extract_path: 'test/files',
+                id: 'test'
+            } satisfies DownloadInfo];
         });
 
         const res = await client.rommApi.api.romm.game({ source: 'test' })({ id: '0' }).install.post();

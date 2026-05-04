@@ -1,12 +1,11 @@
 import { AnimatedBackground } from '@/mainview/components/AnimatedBackground';
 import { createFileRoute, useBlocker, useRouter } from '@tanstack/react-router';
 import DotsLoading from '../components/backgrounds/dots';
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from '../scripts/shortcuts';
+import { GamePadButtonCode, useShortcuts } from '../scripts/shortcuts';
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import Shortcuts, { FloatingShortcuts } from '../components/Shortcuts';
+import { FloatingShortcuts } from '../components/Shortcuts';
 import { useJobStatus } from '../scripts/utils';
-import { useEffect, useRef } from 'react';
-import { rommApi } from '../scripts/clientApi';
+import { useRef } from 'react';
 
 export const Route = createFileRoute('/launcher/$source/$id')({
   component: RouteComponent,

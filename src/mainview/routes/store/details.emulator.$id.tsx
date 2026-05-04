@@ -5,12 +5,12 @@ import
     FocusContext,
 } from "@noriginmedia/norigin-spatial-navigation";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from "@/mainview/scripts/shortcuts";
-import Shortcuts, { FloatingShortcuts } from "@/mainview/components/Shortcuts";
+import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
+import { FloatingShortcuts } from "@/mainview/components/Shortcuts";
 import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { rommApi, systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
-import { ChevronDown, CircleFadingArrowUp, CloudUpload, Cpu, Download, Fullscreen, Gamepad2, Info, Monitor, Puzzle, Save, Settings, Settings2, Terminal, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
+import { ChevronDown, CircleFadingArrowUp, CloudUpload, Cpu, Download, Fullscreen, Gamepad2, Info, Monitor, Puzzle, Settings, Settings2, Terminal, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
 import { ContextList, DialogEntry, useContextDialog } from "@/mainview/components/ContextDialog";
 import { RPC_URL } from "@/shared/constants";
 import Screenshots from "@/mainview/components/Screenshots";
@@ -29,6 +29,7 @@ import FocusTooltip from "@/mainview/components/FocusTooltip";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import { FilterUI } from "@/mainview/components/Filters";
 import Markdown from "react-markdown";
+import { FrontEndEmulatorDetailed } from "@/shared/types";
 
 export const Route = createFileRoute('/store/details/emulator/$id')({
     component: RouteComponent,

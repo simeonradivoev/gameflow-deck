@@ -5,7 +5,7 @@ import z from 'zod';
 import { RefObject, useEffect, useRef, useState } from 'react';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { ButtonStyle } from '../components/options/Button';
-import { CloudDownload, DoorOpen, RefreshCw, Save, Undo } from 'lucide-react';
+import { CloudDownload, DoorOpen, RefreshCw, Undo } from 'lucide-react';
 import { GamePadButtonCode, useShortcuts } from '../scripts/shortcuts';
 import { FloatingShortcuts } from '../components/Shortcuts';
 import { useEventListener } from 'usehooks-ts';

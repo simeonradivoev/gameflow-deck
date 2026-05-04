@@ -8,6 +8,7 @@ import { RPC_URL } from "@shared/constants";
 import { hashFile } from "@/bun/utils";
 import { host } from "@/bun/utils/host";
 import * as emulatorSchema from "@schema/emulators";
+import { DownloadFileEntry, FrontEndGameType, FrontEndGameTypeDetailed, GameLookup, LocalDownloadFileEntry, LocalGameMetadata } from "@/shared/types";
 
 export async function calculateSize (installPath: string | null)
 {

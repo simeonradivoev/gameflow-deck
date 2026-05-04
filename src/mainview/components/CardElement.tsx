@@ -1,4 +1,4 @@
-import { FocusDetails, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
+import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";

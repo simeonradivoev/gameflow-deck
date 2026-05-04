@@ -11,6 +11,7 @@ import ActionButton from "./ActionButton";
 import { useRouter } from "@tanstack/react-router";
 import { DownloadSourceType } from "@/shared/constants";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
+import { CommandEntry, FrontEndGameTypeDetailed } from "@/shared/types";
 
 export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {

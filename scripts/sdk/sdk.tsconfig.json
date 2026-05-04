@@ -1,0 +1,47 @@
+{
+   "compilerOptions": {
+      "target": "ES2022",
+      "useDefineForClassFields": true,
+      "lib": [
+         "ES2024"
+      ],
+      "module": "ESNext",
+      "skipLibCheck": true,
+      "moduleResolution": "bundler",
+      "allowImportingTsExtensions": true,
+      "isolatedModules": true,
+      "moduleDetection": "force",
+      "emitDeclarationOnly": true,
+      "declaration": true,
+      "strict": true,
+      "outDir": "../../dist-sdk/sdk",
+      "types": [
+         "node"
+      ],
+      "paths": {
+         "@/*": [
+            "../../src/*"
+         ],
+         "~/*": [
+            "../../*"
+         ],
+         "@shared/*": [
+            "../../src/shared/*"
+         ],
+         "@clients/*": [
+            "../../src/clients/*"
+         ],
+         "@schema/*": [
+            "../../src/bun/api/schema/*"
+         ],
+         "@queries/*": [
+            "../../src/mainview/scripts/queries/*"
+         ]
+      }
+   },
+   "include": [
+      "../../src/bun/api/hooks",
+      "../../src/bun/types",
+      "../../src/shared"
+   ]
+}

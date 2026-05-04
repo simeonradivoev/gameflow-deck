@@ -1,5 +1,6 @@
 import Elysia, { status } from "elysia";
 import { plugins } from "../app";
+import { FrontEndCollection } from "@/shared/types";
 
 export default new Elysia()
     .get('/collections', async () =>

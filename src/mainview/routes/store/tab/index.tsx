@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { autoEmulatorsQuery } from '@queries/settings';
 import { storeEmulatorsRecommendedQuery, storeFeaturedGamesQuery } from '@queries/store';
 import ImageWithFallbacks from '@/mainview/components/ImageWithFallbacks';
+import { FrontEndGameTypeDetailed } from '@/shared/types';
 
 export const Route = createFileRoute('/store/tab/')({
     component: RouteComponent

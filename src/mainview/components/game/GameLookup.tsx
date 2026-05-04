@@ -1,4 +1,4 @@
-import { gameLookup } from "@/mainview/scripts/queries/romm";
+
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Search } from "lucide-react";
@@ -6,6 +6,8 @@ import HeaderSearchField from "../HeaderSearchField";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { scrollIntoViewHandler } from "@/mainview/scripts/utils";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
+import { FrontEndId, GameLookup } from "@/shared/types";
+import { gameLookupQuery } from "@/mainview/scripts/queries/romm";
 
 function Result (data: {
     match: GameLookup;
@@ -54,7 +56,7 @@ function SearchField (data: { setSearch: (search: string | undefined) => void; s
     </div>;
 }
 
-export default function GameLookup (data: {
+export default function GameLookupElement (data: {
     search: string | undefined,
     setSearch: (search: string | undefined) => void,
     onSelect: (match: GameLookup) => void;
@@ -62,7 +64,7 @@ export default function GameLookup (data: {
     selected?: FrontEndId;
 })
 {
-    const { data: lookups, isFetching } = useQuery({ ...gameLookup(data.search), staleTime: 1000 * 60 * 60 });
+    const { data: lookups, isFetching } = useQuery({ ...gameLookupQuery(data.search), staleTime: 1000 * 60 * 60 });
 
     return <div>
         <SearchField setSearch={data.setSearch} search={data.search} />

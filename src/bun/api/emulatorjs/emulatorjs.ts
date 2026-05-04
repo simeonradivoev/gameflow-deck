@@ -5,6 +5,7 @@ import z from "zod";
 import path from 'node:path';
 import { config, events, plugins } from "../app";
 import { getLocalGame, updateLocalLastPlayed } from "../games/services/statusService";
+import { SaveFileChange } from "@/shared/types";
 
 // TODO: use the retroarch cores based on ES-DE
 export const cores: Record<string, string> = {
@@ -83,7 +84,7 @@ export default new Elysia({ prefix: '/emulatorjs' })
         await plugins.hooks.games.postPlay.promise({
             source,
             id,
-            saveFolderPath: path.join(config.get('downloadPath'), "saves", "EMULATORJS"),
+            saveFolderSlots: { 'emulatorjs': { cwd: path.join(config.get('downloadPath'), "saves", "EMULATORJS") } },
             gameInfo: { platformSlug: localGame?.platform.slug },
             changedSaveFiles: [],
             validChangedSaveFiles: changedSaveFiles,

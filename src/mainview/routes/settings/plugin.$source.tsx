@@ -5,15 +5,15 @@ import { OptionDropdown } from '@/mainview/components/options/OptionDropdown';
 import { OptionInput } from '@/mainview/components/options/OptionInput';
 import { OptionSpace } from '@/mainview/components/options/OptionSpace';
 import { RoundButton } from '@/mainview/components/RoundButton';
-import { getAllPluginsQuery, getPluginDetailsQuery } from '@/mainview/scripts/queries/plugins';
+import { getPluginDetailsQuery } from '@/mainview/scripts/queries/plugins';
 import { getPluginActionsQuery, getPluginSettingQuery, getPluginSettingsDefinitionQuery, pluginActionMutation, setPluginSettingMutation } from '@/mainview/scripts/queries/settings';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { scrollIntoViewHandler } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { JSONSchema7 } from 'json-schema';
-import { ArrowLeft, CirclePlay, Play, Settings2, SettingsIcon } from 'lucide-react';
+import { ArrowLeft, CirclePlay, Settings2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 export const Route = createFileRoute('/settings/plugin/$source')({
     component: RouteComponent,

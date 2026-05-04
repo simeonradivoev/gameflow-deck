@@ -1,4 +1,4 @@
-import { PluginContextType, PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
 import desc from './package.json';
 import path from 'node:path';
 import { config } from "@/bun/api/app";

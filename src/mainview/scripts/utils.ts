@@ -1,5 +1,5 @@
 import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
-import { DependencyList, FocusEventHandler, RefObject, useEffect, useRef, useState } from "react";
+import { DependencyList, RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { jobsApi, systemApi } from "./clientApi";
 import { JobsAPIType } from "@/bun/api/rpc";

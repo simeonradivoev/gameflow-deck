@@ -1,5 +1,4 @@
 import audioSprite from 'audiosprite';
-import { $ } from 'bun';
 import path from 'node:path';
 import { soundMap } from '../src/mainview/scripts/audio/audioConstants';
 

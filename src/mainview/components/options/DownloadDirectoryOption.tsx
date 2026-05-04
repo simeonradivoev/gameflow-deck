@@ -3,6 +3,7 @@ import { PathSettingsOptionBase, PathSettingsOptionParams } from "./PathSettings
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { changeDownloadsMutation, getSettingQuery } from "@queries/settings";
 import { SettingsType } from "@/shared/constants";
+import { KeysWithValueAssignableTo } from "@/shared/types";
 
 export default function DownloadDirectoryOption (data: PathSettingsOptionParams & { id: KeysWithValueAssignableTo<SettingsType, string>; })
 {

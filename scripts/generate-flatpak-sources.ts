@@ -1,6 +1,5 @@
 import { $ } from "bun";
 
-const lockfile = Bun.argv[2] ?? "bun.lockb";
 const output = Bun.argv[3] ?? ".config/flatpak/sources.gen.json";
 
 const text = await $`bun ./bun.lockb --hash: 0000000000000000-0000000000000000-0000000000000000-0000000000000000`.text();

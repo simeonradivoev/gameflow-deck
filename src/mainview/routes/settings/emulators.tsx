@@ -20,6 +20,7 @@ import { FOCUS_KEYS } from '@/mainview/scripts/types';
 import { scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from '@/mainview/scripts/utils';
 import { SettingsOption } from '@/mainview/components/options/SettingsOption';
 import { SettingsDropdown } from '@/mainview/components/options/SettingsDropdown';
+import { FrontEndEmulator } from '@/shared/types';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,

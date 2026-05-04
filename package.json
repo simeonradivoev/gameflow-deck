@@ -1,6 +1,11 @@
 {
   "name": "com.simeonradivoev.gameflow-deck",
   "displayName": "Gameflow",
+  "author": {
+    "name": "Simeon Radivoev",
+    "email": "work@simeonradivoev.com",
+    "url": "https://simeonradivoev.com"
+  },
   "version": "1.4.0",
   "description": "Game Launcher",
   "icon": "./src/mainview/assets/icon.svg",
@@ -43,7 +48,8 @@
     "download:chromium": "bun scripts/download-chromium.ts --out=./bin/chromium",
     "download:nwjs": "bun scripts/download-nw.ts",
     "build:audiosprites": "bun ./scripts/generate-audio-sprites.ts",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "build:sdk": "bun ./scripts/build-sdk.ts"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",

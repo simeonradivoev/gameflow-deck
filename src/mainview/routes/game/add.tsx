@@ -1,6 +1,6 @@
 import { AutoFocus } from '@/mainview/components/AutoFocus';
 import { OptionElement } from '@/mainview/components/ContextDialog';
-import GameLookup from '@/mainview/components/game/GameLookup';
+import GameLookupElement from '@/mainview/components/game/GameLookup';
 import { StickyHeaderUI } from '@/mainview/components/Header';
 import LoadingScreen from '@/mainview/components/LoadingScreen';
 import { Button } from '@/mainview/components/options/Button';
@@ -208,7 +208,7 @@ function Lookup ()
         navigate({ to: '/game/add', search: { ...state, selectedGame: { source, id }, platformId: undefined, search, step: 2 }, replace: true });
         oneShot('openGeneric');
     };
-    return <GameLookup
+    return <GameLookupElement
         showPlatforms
         selected={state.selectedGame}
         search={search}

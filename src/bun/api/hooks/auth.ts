@@ -1,6 +1,7 @@
+import { DownloadFileEntry } from "@/shared/types";
 import { AsyncSeriesHook } from "tapable";
 
-export class AuthHooks
+export default class AuthHooks
 {
     loginComplete = new AsyncSeriesHook<[ctx: {
         service: string;

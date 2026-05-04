@@ -1,4 +1,3 @@
-import { JSX } from 'react';
 import * as z from 'zod';
 
 export const LOGIN_PORT = 5196;
@@ -16,15 +15,6 @@ export const settingRegistry = z.registry<{
 }>();
 
 export const DefaultRommStaleTime = 60 * 1000; // A minute
-export interface GameMeta extends FocusParams
-{
-    id: string,
-    onSelect?: () => void,
-    title: string,
-    subtitle?: string | JSX.Element,
-    previewUrls?: string | URL[];
-    previewSrcset?: string;
-};
 
 export const SettingsSchema = z.object({
     rommAddress: z.url().optional(),

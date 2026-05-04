@@ -1,4 +1,4 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
 import desc from './package.json';
 import path, { } from 'node:path';
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
@@ -12,6 +12,7 @@ import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
 import UpdateStoreJob from "@/bun/api/jobs/update-store";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import { buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
+import { DownloadInfo, FrontEndEmulatorDetailed, FrontEndGameTypeWithIds } from "@/shared/types";
 
 export default class RommIntegration implements PluginType
 {

@@ -19,7 +19,6 @@ function SearchInput (data: {
     onSubmit: (search: string | undefined) => void;
 } & FocusParams)
 {
-    const { control } = useActiveControl();
     const { ref, focusKey } = useFocusable({
         onBlur: () => inputRef.current?.blur(),
         onFocus: (l, p, d) =>

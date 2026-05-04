@@ -1,8 +1,7 @@
 import z from "zod";
-import { GameflowHooks } from "../api/hooks/app";
+import GameflowHooks from "../api/hooks/app";
 import Conf from "conf";
 import { $ZodRegistry } from "zod/v4/core";
-import EventEmitter from "node:events";
 
 export const PluginContextSchema = z.object({
     hooks: z.instanceof(GameflowHooks)
@@ -22,6 +21,7 @@ export const PluginDescriptionSchema = z.object({
     icon: z.url().optional(),
     keywords: z.array(z.string()).optional(),
     category: z.string().default("other"),
+    main: z.string(),
     canDisable: z.boolean().default(true).optional()
 });
 

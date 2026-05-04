@@ -12,6 +12,7 @@ import { shuffleInPlace } from "@/bun/utils";
 import mustache from "mustache";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import fs from "node:fs/promises";
+import { CommandEntry, EmulatorSourceEntryType, EmulatorSystem, FrontEndEmulator, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, SaveFileChange } from "@/shared/types";
 
 export async function getStoreGames (gamesManifest: any[], filter?: { limit?: number; offset?: number; })
 {

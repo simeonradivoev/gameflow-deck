@@ -6,6 +6,7 @@ import { config, taskQueue } from '../../app';
 import { LaunchGameJob } from '../../jobs/launch-game-job';
 import { getStoreEmulatorPackage } from '../../store/services/gamesService';
 import { getOrCachedScoopPackage } from '../../store/services/emulatorsService';
+import { CommandEntry, EmulatorSourceEntryType, FrontEndId } from '@/shared/types';
 
 export async function launchCommand (validCommand: CommandEntry, id: FrontEndId, source?: string, sourceId?: string)
 {

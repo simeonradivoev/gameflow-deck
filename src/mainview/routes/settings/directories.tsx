@@ -13,6 +13,7 @@ import { systemApi } from '@/mainview/scripts/clientApi';
 import useActiveControl from '@/mainview/scripts/gamepads';
 import { changeDownloadsMutation } from '@queries/settings';
 import { downloadDrivesQuery } from '@/mainview/scripts/queries/system';
+import { DownloadsDrive } from '@/shared/types';
 
 export const Route = createFileRoute('/settings/directories')({
   component: RouteComponent,

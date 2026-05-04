@@ -11,11 +11,15 @@ import igdb from './builtin/sources/com.simeonradivoev.gameflow.igdb/package.jso
 import store from './builtin/sources/com.simeonradivoev.gameflow.store/package.json';
 import es from './builtin/launchers/com.simeonradivoev.gameflow.es/package.json';
 import rclone from './builtin/other/com.simeonradivoev.gameflow.rclone/package.json';
-import { PluginDescriptionSchema, PluginDescriptionType, PluginSchema } from "@/bun/types/typesc.schema";
+import { PluginDescriptionSchema, PluginDescriptionType, PluginSchema } from "@/bun/types/types.schema";
+import path from 'node:path';
+import { getStoreRootFolder } from "../store/services/gamesService";
+
+type PluginEntry = PluginDescriptionType & { load: () => Promise<any>; };
 
 export default async function register (pluginManager: PluginManager)
 {
-    const plugins: (PluginDescriptionType & { main: string; load: () => Promise<any>; })[] = [
+    const plugins: PluginEntry[] = [
         { ...pcsx2, load: () => import('./builtin/emulators/com.simeonradivoev.gameflow.pcsx2/pcsx2') },
         { ...ppsspp, load: () => import('./builtin/emulators/com.simeonradivoev.gameflow.ppsspp/ppsspp') },
         { ...dolphin, load: () => import('./builtin/emulators/com.simeonradivoev.gameflow.dolphin/dolphin') },
@@ -28,6 +32,33 @@ export default async function register (pluginManager: PluginManager)
         { ...store, load: () => import('./builtin/sources/com.simeonradivoev.gameflow.store/store') },
         { ...rclone, load: () => import('./builtin/other/com.simeonradivoev.gameflow.rclone/rclone') },
     ];
+
+    const storePackageFile = path.join(getStoreRootFolder(), 'package.json');
+    const storePackage = await Bun.file(storePackageFile).json();
+
+    if (storePackage.dependencies)
+    {
+        const storePlugins = await Promise.all(Object.keys(storePackage.dependencies).map(async p =>
+        {
+            const pluginPath = path.join(getStoreRootFolder(), 'node_modules', p);
+            const pluginPackageFile = Bun.file(path.join(pluginPath, 'package.json'));
+            if (await pluginPackageFile.exists())
+            {
+                const pluginPackage = await PluginDescriptionSchema.safeParseAsync(await pluginPackageFile.json());
+                if (pluginPackage.success)
+                {
+                    const mainPath = path.join(pluginPath, pluginPackage.data.main);
+                    if (await Bun.file(mainPath).exists())
+                    {
+                        const entry: PluginEntry = { ...pluginPackage.data, load: () => import(mainPath) };
+                        return entry;
+                    }
+                }
+            }
+        }));
+
+        plugins.push(...storePlugins.filter(p => !!p));
+    }
 
     await Promise.all(plugins.filter(p =>
     {

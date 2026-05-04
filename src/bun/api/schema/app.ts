@@ -1,3 +1,4 @@
+import { LocalGameMetadata } from "@/shared/types";
 import { sql, relations } from "drizzle-orm";
 import { integer, text, sqliteTable, blob } from "drizzle-orm/sqlite-core";
 

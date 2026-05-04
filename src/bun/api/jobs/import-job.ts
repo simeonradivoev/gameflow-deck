@@ -4,6 +4,7 @@ import { createLocalGame } from "../games/services/utils";
 import { IJob, JobContext } from "../task-queue";
 import * as schema from "@schema/app";
 import z from "zod";
+import { GameLookup } from "@/shared/types";
 
 export class ImportJob implements IJob<z.infer<typeof ImportJob.dataSchema>, string>
 {

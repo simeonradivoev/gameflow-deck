@@ -6,6 +6,7 @@ import { useFocusable, FocusContext } from "@noriginmedia/norigin-spatial-naviga
 import { ArrowDownAz, ClockArrowDown, CalendarArrowDown, Rocket, HardDrive, SortDesc, User, Drama, FunnelX, Store } from "lucide-react";
 import { sourceIconMap } from "./Constants";
 import { useContextDialog, ContextList, DialogEntry } from "./ContextDialog";
+import { FrontEndFilterLists } from "@/shared/types";
 
 function FilterButton (data: {
     id: string,

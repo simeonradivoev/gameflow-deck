@@ -3,6 +3,7 @@ import { plugins, taskQueue } from "../app";
 import z from "zod";
 import { toggleElementInConfig } from "@/bun/utils";
 import ReloadPluginsJob from "../jobs/reload-plugins-job";
+import { FrontendPlugin } from "@/shared/types";
 
 export default new Elysia({ prefix: '/plugins' })
     .get('/', async () =>

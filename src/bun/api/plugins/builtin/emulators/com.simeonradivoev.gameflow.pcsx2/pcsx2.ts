@@ -1,11 +1,12 @@
 
 import { config } from "@/bun/api/app";
-import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
 import defaultConfig from './PCSX2.ini' with { type: 'file' };
 import path from 'node:path';
 import { ensureDir } from "fs-extra";
 import desc from './package.json';
 import ini from 'ini';
+import { EmulatorCapabilities } from "@/shared/types";
 
 export default class PCSX2Integration implements PluginType
 {

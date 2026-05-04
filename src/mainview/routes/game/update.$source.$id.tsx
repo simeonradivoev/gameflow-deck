@@ -1,6 +1,6 @@
 import { AnimatedBackground } from '@/mainview/components/AnimatedBackground';
 import { AutoFocus } from '@/mainview/components/AutoFocus';
-import GameLookup from '@/mainview/components/game/GameLookup';
+import GameLookupElement from '@/mainview/components/game/GameLookup';
 import { StickyHeaderUI } from '@/mainview/components/Header';
 import { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { customUpdateMutation, gameInvalidationQuery, gameQuery } from '@/mainview/scripts/queries/romm';
@@ -20,7 +20,6 @@ function RouteComponent ()
 {
     const { source, id } = Route.useParams();
     const [search, setSearch] = useState<string | undefined>(undefined);
-    const navigate = useNavigate();
 
     const router = useRouter();
     const { data: game } = useQuery(gameQuery(source, id));
@@ -47,7 +46,7 @@ function RouteComponent ()
         <FocusContext value={focusKey}>
             <div className='flex flex-col z-10 overflow-y-scroll'>
                 <StickyHeaderUI ref={ref} />
-                <GameLookup
+                <GameLookupElement
                     search={search}
                     setSearch={setSearch}
                     onSelect={l =>

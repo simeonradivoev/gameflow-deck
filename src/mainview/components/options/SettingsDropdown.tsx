@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { OptionSpace } from "./OptionSpace";
 import { getSettingQuery, setSettingMutation } from "@queries/settings";
 import { OptionDropdown } from "./OptionDropdown";
+import { KeysWithValueAssignableTo } from "@/shared/types";
 
 export function SettingsDropdown (data: {
     label: string;

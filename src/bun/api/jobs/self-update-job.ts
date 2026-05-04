@@ -1,7 +1,6 @@
 import z from "zod";
 import { IJob, JobContext } from "../task-queue";
-import { cleanPromise, cleanup, events, plugins } from "../app";
-import fs from 'fs/promises';
+import { events } from "../app";
 import { Downloader } from "@/bun/utils/downloader";
 import path from 'node:path';
 import os from "node:os";

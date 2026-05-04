@@ -4,6 +4,7 @@ import { FileQuestion, HardDrive, Store } from "lucide-react";
 import { JSX } from "react";
 import { FOCUS_KEYS } from "../scripts/types";
 import { useRouter } from "@tanstack/react-router";
+import { FrontEndGameType, FrontEndId } from "@/shared/types";
 
 export default function FrontEndGameCard (data: { index: number, game: FrontEndGameType; showSource?: boolean; } & FocusParams & InteractParams)
 {

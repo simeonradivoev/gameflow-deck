@@ -1,6 +1,15 @@
-declare type EmulatorSourceType = 'custom' | 'store' | 'registry' | 'system' | 'static' | 'embedded';
+export interface SaveFileChange
+{
+    subPath: string | string[];
+    isGlob?: true;
+    cwd: string;
+    shared: boolean;
+    fixedSize?: boolean;
+}
 
-declare interface EmulatorSourceEntryType
+export type EmulatorSourceType = 'custom' | 'store' | 'registry' | 'system' | 'static' | 'embedded';
+
+export interface EmulatorSourceEntryType
 {
     binPath: string;
     rootPath?: string;
@@ -8,7 +17,7 @@ declare interface EmulatorSourceEntryType
     exists: boolean;
 }
 
-declare interface FrontEndEmulator
+export interface FrontEndEmulator
 {
     name: string;
     source: string;
@@ -20,16 +29,16 @@ declare interface FrontEndEmulator
     integrations: EmulatorSupport[];
 }
 
-declare interface EmulatorSystem { id: string, romm_slug?: string, name: string, iconUrl: string; }
+export interface EmulatorSystem { id: string, romm_slug?: string, name: string, iconUrl: string; }
 
-declare interface FrontEndEmulatorDetailedDownload
+export interface FrontEndEmulatorDetailedDownload
 {
     name: string;
     type: string | undefined;
     version?: string;
 }
 
-declare interface FrontEndEmulatorDetailed extends FrontEndEmulator
+export interface FrontEndEmulatorDetailed extends FrontEndEmulator
 {
     homepage: string;
     description: string;
@@ -41,7 +50,7 @@ declare interface FrontEndEmulatorDetailed extends FrontEndEmulator
     storeDownloadInfo?: { hasUpdate: boolean; version?: string, type: string; description?: string; };
 }
 
-declare interface FrontEndGameTypeDetailedAchievement
+export interface FrontEndGameTypeDetailedAchievement
 {
     id: string;
     title: string;
@@ -53,12 +62,12 @@ declare interface FrontEndGameTypeDetailedAchievement
     type?: string;
 }
 
-declare interface FrontEndGameTypeDetailedEmulator extends FrontEndEmulator
+export interface FrontEndGameTypeDetailedEmulator extends FrontEndEmulator
 {
 
 }
 
-declare interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameTypeWithIds, "metadata">
+export interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameTypeWithIds, "metadata">
 {
     summary: string | null;
     fs_size_bytes: number | null;
@@ -76,7 +85,7 @@ declare interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameTypeWithI
     };
 };
 
-declare interface Drive
+export interface Drive
 {
     parent: string | null;
     device: string;
@@ -91,7 +100,7 @@ declare interface Drive
     hasReadAccess: boolean;
 }
 
-declare interface DownloadsDrive
+export interface DownloadsDrive
 {
     device: string;
     label: string;
@@ -103,7 +112,7 @@ declare interface DownloadsDrive
     unusableReason: 'not_enough_space' | 'already_used' | null;
 }
 
-declare interface FrontendNotification
+export interface FrontendNotification
 {
     title?: string;
     message: string;
@@ -112,7 +121,7 @@ declare interface FrontendNotification
     duration?: number;
 }
 
-declare interface CommandEntry
+export interface CommandEntry
 {
     /** The ID of the command. Could be just an index or a string */
     id: string | number;
@@ -141,14 +150,14 @@ declare interface CommandEntry
     };
 }
 
-declare interface FrontEndId
+export interface FrontEndId
 {
     id: string;
     source: string;
 }
 
 // Stuff stored in the local sqlite metadata field
-declare interface LocalGameMetadata
+export interface LocalGameMetadata
 {
     genres?: string[],
     companies?: string[],
@@ -159,7 +168,7 @@ declare interface LocalGameMetadata
     average_rating?: number;
 }
 
-declare interface FrontEndPlatformType
+export interface FrontEndPlatformType
 {
     id: FrontEndId;
     slug: string;
@@ -172,13 +181,13 @@ declare interface FrontEndPlatformType
     paths_screenshots: string[];
 }
 
-declare interface FrontEndGameTypeWithIds extends FrontEndGameType
+export interface FrontEndGameTypeWithIds extends FrontEndGameType
 {
     igdb_id: number | null;
     ra_id: number | null;
 }
 
-declare interface FrontEndFilterSets
+export interface FrontEndFilterSets
 {
     age_ratings: Set<string>,
     player_counts: Set<string>,
@@ -187,7 +196,7 @@ declare interface FrontEndFilterSets
     genres: Set<string>;
 }
 
-declare interface FrontEndFilterLists
+export interface FrontEndFilterLists
 {
     age_ratings: string[],
     player_counts: string[],
@@ -196,12 +205,12 @@ declare interface FrontEndFilterLists
     genres: string[];
 }
 
-declare interface FrontEndGameMetadata
+export interface FrontEndGameMetadata
 {
     first_release_date: Date | null;
 }
 
-declare interface FrontEndGameMetadataDetailed extends FrontEndGameMetadata
+export interface FrontEndGameMetadataDetailed extends FrontEndGameMetadata
 {
     genres: string[],
     companies: string[],
@@ -211,7 +220,7 @@ declare interface FrontEndGameMetadataDetailed extends FrontEndGameMetadata
     average_rating: number | null;
 }
 
-declare interface FrontEndGameType
+export interface FrontEndGameType
 {
     platform_display_name: string | null,
     path_platform_cover: string | null;
@@ -230,9 +239,9 @@ declare interface FrontEndGameType
     paths_screenshots: string[];
 };
 
-declare type GameStatusType = 'installed' | 'missing-emulator' | 'error' | 'install' | 'download' | 'extract' | 'playing' | 'queued';
+export type GameStatusType = 'installed' | 'missing-emulator' | 'error' | 'install' | 'download' | 'extract' | 'playing' | 'queued';
 
-declare interface GameInstallProgress
+export interface GameInstallProgress
 {
     progress?: number;
     status?: GameStatusType;
@@ -241,10 +250,10 @@ declare interface GameInstallProgress
     error?: any;
 }
 
-declare type JobStatus = 'completed' | 'error' | 'running' | 'queued' | 'aborted';
-declare type GameInstallProgressEvent = 'refresh';
+export type JobStatus = 'completed' | 'error' | 'running' | 'queued' | 'aborted';
+export type GameInstallProgressEvent = 'refresh';
 
-declare interface FrontendPlugin
+export interface FrontendPlugin
 {
     name: string;
     displayName: string;
@@ -258,13 +267,13 @@ declare interface FrontendPlugin
     icon?: string;
 }
 
-declare type PluginSourceType = "builtin";
+export type PluginSourceType = "builtin";
 
-declare type KeysWithValueAssignableTo<T, Value> = {
+export type KeysWithValueAssignableTo<T, Value> = {
     [K in keyof T]: Exclude<T[K], undefined> extends Value ? K : never;
 }[keyof T];
 
-declare interface DownloadInfo
+export interface DownloadInfo
 {
     id: string;
     screenshotUrls: string[];
@@ -289,7 +298,7 @@ declare interface DownloadInfo
     version_system?: string;
 }
 
-declare interface DownloadPlatform
+export interface DownloadPlatform
 {
     id: string;
     source: string;
@@ -303,7 +312,7 @@ declare interface DownloadPlatform
     family_name?: string;
 }
 
-declare interface DownloadFileEntry
+export interface DownloadFileEntry
 {
     url: URL;
     /** The path of the file, excluding the name */
@@ -316,7 +325,7 @@ declare interface DownloadFileEntry
     size?: number;
 }
 
-declare interface LocalDownloadFileEntry extends DownloadFileEntry
+export interface LocalDownloadFileEntry extends DownloadFileEntry
 {
     /** Exists on the file system */
     exists: boolean;
@@ -324,7 +333,7 @@ declare interface LocalDownloadFileEntry extends DownloadFileEntry
     matches: boolean;
 }
 
-declare interface FrontEndCollection
+export interface FrontEndCollection
 {
     id: FrontEndId;
     name: string;
@@ -333,9 +342,9 @@ declare interface FrontEndCollection
     game_count: number;
 }
 
-declare type EmulatorCapabilities = "saves" | "fullscreen" | "resolution" | "batch" | "states" | "config";
+export type EmulatorCapabilities = "saves" | "fullscreen" | "resolution" | "batch" | "states" | "config";
 
-declare interface EmulatorSupport
+export interface EmulatorSupport
 {
     id: string;
     source?: EmulatorSourceEntryType;
@@ -343,7 +352,7 @@ declare interface EmulatorSupport
     capabilities?: EmulatorCapabilities[];
 }
 
-declare interface GameLookup
+export interface GameLookup
 {
     source: string;
     id: string;
@@ -369,19 +378,10 @@ declare interface GameLookup
     }[];
 }
 
-declare interface AutoSaveChange
+export interface AutoSaveChange
 {
     subPath: string;
     cwd: string;
 }
 
-declare interface SaveFileChange
-{
-    subPath: string | string[];
-    isGlob?: true;
-    cwd: string;
-    shared: boolean;
-    fixedSize?: boolean;
-}
-
-declare type SaveSlots = Record<string, { cwd: string; }>;
+export type SaveSlots = Record<string, { cwd: string; }>;

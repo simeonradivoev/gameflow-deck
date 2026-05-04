@@ -2,6 +2,7 @@ import { EmulatorDownloadInfoType, EmulatorPackageType, ScoopPackageSchema } fro
 import { config, plugins } from "../../app";
 import { getOrCached, getOrCachedGithubRelease } from "../../cache";
 import path from "node:path";
+import { EmulatorSourceEntryType, EmulatorSupport } from "@/shared/types";
 
 export function findEmulatorPluginIntegration (name: string, validSources: (EmulatorSourceEntryType | undefined)[]): EmulatorSupport[]
 {

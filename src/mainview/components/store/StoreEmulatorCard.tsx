@@ -10,6 +10,7 @@ import { JSX } from "react";
 import { oneShot } from "@/mainview/scripts/audio/audio";
 import { useQuery } from "@tanstack/react-query";
 import { getUpdateInfoForEmulator } from "@/mainview/scripts/queries/store";
+import { FrontEndEmulator } from "@/shared/types";
 
 export const emulatorStatusIcons: Record<string, JSX.Element> = {
     store: <Store />,

@@ -10,6 +10,7 @@ import FrontEndGameCard from "../FrontEndGameCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import Carousel from "../Carousel";
 import { twMerge } from "tailwind-merge";
+import { FrontEndGameType, FrontEndId } from "@/shared/types";
 
 export function GamesSection (data: {
     games?: FrontEndGameType[];

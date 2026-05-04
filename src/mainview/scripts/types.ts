@@ -1,3 +1,5 @@
+import { FrontEndId } from "@/shared/types";
+
 export const FOCUS_KEYS = {
     NAV_CATEGORIES: "NAV_CATEGORIES",
     NAV_CATEGORY: (cat: string) => `NAV_CAT_${cat}`,

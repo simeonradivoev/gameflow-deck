@@ -1,5 +1,4 @@
 import { join } from "path";
-import { platform } from "os";
 
 const SECTOR_SIZE = 0x800;
 const MAGIC = "MICROSOFT*XBOX*MEDIA";

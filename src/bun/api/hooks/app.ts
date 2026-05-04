@@ -1,9 +1,9 @@
-import { AuthHooks } from "./auth";
-import { EmulatorHooks } from "./emulators";
-import { GameHooks } from "./games";
-import { StoreHooks } from "./store";
+import AuthHooks from "./auth";
+import EmulatorHooks from "./emulators";
+import GameHooks from "./games";
+import StoreHooks from "./store";
 
-export class GameflowHooks
+export default class GameflowHooks
 {
     games = new GameHooks();
     emulators = new EmulatorHooks();

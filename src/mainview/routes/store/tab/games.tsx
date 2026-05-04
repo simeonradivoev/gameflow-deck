@@ -1,13 +1,11 @@
 import { FocusContext, getCurrentFocusKey, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Gamepad2, HardDrive } from 'lucide-react';
-import { JSX, useContext, useEffect, useState } from 'react';
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import FrontEndGameCard from '@/mainview/components/FrontEndGameCard';
+import { JSX, useEffect } from 'react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import LoadMoreButton from '@/mainview/components/LoadMoreButton';
 import { storeGamesInfiniteQuery } from '@queries/store';
-import { StoreContext } from '@/mainview/scripts/contexts';
 import InvalidStoreError from '@/mainview/components/store/InvalidStoreError';
 import { CardList, GameMetaExtra } from '@/mainview/components/CardList';
 import { GameListFilterType, RPC_URL } from '@/shared/constants';
@@ -16,6 +14,7 @@ import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
 import SideFilters from '@/mainview/components/SideFilters';
 import { gameFiltersQuery } from '@/mainview/scripts/queries/romm';
+import { FrontEndGameType } from '@/shared/types';
 
 export const Route = createFileRoute('/store/tab/games')({
   component: RouteComponent,
@@ -91,7 +90,7 @@ function RouteComponent ()
 
               const previewUrls = g.path_covers.map(c =>
               {
-                const url = new URL(`${RPC_URL(__HOST__)}${c}`);
+                const url = c.startsWith('http') ? new URL(c) : new URL(`${RPC_URL(__HOST__)}${c}`);
                 url.searchParams.delete('ts');
                 return url;
               });

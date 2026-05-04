@@ -2,7 +2,7 @@ import { settingsApi } from "./clientApi";
 
 const handleResize = () =>
 {
-  settingsApi.api.settings({ id: 'windowSize' }).post({ value: { width: window.innerWidth, height: window.innerHeight } });
+  settingsApi.api.settings.local({ id: 'windowSize' }).post({ value: { width: window.innerWidth, height: window.innerHeight } });
 };
 window.addEventListener("resize", handleResize);
 import.meta.hot?.dispose(() => window.removeEventListener('resize', handleResize));
@@ -13,7 +13,7 @@ var screenPositionInternal: NodeJS.Timeout = setInterval(() =>
 {
   if (lastWindowPosX != window.screenX || lastWindowPosY != window.screenY)
   {
-    settingsApi.api.settings({ id: 'windowPosition' }).post({ value: { x: window.screenX, y: window.screenY } });
+    settingsApi.api.settings.local({ id: 'windowPosition' }).post({ value: { x: window.screenX, y: window.screenY } });
   }
 
   lastWindowPosX = window.screenX;

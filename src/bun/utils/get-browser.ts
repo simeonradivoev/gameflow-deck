@@ -35,18 +35,6 @@ interface BrowserResult
   source: GetBrowserSource;
 }
 
-const PLATFORM_MAP: Record<string, string> = {
-  linux: "linux",
-  win32: "windows",
-  darwin: 'macos'
-};
-
-const ARCH_MAP: Record<string, Record<string, string>> = {
-  linux: { x64: "x86_64", arm64: "arm64" },
-  darwin: { x64: "x86_64", arm64: "arm64" },
-  win32: { x64: "x64", arm64: "arm64" },
-};
-
 /** The expected binary path per platform after extraction */
 async function getBundledBinaryPath (outDir: string, version: string, platform: string, arch: string): Promise<string | undefined>
 {

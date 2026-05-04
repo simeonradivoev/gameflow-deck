@@ -3,7 +3,6 @@ import
   FocusContext,
   useFocusable,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { GameMeta } from "../../shared/constants";
 import CardElement, { GameCardParams } from "./CardElement";
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";

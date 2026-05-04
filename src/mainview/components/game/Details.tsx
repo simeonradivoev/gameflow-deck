@@ -2,7 +2,7 @@ import { scrollIntoViewHandler } from "@/mainview/scripts/utils";
 import { RPC_URL } from "@/shared/constants";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { Clock, CloudBackup, CloudDownload, CloudUpload, Gamepad2, HardDrive, Store, TriangleAlert } from "lucide-react";
+import { Clock, CloudDownload, CloudUpload, HardDrive, TriangleAlert } from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import { JSX } from "react";
 import ActionButtons from "./ActionButtons";
@@ -10,6 +10,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { useQuery } from "@tanstack/react-query";
 import { validateSourceQuery } from "@/mainview/scripts/queries/romm";
 import { sourceIconMap } from "../Constants";
+import { FrontEndGameTypeDetailed } from "@/shared/types";
 
 export function DetailElement (data: { icon: JSX.Element; tooltip?: string | null, children?: any | any[]; })
 {

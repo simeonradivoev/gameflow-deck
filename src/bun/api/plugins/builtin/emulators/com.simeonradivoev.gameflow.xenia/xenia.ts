@@ -1,6 +1,6 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
+import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
 import desc from './package.json';
-import { GameflowHooks } from "@/bun/api/hooks/app";
+import GameflowHooks from "@/bun/api/hooks/app";
 import { config } from "@/bun/api/app";
 import path from "node:path";
 import { ensureDir } from "fs-extra";

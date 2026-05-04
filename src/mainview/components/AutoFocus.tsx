@@ -1,5 +1,5 @@
 import { doesFocusableExist, FocusDetails, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect } from "react";
 
 export function AutoFocus (data: {
     parentKey?: string;

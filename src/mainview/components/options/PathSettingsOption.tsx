@@ -9,6 +9,7 @@ import { ContextDialog } from "../ContextDialog";
 import FilePicker from "../FilePicker";
 import { setFocus } from "@noriginmedia/norigin-spatial-navigation";
 import { getSettingQuery, setSettingMutation } from "@queries/settings";
+import { KeysWithValueAssignableTo } from "@/shared/types";
 
 export interface PathSettingsOptionParams
 {

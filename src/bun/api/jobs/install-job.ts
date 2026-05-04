@@ -11,6 +11,7 @@ import { ensureDir, move } from "fs-extra";
 import { path7za } from "7zip-bin";
 import StreamZip from 'node-stream-zip';
 import { which } from "bun";
+import { DownloadInfo } from "@/shared/types";
 
 interface JobConfig
 {

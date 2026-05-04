@@ -1,6 +1,6 @@
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Home, TriangleAlert } from "lucide-react";
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
+import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import { FloatingShortcuts } from "./Shortcuts";
 import { Button } from "./options/Button";
 import { useEffect } from "react";

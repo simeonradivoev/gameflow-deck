@@ -3,23 +3,17 @@ import
 {
   Gamepad2,
   Settings,
-  MessageSquare,
-  Image,
   Search,
   Power,
   OctagonAlert,
   Maximize,
   Store,
   LayoutGrid,
-  PlusCircle,
-  Plus,
   LucideIcon,
 } from "lucide-react";
 import
 {
   createFileRoute,
-  PathParamOptions,
-  ToPathOption,
   useRouter,
 } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,11 +35,11 @@ import SaveScroll from "../components/SaveScroll";
 import { ErrorBoundary, useErrorBoundary } from "react-error-boundary";
 import { twMerge } from "tailwind-merge";
 import { PlatformsList } from "../components/PlatformsList";
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from "../scripts/shortcuts";
+import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import z from "zod";
 import CollectionList from "../components/CollectionList";
 import { zodValidator } from '@tanstack/zod-adapter';
-import { mobileCheck, scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from "../scripts/utils";
+import { mobileCheck, scrollIntoViewHandler, useDragScroll } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import Carousel from "../components/Carousel";
 import { closeMutation } from "@queries/system";
@@ -56,6 +50,7 @@ import SelectMenu from "../components/SelectMenu";
 import HeaderSearchField from "../components/HeaderSearchField";
 import CardElement from "../components/CardElement";
 import { Router } from "..";
+import { FrontEndId } from "@/shared/types";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,

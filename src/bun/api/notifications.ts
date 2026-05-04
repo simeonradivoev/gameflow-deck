@@ -1,4 +1,5 @@
 
+import { FrontendNotification } from '@/shared/types';
 import { events } from './app';
 
 export default function buildNotificationsStream ()

@@ -46,6 +46,16 @@ declare interface FocusEventDetails
   focusKeyChanged: boolean;
 }
 
+declare interface GameMeta extends FocusParams
+{
+  id: string,
+  onSelect?: () => void,
+  title: string,
+  subtitle?: any,
+  previewUrls?: string | URL[];
+  previewSrcset?: string;
+};
+
 declare interface FocusParams
 {
   onFocus?: (focusKey: string, node: HTMLElement, details: Record<string, any>) => void;

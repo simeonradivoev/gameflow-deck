@@ -24,6 +24,7 @@ import controls from './controls/controls';
 import { RunAPIServer } from "./rpc";
 import { RunBunServer } from "../server";
 import ReloadPluginsJob from "./jobs/reload-plugins-job";
+import { AppEventMap } from "../types/types";
 
 export let config: Conf<SettingsType>;
 export let customEmulators: Conf<Record<string, string>>;

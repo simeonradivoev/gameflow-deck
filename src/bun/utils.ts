@@ -4,6 +4,7 @@ import { SettingsType } from '@/shared/constants';
 import { config } from './api/app';
 import fs from 'node:fs/promises';
 import packageDef from '~/package.json';
+import { KeysWithValueAssignableTo } from '@/shared/types';
 
 export function checkRunning (pid: number)
 {

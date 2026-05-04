@@ -13,6 +13,7 @@ import { getStoreFolder } from "./services/gamesService";
 import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
 import { BiosDownloadJob } from "../jobs/bios-download-job";
 import { findEmulatorPluginIntegration, getEmulatorPath } from "./services/emulatorsService";
+import { EmulatorSourceEntryType, FrontEndEmulator, FrontEndGameTypeDetailed } from "@/shared/types";
 
 export const store = new Elysia({ prefix: '/api/store' })
     .get('/emulators', async ({ query }) =>

@@ -16,6 +16,7 @@ import ReloadPluginsJob from "./jobs/reload-plugins-job";
 import { semver } from "bun";
 import { getOrCachedGithubRelease } from "./cache";
 import SelfUpdateJob from "./jobs/self-update-job";
+import { DownloadsDrive } from "@/shared/types";
 
 async function checkUpdate (force?: boolean)
 {

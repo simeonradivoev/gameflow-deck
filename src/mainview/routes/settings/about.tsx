@@ -1,11 +1,9 @@
 
 
-import { Button } from '@/mainview/components/options/Button';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { checkUpdateMutation, hasUpdateQuery, systemInfoQuery, updateMutation } from '@queries/system';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { systemInfoQuery } from '@queries/system';
+import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { ArrowUpCircle, CircleFadingArrowUp, RefreshCcw } from 'lucide-react';
 import prettyBytes from 'pretty-bytes';
 
 export const Route = createFileRoute('/settings/about')({
