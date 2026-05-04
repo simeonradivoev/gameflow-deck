@@ -1,6 +1,6 @@
 import { DefaultRommStaleTime, GameListFilterType, RommLoginDataSchema } from "@/shared/constants";
 import { rommApi, settingsApi } from "../clientApi";
-import { InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions, useMutation } from "@tanstack/react-query";
+import { InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
 
@@ -166,6 +166,9 @@ export const gamesRecommendedBasedOnGameQuery = (source: string, id: string) => 
         return data;
     }
 });
+export const allGamesInvalidateQuery: QueryFilters = {
+    queryKey: ['games']
+};
 export const gameInvalidationQuery = (source: string, id: string): QueryFilters => ({
     predicate (query)
     {
@@ -192,16 +195,19 @@ export const fixSourceMutation = mutationOptions({
 export const updateSourceMutation = mutationOptions({
     mutationKey: ['game', "update_source"], mutationFn: async ({ source, id }: { source: string, id: string; }) =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).update.post();
+        const { data, error } = await rommApi.api.romm.game({ source })({ id }).update.post({
+            source: source,
+            id: id
+        });
         if (error) throw error;
         return data;
     }
 });
-export const updatePlatformMutation = (id: string) => mutationOptions({
-    mutationKey: ['platform', 'local', 'update', id],
+export const updatePlatformMutation = (source: string, id: string) => mutationOptions({
+    mutationKey: ['platform', source, 'update', id],
     mutationFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.platform.local({ id }).update.post();
+        const { data, error } = await rommApi.api.romm.platform({ source })({ id }).update.post();
         if (error) throw error;
         return data;
     }
@@ -226,6 +232,63 @@ export const gameFiltersQuery = (filters: { source?: string; }) => queryOptions(
     queryKey: ['game', 'filters', filters], queryFn: async () =>
     {
         const { data, error } = await rommApi.api.romm.games.filters.get({ query: { source: filters.source } });
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const gameLookup = (search: string | undefined) => queryOptions({
+    queryKey: ['game', 'lookup', search],
+    queryFn: async () =>
+    {
+        if (!search) return [];
+        const { data, error } = await rommApi.api.romm.lookup.get({ query: { search } });
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const gameLookupDetails = (source: string | undefined, id: string | undefined) => queryOptions({
+    enabled: !!source && !!id,
+    queryKey: ['game', 'lookup', source, id],
+    queryFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.lookup({ source: source! })({ id: id! }).get();
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const platformLookupMatchQuery = (source: string | undefined, id: number | undefined) => queryOptions({
+    enabled: !!source && !!id,
+    queryKey: ['platform', 'lookup', 'match', source, id],
+    queryFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.platform.lookup.match({ source: source! })({ id: id! }).get();
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const customUpdateMutation = mutationOptions({
+    mutationKey: ['game', 'custom-update'], mutationFn: async (args: { source: string, id: string, destination: string, destinationId: string; }) =>
+    {
+        const { data, error } = await rommApi.api.romm.game({ source: args.source })({ id: args.id }).update.post({ source: args.destination, id: args.destinationId });
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const addManualGameMutation = mutationOptions({
+    mutationKey: ['game', 'custom-add'],
+    mutationFn: async (args: { source: string, id: string, gamePath: string, platformId: number; }) =>
+    {
+        const { data, error } = await rommApi.api.romm.add.custom.post({
+            source: args.source,
+            id: args.id,
+            gamePath: args.gamePath,
+            platformId: args.platformId
+        });
         if (error) throw error;
         return data;
     }

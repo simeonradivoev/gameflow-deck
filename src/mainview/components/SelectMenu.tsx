@@ -1,6 +1,6 @@
 import { ContextList, DialogEntry, useContextDialog } from "./ContextDialog";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
-import { MatchRoute, useMatch, useMatchRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useMatchRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 import { DoorOpen, Gamepad2, Puzzle, RefreshCcw, Settings, Store } from "lucide-react";
 import { systemApi } from "../scripts/clientApi";
@@ -10,6 +10,7 @@ export default function SelectMenu (data: { rootFocusKey: string; })
 {
     const navigate = useNavigate();
     const matchRoute = useMatchRoute();
+    const router = useRouter();
 
     const options: DialogEntry[] = [
         {
@@ -95,7 +96,7 @@ export default function SelectMenu (data: { rootFocusKey: string; })
         }
     ];
     const { dialog, setOpen, open } = useContextDialog('select-menu', {
-        content: <ContextList showCloseButton={false} options={options} />,
+        content: <><ContextList showCloseButton={false} options={options} /><div className="absolute left-2 right-2 top-2 text-base-content/20 text-center">{router.history.location.pathname}</div></>,
         className: 'absolute flex flex-col justify-center left-0 top-0 bottom-0 rounded-none max-h-screen',
         preferredChildFocusKey: FOCUS_KEYS.CONTEXT_DIALOG_OPTION('select-menu', options.find(o => o.selected)?.id ?? '')
     });

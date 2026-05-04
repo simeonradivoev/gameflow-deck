@@ -10,5 +10,6 @@ export const FOCUS_KEYS = {
     EMULATOR_CARD: (id: string) => `EMULATOR_${id}`,
     GAME_SECTION: "GAME_SECTION",
     GAME_CARD: (id: FrontEndId) => `GAME_${id.source}_${id.id}`,
+    GAME_MATCH: (id: FrontEndId) => `GAME_${id.source}_${id.id}`,
     STATS_SECTION: "STATS_SECTION",
 } as const;

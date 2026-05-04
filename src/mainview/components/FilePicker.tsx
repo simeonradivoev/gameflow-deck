@@ -1,9 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry } from "./ContextDialog";
-import { systemApi } from "../scripts/clientApi";
 import { FocusEventHandler, useContext, useRef, useState } from "react";
 import path from "pathe";
-import { Check, File, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
+import { Check, File, FileInput, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { DirType } from "@/shared/constants";
 import classNames from "classnames";
@@ -15,7 +14,6 @@ import toast from "react-hot-toast";
 import { FilePickerContext } from "../scripts/contexts";
 import useActiveControl from "../scripts/gamepads";
 import { createFolderMutation, drivesQuery, filesQuery } from "@queries/system";
-import { showKeyboardHandler } from "../scripts/utils";
 
 function List (data: {
     id: string,
@@ -48,7 +46,7 @@ function List (data: {
                         let icon = <Folder className="text-warning" />;
                         if (isDefaultPath)
                         {
-                            icon = <FolderInput className="text-warning" />;
+                            icon = f.isDirectory ? <FolderInput className="text-accent" /> : <FileInput className="text-accent" />;
                         } else if (!f.isDirectory)
                         {
                             icon = <File />;
@@ -97,7 +95,6 @@ function NewFolderInput (data: { id: string, name: string | undefined, setName: 
     const handleFocus: FocusEventHandler<HTMLInputElement> = (e) =>
     {
         focusSelf();
-        showKeyboardHandler(control as any, e.target);
     };
     return <div className={data.className} ref={ref}>
         <input ref={inputRef}

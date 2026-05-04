@@ -1,4 +1,4 @@
-import { MouseEventHandler } from "react";
+import { JSX, MouseEventHandler } from "react";
 import SvgIcon, { IconType } from "./SvgIcon";
 import classNames from "classnames";
 import { twMerge } from "tailwind-merge";
@@ -6,8 +6,9 @@ import { twMerge } from "tailwind-merge";
 export default function ShortcutPrompt (data: {
   id: string;
   icon?: IconType;
-  label?: string;
+  label?: string | JSX.Element;
   className?: string;
+  iconClassName?: string;
   onClick?: MouseEventHandler;
 })
 {
@@ -23,7 +24,7 @@ export default function ShortcutPrompt (data: {
         })
       )}
     >
-      {data.icon && <SvgIcon className="size-6 portrait:size-6 md:size-8" icon={data.icon} />}
+      {data.icon && <SvgIcon className={twMerge("size-6 portrait:size-6 md:size-8", data.iconClassName)} icon={data.icon} />}
       {data.label}
     </div>
   );

@@ -10,6 +10,7 @@ import { gameInvalidationQuery, installMutation, playMutation } from "@/mainview
 import ActionButton from "./ActionButton";
 import { useRouter } from "@tanstack/react-router";
 import { DownloadSourceType } from "@/shared/constants";
+import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
 
 export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {
@@ -118,10 +119,14 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
     };
 
     let mainButton: any | undefined = undefined;
+    let showAllCommandsAction: ((focusKey: string) => void) | undefined;
+    let mainAction: () => void;
     if (status === 'installed')
     {
+        if (validCommands.length > 1) showAllCommandsAction = (focusKey) => showAllCommands(true, focusKey);
+        mainAction = () => handlePlay(validDefaultCommand);
         mainButton = <div className="flex gap-2">
-            <ActionButton onAction={() => handlePlay(validDefaultCommand)} tooltip={validDefaultCommand?.label ?? details}
+            <ActionButton onAction={mainAction} tooltip={validDefaultCommand?.label ?? details}
                 key="primary"
                 type='primary'
                 id="mainAction"
@@ -130,25 +135,26 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
 
             </ActionButton>
 
-            {validCommands.length > 1 &&
-                <ActionButton className="size-11! header-icon-small" tooltip={"All Commands"} type="base" id="allActionsBtn" onAction={() => showAllCommands(true, 'allActionsBtn')}>
+            {showAllCommandsAction &&
+                <ActionButton className="size-11! header-icon-small" tooltip={"All Commands"} type="base" id="allActionsBtn" onAction={() => showAllCommandsAction!('allActionsBtn')}>
                     <EllipsisVertical />
                 </ActionButton>}</div>;
     }
     else if (error)
     {
+        mainAction = () =>
+        {
+            if (status === 'missing-emulator')
+            {
+                router.navigate({ to: '/settings/directories' });
+            }
+        };
         mainButton = <ActionButton
             key="error"
             tooltip={error}
             tooltipType="error"
             type='error'
-            onAction={() =>
-            {
-                if (status === 'missing-emulator')
-                {
-                    router.navigate({ to: '/settings/directories' });
-                }
-            }}
+            onAction={mainAction}
             id="mainAction">
             <TriangleAlert />
         </ActionButton>;
@@ -167,32 +173,54 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         {
             icon = <Import />;
         }
+        mainAction = () =>
+        {
+            if (installMut.isPending) return;
+            switch (status)
+            {
+                case 'present':
+                case 'install':
+                    if (installSources && installSources.length > 1)
+                    {
+                        showInstallSource(true, 'mainAction');
+                    } else
+                    {
+                        installMut.mutate({});
+                    }
+
+                    break;
+            }
+        };
         mainButton = <ActionButton
             key={status ?? 'unknown'}
-            onAction={() =>
-            {
-                if (installMut.isPending) return;
-                switch (status)
-                {
-                    case 'present':
-                    case 'install':
-                        if (installSources && installSources.length > 1)
-                        {
-                            showInstallSource(true, 'mainAction');
-                        } else
-                        {
-                            installMut.mutate({});
-                        }
-
-                        break;
-                }
-            }}
+            onAction={mainAction}
             tooltip={details ?? status}
             type='primary'
             id="mainAction">
             {icon}
         </ActionButton>;
     }
+
+    useShortcuts('mainAction', () =>
+    {
+        const shortcuts: Shortcut[] = [{
+            button: GamePadButtonCode.A,
+            action: mainAction
+        }];
+
+        if (showAllCommandsAction)
+            shortcuts.push(
+                {
+                    button: GamePadButtonCode.Y,
+                    label: "All Commands",
+                    action (e)
+                    {
+                        showAllCommandsAction('mainAction');
+                    },
+                });
+
+        return shortcuts;
+    }, [showAllCommandsAction, mainAction]);
 
     const { dialog: allCommandDialog, setOpen: showAllCommands } = useContextDialog('all-commands-dialog', {
         content: <ContextList options={validCommands.map((c, i) =>

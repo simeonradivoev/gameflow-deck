@@ -98,6 +98,11 @@ const throttleMap = new Map<string, number>();
 const throttleAcceleration = new Map<string, number>();
 function throttleNav (key: string, dir: string, event: Event)
 {
+    if (document.activeElement && document.activeElement instanceof HTMLInputElement)
+    {
+        return false;
+    }
+
     const minSpeed = 150;
     const maxSpeed = 300;
     const currentDate = new Date();

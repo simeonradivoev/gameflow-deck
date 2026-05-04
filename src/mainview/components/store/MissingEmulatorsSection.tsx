@@ -3,9 +3,7 @@ import
     useFocusable,
     FocusContext,
 } from "@noriginmedia/norigin-spatial-navigation";
-import { Button } from "../options/Button";
-import useActiveControl from "@/mainview/scripts/gamepads";
-import { ChevronRight, CircleQuestionMark, SearchAlert } from "lucide-react";
+import { CircleQuestionMark, SearchAlert } from "lucide-react";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { RPC_URL } from "@/shared/constants";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
@@ -15,14 +13,14 @@ import { oneShot } from "@/mainview/scripts/audio/audio";
 interface MissingCardProps
 {
     emulator: FrontEndEmulator;
-    onSelect?: (id: string, focusKey: string) => void;
+    onSelect?: (em: FrontEndEmulator, focusKey: string) => void;
 }
 
 function MissingCard ({ emulator: em, onSelect }: MissingCardProps)
 {
     const handleSelect = () =>
     {
-        onSelect?.(em.name, focusKey);
+        onSelect?.(em, focusKey);
         oneShot('click');
     };
 
@@ -31,7 +29,6 @@ function MissingCard ({ emulator: em, onSelect }: MissingCardProps)
         onEnterPress: handleSelect,
     });
     useShortcuts(focusKey, () => [{ button: GamePadButtonCode.A, label: "Details", action: handleSelect }], [handleSelect]);
-    const { isMouse } = useActiveControl();
 
     return (
         <div
@@ -40,7 +37,7 @@ function MissingCard ({ emulator: em, onSelect }: MissingCardProps)
             tabIndex={0}
             onClick={handleSelect}
             onKeyDown={(e) => e.key === "Enter" && handleSelect}
-            className={"focusable focusable-accent bg-base-100 rounded-4xl transition-all focused:animate-scale-small shadow-lg"}
+            className={"focusable focusable-accent focusable-hover cursor-pointer bg-base-100 rounded-4xl transition-all focused:animate-scale-small shadow-lg"}
         >
             <div className="card-body p-5 gap-3">
                 <div className="flex gap-4">
@@ -57,10 +54,6 @@ function MissingCard ({ emulator: em, onSelect }: MissingCardProps)
                         <p className="text-base-content/40 mt-0.5">{em.systems?.map(s => s.name).join(',')}</p>
                     </div>
                 </div>
-                <div className="flex items-center grow h-8">
-                    <p className="text-xs text-error/80 leading-relaxed">{em.name}</p>
-                    {isMouse && <Button className="hover:btn-error hover:text-primary-content text-base-content/40 font-normal md:text-base" onAction={handleSelect} id={`details-${em.name}`}>Details<ChevronRight /></Button>}
-                </div>
             </div>
         </div>
     );
@@ -71,7 +64,7 @@ export function MissingEmulatorsSection ({
     onSelect,
 }: {
     emulators: FrontEndEmulator[];
-    onSelect?: (id: string, focusKey: string) => void;
+    onSelect?: (em: FrontEndEmulator, focusKey: string) => void;
 })
 {
     const { ref, focusKey } = useFocusable({

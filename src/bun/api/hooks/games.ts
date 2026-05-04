@@ -1,5 +1,5 @@
 import { EmulatorPackageType, GameListFilterType } from '@/shared/constants';
-import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfallHook } from 'tapable';
+import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook } from 'tapable';
 
 export class GameHooks
 {
@@ -95,7 +95,12 @@ export class GameHooks
         name?: string;
         family_name?: string;
     } | undefined>(['ctx']);
-    gameLookup = new AsyncSeriesBailHook<[ctx: { source: string, id: string; }], { screenshotUrls: string[]; } | undefined>(['ctx']);
+    gameLookup = new AsyncSeriesHook<[ctx: {
+        source?: string,
+        id?: string;
+        search?: string;
+        matches: GameLookup[];
+    }]>(['ctx']);
     fetchPlatforms = new AsyncSeriesHook<[ctx: {
         platforms: FrontEndPlatformType[];
     }]>(['ctx']);

@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CollectionsDetail } from "../components/CollectionsDetail";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { GameListFilterSchema, GameListFilterType, RPC_URL } from "../../shared/constants";
+import { GameListFilterType, RPC_URL } from "../../shared/constants";
 import { deletePlatformMutation, localPlatformFilter, platformQuery, updatePlatformMutation } from "@queries/romm";
 import { zodValidator } from "@tanstack/zod-adapter";
 import z from "zod";
@@ -22,7 +22,7 @@ function PlatformTitle (data: {})
   const { source, id } = Route.useParams();
   const { data: platform } = useQuery(platformQuery(source, id));
 
-  return <div className="sm:landscape:hidden flex flex-col gap-2 pl-2 text-2xl font-semibold text-base-content justify-center drop-shadow">
+  return <div className="sm:landscape:hidden md:landscape:inline flex flex-col gap-2 pl-2 text-2xl font-semibold text-base-content justify-center drop-shadow">
 
     <div className="divider mb-6 mt-0">
       {!!platform && <img className="size-14 rounded-full p-2" src={`${RPC_URL(__HOST__)}${platform.path_cover}`} ></img>}
@@ -36,9 +36,10 @@ function RouteComponent ()
   const { source, id } = Route.useParams();
   const router = useRouter();
   const { countHint } = Route.useSearch();
+  const { data: platform } = useQuery(platformQuery(source, id));
   const [filter, setFilter] = useLocalStorage<GameListFilterType>("platforms-filters", {});
   const updatePlatform = useMutation({
-    ...updatePlatformMutation(id), onSuccess (data, variables, onMutateResult, context)
+    ...updatePlatformMutation(source, id), onSuccess (data, variables, onMutateResult, context)
     {
       context.client.invalidateQueries(localPlatformFilter(id));
     },
@@ -56,7 +57,7 @@ function RouteComponent ()
     },
   });
   const settingsOptions: DialogEntry[] = [];
-  if (source === 'local')
+  if (source === 'local' || platform?.hasLocal)
   {
     settingsOptions.push({
       id: 'update-platform',
@@ -70,7 +71,10 @@ function RouteComponent ()
         router.navigate({ replace: true });
       },
     });
+  }
 
+  if (source === 'local')
+  {
     settingsOptions.push({
       id: 'update-platform',
       type: "error",
@@ -97,7 +101,7 @@ function RouteComponent ()
           icon: <Settings2 />,
           action ()
           {
-            setPlatformSettingsOpen(true);
+            setPlatformSettingsOpen(true, 'open-platform-settings-btn');
           },
         }]}
         countHint={countHint}

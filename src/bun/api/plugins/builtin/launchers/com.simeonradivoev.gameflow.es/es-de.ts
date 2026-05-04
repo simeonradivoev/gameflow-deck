@@ -288,7 +288,7 @@ export default class IgdbIntegration implements PluginType
         }
 
         const downloadPath = config.get('downloadPath');
-        const gamePath = path.join(downloadPath, data.gamePath);
+        const gamePath = path.isAbsolute(data.gamePath) ? data.gamePath : path.join(downloadPath, data.gamePath);
 
         const validFiles: string[] = await this.getRomFilePaths(gamePath, { systemSlug: data.systemSlug, mainGlob: data.mainGlob });
 
@@ -449,7 +449,7 @@ export default class IgdbIntegration implements PluginType
             }
 
             const downloadPath = config.get('downloadPath');
-            const path_fs = path.join(downloadPath, localGame.path_fs);
+            const path_fs = path.isAbsolute(localGame.path_fs) ? localGame.path_fs : path.join(downloadPath, localGame.path_fs);
 
             return this.getRomFilePaths(path_fs, { systemSlug: localGame.platform.es_slug ?? undefined, mainGlob: localGame.main_glob });
         });

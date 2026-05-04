@@ -3,7 +3,7 @@ import sounds from '../../assets/sounds.ogg';
 import soundSprites from '../../assets/sounds.json';
 import { getLocalSetting } from '../utils';
 import { hapticMap } from '../gamepads';
-import { soundMap } from './audioConstants';
+import { soundMap, SoundMapEntry } from './audioConstants';
 
 const timingMap = new Map<string, Date>();
 
@@ -47,15 +47,17 @@ function random ()
     return Math.random() * 2 - 1;
 }
 
-export function oneShot (id: keyof typeof soundMap)
+export function oneShot (id: keyof typeof soundMap, options?: { volume?: number; })
 {
     const currentDate = timingMap.get(id);
     if (!getLocalSetting('soundEffects')) return;
-    if (currentDate && new Date().getTime() - currentDate.getTime() <= 100) return;
-    const soundValue = soundMap[id] as { key: keyof typeof soundSprites.sprite, rateVariation?: number; volumeVariation?: number; };
+    const soundValue = soundMap[id] as SoundMapEntry;
+    const maxDelay = soundValue.maxDelay ?? 100;
+    if (currentDate && new Date().getTime() - currentDate.getTime() <= maxDelay) return;
+
     const instanceId = sound.play(soundValue.key);
     const baseVolume = getLocalSetting("soundEffectsVolume") / 100;
-    sound.volume(Math.min(baseVolume * (1 + random() * (soundValue.volumeVariation ?? 0), 1)), instanceId);
+    sound.volume(Math.min(baseVolume * (soundValue.volume ?? 1) * (options?.volume ?? 1) * (1 + random() * (soundValue.volumeVariation ?? 0), 1)), instanceId);
     sound.rate(1 + sinRandom() * (soundValue.rateVariation ?? 0), instanceId);
     timingMap.set(id, new Date());
 }

@@ -13,7 +13,7 @@ import { getSettingQuery, setSettingMutation } from "@queries/settings";
 export interface PathSettingsOptionParams
 {
     label: string;
-    id: KeysWithValueAssignableTo<SettingsType, string>;
+    id: string;
     type: HTMLInputTypeAttribute;
     placeholder?: string;
     icon?: JSX.Element;
@@ -24,10 +24,11 @@ export interface PathSettingsOptionParams
     allowNewFolderCreation?: boolean;
 }
 
-export function PathSettingsOption (data: PathSettingsOptionParams)
+export function PathSettingsOption (data: PathSettingsOptionParams & { id: KeysWithValueAssignableTo<SettingsType, string>; })
 {
     const [localValue, setLocalValue] = useState<string | undefined>();
     const [dirty, setDirty] = useState(false);
+    const { data: defaultValue } = useQuery(getSettingQuery(data.id));
     const setMutation = useMutation({
         ...setSettingMutation(data.id),
         onSuccess: (d, v, r, cx) =>
@@ -44,6 +45,7 @@ export function PathSettingsOption (data: PathSettingsOptionParams)
         save={setMutation.mutate}
         localValue={localValue}
         allowNewFolderCreation={data.allowNewFolderCreation}
+        defaultValue={defaultValue as any}
         setLocalValue={(v) =>
         {
             setLocalValue(v);
@@ -56,16 +58,17 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
     localValue: string | undefined;
     setLocalValue: (value: string | undefined) => void;
     isDirty: boolean;
+    className?: string;
+    defaultValue: string | undefined;
 })
 {
     const [isBrowsing, setIsBrowsing] = useState(false);
-    const { data: defaultValue } = useQuery(getSettingQuery(data.id));
-    const changed = defaultValue !== data.localValue;
+    const changed = data.defaultValue !== data.localValue;
 
     useEffect(() =>
     {
-        data.setLocalValue(String(defaultValue));
-    }, [defaultValue]);
+        data.setLocalValue(String(data.defaultValue ?? ''));
+    }, [data.defaultValue]);
 
     const handleSelectPath = (path: string) =>
     {
@@ -92,7 +95,8 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
     };
 
     return (
-        <OptionSpace id={`${data.id}-space`} className="gap-2" label={<>{data.label}{changed && <Pen />}</>}>
+        <OptionSpace id={`${data.id}-space`} innerClassName="gap-2" className={data.className} label={<>{data.label}{changed && <Pen />}</>}>
+
             <OptionInput
                 icon={data.icon}
                 name={`${data.id}-input`}
@@ -105,7 +109,7 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
                 }}
                 value={data.localValue}
             />
-            <Button id={`${data.id}-browse`} className="ring-accent-content" focusClassName="ring-7" onAction={() =>
+            <Button id={`${data.id}-browse`} className="focusable focusable-accent" onAction={() =>
             {
                 setIsBrowsing(true);
                 data.onBrowseAction?.(data.localValue);
@@ -113,7 +117,7 @@ export function PathSettingsOptionBase (data: PathSettingsOptionParams & {
                 {data.isDirectoryPicker ? <FolderSearch /> : <FileSearchCorner />}
             </Button>
             {data.requireConfirmation === true && <Button
-                disabled={defaultValue === data.localValue}
+                disabled={data.defaultValue === data.localValue}
                 id={`${data.id}-save`}
                 onAction={() => data.save(data.localValue)}
                 type="button">

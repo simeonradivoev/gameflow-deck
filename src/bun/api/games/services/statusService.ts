@@ -4,7 +4,7 @@ import { getErrorMessage } from "@/bun/utils";
 import { checkFiles, getLocalGameMatch, getSourceGameDetailed } from "./utils";
 import fs from 'node:fs/promises';
 import Elysia from "elysia";
-import z, { string } from "zod";
+import z from "zod";
 import { InstallJob, InstallJobStates } from "../../jobs/install-job";
 import { LaunchGameJob } from "../../jobs/launch-game-job";
 import * as appSchema from "@schema/app";
@@ -41,6 +41,63 @@ export async function getLocalGame (source: string, id: string)
     return localGame;
 }
 
+/** Update local game's metadata from custom source, not the actual source of the game. Say from metadata providers like IGDB */
+export async function customUpdate (source: string, id: string, destination: string, destinationId: string)
+{
+    const localGame = await getLocalGame(source, id);
+    if (!localGame) throw new Error("Could not find Local Game");
+
+    const matches: GameLookup[] = [];
+    await plugins.hooks.games.gameLookup.promise({ source: destination, id: destinationId, matches });
+    if (matches.length <= 0) throw new Error("Could not find destination");
+    const match = matches[0];
+
+    await db.transaction(async (tx) =>
+    {
+        await tx.delete(appSchema.screenshots).where(eq(appSchema.screenshots.game_id, localGame.id));
+
+        // pre-fetch screenshots
+        const screenshots = await Promise.all(match.screenshotUrls.map(s => fetch(s)));
+
+        if (screenshots.length > 0)
+        {
+            await tx.insert(appSchema.screenshots).values(await Promise.all(screenshots.map(async (response) =>
+            {
+                const screenshot: typeof appSchema.screenshots.$inferInsert = {
+                    game_id: localGame.id,
+                    content: Buffer.from(await response.arrayBuffer()),
+                    type: response.headers.get('content-type')
+                };
+
+                return screenshot;
+            })));
+        }
+
+        let cover: Buffer<ArrayBuffer> | undefined = undefined;
+        if (match.coverUrl)
+        {
+            const coverResponse = await fetch(match.coverUrl);
+            if (coverResponse.ok)
+            {
+                cover = Buffer.from(await coverResponse.arrayBuffer());
+            }
+        }
+
+        await tx.update(appSchema.games).set({
+            cover,
+            metadata: {
+                age_ratings: match.age_ratings,
+                genres: match.genres,
+                player_count: match.player_count ?? undefined,
+                companies: match.companies,
+                game_modes: match.game_modes,
+                average_rating: match.average_rating ?? undefined,
+                first_release_date: match.first_release_date,
+            }
+        }).where(eq(appSchema.games.id, localGame.id));
+    });
+}
+
 export async function update (source: string, id: string)
 {
     const localGame = await getLocalGame(source, id);
@@ -56,10 +113,11 @@ export async function update (source: string, id: string)
         const paths_screenshots: string[] = [...sourceGame.paths_screenshots.map(s => `${RPC_URL(host)}${s}`)];
         if (paths_screenshots.length <= 0 && sourceGame.igdb_id)
         {
-            const igdbLookup = await plugins.hooks.games.gameLookup.promise({ source: 'igdb', id: String(sourceGame.igdb_id) });
-            if (igdbLookup)
+            const matches: GameLookup[] = [];
+            await plugins.hooks.games.gameLookup.promise({ source: 'igdb', id: String(sourceGame.igdb_id), matches });
+            if (matches.length > 0)
             {
-                paths_screenshots.push(...igdbLookup.screenshotUrls);
+                paths_screenshots.push(...matches[0].screenshotUrls);
             }
         }
 

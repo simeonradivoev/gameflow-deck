@@ -1,24 +1,17 @@
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { HeaderButton, StickyHeaderUI } from './Header';
 import { GameList } from './GameList';
-import { ArrowDownAz, CalendarArrowDown, ClockArrowDown, Drama, Filter, FunnelX, HardDrive, Rocket, Search, Settings2, SortDesc, Store, Tags, User, UserLock } from 'lucide-react';
-import { JSX, Suspense, useRef, useState } from 'react';
+import { JSX, Suspense } from 'react';
 import { FloatingShortcuts } from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
 import { GamePadButtonCode, useShortcuts } from '../scripts/shortcuts';
-import { GameListFilterSchema, GameListFilterType } from '@/shared/constants';
+import { GameListFilterType } from '@/shared/constants';
 import { HandleGoBack } from '../scripts/utils';
 import LoadingCardList from './LoadingCardList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gameFiltersQuery, gameQuery } from '../scripts/queries/romm';
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 import SelectMenu from './SelectMenu';
-import { RoundButton } from './RoundButton';
-import { ContextList, DialogEntry, useContextDialog } from './ContextDialog';
-import classNames from 'classnames';
-import { sourceIconMap } from './Constants';
-import { stat } from 'fs-extra';
-import { FilterUI } from './Filters';
 import SideFilters from './SideFilters';
 
 export interface CollectionsDetailParams
@@ -75,7 +68,7 @@ export function CollectionsDetail (data: CollectionsDetailParams)
                         <div className='absolute top-0 bottom-0 left-0 right-0 bg-radial from-base-100 to-base-300 -z-1'></div>
                         <div className='mobile:hidden bg-noise'></div>
                         <div className='mobile:hidden bg-dots'></div>
-                        {finalFilter && data.title}
+                        {!!finalFilter && data.title}
                         {<Suspense fallback={<LoadingCardList grid placeholderCount={data.countHint ?? 8} id={`${focusKey}-list`} />}>
                             <GameList
                                 key={`${data.id}-${JSON.stringify(finalFilter)}`}

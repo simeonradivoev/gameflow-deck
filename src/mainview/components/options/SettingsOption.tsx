@@ -7,6 +7,7 @@ import { getSettingQuery, setSettingMutation } from "@queries/settings";
 
 export function SettingsOption (data: {
     label: string;
+    help?: string;
     id: KeysWithValueAssignableTo<SettingsType, string | boolean>;
     type: HTMLInputTypeAttribute;
     placeholder?: string;
@@ -35,7 +36,10 @@ export function SettingsOption (data: {
     }, [dirty, setDirty, localValue]);
 
     return (
-        <OptionSpace id={`${data.id}-space`} label={data.label}>
+        <OptionSpace id={`${data.id}-space`} label={<div className="flex flex-col">
+            <div>{data.label}</div>
+            <div className="text-base-content/40 text-sm">{data.help}</div>
+        </div>}>
             <OptionInput
                 icon={data.icon}
                 name={data.id ?? ""}

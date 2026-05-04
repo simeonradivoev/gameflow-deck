@@ -253,6 +253,8 @@ export default class RommIntegration implements PluginType<SettingsType>
 
             const info: DownloadInfo = {
                 platform: {
+                    source: 'romm',
+                    id: String(rommPlatform.id),
                     slug: rommPlatform.slug,
                     name: rommPlatform.name,
                     family_name: rommPlatform.family_name ?? undefined

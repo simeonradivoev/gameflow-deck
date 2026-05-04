@@ -1,6 +1,6 @@
 import { PluginLoadingContextType, PluginType } from "@/bun/types/typesc.schema";
 import desc from './package.json';
-import path, { basename, dirname } from 'node:path';
+import path, { } from 'node:path';
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
 import { Glob, pathToFileURL } from "bun";
 import { and, eq } from "drizzle-orm";
@@ -12,7 +12,6 @@ import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
 import UpdateStoreJob from "@/bun/api/jobs/update-store";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import { buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
-import { path7za } from "7zip-bin";
 
 export default class RommIntegration implements PluginType
 {
@@ -314,6 +313,8 @@ export default class RommIntegration implements PluginType
                     version_system: validDownload.system,
                     version_source: validDownload.id,
                     platform: {
+                        source: 'store',
+                        id: system,
                         slug: system,
                         name: system
                     }

@@ -4,12 +4,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
 import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
-import { Hammer, RefreshCcw, Settings, Trash, Trophy } from "lucide-react";
+import { Hammer, RefreshCcw, RefreshCcwDot, Settings, Trash, Trophy } from "lucide-react";
 import MainActions from "./MainActions";
 import ActionButton from "./ActionButton";
 import { useLocalStorage } from "usehooks-ts";
 import FocusTooltip from "../FocusTooltip";
-import { useBlocker, useRouter } from "@tanstack/react-router";
+import { useBlocker, useNavigate, useRouter } from "@tanstack/react-router";
 
 function AchievementsInfo (data: { game: FrontEndGameTypeDetailed; } & InteractParams)
 {
@@ -32,6 +32,7 @@ function AchievementsInfo (data: { game: FrontEndGameTypeDetailed; } & InteractP
 export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {
     const [, setDetailsSection] = useLocalStorage('details-section', 'screenshots');
+    const navigate = useNavigate();
 
     const fixMutation = useMutation({
         ...fixSourceMutation,
@@ -64,7 +65,8 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
         ...deleteGameMutation({ id: data.id, source: data.source }),
         onSuccess: (d, v, r, ctx) =>
         {
-            ctx.client.invalidateQueries(gameInvalidationQuery(data.id, data.source)).then(() => router.history.back());
+            ctx.client.invalidateQueries(gameInvalidationQuery(data.id, data.source));
+            router.history.back();
         },
         onError (error)
         {
@@ -84,9 +86,10 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
     {
         contextOptions.push({
             id: 'delete',
-            action: () =>
+            action: (ctx) =>
             {
                 deleteMutation.mutate();
+                ctx.close();
             },
             icon: deleteMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <Trash />,
             content: deleteMutation.isPending ? "Deleting" : "Delete",
@@ -98,12 +101,16 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
     {
         contextOptions.push({
             id: "fix_source",
-            async action (ctx)
+            action (ctx)
             {
                 if (!data.game) return;
-                await fixMutation.mutateAsync({ source: data.game.id.source, id: data.game.id.id });
+                fixMutation.mutate({ source: data.game.id.source, id: data.game.id.id }, {
+                    onSuccess (data, variables, onMutateResult, context)
+                    {
+                        router.navigate({ replace: true });
+                    },
+                });
                 ctx.close();
-                router.navigate({ replace: true });
             },
             icon: fixMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <Hammer />,
             content: "Try Fix Source",
@@ -124,6 +131,18 @@ export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, 
             },
             icon: updateMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <RefreshCcw />,
             content: "Update Metadata",
+            type: "primary"
+        });
+
+        contextOptions.push({
+            id: 'update-custom',
+            action (ctx)
+            {
+                ctx.close();
+                navigate({ to: '/game/update/$source/$id', params: { source: data.source, id: data.id } });
+            },
+            icon: updateMutation.isPending ? <span className="loading loading-spinner loading-lg"></span> : <RefreshCcwDot />,
+            content: "Update Metadata (Interactive)",
             type: "primary"
         });
     }

@@ -2,7 +2,7 @@ import Elysia from "elysia";
 import open from 'open';
 import z from "zod";
 import os from 'node:os';
-import { cache, cachePath, config, events, taskQueue } from "./app";
+import { cachePath, config, events, taskQueue } from "./app";
 import { getAppVersion, isSteamDeck, openExternal } from "../utils";
 import fs from 'node:fs/promises';
 import buildNotificationsStream from "./notifications";
@@ -14,7 +14,7 @@ import si from 'systeminformation';
 import { getStoreFolder } from "./store/services/gamesService";
 import ReloadPluginsJob from "./jobs/reload-plugins-job";
 import { semver } from "bun";
-import { getOrCached, getOrCachedGithubRelease, githubRequestQueue } from "./cache";
+import { getOrCachedGithubRelease } from "./cache";
 import SelfUpdateJob from "./jobs/self-update-job";
 
 async function checkUpdate (force?: boolean)
@@ -239,6 +239,10 @@ export const system = new Elysia({ prefix: '/api/system' })
         {
             currentPath = path.resolve(process.cwd(), currentPath);
         }
+        const currentPathExists = await fs.exists(currentPath);
+        if (!currentPathExists) currentPath = dirname(process.cwd());
+        const currentPathStat = await fs.stat(currentPath);
+        if (!currentPathStat.isDirectory()) currentPath = dirname(currentPath);
         const paths = await fs.readdir(currentPath, { withFileTypes: true });
         return {
             name: path.basename(currentPath),

@@ -8,10 +8,9 @@ export default function CollectionList (data: {
     id: string,
     setBackground: (url: string) => void;
     className?: string;
-    onFocus?: GameCardFocusHandler;
     onSelect?: (id: string) => void;
     saveChildFocus?: 'session' | 'local';
-})
+} & FocusParams)
 {
     const router = useRouter();
     const { data: collections } = useSuspenseQuery(getCollectionsQuery);
@@ -37,7 +36,7 @@ export default function CollectionList (data: {
                     id: `${g.id.source}@${g.id.id}`,
                     title: g.name,
                     focusKey: `collection-${g.id}`,
-                    previewUrl: `${RPC_URL(__HOST__)}${g.path_platform_cover}`,
+                    previewUrls: `${RPC_URL(__HOST__)}${g.path_platform_cover}`,
                     badges: [
                         <span className="text-lg font-bold badge bg-base-100 shadow-md shadow-base-300 h-8 rounded-full mr-2">
                             {g.game_count}

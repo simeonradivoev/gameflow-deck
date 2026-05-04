@@ -372,7 +372,7 @@ export function useOnNavigateBack (callback: (state: { sound?: keyof typeof soun
   }, [router]);
 }
 
-export function showKeyboardHandler (activeControl: string, node?: HTMLInputElement)
+export function showKeyboardHandler (activeControl: string | undefined, node?: HTMLInputElement)
 {
   if (node && node.type !== 'checkbox' && (activeControl === 'gamepad' || activeControl === 'touch'))
   {

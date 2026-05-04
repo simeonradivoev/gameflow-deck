@@ -15,10 +15,15 @@ export const { useAppForm: useSettingsForm, useTypedAppFormContext: useSettingsF
     formComponents: {}
 });
 
-function FormOption (data: { type: HTMLInputTypeAttribute, icon?: JSX.Element; label?: string | JSX.Element; placeholder?: string; })
+function FormOption (data: {
+    type: HTMLInputTypeAttribute,
+    icon?: JSX.Element;
+    label?: string | JSX.Element;
+    placeholder?: string;
+})
 {
     const field = useFieldContext<string>();
-    return <OptionSpace id={`${field.name}-space`} label={<div className="flex flex-1 gap-2">
+    return <OptionSpace id={`${field.name}-space`} label={<div className="flex items-center flex-1 gap-2">
         {data.label}
         {field.getMeta().errors.length > 0 && <div className="badge badge-error">
             {field.state.meta.errors.map(e => e.message).join(',')}

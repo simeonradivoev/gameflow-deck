@@ -3,18 +3,18 @@ import { FilterUI } from '@/mainview/components/Filters';
 import { HeaderUI } from '@/mainview/components/Header';
 import HeaderSearchField from '@/mainview/components/HeaderSearchField';
 import SelectMenu from '@/mainview/components/SelectMenu';
-import Shortcuts, { FloatingShortcuts } from '@/mainview/components/Shortcuts';
+import { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { StoreContext } from '@/mainview/scripts/contexts';
 import { gameQuery } from '@/mainview/scripts/queries/romm';
 import { storeEmulatorDetailsQuery } from '@/mainview/scripts/queries/store';
-import { GamePadButtonCode, useShortcutContext, useShortcuts } from '@/mainview/scripts/shortcuts';
+import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { HandleGoBack, mobileCheck, useStickyDataAttr } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMatchRoute, useRouter } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useSessionStorage } from 'usehooks-ts';
 import z from 'zod';
 
@@ -104,7 +104,7 @@ function RouteComponent ()
   {
     if (type === 'emulator')
     {
-      if (source === 'local') return;
+      if (!source || source === 'local') return;
       router.navigate({ to: '/store/details/emulator/$id', params: { id } });
     }
     else if (type === 'game')

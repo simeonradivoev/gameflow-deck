@@ -35,6 +35,7 @@ export function useOptionContext (params?: { onOptionEnterPress?: () => void; })
 export function OptionSpace (data: {
     id?: string;
     className?: string;
+    innerClassName?: string;
     focusable?: boolean;
     children?: any | any[];
     label?: string | JSX.Element | ((focused: boolean) => JSX.Element);
@@ -90,7 +91,7 @@ export function OptionSpace (data: {
                 {!!labelElement && <div className="flex gap-2 items-center flex-1 md:text-lg pr-4">
                     {labelElement}
                 </div>}
-                <div className="flex flex-1 justify-end-safe">
+                <div className={twMerge("flex flex-1 justify-end-safe", data.innerClassName)}>
                     {data.children}
                 </div>
             </li>

@@ -147,6 +147,18 @@ declare interface FrontEndId
     source: string;
 }
 
+// Stuff stored in the local sqlite metadata field
+declare interface LocalGameMetadata
+{
+    genres?: string[],
+    companies?: string[],
+    game_modes?: string[],
+    age_ratings?: string[];
+    player_count?: string;
+    first_release_date?: number;
+    average_rating?: number;
+}
+
 declare interface FrontEndPlatformType
 {
     id: FrontEndId;
@@ -279,6 +291,8 @@ declare interface DownloadInfo
 
 declare interface DownloadPlatform
 {
+    id: string;
+    source: string;
     igdb_id?: number;
     igdb_slug?: string;
     ra_id?: number;
@@ -327,6 +341,32 @@ declare interface EmulatorSupport
     source?: EmulatorSourceEntryType;
     supportLevel?: "partial" | "full";
     capabilities?: EmulatorCapabilities[];
+}
+
+declare interface GameLookup
+{
+    source: string;
+    id: string;
+    coverUrl: string | null | undefined;
+    slug: string | null | undefined;
+    screenshotUrls: string[];
+    name: string;
+    summary: string | null | undefined;
+    genres: string[];
+    companies: string[];
+    game_modes: string[];
+    age_ratings: string[];
+    player_count: string | undefined;
+    first_release_date: number | undefined;
+    average_rating: number | undefined;
+    keywords: string[];
+    igdb_id: number | undefined;
+    platforms: {
+        id: number;
+        name?: string | null;
+        displayName: string;
+        slug: string;
+    }[];
 }
 
 declare interface AutoSaveChange

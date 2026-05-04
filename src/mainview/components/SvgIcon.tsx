@@ -1,5 +1,6 @@
 import "virtual:svg-icons/register";
 import { StaticAssetPath } from "../gen/static-icon-assets.gen";
+import { CSSProperties } from "react";
 
 type OnlySvgIcon<T extends string> = T extends `${infer Rest}.svg`
   ? Rest
@@ -15,17 +16,19 @@ export default function SvgIcon ({
   icon,
   prefix = "icon",
   className,
+  style,
   ...props
 }: {
   icon: IconType;
   prefix?: string;
   className?: string;
+  style?: CSSProperties;
 })
 {
   const symbolId = `#${prefix}-${icon}`;
 
   return (
-    <svg className={className} {...props} aria-hidden="true">
+    <svg style={style} className={className} {...props} aria-hidden="true">
       <use href={symbolId} />
     </svg>
   );

@@ -24,6 +24,7 @@ import Details from "@/mainview/components/game/Details";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import SelectMenu from "@/mainview/components/SelectMenu";
 import { en } from "zod/v4/locales";
+import { IGDBIcon } from "@/mainview/scripts/brandIcons";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>
@@ -105,6 +106,8 @@ function Stats (data: { game: FrontEndGameTypeDetailed | undefined; })
       stats.push({ label: "Release Date", content: data.game.metadata.first_release_date.toLocaleDateString(), icon: <Calendar /> });
     if (data.game.emulators)
       stats.push({ label: "Emulators", content: data.game.emulators.map(e => e.name) });
+    if (data.game.igdb_id)
+      stats.push({ label: "IGDB", icon: IGDBIcon, content: String(data.game.igdb_id) });
     if (data.game.source)
       stats.push({ label: "Source", content: `${data.game.source} - ${data.game.source_id}` });
     const integrations = new Set<string>(data.game.emulators?.flatMap(e => e.integrations).flatMap(i => i.capabilities).filter(c => !!c));

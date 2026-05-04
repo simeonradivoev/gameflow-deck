@@ -126,7 +126,7 @@ export function RouteComponent ()
             <FocusContext value={focusKey}>
                 {<Main games={featuredGames} />}
                 {!!crucialEmulators && crucialEmulators?.length > 0 && <MissingEmulatorsSection
-                    onSelect={(id, focus) => storeContext.showDetails('emulator', 'store', id, focus)}
+                    onSelect={(em, focus) => storeContext.showDetails('emulator', em.source, em.name, focus)}
                     emulators={crucialEmulators} />}
                 <div className='pt-4'>
                     <EmulatorsSection

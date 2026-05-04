@@ -4,7 +4,7 @@ import { OptionInput } from '../../components/options/OptionInput';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '../../components/options/Button';
-import { Check, ChevronDown, FileQuestion, FolderSearch, HardDrive, Plug, SearchAlert, Store, Trash } from 'lucide-react';
+import { Check, ChevronDown, FolderSearch, HardDrive, Plug, SearchAlert, Store, Trash } from 'lucide-react';
 import { ContextDialog, ContextList, DialogEntry, OptionElement } from '../../components/ContextDialog';
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
@@ -80,7 +80,10 @@ function NewEmulatorPath (data: { addOverride: (emulator: string) => void; isAdd
   };
 
 
-  return <OptionSpace id={'custom-emulator-path-option'} label={"Custom Emulator Path"}>
+  return <OptionSpace id={'custom-emulator-path-option'} label={<div className='flex flex-col'>
+    <div>Custom Emulator Path</div>
+    <div className='text-base-content/40 text-sm'>Manually Pick a path to an emulator if not automatically found.</div>
+  </div>}>
     <Button disabled={data.isAddingOverride} id='emulator' type='button' onAction={() => setNewEmulatorTypeOpen(true)} >
       Emulator
       <ChevronDown />
@@ -227,6 +230,18 @@ function EmulatorBadge (data: {
     statusIcon = <Check />;
   }
 
+  let logoUrl: string | undefined = undefined;
+  if (data.emulator.logo)
+  {
+    if (data.emulator.logo.startsWith('http'))
+    {
+      logoUrl = data.emulator.logo;
+    } else
+    {
+      logoUrl = `${RPC_URL(__HOST__)}${data.emulator.logo}`;
+    }
+  }
+
   return <div ref={ref} className={
     twMerge('grid grid-rows-3 grid-cols-1 flex-col rounded-3xl bg-base-300 items-center p-4 overflow-hidden h-full select-none focusable focusable-accent',
       classNames({
@@ -238,7 +253,7 @@ function EmulatorBadge (data: {
     <div className='flex flex-col items-center gap-1'>
       <div className='flex gap-2 font-semibold'>
         {statusIcon}
-        {!!data.emulator.logo && <img className='size-6 drop-shadow drop-shadow-black/20' src={`${RPC_URL(__HOST__)}${data.emulator.logo}`}></img>}
+        {!!logoUrl && <img className='size-6 drop-shadow drop-shadow-black/20' src={logoUrl}></img>}
         {data.emulator.name}
       </div>
       <div className='text-base-content/40 max-w-full overflow-hidden text-nowrap text-ellipsis'>
@@ -329,7 +344,7 @@ function RouteComponent ()
       <EmulatorBadges addOverride={addOverrideMutation.mutate} onFocus={scrollIntoViewHandler({ block: 'center' })} />
       <div className="divider text-base-content/40">Preferences</div>
       <SettingsOption label="Launch In Fullscreen" id="launchInFullscreen" type="checkbox" />
-      <SettingsOption label="Widescreen" id="emulatorWidescreen" type="checkbox" />
+      <SettingsOption label="Widescreen" help='Force games to play in wide screen. Might cause artifacts.' id="emulatorWidescreen" type="checkbox" />
       <SettingsDropdown label='Resolution' id='emulatorResolution' values={SettingsSchema.shape.emulatorResolution.unwrap().options} />
       <div className="divider text-base-content/40">Overrides</div>
       <NewEmulatorPath isAddingOverride={addOverrideMutation.isPending} addOverride={addOverrideMutation.mutate} />

@@ -1,5 +1,3 @@
-
-
 import { JSX } from 'react';
 import * as z from 'zod';
 
@@ -13,6 +11,9 @@ export const RPC_PORT = 8787;
 export const RPC_URL = (host: string) => `http://${host}:${RPC_PORT}`;
 export const EMULATORJS_URL = (host: string) => `http://${host}:${EMULATORJS_PORT}`;
 export const SOCKETS_URL = (host: string) => `ws://${host}:${RPC_PORT}`;
+export const settingRegistry = z.registry<{
+    dev?: boolean;
+}>();
 
 export const DefaultRommStaleTime = 60 * 1000; // A minute
 export interface GameMeta extends FocusParams
@@ -38,14 +39,16 @@ export const SettingsSchema = z.object({
 });
 
 export const LocalSettingsSchema = z.object({
-    backgroundBlur: z.stringbool().or(z.boolean()).default(true),
-    backgroundAnimation: z.stringbool().or(z.boolean()).default(true),
-    theme: z.enum(['dark', 'light', 'auto']).default('auto'),
-    soundEffects: z.boolean().default(true),
-    soundEffectsVolume: z.number().min(0).max(100).default(50),
-    hapticsEffects: z.boolean().default(true),
-    showRouterDevOptions: z.boolean().default(false),
-    showQueryDevOptions: z.boolean().default(false),
+    backgroundBlur: z.boolean().default(true).meta({ title: "Background Blur" }),
+    backgroundAnimation: z.boolean().default(true).meta({ title: "Background Animation" }),
+    theme: z.enum(['dark', 'light', 'auto']).default('auto').meta({ title: "Theme" }),
+    soundEffects: z.boolean().default(true).meta({ title: "Sounds" }),
+    soundEffectsVolume: z.number().min(0).max(100).default(50).meta({ title: "Sound Volume" }),
+    hapticsEffects: z.boolean().default(true).meta({ title: "Haptics" }),
+    showRouterDevOptions: z.boolean().default(false).meta({ title: "Show Router Options" }).register(settingRegistry, { dev: true }),
+    showQueryDevOptions: z.boolean().default(false).meta({ title: "Show Query Options" }).register(settingRegistry, { dev: true }),
+    useGameflowKeyboard: z.boolean().default(true).describe("Show the gameflow on screen keyboard when using a controller").meta({ title: "Use Gameflow Keyboard" }),
+    autoKeybaord: z.boolean().default(true).describe("Open on screen keybaord automatically").meta({ title: "Auto Keyboard" })
 });
 
 export const GameListFilterSchema = z.object({
@@ -113,6 +116,14 @@ export const StoreDownloadSchema = z.discriminatedUnion('type', [
         saves: z.record(z.string(), StoreGameSaveSchema).optional()
     })
 ]);
+
+export const NewGameSchema = z.object({
+    name: z.string(),
+    summary: z.string(),
+    genres: z.string().regex(/^$|^(\s*\S[^,]*)(\s*,\s*\S[^,]*)*\s*$/, {
+        message: "Must be a comma-separated list",
+    })
+});
 
 export const StoreGameSchema = z.object({
     name: z.string(),

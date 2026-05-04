@@ -1,8 +1,9 @@
 import Elysia, { status } from "elysia";
 import z from "zod";
-import { and, count, eq, getTableColumns, not, notExists } from "drizzle-orm";
-import { db, plugins } from "../app";
+import { and, count, eq, getTableColumns, not, notExists, or } from "drizzle-orm";
+import { config, db, plugins } from "../app";
 import * as schema from "@schema/app";
+import { findPlatform } from "./services/utils";
 
 export default new Elysia()
     .get('/platforms', async () =>
@@ -91,7 +92,8 @@ export default new Elysia()
         {
             const remotePlatform = await plugins.hooks.games.fetchPlatform.promise({ source, id });
             if (!remotePlatform) return status("Not Found");
-            return remotePlatform;
+            const local = await db.query.platforms.findFirst({ where: or(eq(schema.platforms.slug, remotePlatform?.slug), eq(schema.platforms.name, remotePlatform?.name)) });
+            return { ...remotePlatform, hasLocal: !!local };
         }
     }, { params: z.object({ source: z.string(), id: z.string() }) })
     .get('/platform/local/:id/cover', async ({ params: { id }, set }) =>
@@ -114,15 +116,31 @@ export default new Elysia()
         }
         return status(200, coverBlob.cover);
     }, { response: { 200: z.instanceof(Buffer<ArrayBufferLike>), 404: z.any() }, params: z.object({ id: z.coerce.number() }) })
-    .post('/platform/local/:id/update', async ({ params: { id } }) =>
+    .post('/platform/:source/:id/update', async ({ params: { source, id } }) =>
     {
-        const localPlatform = await db.query.platforms.findFirst({ where: eq(schema.platforms.id, Number(id)) });
+        const where: any[] = [];
+        if (source === 'local')
+        {
+            where.push(eq(schema.platforms.id, Number(id)));
+        } else
+        {
+            const remotePlatform = await plugins.hooks.games.fetchPlatform.promise({ source, id });
+            if (remotePlatform)
+            {
+                where.push(eq(schema.platforms.slug, remotePlatform.slug));
+            }
+        }
+
+        const localPlatform = await db.query.platforms.findFirst({
+            where: or(...where)
+
+        });
         if (!localPlatform) return status("Not Found");
 
         const platformLookup = await plugins.hooks.games.platformLookup.promise({
             slug: localPlatform.slug
         });
-        let platformCover = await fetch(`https://demo.romm.app/assets/platforms/${localPlatform.slug}.svg`);
+        let platformCover = await fetch(`${config.get('rommAddress') ?? 'https://demo.romm.app'}/assets/platforms/${localPlatform.slug}.svg`);
         if (!platformCover.ok && platformLookup?.url_logo)
         {
             platformCover = await fetch(platformLookup.url_logo);
@@ -144,4 +162,23 @@ export default new Elysia()
                     .where(eq(schema.games.platform_id, Number(id)))
             ))).returning();
         if (deleted.length <= 0) return status("Not Found");
+    })
+    .get('/platform/lookup/match/:source/:id', async ({ params: { source, id } }) =>
+    {
+        const platformLookup = await plugins.hooks.games.platformLookup.promise({ source, id });
+        if (!platformLookup) return status("Not Found");
+        const match = await findPlatform({
+            system_slug: platformLookup.slug,
+            platform: {
+                source_slug: platformLookup.slug,
+                source_id: Number(id),
+                source: source,
+                name: platformLookup.name
+            }
+        });
+        return { details: platformLookup, match };
+    }, {
+        detail: {
+            description: "Find matches of remote platform lookups. Returns the operations for each platform if it were to be imported. If platform locally exists. Will a new local platform be created from say romm. Unknown is returned if no match is found."
+        }
     });

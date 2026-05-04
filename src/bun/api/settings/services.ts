@@ -57,15 +57,6 @@ export async function getRelevantEmulators ()
         await plugins.hooks.emulators.findEmulatorSource.promise({ emulator, sources: execPaths });
         const integrations = findEmulatorPluginIntegration(emulator, execPaths);
 
-        const storeEmulator = await plugins.hooks.store.fetchEmulator.promise({ id: emulator });
-
-        if (storeEmulator)
-        {
-            storeEmulator.validSources = execPaths;
-            storeEmulator.integrations = integrations;
-            return storeEmulator;
-        }
-
         let platform: number | null | undefined = null;
         const validSystemSlug = system_slug.find(s => s.system);
         if (validSystemSlug?.system)
@@ -78,7 +69,17 @@ export async function getRelevantEmulators ()
             systems.forEach(s => platformViability.set(s, true));
         }
 
+        const storeEmulator = await plugins.hooks.store.fetchEmulator.promise({ id: emulator });
+
+        if (storeEmulator)
+        {
+            storeEmulator.validSources = execPaths;
+            storeEmulator.integrations = integrations;
+            return { ...storeEmulator, isCritical: false };
+        }
+
         const em: FrontEndEmulator & { isCritical: boolean; } = {
+            source: 'local',
             name: emulator,
             logo: platform ? `/api/romm/platform/local/${platform}/cover` : '',
             systems: systems.map(s => platformLookup.get(s)).filter(s => !!s).map(e => ({ iconUrl: `/api/romm/image/romm/assets/platforms/${e.es_slug}.svg`, name: e.platform_name ?? 'Unknown', id: e.es_slug ?? '' })),
@@ -92,6 +93,7 @@ export async function getRelevantEmulators ()
     }));
 
     finalEmulators.push({
+        source: 'local',
         name: 'EMULATORJS',
         validSources: [{ binPath: `${SERVER_URL(host)}`, type: 'embedded', exists: true }],
         logo: `/api/romm/image?url=${encodeURIComponent('https://emulatorjs.org/logo/EmulatorJS.png')}`,

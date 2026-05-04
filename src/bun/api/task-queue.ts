@@ -1,8 +1,5 @@
-
-
-import { and } from 'drizzle-orm';
 import EventEmitter from 'node:events';
-import z, { any } from 'zod';
+import z from 'zod';
 
 export class TaskQueue
 {
@@ -10,7 +7,16 @@ export class TaskQueue
     private queue?: JobContext<IJob<any, string>, any, string>[] = [];
     private events?: EventEmitter<EventsList> = new EventEmitter<EventsList>();
 
-    public enqueue<T> (id: string, job: T): T extends IJob<infer TData, infer TState extends string>
+    constructor()
+    {
+        // we need a default error listener or app crashes
+        this.events?.addListener('error', e =>
+        {
+            console.error(e);
+        });
+    }
+
+    public enqueue<T> (id: string, job: T, throwOnError?: boolean): T extends IJob<infer TData, infer TState extends string>
         ? Promise<TData>
         : never
     {
@@ -35,7 +41,7 @@ export class TaskQueue
         {
             job.job.start();
             this.activeQueue.push(job.job);
-            job.job.promise.promise.finally(() =>
+            job.job.promise.promise.catch(e => { }).finally(() =>
             {
                 const index = this.activeQueue.indexOf(job.job);
                 this.activeQueue.splice(index, 1);
@@ -235,26 +241,21 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
             }
         } catch (error)
         {
-            try
+            if (error instanceof Event)
             {
-                if (error instanceof Event)
+                if (error.target instanceof AbortSignal)
                 {
-                    if (error.target instanceof AbortSignal)
-                    {
-
-                    } else
-                    {
-                        console.error(error);
-                    }
+                    this.m_promise.resolve(undefined);
                 } else
                 {
                     console.error(error);
-                    this.events.emit('error', { id: this.m_id, job: this, error });
-                    this.error = error;
+                    this.m_promise.reject(error);
                 }
-            } finally
+            } else
             {
-                this.m_promise.resolve(undefined);
+                this.events.emit('error', { id: this.m_id, job: this, error });
+                this.error = error;
+                this.m_promise.reject(error);
             }
 
         } finally

@@ -1,13 +1,12 @@
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { FocusEventHandler, Ref, RefObject, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import { oneShot } from "../scripts/audio/audio";
 import { Search } from "lucide-react";
 import { RoundButton } from "./RoundButton";
 import { useEventListener } from "usehooks-ts";
-import { systemApi } from "../scripts/clientApi";
-import { showKeyboardHandler } from "../scripts/utils";
 import useActiveControl from "../scripts/gamepads";
+import { twMerge } from "tailwind-merge";
 
 function SearchInput (data: {
     id: string;
@@ -16,6 +15,7 @@ function SearchInput (data: {
     compact: boolean | undefined;
     onInputFocus: () => void;
     setShowInput: (show: boolean) => void;
+    className?: string;
     onSubmit: (search: string | undefined) => void;
 } & FocusParams)
 {
@@ -63,9 +63,7 @@ function SearchInput (data: {
         data.onSubmit?.(undefined);
     }, inputRef as any);
 
-    const handlInputFocus: FocusEventHandler<HTMLInputElement> = e => showKeyboardHandler(control as any, e.target);
-
-    return <label ref={ref} onFocus={data.onInputFocus} className='input rounded-full input-lg w-full max-w-xs has-focus:bg-base-300 ring-primary focused:ring-7 has-focus:ring-7 has-focus:ring-base-content'>
+    return <label ref={ref} onFocus={data.onInputFocus} className={twMerge('input rounded-full input-lg w-full max-w-xs bg-base-200 has-focus:bg-base-300 ring-primary focused:ring-7 has-focus:ring-7 has-focus:ring-base-content', data.className)}>
         <Search />
         <input
             onBlur={e =>
@@ -74,7 +72,6 @@ function SearchInput (data: {
                 setLocalSearch(data.search);
             }}
             autoFocus={data.compact}
-            onFocus={handlInputFocus}
             ref={inputRef}
             value={localSearch ?? ""}
             onChange={v => setLocalSearch(v.target.value)}
@@ -89,6 +86,7 @@ export default function HeaderSearchField (data: {
     autoSearch?: boolean;
     search: string | undefined,
     onSubmit: (search: string | undefined) => void;
+    className?: string;
     compact?: boolean;
 } & FocusParams)
 {
@@ -102,7 +100,7 @@ export default function HeaderSearchField (data: {
 
     return <div ref={ref} className='flex items-center'>
         <FocusContext value={focusKey}>
-            {(!data.compact || showInput) && <SearchInput autoSearch={data.autoSearch} onFocus={data.onFocus} id={`${data.id}-field`} search={data.search} onSubmit={data.onSubmit} compact={data.compact} setShowInput={setShowInput} onInputFocus={focusSelf} />}
+            {(!data.compact || showInput) && <SearchInput className={data.className} autoSearch={data.autoSearch} onFocus={data.onFocus} id={`${data.id}-field`} search={data.search} onSubmit={data.onSubmit} compact={data.compact} setShowInput={setShowInput} onInputFocus={focusSelf} />}
             {data.compact && !showInput && <RoundButton onAction={e => setShowInput(true)} className="header-icon sm:size-10 md:size-14" id={`${data.id}-field`} ><Search /></RoundButton>}
         </FocusContext>
     </div>;

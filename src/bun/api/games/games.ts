@@ -8,7 +8,7 @@ import { GameListFilterSchema, SERVER_URL } from "@shared/constants";
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
 import { convertLocalToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
-import buildStatusResponse, { fixSource, getValidLaunchCommandsForGame, update, validateGameSource } from "./services/statusService";
+import buildStatusResponse, { customUpdate, fixSource, getValidLaunchCommandsForGame, update, validateGameSource } from "./services/statusService";
 import { errorToResponse } from "elysia/adapter/bun/handler";
 import { launchCommand } from "./services/launchGameService";
 import { getErrorMessage, SeededRandom } from "@/bun/utils";
@@ -21,6 +21,7 @@ import { host } from "@/bun/utils/host";
 import { LaunchGameJob } from "../jobs/launch-game-job";
 import { cores } from "../emulatorjs/emulatorjs";
 import { findEmulatorPluginIntegration } from "../store/services/emulatorsService";
+import { ImportJob } from "../jobs/import-job";
 
 // A custom jimp that supports webp
 const Jimp = createJimp({
@@ -491,6 +492,24 @@ export default new Elysia()
     {
         return update(source, id);
     })
+    .post('/game/:source/:id/update', async ({ params: { id, source }, body }) =>
+    {
+        return customUpdate(source, id, body.source, body.id);
+    }, { body: z.object({ source: z.string(), id: z.string() }) })
+    .get('/lookup', async ({ query: { search } }) =>
+    {
+        const matches: GameLookup[] = [];
+        await plugins.hooks.games.gameLookup.promise({ search, matches });
+        return matches;
+    }, {
+        query: z.object({ search: z.string() })
+    })
+    .get('/lookup/:source/:id', async ({ params: { source, id } }) =>
+    {
+        const matches: GameLookup[] = [];
+        await plugins.hooks.games.gameLookup.promise({ source, id, matches });
+        return matches;
+    })
     .post('/game/:source/:id/play', async ({ params: { id, source }, body, set }) =>
     {
         const validCommands = await getValidLaunchCommandsForGame(source, id);
@@ -651,4 +670,17 @@ export default new Elysia()
         rankedGames.sort((lhs, rhs) => rhs.rank - lhs.rank);
 
         return rankedGames.map(g => g.game).slice(0, 10);
+    })
+    .post('/add/custom', async ({ body: { source, id, platformId, gamePath } }) =>
+    {
+        if (taskQueue.hasActiveOfType(ImportJob)) return status("Conflict", "Import Job Already Running");
+        const data = await taskQueue.enqueue(ImportJob.id, new ImportJob(source, id, gamePath, platformId), true);
+        return { source: 'local', id: data.localId };
+    }, {
+        body: z.object({
+            source: z.string(),
+            id: z.string(),
+            gamePath: z.string(),
+            platformId: z.number()
+        })
     });

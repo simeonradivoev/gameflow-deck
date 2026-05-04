@@ -3,6 +3,7 @@ import { SystemInfoContext } from "../scripts/contexts";
 import { systemApi } from "../scripts/clientApi";
 import { SystemInfoType } from "@/shared/constants";
 import LoadingScreen from "./LoadingScreen";
+import { GamepadKeyboard } from "./GamepadKeyboard";
 
 export default function AppCommunication (data: { children: any; })
 {
@@ -55,5 +56,6 @@ export default function AppCommunication (data: { children: any; })
                 </div>
             </LoadingScreen>
             : data.children}
+        <GamepadKeyboard />
     </SystemInfoContext>;
 } 

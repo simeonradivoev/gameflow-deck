@@ -1,4 +1,4 @@
-import { HTMLInputTypeAttribute, JSX } from "react";
+import { JSX } from "react";
 import { LocalSettingsSchema, LocalSettingsType } from "@shared/constants";
 import { OptionSpace } from "./OptionSpace";
 import { OptionInput } from "./OptionInput";
@@ -6,14 +6,9 @@ import { useLocalStorage } from "usehooks-ts";
 import { OptionDropdown } from "./OptionDropdown";
 
 export function LocalOption (data: {
-    label: string;
     id: keyof LocalSettingsType;
-    type: HTMLInputTypeAttribute | 'dropdown';
-    min?: number;
-    max?: number;
     step?: number;
     placeholder?: string;
-    values?: string[];
     icon?: JSX.Element;
     children?: any;
 })
@@ -22,9 +17,20 @@ export function LocalOption (data: {
         deserializer: (v) => LocalSettingsSchema.shape[data.id].parse(JSON.parse(v))
     });
 
+    const schema = LocalSettingsSchema.shape[data.id].toJSONSchema();
+    const typeMapping: Record<string, string> = {
+        string: 'text',
+        integer: 'range',
+        number: 'range',
+        boolean: 'checkbox'
+    };
+
     return (
-        <OptionSpace id={`${data.id}-space`} label={data.label}>
-            {data.type === 'dropdown' && data.values && <OptionDropdown values={data.values} icon={data.icon}
+        <OptionSpace id={`${data.id}-space`} label={<div className="flex flex-col gap-1">
+            <div>{schema.title ?? data.id}</div>
+            <div className="text-base-content/40 text-sm">{schema.description}</div>
+        </div>}>
+            {!!schema.enum && <OptionDropdown values={schema.enum.map(v => String(v))} icon={data.icon}
                 name={data.id ?? ""}
                 placeholder={data.placeholder}
                 defaultValue={localValue}
@@ -33,12 +39,12 @@ export function LocalOption (data: {
                     setLocalValue(v);
                 }}
                 value={localValue} />}
-            {data.type !== 'dropdown' && <OptionInput
+            {!schema.enum && <OptionInput
                 icon={data.icon}
                 name={data.id ?? ""}
-                type={data.type}
-                min={data.min}
-                max={data.max}
+                type={schema.type ? typeMapping[schema.type] : 'text'}
+                min={schema.minimum}
+                max={schema.maximum}
                 step={data.step}
                 placeholder={data.placeholder}
                 defaultValue={localValue}

@@ -12,6 +12,8 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 ### Integrations
 
 - **[ROMM](https://github.com/rommapp/romm)** - download, sync and update roms and platforms.
+  - Show Achievements and sync playtime.
+  - Experimental save syncing
 - **[Emulator JS](https://github.com/EmulatorJS/EmulatorJS)** - play your games with emulator js right within the app. Uses RetroArch cores.
 - **[RClone](https://github.com/rclone/rclone)** - sync saves between devices or cloud. Some Emulators and store games support it.
 - **[UMU](https://github.com/Open-Wine-Components/umu-launcher)** - UMU Launcher for playing windows games on linux without needing steam. (Only used for store games for now)
@@ -39,7 +41,7 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 
 ## Screenshots
 
-<img src=".github/screenshots/Pkazk0RufB.png" title="Home Screen Showing games sorted by latest activity" width="25%"></img>
+<img src=".github/screenshots/3d screenshot.png" title="Home Screen Showing games sorted by latest activity" width="25%"></img>
 <img src=".github/screenshots/3nhuKCK6E3.png" title="Game Details." width="25%"></img>
 <img src=".github/screenshots/yObFD2LySH.jpg" title="Home Screen in dark mode" width="25%"></img>
 <img src=".github/screenshots/GL7SkQbHIY.png" title="Plugins Page" width="25%"></img>

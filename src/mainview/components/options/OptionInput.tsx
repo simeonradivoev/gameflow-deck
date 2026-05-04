@@ -2,11 +2,9 @@ import { FocusEventHandler, HTMLInputAutoCompleteAttribute, HTMLInputTypeAttribu
 import { twMerge } from "tailwind-merge";
 import { useOptionContext } from "./OptionSpace";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { systemApi } from "../../scripts/clientApi";
 import { CheckIcon, X } from "lucide-react";
 import { oneShot } from "@/mainview/scripts/audio/audio";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
-import { showKeyboardHandler } from "@/mainview/scripts/utils";
 import useActiveControl from "@/mainview/scripts/gamepads";
 
 export function OptionInput (data: {
@@ -106,7 +104,6 @@ export function OptionInput (data: {
     {
         option.focus();
         setInputFocused(true);
-        showKeyboardHandler(control as any, e.target);
     };
 
     const handleInputBlur = (e: any) =>
