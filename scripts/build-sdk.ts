@@ -4,6 +4,11 @@ import sdkTsConfig from './sdk/sdk.tsconfig.json';
 import sdkPackage from './sdk/package.json';
 import { emptyDir } from 'fs-extra';
 import { generateDtsBundle } from 'dts-bundle-generator';
+import { zodToTs, createAuxiliaryTypeStore, printNode } from 'zod-to-ts';
+
+import * as types from './sdk/sdk';
+
+const zodTypeRegex = /z\.infer<typeof? ([\w\d]+)>/gm;
 
 async function generateApiDeclarations ()
 {
@@ -19,7 +24,29 @@ async function generateApiDeclarations ()
         }
     },], { preferredConfigPath: './scripts/sdk/sdk.tsconfig.json' });
 
-    await Bun.write('./dist-sdk/index.d.ts', results);
+    const auxiliaryTypeStore = createAuxiliaryTypeStore();
+
+    await Bun.write('./dist-sdk/index.d.ts', results.map(r =>
+    {
+        const result = r;
+        return result.replaceAll(zodTypeRegex, (e, name) =>
+        {
+            const schema = types[name as keyof typeof types];
+            if (schema)
+            {
+                try
+                {
+                    const { node } = zodToTs(schema as any, { auxiliaryTypeStore, unrepresentable: 'any' });
+                    return printNode(node);
+                } catch (error)
+                {
+                    console.error(error);
+                    return e;
+                }
+            }
+            return e;
+        });
+    }));
 
     const pkg = {
         ...sdkPackage,
@@ -29,7 +56,7 @@ async function generateApiDeclarations ()
         author: appPkg.author,
         peerDependencies: appPkg.dependencies
     };
-    await Bun.write(path.join(outDir, '..', 'package.json'), JSON.stringify(pkg, null, 3));
+    await Bun.write(path.join(outDir, 'package.json'), JSON.stringify(pkg, null, 3));
 }
 
 await generateApiDeclarations();

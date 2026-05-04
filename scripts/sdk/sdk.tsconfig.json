@@ -14,7 +14,7 @@
       "emitDeclarationOnly": true,
       "declaration": true,
       "strict": true,
-      "outDir": "../../dist-sdk/sdk",
+      "outDir": "../../dist-sdk",
       "types": [
          "node"
       ],
@@ -38,10 +38,5 @@
             "../../src/mainview/scripts/queries/*"
          ]
       }
-   },
-   "include": [
-      "../../src/bun/api/hooks",
-      "../../src/bun/types",
-      "../../src/shared"
-   ]
+   }
 }
