@@ -1,4 +1,4 @@
-# Gameflow Deck
+# <img src="src/mainview/public/icon.svg" title="Home Screen Showing games sorted by latest activity" style="width:2.5rem;margin-bottom:-1rem" /> Gameflow Deck
 
 A Cross-Platform open source Retro gaming frontend designed for handheld and controllers.
 Focused on building a simple user experience and intuitive UI as a curated community driven experience.
