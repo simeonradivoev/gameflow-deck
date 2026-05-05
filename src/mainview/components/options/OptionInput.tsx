@@ -121,7 +121,7 @@ export function OptionInput (data: {
                 step={data.step}
                 data-focus={"input"}
                 name={data.name}
-                value={String(data.value)}
+                value={data.value === undefined ? undefined : String(data.value)}
                 defaultValue={typeof data.defaultValue === 'string' ? data.defaultValue : undefined}
                 type={data.type}
                 autoComplete={data.autocomplete}

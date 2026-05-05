@@ -441,9 +441,9 @@ export async function createLocalGame (info: {
 
         if (info.screenshotUrls.length <= 0 && info.igdb_id)
         {
-            const matches: GameLookup[] = [];
-            await plugins.hooks.games.gameLookup.promise({ source: 'igdb', id: String(info.igdb_id), matches });
-            info.screenshotUrls.push(...matches[0].screenshotUrls);
+            const matches = new Map<string, GameLookup[]>();
+            await plugins.hooks.games.gameLookup.promise(matches, { source: 'igdb', id: String(info.igdb_id) });
+            info.screenshotUrls.push(...(matches.values().next().value?.[0].screenshotUrls ?? []));
         }
 
         // pre-fetch screenshots

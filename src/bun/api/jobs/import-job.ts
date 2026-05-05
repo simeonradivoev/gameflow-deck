@@ -32,9 +32,10 @@ export class ImportJob implements IJob<z.infer<typeof ImportJob.dataSchema>, str
 
     async start (context: JobContext<IJob<z.infer<typeof ImportJob.dataSchema>, string>, z.infer<typeof ImportJob.dataSchema>, string>): Promise<any>
     {
-        const matches: GameLookup[] = [];
-        await plugins.hooks.games.gameLookup.promise({ source: this.source, id: this.id, matches });
-        if (matches.length <= 0) throw Error("Could not Find Game");
+        const matchesMap = new Map<string, GameLookup[]>();
+        await plugins.hooks.games.gameLookup.promise(matchesMap, { source: this.source, id: this.id });
+        const matches = matchesMap.values().next().value;
+        if (!matches || matches.length <= 0) throw Error("Could not Find Game");
         const match = matches[0];
 
         let cover: Buffer<ArrayBufferLike> | undefined = undefined;

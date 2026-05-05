@@ -26,8 +26,6 @@ import
 } from "lucide-react";
 import { JSX, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
-import z from "zod";
-import { SettingsSchema } from "../../../shared/constants";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Shortcuts from "@/mainview/components/Shortcuts";
 import { HandleGoBack } from "@/mainview/scripts/utils";
@@ -37,9 +35,6 @@ import SelectMenu from "@/mainview/components/SelectMenu";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsUI,
-  validateSearch: z.object({
-    focus: z.keyof(SettingsSchema).optional()
-  }),
   staticData: {
     enterSound: 'openSettings'
   }

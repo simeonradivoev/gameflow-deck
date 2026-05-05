@@ -27,6 +27,7 @@ export function Button (data: {
     children?: any,
     className?: string,
     disabled?: boolean,
+    external?: boolean,
     type?: "reset" | "button" | "submit";
     style?: ButtonStyle,
     shortcutLabel?: string;
@@ -65,6 +66,7 @@ export function Button (data: {
             focused ? data.focusClassName : undefined,
             classNames({
                 "btn-accent": focused,
+                "focusable focusable-primary focusable-hover": data.external
             }, data.className))}
         type={data.type ?? 'button'}
     >

@@ -1,13 +1,15 @@
 
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Search } from "lucide-react";
+import { Check, Search, TriangleAlert } from "lucide-react";
 import HeaderSearchField from "../HeaderSearchField";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { scrollIntoViewHandler } from "@/mainview/scripts/utils";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import { FrontEndId, GameLookup } from "@/shared/types";
 import { gameLookupQuery } from "@/mainview/scripts/queries/romm";
+import { Button } from "../options/Button";
+import { useNavigate } from "@tanstack/react-router";
 
 function Result (data: {
     match: GameLookup;
@@ -65,18 +67,26 @@ export default function GameLookupElement (data: {
 })
 {
     const { data: lookups, isFetching } = useQuery({ ...gameLookupQuery(data.search), staleTime: 1000 * 60 * 60 });
+    const navigate = useNavigate();
 
     return <div>
         <SearchField setSearch={data.setSearch} search={data.search} />
         <div className="divider">{isFetching ? <span className="loading loading-spinner loading-lg"></span> : <Search className='size-10' />}Results</div>
         <ul className='flex flex-col gap-2 justify-center p-2 px-4'>
-            {lookups?.map((l, i) =>
-            {
-                return <Result key={i} selected={data.selected?.id === l.id && data.selected?.source === l.source} showPlatform={data.showPlatforms ?? false} match={l} onAction={(ctx) =>
+            {!Array.isArray(lookups) && <>
+
+                {!isFetching && !lookups?.hadMatchers && <div className="flex justify-center items-center text-2xl p-16 gap-2 text-warning">
+                    <Button onAction={e => navigate({ to: '/settings/accounts', search: { focus: 'twitch-login-space' } })} external className="gap-2" style="warning" id="setup-lookup-btn"><TriangleAlert /> Login With Lookup Provider</Button>
+                </div>}
+                {lookups?.matches.map((l, i) =>
                 {
-                    data.onSelect(l);
-                }} />;
-            })}
+                    return <Result key={i} selected={data.selected?.id === l.id && data.selected?.source === l.source} showPlatform={data.showPlatforms ?? false} match={l} onAction={(ctx) =>
+                    {
+                        data.onSelect(l);
+                    }} />;
+                })}
+
+            </>}
         </ul>
     </div>;
 }

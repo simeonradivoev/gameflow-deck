@@ -43,13 +43,13 @@ export default class IgdbIntegration implements PluginType
     {
         await checkLoginAndRefreshTwitch();
 
-        ctx.hooks.games.gameLookup.tapPromise(desc.name, async ({ source, id, search, matches }) =>
+        ctx.hooks.games.gameLookup.tapPromise(desc.name, async (matches, { source, id, search }) =>
         {
-            if (!process.env.TWITCH_CLIENT_ID) return;
+            if (!process.env.TWITCH_CLIENT_ID) return matches;
             const access_token = await secrets.get({ service: 'gamflow_twitch', name: 'access_token' });
             if (!access_token)
             {
-                return;
+                return matches;
             }
 
             if ((source === 'igdb' && id) || search)
@@ -62,7 +62,7 @@ export default class IgdbIntegration implements PluginType
                         ...(source === 'igdb' && id ? [igdb.where('id', '=', Number(id))] : []),
                         igdb.limit(10)).execute());
 
-                matches.push(...games.filter(g => !!g.name)
+                matches.set(desc.name, games.filter(g => !!g.name)
                     .map(g =>
                     {
                         const lookup: GameLookup = {
@@ -89,8 +89,10 @@ export default class IgdbIntegration implements PluginType
                         return lookup;
                     }));
 
-                return;
+                return matches;
             }
+
+            return matches.set(desc.name, []);
         });
 
         ctx.hooks.games.platformLookup.tapPromise(desc.name, async ({ source, id, slug }) =>

@@ -13,6 +13,12 @@ export type ScrollSaveParams = {
   storage?: "session" | "local";
   shouldSave?: boolean;
 };
+
+export function isTextInputFocused ()
+{
+  return document.activeElement && document.activeElement instanceof HTMLInputElement;
+}
+
 export function useScrollSave (data: ScrollSaveParams)
 {
   useEffect(() =>

@@ -499,17 +499,17 @@ export default new Elysia()
     }, { body: z.object({ source: z.string(), id: z.string() }) })
     .get('/lookup', async ({ query: { search } }) =>
     {
-        const matches: GameLookup[] = [];
-        await plugins.hooks.games.gameLookup.promise({ search, matches });
-        return matches;
+        const matches = new Map<string, GameLookup[]>();
+        await plugins.hooks.games.gameLookup.promise(matches, { search });
+        return { hadMatchers: matches.size > 0, matches: Array.from(matches.values()).flatMap(m => m) };
     }, {
         query: z.object({ search: z.string() })
     })
     .get('/lookup/:source/:id', async ({ params: { source, id } }) =>
     {
-        const matches: GameLookup[] = [];
-        await plugins.hooks.games.gameLookup.promise({ source, id, matches });
-        return matches;
+        const matches = new Map<string, GameLookup[]>();
+        await plugins.hooks.games.gameLookup.promise(matches, { source, id });
+        return Array.from(matches.values()).flatMap(m => m);
     })
     .post('/game/:source/:id/play', async ({ params: { id, source }, body, set }) =>
     {

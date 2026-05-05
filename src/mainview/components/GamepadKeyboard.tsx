@@ -1,5 +1,5 @@
 import { createRef, JSX, RefObject, useEffect, useRef, useState } from "react";
-import useActiveControl from "../scripts/gamepads";
+import useActiveControl, { GamepadButtonEvent } from "../scripts/gamepads";
 import { oneShot } from "../scripts/audio/audio";
 import { ArrowLeft, ArrowRight, CornerDownLeft, Delete, Space } from "lucide-react";
 import { GamePadButtonCode } from "../scripts/shortcuts";
@@ -457,11 +457,26 @@ export function GamepadKeyboard ()
 
         if (!disposed && !hidden) requestAnimationFrame(update);
 
+        const gamepadButtonHandler = (e: Event) =>
+        {
+            if (!(e instanceof GamepadButtonEvent) || disposed || hidden) return;
+            if (e.button === GamePadButtonCode.L1 || e.button === GamePadButtonCode.R1 || e.button === GamePadButtonCode.L2 || e.button === GamePadButtonCode.R2)
+            {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+
+        };
+        window.addEventListener('gamepadbuttondown', gamepadButtonHandler);
+        window.addEventListener('gamepadbuttonup', gamepadButtonHandler);
+
         return () =>
         {
             disposed = true;
             Object.values(buttonRepeatTimeout).forEach(v => clearTimeout(v));
             Object.values(actionRepeatTimeout).forEach(v => clearTimeout(v));
+            window.removeEventListener('gamepadbuttondown', gamepadButtonHandler);
+            window.removeEventListener('gamepadbuttonup', gamepadButtonHandler);
         };
     }, [focusedInput, elements, shift, characters, hidden]);
 

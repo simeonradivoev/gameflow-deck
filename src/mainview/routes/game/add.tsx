@@ -5,6 +5,7 @@ import { StickyHeaderUI } from '@/mainview/components/Header';
 import LoadingScreen from '@/mainview/components/LoadingScreen';
 import { Button } from '@/mainview/components/options/Button';
 import { PathSettingsOptionBase } from '@/mainview/components/options/PathSettingsOption';
+import SelectMenu from '@/mainview/components/SelectMenu';
 import { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { oneShot } from '@/mainview/scripts/audio/audio';
 import { addManualGameMutation, allGamesInvalidateQuery, gameLookupDetails, platformLookupMatchQuery } from '@/mainview/scripts/queries/romm';
@@ -252,7 +253,6 @@ function Location ()
 
 function Details (data: {})
 {
-
     const { ref, focusKey } = useFocusable({ focusKey: 'add-game-details-section' });
     const state = Route.useSearch();
     const step = state.step ?? 0;
@@ -318,11 +318,13 @@ function Steps ()
     const state = Route.useSearch();
     const step = state.step ?? 0;
     const { ref, focusKey } = useFocusable({ focusKey: "steps", preferredChildFocusKey: `step-${step}`, saveLastFocusedChild: false });
-    return <ul ref={ref} className="steps pt-2" style={{ viewTransitionName: 'steps' }}>
-        <FocusContext value={focusKey}>
-            {StepDetails.map((s, i) => <Step key={i} index={i} label={s.label} />)}
-        </FocusContext>
-    </ul>;
+    return <div ref={ref} className='flex justify-center mt-8'>
+
+        <ul className="steps pt-2" style={{ viewTransitionName: 'steps' }}>
+            <FocusContext value={focusKey}>
+                {StepDetails.map((s, i) => <Step key={i} index={i} label={s.label} />)}
+            </FocusContext>
+        </ul></div>;
 }
 
 function RouteComponent ()
@@ -374,23 +376,23 @@ function RouteComponent ()
         }
     ], [step]);
 
-    return <div ref={ref}>
+    return <div className='absolute w-screen h-screen' ref={ref}>
         <FocusContext value={focusKey}>
             <div className='absolute w-screen h-screen overflow-y-scroll'>
                 <StickyHeaderUI className='bg-base-300' ref={ref} />
-                <div className='flex justify-center mt-8'>
-                    <Steps />
-                </div>
+                <Steps />
                 <Details />
                 <FloatingShortcuts />
             </div>
+
+            <AutoFocus focus={focusSelf} />
+            {isAddingGame && <LoadingScreen>
+                <div className='flex gap-3'>
+                    <span className="loading loading-spinner loading-lg"></span>
+                    <div>Adding Game</div>
+                </div>
+            </LoadingScreen>}
+            <SelectMenu rootFocusKey={focusKey} />
         </FocusContext>
-        <AutoFocus focus={focusSelf} />
-        {isAddingGame && <LoadingScreen>
-            <div className='flex gap-3'>
-                <span className="loading loading-spinner loading-lg"></span>
-                <div>Adding Game</div>
-            </div>
-        </LoadingScreen>}
     </div>;
 }

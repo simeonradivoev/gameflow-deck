@@ -48,9 +48,10 @@ export async function customUpdate (source: string, id: string, destination: str
     const localGame = await getLocalGame(source, id);
     if (!localGame) throw new Error("Could not find Local Game");
 
-    const matches: GameLookup[] = [];
-    await plugins.hooks.games.gameLookup.promise({ source: destination, id: destinationId, matches });
-    if (matches.length <= 0) throw new Error("Could not find destination");
+    const matchesMap = new Map<string, GameLookup[]>();
+    await plugins.hooks.games.gameLookup.promise(matchesMap, { source: destination, id: destinationId });
+    const matches = matchesMap.values().next().value;
+    if (!matches || matches?.length <= 0) throw new Error("Could not find destination");
     const match = matches[0];
 
     await db.transaction(async (tx) =>

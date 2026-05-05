@@ -15,9 +15,11 @@ import { validateGameSource } from "@/bun/api/games/services/statusService";
 import z from "zod";
 import { checkLoginAndRefreshRomm } from "@/bun/api/auth";
 import { DownloadFileEntry, DownloadInfo, FrontEndCollection, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement, FrontEndGameTypeWithIds, FrontEndPlatformType } from "@/shared/types";
+import Conf from "conf";
 
 const SettingsSchema = z.object({
-    savesSync: z.boolean().default(false).describe("Experimental save sync support")
+    savesSync: z.boolean().default(false).describe("Experimental save sync support"),
+    clientApiToken: z.string().optional().describe("Generate a long lived token from the ROMM server")
 });
 
 type SettingsType = z.infer<typeof SettingsSchema>;
@@ -39,26 +41,34 @@ export default class RommIntegration implements PluginType<SettingsType>
         return true;
     }
 
-    async updateClient ()
+    async getAccessToken (config: Conf<SettingsType>)
+    {
+        if (process.env.ROMM_CLIENT_TOKEN) return process.env.ROMM_CLIENT_TOKEN;
+        const client_token = await config.get('clientApiToken');
+        if (client_token) return client_token;
+        return (await secrets.get({ service: 'gameflow', name: 'romm_access_token' })) ?? undefined;
+    }
+
+    async updateClient (pluginConfig: Conf<SettingsType>)
     {
         client.setConfig({
             baseUrl: config.get('rommAddress'),
-            async auth (auth)
+            auth: (auth) =>
             {
                 if (auth.scheme === 'bearer')
                 {
-                    return (await secrets.get({ service: 'gameflow', name: 'romm_access_token' })) ?? undefined;
+                    return this.getAccessToken(pluginConfig);
                 }
             }
         });
     }
 
-    async getAuthToken ()
+    async getAuthToken (config: Conf<SettingsType>)
     {
         return getAuthToken({
             scheme: 'bearer',
             type: "http"
-        }, async (a) => (await secrets.get({ service: "gameflow", name: 'romm_access_token' })) ?? undefined);
+        }, async (a) => this.getAccessToken(config));
     }
 
     async getAllRommPlatforms ()
@@ -146,9 +156,9 @@ export default class RommIntegration implements PluginType<SettingsType>
     {
         this.isSteamDeck = isSteamDeckGameMode();
         ctx.setProgress(0, "Logging Into Romm");
-        await this.updateClient();
+        await this.updateClient(ctx.config);
         await checkLoginAndRefreshRomm();
-        await this.updateClient();
+        await this.updateClient(ctx.config);
 
         ctx.hooks.games.fetchGames.tapPromise(desc.name, async ({ query, games }) =>
         {
@@ -199,7 +209,7 @@ export default class RommIntegration implements PluginType<SettingsType>
         {
             if (!await this.checkRemote()) return;
             if (service !== 'romm') return;
-            await this.updateClient();
+            await this.updateClient(ctx.config);
         });
 
         ctx.hooks.games.fetchGame.tapPromise(desc.name, async ({ source, id }) =>
@@ -273,7 +283,7 @@ export default class RommIntegration implements PluginType<SettingsType>
                 system_slug: rommPlatform.slug,
                 metadata: rom.metadatum,
                 files,
-                auth: await this.getAuthToken(),
+                auth: await this.getAuthToken(ctx.config),
                 extract_path,
                 id: "romm"
             };
@@ -310,7 +320,7 @@ export default class RommIntegration implements PluginType<SettingsType>
                 }
             }
 
-            if (files.length > 0) return { files, auth: await this.getAuthToken() };
+            if (files.length > 0) return { files, auth: await this.getAuthToken(ctx.config) };
         });
 
         ctx.hooks.games.fetchRecommendedGamesForGame.tapPromise(desc.name, async ({ game, games }) =>
@@ -445,7 +455,7 @@ export default class RommIntegration implements PluginType<SettingsType>
                     const rommSlot = saveFiles.data.slots.find(s => s.slot === 'gameflow' && s.latest.file_name_no_tags === slot);
                     if (rommSlot)
                     {
-                        const auth = await this.getAuthToken();
+                        const auth = await this.getAuthToken(ctx.config);
                         const headers: Record<string, string> = {};
                         if (auth)
                             headers['Authorization'] = auth;
@@ -535,7 +545,7 @@ export default class RommIntegration implements PluginType<SettingsType>
                         url.searchParams.set('emulator', command.emulator);
                     url.searchParams.set('overwrite', "true");
 
-                    const auth = await this.getAuthToken();
+                    const auth = await this.getAuthToken(ctx.config);
                     const headers: Record<string, string> = {};
                     if (auth)
                         headers['Authorization'] = auth;

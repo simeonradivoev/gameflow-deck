@@ -7,7 +7,7 @@ import
 import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import classNames from "classnames";
-import { Key, Link, Lock, LogIn, LogOut, ScanQrCode, User, X } from "lucide-react";
+import { Info, Key, Link, Lock, LogIn, LogOut, ScanQrCode, User, X } from "lucide-react";
 import
 {
   useEffect,
@@ -26,9 +26,13 @@ import { TwitchIcon } from "@/mainview/scripts/brandIcons";
 import { twitchLoginMutation, twitchLoginVerificationQuery, twitchLogoutMutation } from "@queries/settings";
 import { rommGetOptionsQuery, rommLoggedInQuery, rommHostnameQuery, rommLoginMutation, rommLogoutMutation, rommQrLoginMutation, rommUsernameQuery, rommUserQuery, invalidateLogin } from "@queries/romm";
 import { systemApi } from "@/mainview/scripts/clientApi";
+import z from "zod";
 
 export const Route = createFileRoute("/settings/accounts")({
   component: RouteComponent,
+  validateSearch: z.object({
+    focus: z.string().optional()
+  }),
 });
 
 function LoginQR (data: { id: string, isOpen: boolean, cancel: () => void, url: string; endsAt: Date; startedAt: Date; code?: string; })
@@ -221,6 +225,8 @@ function RouteComponent ()
               <field.FormOption label={"Romm Username"} icon={<User />} type="text" />} />
             <loginForm.AppField name="password" children={(field) =>
               <field.FormOption label={"Romm Password"} icon={<Key />} type="password" placeholder="Password" />} />
+            <loginForm.AppField name="password" children={(field) =>
+              <div className="flex p-4 gap-2 items-center justify-center bg-base-200 rounded-2xl"><Info /> For Romm Client API Token open plugin settings</div>} />
             <loginForm.Subscribe children={(form) =>
               <OptionSpace id="login-controls-space" className="justify-end border-0">
                 <LoginControls />

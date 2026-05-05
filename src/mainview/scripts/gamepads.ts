@@ -1,7 +1,7 @@
 import { getCurrentFocusKey, navigateByDirection } from "@noriginmedia/norigin-spatial-navigation";
 import { GetFocusedElement } from "./spatialNavigation";
 import { useEffect, useState } from "react";
-import { getLocalSetting, mobileCheck } from "./utils";
+import { getLocalSetting, isTextInputFocused, mobileCheck } from "./utils";
 import { oneShot } from "./audio/audio";
 import { Router } from "@/mainview";
 
@@ -98,7 +98,7 @@ const throttleMap = new Map<string, number>();
 const throttleAcceleration = new Map<string, number>();
 function throttleNav (key: string, dir: string, event: Event)
 {
-    if (document.activeElement && document.activeElement instanceof HTMLInputElement)
+    if (isTextInputFocused())
     {
         return false;
     }

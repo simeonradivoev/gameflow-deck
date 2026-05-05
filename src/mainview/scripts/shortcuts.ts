@@ -2,6 +2,7 @@ import { DependencyList, useEffect, useState } from "react";
 import { GamepadButtonEvent } from "./gamepads";
 import { dispatchFocusedEvent, GetFocusedTree } from "./spatialNavigation";
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
+import { isTextInputFocused } from "./utils";
 
 const shortcutMap = new Map<string, (() => Shortcut[])[]>();
 const conflictSet = new Set<number>();
@@ -123,12 +124,21 @@ export function useShortcutContext ()
             if (e.key === 'Escape')
             {
                 shortcuts.get(GamePadButtonCode.B)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.B }));
-            } else if (e.key === 'Backspace')
+            } else
             {
-                shortcuts.get(GamePadButtonCode.X)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.X }));
-            } else if (e.key === ' ')
-            {
-                shortcuts.get(GamePadButtonCode.Y)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.Y }));
+                // We use backspace and space in typing 
+                if (isTextInputFocused())
+                {
+                    return false;
+                }
+
+                if (e.key === 'Backspace')
+                {
+                    shortcuts.get(GamePadButtonCode.X)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.X }));
+                } else if (e.key === ' ')
+                {
+                    shortcuts.get(GamePadButtonCode.Y)?.action?.(new GamepadButtonEvent('gamepadbuttondown', { button: GamePadButtonCode.Y }));
+                }
             }
         };
 

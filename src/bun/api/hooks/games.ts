@@ -1,6 +1,6 @@
 import { EmulatorPackageType, GameListFilterType } from '@/shared/constants';
 import { CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSlots } from '@/shared/types';
-import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, Hook } from 'tapable';
+import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, Hook, AsyncSeriesWaterfallHook } from 'tapable';
 
 export default class GameHooks
 {
@@ -96,12 +96,11 @@ export default class GameHooks
         name?: string;
         family_name?: string;
     } | undefined>(['ctx']);
-    gameLookup = new AsyncSeriesHook<[ctx: {
+    gameLookup = new AsyncSeriesWaterfallHook<[matches: Map<string, GameLookup[]>, ctx: {
         source?: string,
         id?: string;
         search?: string;
-        matches: GameLookup[];
-    }]>(['ctx']);
+    }]>(['matches', 'ctx']);
     fetchPlatforms = new AsyncSeriesHook<[ctx: {
         platforms: FrontEndPlatformType[];
     }]>(['ctx']);

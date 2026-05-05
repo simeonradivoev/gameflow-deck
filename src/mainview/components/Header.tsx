@@ -230,14 +230,6 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
 
   const accounts: HeaderAccount[] = [];
   if (data.accounts) accounts.push(...data.accounts);
-  const router = useRouter();
-
-  const { ref } = useFocusable({
-    focusKey: 'accounts',
-    onEnterPress: handleSelect,
-    focusable: accounts.length > 0
-  });
-
   if (rommUser.data?.hasLogin || rommUser.isError)
   {
     accounts.push({
@@ -254,6 +246,16 @@ export function HeaderAccounts (data: { accounts?: HeaderAccount[]; })
       type: 'secondary'
     });
   }
+  const hasAccounts = accounts.length > 0;
+  const router = useRouter();
+
+  const { ref } = useFocusable({
+    focusKey: 'accounts',
+    onEnterPress: handleSelect,
+    focusable: hasAccounts
+  });
+
+
 
   return <div onClick={handleSelect} ref={ref} style={{ viewTimelineName: "header-accounts" }} className="avatar-group cursor-pointer -space-x-6 w-fit flex items-center gap-2 drop-shadow-sm overflow-visible rounded-3xl focusable focusable-primary focusable-hover ">
     {accounts?.map(a => <HeaderAvatar
@@ -316,17 +318,19 @@ export function HeaderUI (data: HeaderUIParams)
     router.navigate({ to: '/settings/accounts' });
   };
   return (
-    <FocusContext.Provider value={focusKey}>
-      <header
-        ref={ref}
-        className="flex items-center justify-between text-base-content"
-        style={{ viewTimelineName: 'header' }}
-      >
+
+    <header
+      ref={ref}
+      className="flex items-center justify-between text-base-content"
+      style={{ viewTimelineName: 'header' }}
+    >
+      <FocusContext value={focusKey}>
         <HeaderAccounts key={"header-accounts"} accounts={data.accounts} />
         {data.title}
         <HeaderStatusBar key={"header-status-bar"} buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "header-settings-btn", action: goToSettings, external: true }]} />
-      </header>
-    </FocusContext.Provider>
+
+      </FocusContext>
+    </header >
   );
 }
 
