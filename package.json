@@ -49,7 +49,8 @@
     "download:nwjs": "bun scripts/download-nw.ts",
     "build:audiosprites": "bun ./scripts/generate-audio-sprites.ts",
     "tsc": "tsc --noEmit",
-    "build:sdk": "bun ./scripts/build-sdk.ts"
+    "build:sdk": "bun ./scripts/build-sdk.ts",
+    "publish:sdk": "bun build:sdk && bun publish --cwd ./dist-sdk/ --access public"
   },
   "dependencies": {
     "7zip-bin": "^5.2.0",

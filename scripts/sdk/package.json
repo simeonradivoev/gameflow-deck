@@ -1,5 +1,5 @@
 {
-    "name": "gameflow-sdk",
+    "name": "@simeonradivoev/gameflow-sdk",
     "types": "index.d.ts",
     "description": "plugin SDK for the Gameflow Deck Launcher",
     "keywords": [

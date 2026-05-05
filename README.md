@@ -104,6 +104,14 @@ But given it's an existing setup, say from emudeck it won't matter much as it's 
    - `bun run download:chromium` downloads degoogled chromium to use as the frontend
    - `bun run download:nwjs` downloads NW.js to use as a frontend.
 
+## Plugins
+
+To create a plugin create a new npm project and install:
+`bun i --peer @simeonradivoev/gameflow-sdk`
+
+Then publish the package to npmjs with a tag `gameflow-plugin` to appear in the UI.
+For more info check the [SDK README](./scripts/sdk/README.md)
+
 ### Tech Stack
 
 - [Bun](https://bun.com/) for the backend

@@ -5,6 +5,7 @@ import sdkPackage from './sdk/package.json';
 import { emptyDir } from 'fs-extra';
 import { generateDtsBundle } from 'dts-bundle-generator';
 import { zodToTs, createAuxiliaryTypeStore, printNode } from 'zod-to-ts';
+import fs from 'node:fs/promises';
 
 import * as types from './sdk/sdk';
 
@@ -57,6 +58,7 @@ async function generateApiDeclarations ()
         peerDependencies: appPkg.dependencies
     };
     await Bun.write(path.join(outDir, 'package.json'), JSON.stringify(pkg, null, 3));
+    await fs.cp('./scripts/sdk/README.md', path.join(outDir, 'README.md'));
 }
 
 await generateApiDeclarations();
