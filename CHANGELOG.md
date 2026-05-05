@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.4.0...v1.5.0) (2026-05-05)
+
+
+### Features
+
+* Implemented local game import (with a wizard) ([06b7e40](https://github.com/simeonradivoev/gameflow-deck/commit/06b7e4074da23afdec3b2ff97f84a9e1486944d2))
+
+
+### Bug Fixes
+
+* Navigation blocking now working with focuesed input fields ([4da717c](https://github.com/simeonradivoev/gameflow-deck/commit/4da717c26d9840febd48ee87a6a493a3e1acc6b9))
+
 ## [1.4.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.3.0...v1.4.0) (2026-04-26)
 
 

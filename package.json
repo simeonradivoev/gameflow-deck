@@ -6,7 +6,7 @@
     "email": "work@simeonradivoev.com",
     "url": "https://simeonradivoev.com"
   },
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Game Launcher",
   "icon": "./src/mainview/assets/icon.svg",
   "main": "./src/bun/index.ts",
