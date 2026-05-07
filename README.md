@@ -1,4 +1,4 @@
-# <img src="src/mainview/public/icon.svg" title="Home Screen Showing games sorted by latest activity" style="width:2.5rem;margin-bottom:-1rem" /> Gameflow Deck
+# Gameflow Deck
 
 A Cross-Platform open source Retro gaming frontend designed for handheld and controllers.
 Focused on building a simple user experience and intuitive UI as a curated community driven experience.
@@ -6,6 +6,12 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 > [!WARNING]
 > This app is actively in development, it is constantly changing and improving.
 > It will have an opinionated design and will be used as an experiment in discovering a good UX.
+
+## Community
+
+Join us on Discord, where you can ask questions, submit ideas and get help.
+
+[![](https://invidget.switchblade.xyz/R9KakhY67d)](https://discord.gg/R9KakhY67d)
 
 ## Features
 
