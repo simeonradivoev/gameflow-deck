@@ -20,16 +20,12 @@ export default class UpdateStoreJob implements IJob<never, never>
         this.storeVersion = process.env.STORE_VERSION ?? "^0.1.0";
     }
 
-    async start (context: JobContext<UpdateStoreJob, never, never>)
+    async runCommand (commands: string[])
     {
-        if (process.env.CUSTOM_STORE_PATH) return;
-
         const tempCache = path.join(tmpdir(), "gameflow-bun-cache");
         const storeFolder = getStoreRootFolder();
-        await ensureDir(storeFolder);
 
-        console.log("Adding Store Package");
-        let proc = Bun.spawn([process.execPath, "add", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
+        let proc = Bun.spawn([process.execPath, ...commands, "--registry", this.registry.href, '--json'], {
             cwd: storeFolder,
             stdout: 'pipe',
             stderr: 'pipe',
@@ -45,23 +41,19 @@ export default class UpdateStoreJob implements IJob<never, never>
         if (stderr)
             console.error(stderr);
         await proc.exited;
+    }
+
+    async start (context: JobContext<UpdateStoreJob, never, never>)
+    {
+        if (process.env.CUSTOM_STORE_PATH) return;
+
+        const storeFolder = getStoreRootFolder();
+        await ensureDir(storeFolder);
+
+        console.log("Adding Store Package");
+        await this.runCommand(["add", `${this.packageName}@${this.storeVersion}`]);
 
         console.log("Updating Store Package");
-        proc = Bun.spawn([process.execPath, "update", `${this.packageName}@${this.storeVersion}`, "--registry", this.registry.href], {
-            cwd: storeFolder,
-            stdout: 'pipe',
-            stderr: 'pipe',
-            env: {
-                BUN_BE_BUN: "1",
-                BUN_INSTALL_CACHE_DIR: tempCache
-            }
-        });
-
-        stdout = await new Response(proc.stdout).text();
-        console.log(stdout);
-        stderr = await new Response(proc.stderr).text();
-        if (stderr)
-            console.error(stderr);
-        await proc.exited;
+        await this.runCommand(["update", `${this.packageName}@${this.storeVersion}`]);
     }
 }
