@@ -6,7 +6,7 @@
     "email": "work@simeonradivoev.com",
     "url": "https://simeonradivoev.com"
   },
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Game Launcher",
   "icon": "./src/mainview/assets/icon.svg",
   "main": "./src/bun/index.ts",
@@ -46,7 +46,7 @@
     "flatpak:install": "bun run flatpak:build && flatpak --user install --reinstall \"$PWD/.config/flatpak/repo\" com.simeonradivoev.gameflow-deck",
     "build:prod:appimage": "bun run build:prod && bun run ./scripts/build-appimage.ts",
     "build:dev:appimage": "bun run build && bun run ./scripts/build-appimage.ts",
-    "version:generate": "standard-version --sign",
+    "version:generate": "commit-and-tag-version --sign",
     "package:Linux": "bun run build:prod:appimage",
     "package:Windows": "bun run build:prod",
     "download:chromium": "bun scripts/download-chromium.ts --out=./bin/chromium",

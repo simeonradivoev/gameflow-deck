@@ -1,6 +1,13 @@
 # Changelog
 
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
+
+## [1.6.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.5.0...v1.6.0) (2026-05-09)
+
+
+### Features
+
+* Implemented public plugin system accessible from the store. ([38cb752](https://github.com/simeonradivoev/gameflow-deck/commit/38cb7525527b5ad4f6eb284cdad0001fd87eaf7e))
 
 ## [1.5.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.4.0...v1.5.0) (2026-05-05)
 
