@@ -10,7 +10,7 @@ import FrontEndGameCard from "../FrontEndGameCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import Carousel from "../Carousel";
 import { twMerge } from "tailwind-merge";
-import { FrontEndGameType, FrontEndId } from "@/shared/types";
+import { FrontEndGameType, FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
 
 export function GamesSection (data: {
     games?: FrontEndGameType[];

@@ -1,5 +1,5 @@
 
-import { FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement } from "@/shared/types";
+import { FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement } from "@simeonradivoev/gameflow-sdk/shared";
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { Medal } from "lucide-react";
 

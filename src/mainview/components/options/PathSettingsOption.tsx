@@ -1,5 +1,4 @@
 import { HTMLInputTypeAttribute, JSX, useEffect, useState } from "react";
-import { SettingsType } from "../../../shared/constants";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { OptionSpace } from "./OptionSpace";
 import { OptionInput } from "./OptionInput";
@@ -9,7 +8,7 @@ import { ContextDialog } from "../ContextDialog";
 import FilePicker from "../FilePicker";
 import { setFocus } from "@noriginmedia/norigin-spatial-navigation";
 import { getSettingQuery, setSettingMutation } from "@queries/settings";
-import { KeysWithValueAssignableTo } from "@/shared/types";
+import { KeysWithValueAssignableTo, SettingsType } from "@simeonradivoev/gameflow-sdk/shared";
 
 export interface PathSettingsOptionParams
 {

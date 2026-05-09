@@ -1,5 +1,4 @@
-import { EmulatorDownloadInfoType } from "@/shared/constants";
-import { FrontEndEmulator, FrontEndEmulatorDetailed, FrontEndGameTypeDetailed } from "@/shared/types";
+import { FrontEndEmulator, FrontEndEmulatorDetailed, FrontEndGameTypeDetailed, EmulatorDownloadInfoType } from "../shared";
 import { AsyncSeriesBailHook, AsyncSeriesHook } from "tapable";
 
 export default class StoreHooks

@@ -1,5 +1,5 @@
 import { JSX } from "react";
-import { LocalSettingsSchema, LocalSettingsType } from "@shared/constants";
+import { LocalSettingsSchema, LocalSettingsType } from '@simeonradivoev/gameflow-sdk/shared';
 import { OptionSpace } from "./OptionSpace";
 import { OptionInput } from "./OptionInput";
 import { useLocalStorage } from "usehooks-ts";

@@ -1,9 +1,9 @@
-import { DefaultRommStaleTime, GameListFilterType, RommLoginDataSchema } from "@/shared/constants";
+import { DefaultRommStaleTime } from "@/shared/constants";
+import { GameListFilterType, RommLoginDataSchema, FrontEndId } from '@simeonradivoev/gameflow-sdk/shared';
 import { rommApi, settingsApi } from "../clientApi";
 import { InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
-import { FrontEndId } from "@/shared/types";
 
 export const allGamesQuery = (filter?: GameListFilterType) => queryOptions({
     queryKey: ['games', filter ?? 'all'],

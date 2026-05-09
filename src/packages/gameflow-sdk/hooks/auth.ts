@@ -1,5 +1,6 @@
-import { DownloadFileEntry } from "@/shared/types";
+
 import { AsyncSeriesHook } from "tapable";
+import { DownloadFileEntry } from "../shared";
 
 export default class AuthHooks
 {

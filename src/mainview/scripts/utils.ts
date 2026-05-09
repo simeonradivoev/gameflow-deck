@@ -1,4 +1,4 @@
-import { LocalSettingsSchema, LocalSettingsType } from "@/shared/constants";
+import { LocalSettingsSchema, LocalSettingsType } from '@simeonradivoev/gameflow-sdk/shared';
 import { DependencyList, RefObject, useEffect, useRef, useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 import { jobsApi, systemApi } from "./clientApi";

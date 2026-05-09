@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SystemInfoContext } from "../scripts/contexts";
 import { systemApi } from "../scripts/clientApi";
-import { SystemInfoType } from "@/shared/constants";
+import { SystemInfoType } from '@simeonradivoev/gameflow-sdk/shared';
 import LoadingScreen from "./LoadingScreen";
 import { GamepadKeyboard } from "./GamepadKeyboard";
 

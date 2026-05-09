@@ -22,6 +22,7 @@ import { Route as SettingsAboutRouteImport } from './../routes/settings/about'
 import { Route as GameAddRouteImport } from './../routes/game/add'
 import { Route as StoreTabRouteRouteImport } from './../routes/store/tab/route'
 import { Route as StoreTabIndexRouteImport } from './../routes/store/tab/index'
+import { Route as StoreTabPluginsRouteImport } from './../routes/store/tab/plugins'
 import { Route as StoreTabGamesRouteImport } from './../routes/store/tab/games'
 import { Route as StoreTabEmulatorsRouteImport } from './../routes/store/tab/emulators'
 import { Route as SettingsPluginSourceRouteImport } from './../routes/settings/plugin.$source'
@@ -30,6 +31,7 @@ import { Route as LauncherSourceIdRouteImport } from './../routes/launcher.$sour
 import { Route as GameSourceIdRouteImport } from './../routes/game/$source.$id'
 import { Route as EmbeddedSourceIdRouteImport } from './../routes/embedded.$source.$id'
 import { Route as CollectionSourceIdRouteImport } from './../routes/collection.$source.$id'
+import { Route as StoreDetailsPluginIdRouteImport } from './../routes/store/details.plugin.$id'
 import { Route as StoreDetailsEmulatorIdRouteImport } from './../routes/store/details.emulator.$id'
 import { Route as GameUpdateSourceIdRouteImport } from './../routes/game/update.$source.$id'
 
@@ -98,6 +100,11 @@ const StoreTabIndexRoute = StoreTabIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StoreTabRouteRoute,
 } as any)
+const StoreTabPluginsRoute = StoreTabPluginsRouteImport.update({
+  id: '/plugins',
+  path: '/plugins',
+  getParentRoute: () => StoreTabRouteRoute,
+} as any)
 const StoreTabGamesRoute = StoreTabGamesRouteImport.update({
   id: '/games',
   path: '/games',
@@ -138,6 +145,11 @@ const CollectionSourceIdRoute = CollectionSourceIdRouteImport.update({
   path: '/collection/$source/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreDetailsPluginIdRoute = StoreDetailsPluginIdRouteImport.update({
+  id: '/store/details/plugin/$id',
+  path: '/store/details/plugin/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoreDetailsEmulatorIdRoute = StoreDetailsEmulatorIdRouteImport.update({
   id: '/store/details/emulator/$id',
   path: '/store/details/emulator/$id',
@@ -170,9 +182,11 @@ export interface FileRoutesByFullPath {
   '/settings/plugin/$source': typeof SettingsPluginSourceRoute
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
+  '/store/tab/plugins': typeof StoreTabPluginsRoute
   '/store/tab/': typeof StoreTabIndexRoute
   '/game/update/$source/$id': typeof GameUpdateSourceIdRoute
   '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
+  '/store/details/plugin/$id': typeof StoreDetailsPluginIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -194,9 +208,11 @@ export interface FileRoutesByTo {
   '/settings/plugin/$source': typeof SettingsPluginSourceRoute
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
+  '/store/tab/plugins': typeof StoreTabPluginsRoute
   '/store/tab': typeof StoreTabIndexRoute
   '/game/update/$source/$id': typeof GameUpdateSourceIdRoute
   '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
+  '/store/details/plugin/$id': typeof StoreDetailsPluginIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -220,9 +236,11 @@ export interface FileRoutesById {
   '/settings/plugin/$source': typeof SettingsPluginSourceRoute
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
+  '/store/tab/plugins': typeof StoreTabPluginsRoute
   '/store/tab/': typeof StoreTabIndexRoute
   '/game/update/$source/$id': typeof GameUpdateSourceIdRoute
   '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
+  '/store/details/plugin/$id': typeof StoreDetailsPluginIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -247,9 +265,11 @@ export interface FileRouteTypes {
     | '/settings/plugin/$source'
     | '/store/tab/emulators'
     | '/store/tab/games'
+    | '/store/tab/plugins'
     | '/store/tab/'
     | '/game/update/$source/$id'
     | '/store/details/emulator/$id'
+    | '/store/details/plugin/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -271,9 +291,11 @@ export interface FileRouteTypes {
     | '/settings/plugin/$source'
     | '/store/tab/emulators'
     | '/store/tab/games'
+    | '/store/tab/plugins'
     | '/store/tab'
     | '/game/update/$source/$id'
     | '/store/details/emulator/$id'
+    | '/store/details/plugin/$id'
   id:
     | '__root__'
     | '/'
@@ -296,9 +318,11 @@ export interface FileRouteTypes {
     | '/settings/plugin/$source'
     | '/store/tab/emulators'
     | '/store/tab/games'
+    | '/store/tab/plugins'
     | '/store/tab/'
     | '/game/update/$source/$id'
     | '/store/details/emulator/$id'
+    | '/store/details/plugin/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -314,6 +338,7 @@ export interface RootRouteChildren {
   PlatformSourceIdRoute: typeof PlatformSourceIdRoute
   GameUpdateSourceIdRoute: typeof GameUpdateSourceIdRoute
   StoreDetailsEmulatorIdRoute: typeof StoreDetailsEmulatorIdRoute
+  StoreDetailsPluginIdRoute: typeof StoreDetailsPluginIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -409,6 +434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreTabIndexRouteImport
       parentRoute: typeof StoreTabRouteRoute
     }
+    '/store/tab/plugins': {
+      id: '/store/tab/plugins'
+      path: '/plugins'
+      fullPath: '/store/tab/plugins'
+      preLoaderRoute: typeof StoreTabPluginsRouteImport
+      parentRoute: typeof StoreTabRouteRoute
+    }
     '/store/tab/games': {
       id: '/store/tab/games'
       path: '/games'
@@ -465,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectionSourceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/store/details/plugin/$id': {
+      id: '/store/details/plugin/$id'
+      path: '/store/details/plugin/$id'
+      fullPath: '/store/details/plugin/$id'
+      preLoaderRoute: typeof StoreDetailsPluginIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/store/details/emulator/$id': {
       id: '/store/details/emulator/$id'
       path: '/store/details/emulator/$id'
@@ -511,12 +550,14 @@ const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
 interface StoreTabRouteRouteChildren {
   StoreTabEmulatorsRoute: typeof StoreTabEmulatorsRoute
   StoreTabGamesRoute: typeof StoreTabGamesRoute
+  StoreTabPluginsRoute: typeof StoreTabPluginsRoute
   StoreTabIndexRoute: typeof StoreTabIndexRoute
 }
 
 const StoreTabRouteRouteChildren: StoreTabRouteRouteChildren = {
   StoreTabEmulatorsRoute: StoreTabEmulatorsRoute,
   StoreTabGamesRoute: StoreTabGamesRoute,
+  StoreTabPluginsRoute: StoreTabPluginsRoute,
   StoreTabIndexRoute: StoreTabIndexRoute,
 }
 
@@ -537,6 +578,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlatformSourceIdRoute: PlatformSourceIdRoute,
   GameUpdateSourceIdRoute: GameUpdateSourceIdRoute,
   StoreDetailsEmulatorIdRoute: StoreDetailsEmulatorIdRoute,
+  StoreDetailsPluginIdRoute: StoreDetailsPluginIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,5 @@
 
-import { TaskQueue } from "./task-queue";
+import { TaskQueue, AppEventMap } from "@simeonradivoev/gameflow-sdk";
 import { Database } from "bun:sqlite";
 import { CookieJar } from 'tough-cookie';
 import FileCookieStore from 'tough-cookie-file-store';
@@ -8,7 +8,7 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { BunSQLiteDatabase, drizzle } from "drizzle-orm/bun-sqlite";
 import Conf from "conf";
 import projectPackage from '~/package.json';
-import { SettingsSchema, SettingsType } from "@shared/constants";
+import { SettingsType, SettingsSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import { client } from "@clients/romm/client.gen";
 import * as schema from "@schema/app";
 import cacheSchema from "@schema/cache";
@@ -24,7 +24,6 @@ import controls from './controls/controls';
 import { RunAPIServer } from "./rpc";
 import { RunBunServer } from "../server";
 import ReloadPluginsJob from "./jobs/reload-plugins-job";
-import { AppEventMap } from "../types/types";
 
 export let config: Conf<SettingsType>;
 export let customEmulators: Conf<Record<string, string>>;

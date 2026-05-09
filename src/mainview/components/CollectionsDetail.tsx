@@ -5,7 +5,7 @@ import { JSX, Suspense } from 'react';
 import { FloatingShortcuts } from './Shortcuts';
 import { AutoFocus } from './AutoFocus';
 import { GamePadButtonCode, useShortcuts } from '../scripts/shortcuts';
-import { GameListFilterType } from '@/shared/constants';
+import { GameListFilterType } from '@simeonradivoev/gameflow-sdk/shared';
 import { HandleGoBack } from '../scripts/utils';
 import LoadingCardList from './LoadingCardList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

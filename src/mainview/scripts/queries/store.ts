@@ -1,8 +1,6 @@
 import { infiniteQueryOptions, mutationOptions, queryOptions } from "@tanstack/react-query";
 import { rommApi, storeApi } from "../clientApi";
-import { GameListFilterType } from "@/shared/constants";
-import { FrontEndGameType } from "@/shared/types";
-
+import { GameListFilterType, FrontEndGameType } from '@simeonradivoev/gameflow-sdk/shared';
 
 export const storeEmulatorsQuery = (filters: { search?: string; }) => queryOptions({
     queryKey: ['store-emulators', filters], queryFn: async () =>
@@ -94,6 +92,24 @@ export const getUpdateInfoForEmulator = (id: string) => queryOptions({
     queryKey: ['emulator', 'update'], queryFn: async () =>
     {
         const { data, error } = await storeApi.api.store.emulator({ id }).update.get();
+        if (error) throw error;
+        return data;
+    }
+});
+export const pluginsQuery = (search?: string) => queryOptions({
+    queryKey: ['plugins', 'store', search ?? 'all'],
+    queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.plugins.get({ query: { search } });
+        if (error) throw error;
+        return data;
+    }
+});
+export const pluginDetailsQuery = (id: string) => queryOptions({
+    queryKey: ['plugin', 'store', id],
+    queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.plugin.get({ query: { plugin: id } });
         if (error) throw error;
         return data;
     }

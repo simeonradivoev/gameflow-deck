@@ -1,7 +1,8 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CollectionsDetail } from "../components/CollectionsDetail";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { GameListFilterType, RPC_URL } from "../../shared/constants";
+import { RPC_URL } from "../../shared/constants";
+import { GameListFilterType } from '@simeonradivoev/gameflow-sdk/shared';
 import { deletePlatformMutation, localPlatformFilter, platformQuery, updatePlatformMutation } from "@queries/romm";
 import { zodValidator } from "@tanstack/zod-adapter";
 import z from "zod";

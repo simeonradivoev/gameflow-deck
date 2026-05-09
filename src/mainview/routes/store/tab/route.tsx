@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMatchRoute, useRouter } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
+import { Gamepad2, Home, Joystick, Puzzle } from 'lucide-react';
 import { useRef } from 'react';
 import { useSessionStorage } from 'usehooks-ts';
 import z from 'zod';
@@ -93,9 +94,10 @@ function RouteComponent ()
   const headerRef = useRef(null);
   const sentinelRef = useRef(null);
   const filters: Record<string, FilterOption> = {
-    home: { label: "Home", selected: useIsSettings(''), },
-    emulators: { label: "Emulators", selected: useIsSettings('emulators') },
-    games: { label: "Games", selected: useIsSettings('games') }
+    home: { label: "Home", icon: <Home />, selected: useIsSettings(''), },
+    emulators: { label: "Emulators", icon: <Joystick />, selected: useIsSettings('emulators') },
+    games: { label: "Games", icon: <Gamepad2 />, selected: useIsSettings('games') },
+    plugins: { label: "Plugins", icon: <Puzzle />, selected: useIsSettings('plugins') }
   };
   const [search, setSearch] = useSessionStorage<string | undefined>(`${router.history.location.pathname}-search`, undefined);
   const [, setGamesSearch] = useSessionStorage<string | undefined>(`/store/tab/games-search`, undefined);

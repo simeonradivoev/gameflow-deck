@@ -4,7 +4,8 @@ import { and, desc, eq, getTableColumns, inArray, like, sql } from "drizzle-orm"
 import z from "zod";
 import * as schema from "@schema/app";
 import fs from "node:fs/promises";
-import { GameListFilterSchema, SERVER_URL } from "@shared/constants";
+import { SERVER_URL } from "@shared/constants";
+import { GameListFilterSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
 import { convertLocalToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
@@ -22,7 +23,7 @@ import { LaunchGameJob } from "../jobs/launch-game-job";
 import { cores } from "../emulatorjs/emulatorjs";
 import { findEmulatorPluginIntegration } from "../store/services/emulatorsService";
 import { ImportJob } from "../jobs/import-job";
-import { EmulatorSourceEntryType, EmulatorSystem, FrontEndFilterLists, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailedEmulator, FrontEndGameTypeWithIds, FrontEndId, GameLookup } from "@/shared/types";
+import { EmulatorSourceEntryType, EmulatorSystem, FrontEndFilterLists, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailedEmulator, FrontEndGameTypeWithIds, FrontEndId, GameLookup } from "@simeonradivoev/gameflow-sdk/shared";
 
 // A custom jimp that supports webp
 const Jimp = createJimp({

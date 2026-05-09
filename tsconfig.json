@@ -19,6 +19,7 @@
     "noUnusedLocals": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
+      "@simeonradivoev/gameflow-sdk/*": ["./src/packages/gameflow-sdk/*"],
       "@/*": [
         "./src/*"
       ],

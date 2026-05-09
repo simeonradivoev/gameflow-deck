@@ -1,4 +1,4 @@
-import { FrontEndId } from "@/shared/types";
+import { FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
 
 export const FOCUS_KEYS = {
     NAV_CATEGORIES: "NAV_CATEGORIES",
@@ -14,4 +14,5 @@ export const FOCUS_KEYS = {
     GAME_CARD: (id: FrontEndId) => `GAME_${id.source}_${id.id}`,
     GAME_MATCH: (id: FrontEndId) => `GAME_${id.source}_${id.id}`,
     STATS_SECTION: "STATS_SECTION",
+    PLUGIN_ENTRY: (id: string) => `PLUGIN_${id}`
 } as const;

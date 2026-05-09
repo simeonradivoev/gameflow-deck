@@ -1,8 +1,8 @@
 {
     "name": "com.simeonradivoev.gameflow.store",
-    "displayName": "Gameflow Store",
+    "displayName": "Gameflow Store Integration",
     "version": "0.0.1",
-    "description": "The internal gameflow store",
+    "description": "The internal gameflow store integration. This is the logic of the store that uses the data only store package",
     "main": "./store.ts",
     "category": "sources",
     "canDisable": false,

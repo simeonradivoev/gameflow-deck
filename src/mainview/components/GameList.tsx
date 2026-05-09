@@ -1,13 +1,14 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
-import { DefaultRommStaleTime, GameListFilterType, RPC_URL } from "@shared/constants";
+import { DefaultRommStaleTime, RPC_URL } from "@shared/constants";
+import { GameListFilterType } from '@simeonradivoev/gameflow-sdk/shared';
 import { useNavigate } from "@tanstack/react-router";
 import { HardDrive } from "lucide-react";
 import { JSX, useContext } from "react";
 import { useLocalSetting } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import { allGamesQuery } from "@queries/romm";
-import { FrontEndGameType, FrontEndId } from "@/shared/types";
+import { FrontEndGameType, FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
 
 export interface GameListParams extends FocusParams
 {

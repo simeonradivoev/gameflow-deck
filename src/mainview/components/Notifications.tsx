@@ -1,5 +1,5 @@
 import { RPC_URL } from "@/shared/constants";
-import { FrontendNotification } from "@/shared/types";
+import { FrontendNotification } from "@simeonradivoev/gameflow-sdk/shared";
 import { Clock, CloudUpload, Save } from "lucide-react";
 import { useEffect } from "react";
 import toast, { ToastOptions } from "react-hot-toast";

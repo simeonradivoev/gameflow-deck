@@ -1,5 +1,5 @@
 import z from "zod";
-import { SettingsSchema } from "@shared/constants";
+import { SettingsSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import Elysia, { status } from "elysia";
 import { config, customEmulators, plugins, taskQueue } from "../app";
 import fs from 'node:fs/promises';
@@ -96,27 +96,27 @@ export const settings = new Elysia({ prefix: '/api/settings' })
     })
     .get('/definitions/:source', async ({ params: { source } }) =>
     {
-        return plugins.plugins[source].plugin.settingsSchema?.toJSONSchema() as JSONSchema7;
+        return plugins.plugins[decodeURIComponent(source)].plugin.settingsSchema?.toJSONSchema() as JSONSchema7;
     })
     .get('/actions/:source', async ({ params: { source } }) =>
     {
-        const plugin = plugins.plugins[source]?.plugin;
+        const plugin = plugins.plugins[decodeURIComponent(source)]?.plugin;
         if (!plugin.eventsNames) return [];
         return plugin.eventsNames;
     })
     .post('/actions/:source/:id', async ({ params: { source, id } }) =>
     {
-        return await plugins.plugins[source]?.plugin.onEvent?.(id);
+        return await plugins.plugins[decodeURIComponent(source)]?.plugin.onEvent?.(decodeURIComponent(id));
     })
     .get('/:source/:id', async ({ params: { source, id } }) =>
     {
-        return { value: plugins.plugins[source].config?.get(id) };
+        return { value: plugins.plugins[decodeURIComponent(source)].config?.get(decodeURIComponent(id)) };
     })
     .put('/:source/:id', async ({ params: { source, id }, body: { value } }) =>
     {
-        const plugin = plugins.plugins[source];
+        const plugin = plugins.plugins[decodeURIComponent(source)];
         if (!plugin.config) return status("Not Found", "Plugin has no config");
-        const settingSchema = plugin.plugin.settingsSchema?.shape[id] as z.ZodObject;
+        const settingSchema = plugin.plugin.settingsSchema?.shape[decodeURIComponent(id)] as z.ZodObject;
         if (!settingSchema) return status("Not Found", "Could not find setting");
         const meta = pluginZodRegistry.get(settingSchema);
 

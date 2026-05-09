@@ -5,23 +5,25 @@ import { OptionDropdown } from '@/mainview/components/options/OptionDropdown';
 import { OptionInput } from '@/mainview/components/options/OptionInput';
 import { OptionSpace } from '@/mainview/components/options/OptionSpace';
 import { RoundButton } from '@/mainview/components/RoundButton';
-import { getPluginDetailsQuery } from '@/mainview/scripts/queries/plugins';
+import { allPluginsFilter, getPluginDetailsQuery, updatePluginMutation } from '@/mainview/scripts/queries/plugins';
 import { getPluginActionsQuery, getPluginSettingQuery, getPluginSettingsDefinitionQuery, pluginActionMutation, setPluginSettingMutation } from '@/mainview/scripts/queries/settings';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { scrollIntoViewHandler } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { PluginUpdateCheck } from '@simeonradivoev/gameflow-sdk/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { JSONSchema7 } from 'json-schema';
-import { ArrowLeft, CirclePlay, Settings2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CircleFadingArrowUp, CirclePlay, Settings2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 export const Route = createFileRoute('/settings/plugin/$source')({
     component: RouteComponent,
     pendingComponent: Loading,
     async loader (ctx)
     {
-        const definitions = await ctx.context.queryClient.fetchQuery(getPluginSettingsDefinitionQuery(ctx.params.source));
-        const actions = await ctx.context.queryClient.fetchQuery(getPluginActionsQuery(ctx.params.source));
+        const source = decodeURIComponent(ctx.params.source);
+        const definitions = await ctx.context.queryClient.fetchQuery(getPluginSettingsDefinitionQuery(source));
+        const actions = await ctx.context.queryClient.fetchQuery(getPluginActionsQuery(source));
         await new Promise(resolve => setTimeout(resolve, 1000));
         return { definitions, actions };
     },
@@ -38,7 +40,8 @@ function Loading ()
 
 function PluginAction (data: { id: string, title: string | undefined, description: string | undefined; action: string; reload: () => void; })
 {
-    const { source } = Route.useParams();
+    const { source: sourceRaw } = Route.useParams();
+    const source = decodeURIComponent(sourceRaw);
     const action = useMutation({
         ...pluginActionMutation(source, data.id),
         onSuccess (acitonData, variables, onMutateResult, context)
@@ -67,7 +70,8 @@ function PluginAction (data: { id: string, title: string | undefined, descriptio
 
 function PluginOption (data: { name: string, title?: string, prop: JSONSchema7; })
 {
-    const { source } = Route.useParams();
+    const { source: sourceRaw } = Route.useParams();
+    const source = decodeURIComponent(sourceRaw);
     const { data: value, refetch: refetchValue } = useQuery(getPluginSettingQuery(source, data.name));
     const setValue = useMutation({
         ...setPluginSettingMutation(source, data.name),
@@ -108,12 +112,21 @@ function PluginOption (data: { name: string, title?: string, prop: JSONSchema7; 
     </OptionSpace>;
 }
 
-function Settings ()
+function Settings (data: { update: PluginUpdateCheck | undefined; })
 {
     const { definitions, actions } = Route.useLoaderData();
-    const { source } = Route.useParams();
+    const { source: sourceRaw } = Route.useParams();
+    const source = decodeURIComponent(sourceRaw);
     const queryClient = useQueryClient();
-
+    const navigate = useNavigate();
+    const update = useMutation({
+        ...updatePluginMutation(source),
+        onSuccess (data, variables, onMutateResult, context)
+        {
+            context.client.invalidateQueries(allPluginsFilter);
+            navigate({ to: '/settings/plugin/$source', params: { source: encodeURIComponent(source) }, replace: true });
+        },
+    });
     const handleReload = () =>
     {
         queryClient.refetchQueries(getPluginSettingsDefinitionQuery(source));
@@ -121,7 +134,7 @@ function Settings ()
     };
     const { ref, focusKey } = useFocusable({
         focusKey: 'plugin-settings',
-        focusable: (definitions?.properties && Object.keys(definitions?.properties).length > 0) || actions.length > 0
+        focusable: (definitions?.properties && Object.keys(definitions?.properties).length > 0) || actions.length > 0 || !!data.update
     });
     return <div ref={ref}>
         <FocusContext value={focusKey}>
@@ -148,6 +161,15 @@ function Settings ()
 
             })}
             <div className="divider"><CirclePlay className='size-14' /> Actions</div>
+            {!!data.update && <OptionSpace
+                id="update-option-space"
+                label={
+                    <div className='flex flex-col'>
+                        <div>Update</div>
+                        <div className='flex gap-2 text-sm text-base-content/40 text-wrap'>{data?.update?.current} {'>'} {data?.update?.new}</div>
+                    </div>}>
+                <Button style='warning' id='update-plugin-btn' onAction={e => update.mutate()} >{update.isPending ? <span className="loading loading-spinner loading-lg"></span> : <CircleFadingArrowUp />}Update</Button>
+            </OptionSpace>}
             {actions?.map(a => <PluginAction key={a.id} id={a.id} title={a.title} description={a.description} action={a.action} reload={handleReload} />)}
         </FocusContext>
     </div>;
@@ -155,7 +177,8 @@ function Settings ()
 
 function RouteComponent ()
 {
-    const { source } = Route.useParams();
+    const { source: sourceRaw } = Route.useParams();
+    const source = decodeURIComponent(sourceRaw);
 
     const { ref, focusKey, focusSelf } = useFocusable({ focusKey: 'plugins' });
     const { data } = useQuery(getPluginDetailsQuery(source));
@@ -167,17 +190,17 @@ function RouteComponent ()
         <FocusContext value={focusKey}>
 
             <div className='flex flex-col gap-4'>
-                <div className='flex text-2xl font-bold gap-2 grow items-center justify-center'>
+                <div className='flex gap-2 grow items-center justify-center'>
                     <RoundButton onFocus={scrollIntoViewHandler({ inline: 'end' })} id='return-to-plugins' onAction={handleReturn}><ArrowLeft /></RoundButton>
                     <img className='h-12' src={data?.icon}></img>
-                    {data?.displayName}
+                    <div className='text-2xl font-bold'>{data?.displayName}</div>
+                    <div className='px-3 bg-base-300 rounded-full font-semibold'>{data?.version}</div>
+                    {!!data?.update && <div className='flex gap-2'> <ArrowRight /><div className='px-3 bg-warning text-warning-content rounded-full font-semibold'>{data?.update.new}</div></div>}
                 </div>
                 <ul className='flex gap-2 justify-center'>{data?.keywords?.map((k, i) => <li key={i} className='bg-base-200 rounded-full p-2 px-4'>{k}</li>)}</ul>
                 <div className='bg-base-200 p-4 rounded-2xl'>{data?.description}</div>
             </div>
-
-            <Settings />
-
+            <Settings update={data?.update} />
         </FocusContext>
         <AutoFocus focus={focusSelf} />
     </div>;

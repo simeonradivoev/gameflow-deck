@@ -17,26 +17,6 @@
       "outDir": "../../dist-sdk",
       "types": [
          "node"
-      ],
-      "paths": {
-         "@/*": [
-            "../../src/*"
-         ],
-         "~/*": [
-            "../../*"
-         ],
-         "@shared/*": [
-            "../../src/shared/*"
-         ],
-         "@clients/*": [
-            "../../src/clients/*"
-         ],
-         "@schema/*": [
-            "../../src/bun/api/schema/*"
-         ],
-         "@queries/*": [
-            "../../src/mainview/scripts/queries/*"
-         ]
-      }
+      ]
    }
 }

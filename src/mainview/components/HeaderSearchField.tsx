@@ -5,7 +5,6 @@ import { oneShot } from "../scripts/audio/audio";
 import { Search } from "lucide-react";
 import { RoundButton } from "./RoundButton";
 import { useEventListener } from "usehooks-ts";
-import useActiveControl from "../scripts/gamepads";
 import { twMerge } from "tailwind-merge";
 
 function SearchInput (data: {

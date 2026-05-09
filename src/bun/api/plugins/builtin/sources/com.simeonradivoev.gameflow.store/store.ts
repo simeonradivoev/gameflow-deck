@@ -1,4 +1,4 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
+import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
 import path, { } from 'node:path';
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
@@ -12,7 +12,7 @@ import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
 import UpdateStoreJob from "@/bun/api/jobs/update-store";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import { buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
-import { DownloadInfo, FrontEndEmulatorDetailed, FrontEndGameTypeWithIds } from "@/shared/types";
+import { DownloadInfo, FrontEndEmulatorDetailed, FrontEndGameTypeWithIds } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default class RommIntegration implements PluginType
 {
@@ -151,7 +151,8 @@ export default class RommIntegration implements PluginType
             if (!validDownload || !validDownload.bin) return;
             const glob = new Glob(validDownload.bin);
             const files = await Array.fromAsync(glob.scan({ cwd: emulatorPath }));
-            if (files.length > 0)
+            // es-de also searches for store executables so there might be duplicates, check first.
+            if (files.length > 0 && !sources.find(s => s.type === 'store'))
             {
                 sources.push({ binPath: path.join(emulatorPath, files[0]), exists: true, rootPath: emulatorPath, type: 'store' });
             }

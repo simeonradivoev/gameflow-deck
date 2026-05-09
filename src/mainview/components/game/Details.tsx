@@ -10,7 +10,7 @@ import prettyMilliseconds from 'pretty-ms';
 import { useQuery } from "@tanstack/react-query";
 import { validateSourceQuery } from "@/mainview/scripts/queries/romm";
 import { sourceIconMap } from "../Constants";
-import { FrontEndGameTypeDetailed } from "@/shared/types";
+import { FrontEndGameTypeDetailed } from "@simeonradivoev/gameflow-sdk/shared";
 
 export function DetailElement (data: { icon: JSX.Element; tooltip?: string | null, children?: any | any[]; })
 {

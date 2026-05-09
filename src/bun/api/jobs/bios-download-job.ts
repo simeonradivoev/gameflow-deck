@@ -1,5 +1,5 @@
 import z from "zod";
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
 import { config, plugins } from "../app";
 import { simulateProgress } from "@/bun/utils";
 import { Downloader } from "@/bun/utils/downloader";

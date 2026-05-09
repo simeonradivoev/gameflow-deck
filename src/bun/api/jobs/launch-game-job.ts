@@ -1,13 +1,13 @@
 import z from "zod";
-import { IJob, JobContext } from "../task-queue";
-import { ActiveGameSchema, ActiveGameType } from "@/bun/types/types.schema";
+import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
+import { ActiveGameSchema, ActiveGameType } from "@simeonradivoev/gameflow-sdk";
 import { config, db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";
 import { eq } from "drizzle-orm";
 import { spawn } from 'node:child_process';
 import { updateLocalLastPlayed } from "../games/services/statusService";
 import { getErrorMessage } from "@/bun/utils";
-import { CommandEntry, FrontEndId, SaveSlots } from "@/shared/types";
+import { CommandEntry, FrontEndId, SaveSlots } from "@simeonradivoev/gameflow-sdk/shared";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, string>
 {

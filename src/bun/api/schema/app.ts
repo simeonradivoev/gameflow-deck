@@ -1,4 +1,5 @@
-import { LocalGameMetadata } from "@/shared/types";
+
+import { LocalGameMetadata } from "@simeonradivoev/gameflow-sdk/shared";
 import { sql, relations } from "drizzle-orm";
 import { integer, text, sqliteTable, blob } from "drizzle-orm/sqlite-core";
 

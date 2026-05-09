@@ -1,7 +1,7 @@
 import si from 'systeminformation';
 import fs from 'node:fs';
 import os from "node:os";
-import { Drive } from '@/shared/types';
+import { Drive } from '@simeonradivoev/gameflow-sdk/shared';
 
 async function getAccess (path: string)
 {

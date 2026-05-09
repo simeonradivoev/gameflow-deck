@@ -1,10 +1,13 @@
-import GameflowHooks from "../hooks/app";
-import { PluginDescriptionType, PluginLoadingContextType, PluginType } from "../../types/types.schema";
-import { config } from "../app";
+import { GameflowHooks } from "@simeonradivoev/gameflow-sdk";
+import { PluginDescriptionType, PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
+import { config, events, taskQueue } from "../app";
 import Conf from "conf";
 import projectPackage from '~/package.json';
 import z from "zod";
-import { PluginSourceType } from "@/shared/types";
+import { PluginSourceType, PluginUpdateCheck } from "@simeonradivoev/gameflow-sdk/shared";
+import { getUpdates } from "./services";
+import sdkPkg from '@simeonradivoev/gameflow-sdk/package.json';
+import { semver } from "bun";
 
 export const pluginZodRegistry = z.registry<{
     requiresRestart?: boolean;
@@ -21,8 +24,18 @@ export class PluginManager
         description: PluginDescriptionType,
         source: PluginSourceType;
         config?: Conf;
+        update?: PluginUpdateCheck;
+        incompatible?: boolean;
 
     }> = {};
+
+    unregister (id: string)
+    {
+        if (!this.plugins[id]) return false;
+        delete this.plugins[id];
+        console.log("Plugin", id, "unregistered");
+        return true;
+    }
 
     register (plugin: PluginType, description: PluginDescriptionType, source: PluginSourceType)
     {
@@ -68,16 +81,33 @@ export class PluginManager
         };
     }
 
-    private async reload (name: string, reloadCtx: { setProgress: (progress: number, state: string) => void; })
+    checkValidity (plugin: PluginDescriptionType)
+    {
+        const sdkDep = plugin.peerDependencies?.[sdkPkg.name];
+        if (sdkDep)
+        {
+            return semver.satisfies(sdkPkg.version, sdkDep);
+        }
+        return true;
+    }
+
+    private async reload (name: string, reloadCtx: { setProgress: (progress: number, state: string) => void; }, update: string | undefined)
     {
         const plugin = this.plugins[name];
         if (plugin)
         {
+            plugin.update = update && !semver.satisfies(plugin.description.version, update) ? { current: plugin.description.version, new: update } : undefined;
+
             const ctx: PluginLoadingContextType = {
                 hooks: this.hooks,
                 setProgress: reloadCtx.setProgress.bind(reloadCtx),
                 config: plugin.config as any,
-                zodRegistry: pluginZodRegistry
+                zodRegistry: pluginZodRegistry,
+                app: {
+                    config,
+                    events,
+                    taskQueue
+                }
             };
 
             if (plugin.loaded)
@@ -88,7 +118,14 @@ export class PluginManager
 
             try
             {
-                if (plugin.enabled || plugin.description.canDisable === false)
+                plugin.incompatible = !this.checkValidity(plugin.description);
+                if (plugin.incompatible)
+                {
+                    console.error(plugin.description.name, "Incompatible sdk verison");
+                    return;
+                }
+
+                if (plugin.enabled || plugin.description.canDisable === false || plugin.description.name === '@simeonradivoev/gameflow-store')
                 {
                     console.log("Loading Plugin", plugin.description.name);
                     await plugin.plugin.load(ctx);
@@ -106,10 +143,13 @@ export class PluginManager
     async reloadAll (ctx: { setProgress: (progress: number, state: string) => void; })
     {
         this.hooks = new GameflowHooks();
+
+        const outdated = await getUpdates();
+
         for await (const id of Object.keys(this.plugins))
         {
             ctx.setProgress(0, `Loading ${id}`);
-            await this.reload(id, ctx);
+            await this.reload(id, ctx, outdated?.[id]);
         }
     }
 

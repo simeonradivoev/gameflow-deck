@@ -3,7 +3,7 @@ import EmulatorHooks from "./emulators";
 import GameHooks from "./games";
 import StoreHooks from "./store";
 
-export default class GameflowHooks
+export class GameflowHooks
 {
     games = new GameHooks();
     emulators = new EmulatorHooks();

@@ -8,13 +8,13 @@ import LoadMoreButton from '@/mainview/components/LoadMoreButton';
 import { storeGamesInfiniteQuery } from '@queries/store';
 import InvalidStoreError from '@/mainview/components/store/InvalidStoreError';
 import { CardList, GameMetaExtra } from '@/mainview/components/CardList';
-import { GameListFilterType, RPC_URL } from '@/shared/constants';
+import { RPC_URL } from '@/shared/constants';
+import { GameListFilterType, FrontEndGameType } from '@simeonradivoev/gameflow-sdk/shared';
 import { useSessionStorage } from 'usehooks-ts';
 import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
 import SideFilters from '@/mainview/components/SideFilters';
 import { gameFiltersQuery } from '@/mainview/scripts/queries/romm';
-import { FrontEndGameType } from '@/shared/types';
 
 export const Route = createFileRoute('/store/tab/games')({
   component: RouteComponent,

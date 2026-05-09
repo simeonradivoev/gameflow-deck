@@ -11,11 +11,77 @@ import igdb from './builtin/sources/com.simeonradivoev.gameflow.igdb/package.jso
 import store from './builtin/sources/com.simeonradivoev.gameflow.store/package.json';
 import es from './builtin/launchers/com.simeonradivoev.gameflow.es/package.json';
 import rclone from './builtin/other/com.simeonradivoev.gameflow.rclone/package.json';
-import { PluginDescriptionSchema, PluginDescriptionType, PluginSchema } from "@/bun/types/types.schema";
+import { PluginDescriptionSchema, PluginDescriptionType, PluginSchema } from "@simeonradivoev/gameflow-sdk";
 import path from 'node:path';
 import { getStoreRootFolder } from "../store/services/gamesService";
+import { getUpdates } from "./services";
+import { PluginSourceType } from "@simeonradivoev/gameflow-sdk/shared";
+import { taskQueue } from "../app";
+import UpdateStoreJob from "../jobs/update-store";
 
 type PluginEntry = PluginDescriptionType & { load: () => Promise<any>; };
+
+const blacklist = new Set(['@simeonradivoev/gameflow-sdk']);
+
+export async function getPlugin (id: string, pluginManager: PluginManager)
+{
+    const pluginPath = path.join(getStoreRootFolder(), 'node_modules', id);
+    const pluginPackageFile = Bun.file(path.join(pluginPath, 'package.json'));
+    if (await pluginPackageFile.exists())
+    {
+        const pluginPackage = await PluginDescriptionSchema.safeParseAsync(await pluginPackageFile.json());
+        if (pluginPackage.success)
+        {
+            const mainPath = path.join(pluginPath, pluginPackage.data.main);
+            if (await Bun.file(mainPath).exists())
+            {
+                const entry: PluginEntry = { ...pluginPackage.data, load: () => import(mainPath) };
+                return entry;
+            } else
+            {
+                console.error("Main file for", id, "does not exist");
+            }
+        } else
+        {
+            console.error("Invalid Package for", id, pluginPackage.error.message);
+        }
+    } else
+    {
+        console.error("Package for", id, "does not exist");
+    }
+}
+
+export async function unregisterPlugin (id: string, pluginManager: PluginManager)
+{
+    return pluginManager.unregister(id);
+}
+
+export async function registerPlugin (plugin: PluginEntry, source: PluginSourceType, pluginManager: PluginManager)
+{
+    if (process.env.PLUGIN_WHITELIST && !process.env.PLUGIN_WHITELIST.includes(plugin.name))
+    {
+        console.log("Skipping", plugin.name, "missing in whitelist");
+        return;
+    }
+
+    if (process.env.PLUGIN_BLACKLIST && process.env.PLUGIN_BLACKLIST.includes(plugin.name))
+    {
+        console.log("Skipping", plugin.name, "found in whitelist");
+        return;
+    }
+
+    const file = await plugin.load();
+    if (file.default && typeof file.default === 'function')
+    {
+        const pluginInstance = new file.default();
+        await PluginSchema.parseAsync(pluginInstance);
+        const description = await PluginDescriptionSchema.parseAsync(plugin);
+        pluginManager.register(pluginInstance, description, source);
+    } else
+    {
+        console.log("Skipping", plugin.name, "invalid main. Has to be class with load method");
+    }
+}
 
 export default async function register (pluginManager: PluginManager)
 {
@@ -33,53 +99,41 @@ export default async function register (pluginManager: PluginManager)
         { ...rclone, load: () => import('./builtin/other/com.simeonradivoev.gameflow.rclone/rclone') },
     ];
 
-    const storePackageFile = path.join(getStoreRootFolder(), 'package.json');
-    const storePackage = await Bun.file(storePackageFile).json();
+    await Promise.all(plugins.map(p => registerPlugin(p, 'builtin', pluginManager)));
 
-    if (storePackage.dependencies)
+    const storePackageFilePath = path.join(getStoreRootFolder(), 'package.json');
+    if (!await Bun.file(storePackageFilePath).exists())
     {
-        const storePlugins = await Promise.all(Object.keys(storePackage.dependencies).map(async p =>
+        console.log("Store is missing. Updating it.");
+        await taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
+        console.log("Store Updated");
+    }
+    const storePackage = await Bun.file(storePackageFilePath).json();
+
+    if (storePackage?.dependencies)
+    {
+        const storePlugins = await Promise.all(Object.keys(storePackage.dependencies).filter(p => !blacklist.has(p)).map(async p =>
         {
-            const pluginPath = path.join(getStoreRootFolder(), 'node_modules', p);
-            const pluginPackageFile = Bun.file(path.join(pluginPath, 'package.json'));
-            if (await pluginPackageFile.exists())
-            {
-                const pluginPackage = await PluginDescriptionSchema.safeParseAsync(await pluginPackageFile.json());
-                if (pluginPackage.success)
-                {
-                    const mainPath = path.join(pluginPath, pluginPackage.data.main);
-                    if (await Bun.file(mainPath).exists())
-                    {
-                        const entry: PluginEntry = { ...pluginPackage.data, load: () => import(mainPath) };
-                        return entry;
-                    }
-                }
-            }
+            return getPlugin(p, pluginManager);
         }));
 
-        plugins.push(...storePlugins.filter(p => !!p));
-    }
+        console.log("Checking for outdated packages");
+        const outdated = await getUpdates();
 
-    await Promise.all(plugins.filter(p =>
-    {
-        if (process.env.PLUGIN_WHITELIST && !process.env.PLUGIN_WHITELIST.includes(p.name))
+        const validPlugins = storePlugins.filter(p => !!p);
+
+        if (outdated)
         {
-            return false;
+            validPlugins.forEach(p =>
+            {
+                const newVersion = outdated[p.name];
+                if (newVersion)
+                {
+                    console.log("Plugin", p.name, "has update", p.version, "=>", newVersion);
+                }
+            });
         }
-        if (process.env.PLUGIN_BLACKLIST && process.env.PLUGIN_BLACKLIST.includes(p.name))
-        {
-            return false;
-        }
-        return true;
-    }).map(async (pluginPackage) =>
-    {
-        const file = await pluginPackage.load();
-        if (file.default && typeof file.default === 'function')
-        {
-            const pluginInstance = new file.default();
-            await PluginSchema.parseAsync(pluginInstance);
-            const description = await PluginDescriptionSchema.parseAsync(pluginPackage);
-            pluginManager.register(pluginInstance, description, 'builtin');
-        }
-    }));
+
+        await Promise.all(validPlugins.map(p => registerPlugin(p, 'store', pluginManager)));
+    }
 }

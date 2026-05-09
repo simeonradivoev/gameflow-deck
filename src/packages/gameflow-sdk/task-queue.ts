@@ -1,6 +1,7 @@
-import { JobStatus } from '@/shared/types';
+
 import EventEmitter from 'node:events';
 import z from 'zod';
+import { JobStatus } from './shared';
 
 export class TaskQueue
 {

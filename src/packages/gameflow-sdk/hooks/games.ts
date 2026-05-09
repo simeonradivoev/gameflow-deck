@@ -1,6 +1,6 @@
-import { EmulatorPackageType, GameListFilterType } from '@/shared/constants';
-import { CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSlots } from '@/shared/types';
-import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, Hook, AsyncSeriesWaterfallHook } from 'tapable';
+
+import { EmulatorPackageType, GameListFilterType, CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSlots } from '../shared';
+import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfallHook } from 'tapable';
 
 export default class GameHooks
 {

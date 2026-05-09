@@ -1,5 +1,5 @@
 
-import { FrontendNotification } from '@/shared/types';
+import { FrontendNotification } from '@simeonradivoev/gameflow-sdk/shared';
 import { events } from './app';
 
 export default function buildNotificationsStream ()

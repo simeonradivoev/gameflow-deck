@@ -1,8 +1,7 @@
-import { EmulatorDownloadInfoType, EmulatorPackageType, ScoopPackageSchema } from "@/shared/constants";
 import { config, plugins } from "../../app";
 import { getOrCached, getOrCachedGithubRelease } from "../../cache";
 import path from "node:path";
-import { EmulatorSourceEntryType, EmulatorSupport } from "@/shared/types";
+import { EmulatorSourceEntryType, EmulatorSupport, ScoopPackageSchema, EmulatorPackageType, EmulatorDownloadInfoType } from "@simeonradivoev/gameflow-sdk/shared";
 
 export function findEmulatorPluginIntegration (name: string, validSources: (EmulatorSourceEntryType | undefined)[]): EmulatorSupport[]
 {

@@ -12,7 +12,7 @@ import { StoreEmulatorCard } from "./StoreEmulatorCard";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import Carousel from "../Carousel";
 import { useRouter } from "@tanstack/react-router";
-import { FrontEndEmulator } from "@/shared/types";
+import { FrontEndEmulator } from "@simeonradivoev/gameflow-sdk/shared";
 
 function SeeAllCard (data: { id: string; onAction: () => void; onFocus?: (details: { node: HTMLElement, instant?: boolean; }) => void; })
 {

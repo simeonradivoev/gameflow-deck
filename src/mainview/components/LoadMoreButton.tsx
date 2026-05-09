@@ -1,6 +1,7 @@
 import { setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { FOCUS_KEYS } from "../scripts/types";
 import { useIntersectionObserver } from "usehooks-ts";
+import { FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default function LoadMoreButton (data: { isFetching: boolean; hidden?: boolean, lastId?: FrontEndId; } & FocusParams & InteractParams)
 {

@@ -4,7 +4,7 @@ import * as app from '@/bun/api/app';
 import fs from 'node:fs/promises';
 import path from "node:path";
 import AdmZip from "adm-zip";
-import { DownloadInfo } from '@/shared/types';
+import { DownloadInfo } from '@simeonradivoev/gameflow-sdk/shared';
 
 describe("Download Tests", () =>
 {

@@ -3,7 +3,9 @@ import { plugins, taskQueue } from "../app";
 import z from "zod";
 import { toggleElementInConfig } from "@/bun/utils";
 import ReloadPluginsJob from "../jobs/reload-plugins-job";
-import { FrontendPlugin } from "@/shared/types";
+import { FrontendPlugin } from "@simeonradivoev/gameflow-sdk/shared";
+import { canDisable, canUninstall } from "./services";
+import PluginOperationJob from "../jobs/plugin-operation-job";
 
 export default new Elysia({ prefix: '/plugins' })
     .get('/', async () =>
@@ -17,25 +19,27 @@ export default new Elysia({ prefix: '/plugins' })
                 description: p.description.description,
                 source: p.source,
                 version: p.description.version,
-                canDisable: p.description.canDisable ?? true,
+                canDisable: canDisable(p.description),
                 icon: p.description.icon,
                 category: p.description.category,
-                hasSettings: !!p.config || !!p.plugin.eventsNames
+                hasSettings: !!p.config || !!p.plugin.eventsNames,
+                canUninstall: canUninstall(p.description, p.source),
+                update: p.update
             };
             return plugin;
         });
     })
     .get('/:id', async ({ params: { id } }) =>
     {
-        const plugin = plugins.plugins[id];
-        return plugin.description;
+        const plugin = plugins.plugins[decodeURIComponent(id)];
+        return { ...plugin.description, update: plugin.update };
     })
     .post('/:id', async ({ params: { id }, body: { enabled } }) =>
     {
-        const plugin = plugins.plugins[id];
+        const plugin = plugins.plugins[decodeURIComponent(id)];
         if (plugin)
         {
-            if (plugin.description.canDisable === false)
+            if (!canDisable(plugin.description))
             {
                 return status("Forbidden");
             }
@@ -48,4 +52,26 @@ export default new Elysia({ prefix: '/plugins' })
         }
     }, {
         body: z.object({ enabled: z.boolean() })
+    }).post('/install', async ({ body: { id } }) =>
+    {
+        if (taskQueue.hasActiveOfType(PluginOperationJob) || taskQueue.hasActiveOfType(ReloadPluginsJob)) return;
+        await taskQueue.enqueue(PluginOperationJob.id, new PluginOperationJob("add", id));
+        await taskQueue.enqueue(ReloadPluginsJob.id, new ReloadPluginsJob());
+    }, {
+        body: z.object({ id: z.string() })
+    }).post('/update', async ({ body: { id } }) =>
+    {
+        if (taskQueue.hasActiveOfType(PluginOperationJob) || taskQueue.hasActiveOfType(ReloadPluginsJob)) return;
+        await taskQueue.enqueue(PluginOperationJob.id, new PluginOperationJob("update", id));
+        await taskQueue.enqueue(ReloadPluginsJob.id, new ReloadPluginsJob());
+    }, {
+        body: z.object({ id: z.string() })
+    })
+    .post('/uninstall', async ({ body: { id } }) =>
+    {
+        if (taskQueue.hasActiveOfType(PluginOperationJob) || taskQueue.hasActiveOfType(ReloadPluginsJob)) return;
+        await taskQueue.enqueue(PluginOperationJob.id, new PluginOperationJob("remove", id));
+        await taskQueue.enqueue(ReloadPluginsJob.id, new ReloadPluginsJob());
+    }, {
+        body: z.object({ id: z.string() })
     });

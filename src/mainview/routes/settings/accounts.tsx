@@ -13,7 +13,8 @@ import
   useEffect,
   useRef,
 } from "react";
-import { RommLoginDataSchema, RPC_URL } from "@shared/constants";
+import { RPC_URL } from "@shared/constants";
+import { RommLoginDataSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import toast from "react-hot-toast";
 import { OptionSpace } from "../../components/options/OptionSpace";
 import { useSettingsForm, useSettingsFormContext } from "../../components/options/SettingsAppForm";

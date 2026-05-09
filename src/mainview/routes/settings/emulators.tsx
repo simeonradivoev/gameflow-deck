@@ -8,7 +8,8 @@ import { Check, ChevronDown, FolderSearch, HardDrive, Plug, SearchAlert, Store, 
 import { ContextDialog, ContextList, DialogEntry, OptionElement } from '../../components/ContextDialog';
 import classNames from 'classnames';
 import { twMerge } from 'tailwind-merge';
-import { RPC_URL, SettingsSchema } from '../../../shared/constants';
+import { RPC_URL } from '../../../shared/constants';
+import { SettingsSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import emulators from '@emulators';
 import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { GamePadButtonCode, Shortcut, useShortcuts } from '@/mainview/scripts/shortcuts';
@@ -20,11 +21,14 @@ import { FOCUS_KEYS } from '@/mainview/scripts/types';
 import { scrollIntoNearestParent, scrollIntoViewHandler, useDragScroll } from '@/mainview/scripts/utils';
 import { SettingsOption } from '@/mainview/components/options/SettingsOption';
 import { SettingsDropdown } from '@/mainview/components/options/SettingsDropdown';
-import { FrontEndEmulator } from '@/shared/types';
+import { FrontEndEmulator } from '@simeonradivoev/gameflow-sdk/shared';
+import { zodValidator } from '@tanstack/zod-adapter';
+import z from 'zod';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
   pendingComponent: EmulatorsPending,
+  validateSearch: zodValidator(z.object({ focus: z.string().optional() }))
 });
 
 function EmulatorsPending ()

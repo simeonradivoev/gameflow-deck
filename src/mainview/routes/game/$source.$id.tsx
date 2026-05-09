@@ -24,7 +24,7 @@ import Details from "@/mainview/components/game/Details";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import SelectMenu from "@/mainview/components/SelectMenu";
 import { IGDBIcon } from "@/mainview/scripts/brandIcons";
-import { FrontEndGameTypeDetailed } from "@/shared/types";
+import { FrontEndGameTypeDetailed } from "@simeonradivoev/gameflow-sdk/shared";
 
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>

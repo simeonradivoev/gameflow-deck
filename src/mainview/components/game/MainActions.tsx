@@ -9,9 +9,8 @@ import { Clock, Crosshair, Download, EllipsisVertical, Import, PackageOpen, Play
 import { gameInvalidationQuery, installMutation, playMutation } from "@/mainview/scripts/queries/romm";
 import ActionButton from "./ActionButton";
 import { useRouter } from "@tanstack/react-router";
-import { DownloadSourceType } from "@/shared/constants";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
-import { CommandEntry, FrontEndGameTypeDetailed } from "@/shared/types";
+import { CommandEntry, FrontEndGameTypeDetailed, DownloadSourceType } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
 {

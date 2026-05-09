@@ -1,5 +1,4 @@
 import { getStoreFolder } from "@/bun/api/store/services/gamesService";
-import { EmulatorDownloadInfoSchema, EmulatorDownloadInfoType, EmulatorPackageType, StoreDownloadType, StoreGameSchema, StoreGameType } from "@/shared/constants";
 import os from 'node:os';
 import path from "node:path";
 import * as appSchema from '@schema/app';
@@ -12,7 +11,7 @@ import { shuffleInPlace } from "@/bun/utils";
 import mustache from "mustache";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import fs from "node:fs/promises";
-import { CommandEntry, EmulatorSourceEntryType, EmulatorSystem, FrontEndEmulator, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, SaveFileChange } from "@/shared/types";
+import { CommandEntry, EmulatorSourceEntryType, EmulatorSystem, FrontEndEmulator, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, SaveFileChange, EmulatorDownloadInfoType, StoreDownloadType, StoreGameType, EmulatorPackageType, EmulatorDownloadInfoSchema, StoreGameSchema } from "@simeonradivoev/gameflow-sdk/shared";
 
 export async function getStoreGames (gamesManifest: any[], filter?: { limit?: number; offset?: number; })
 {

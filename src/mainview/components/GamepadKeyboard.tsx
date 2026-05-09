@@ -60,7 +60,7 @@ function buildWheel (side: 0 | 1, shift: boolean, characters: boolean)
     const elements: JSX.Element[] = [];
     const refs: RefObject<HTMLSpanElement | null>[] = [];
     const positions: { left: string; top: string; }[] = [];
-    const W = 258, C = 129, R2 = 107, R1 = 42, n = GetKeys(characters)[side].length, GAP = 0.028;
+    const n = GetKeys(characters)[side].length, GAP = 0.028;
 
     for (let i = 0; i < n; i++)
     {

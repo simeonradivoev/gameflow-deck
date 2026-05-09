@@ -1,11 +1,15 @@
 import { LocalOption } from '@/mainview/components/options/LocalOption';
-import { LocalSettingsSchema, settingRegistry } from '@/shared/constants';
+import { settingRegistry } from '@simeonradivoev/gameflow-sdk/shared';
+import { LocalSettingsSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { createFileRoute } from '@tanstack/react-router';
 import { Terminal } from 'lucide-react';
+import { zodValidator } from '@tanstack/zod-adapter';
+import z from 'zod';
 
 export const Route = createFileRoute('/settings/interface')({
   component: RouteComponent,
+  validateSearch: zodValidator(z.object({ focus: z.string().optional() }))
 });
 
 function RouteComponent ()

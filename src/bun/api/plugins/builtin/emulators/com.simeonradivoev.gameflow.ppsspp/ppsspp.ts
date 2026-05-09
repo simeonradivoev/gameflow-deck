@@ -1,4 +1,4 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
+import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
 import { config } from "@/bun/api/app";
 import configFilePathWin32 from './win32/ppsspp.ini' with { type: 'file' };
@@ -11,7 +11,7 @@ import { ensureDir } from "fs-extra";
 import { homedir } from "node:os";
 import ini from 'ini';
 import fs from 'node:fs/promises';
-import { EmulatorCapabilities } from "@/shared/types";
+import { EmulatorCapabilities } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default class PPSSPPIntegration implements PluginType
 {

@@ -1,4 +1,4 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
+import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
 import { config, customEmulators, db, emulatorsDb } from "@/bun/api/app";
 import * as emulatorSchema from '@schema/emulators';
@@ -13,7 +13,7 @@ import { findStoreEmulatorExec } from "@/bun/api/games/services/launchGameServic
 import { which } from "bun";
 import os from 'node:os';
 import { getLocalGameMatch } from "@/bun/api/games/services/utils";
-import { CommandEntry, EmulatorSourceEntryType } from "@/shared/types";
+import { CommandEntry, EmulatorSourceEntryType } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default class IgdbIntegration implements PluginType
 {

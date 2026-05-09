@@ -1,6 +1,7 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { getRomApiRomsIdGetOptions, getRomsApiRomsGetOptions } from "../clients/romm/@tanstack/react-query.gen";
-import { DefaultRommStaleTime, GameListFilterType } from "../shared/constants";
+import { DefaultRommStaleTime } from "../shared/constants";
+import { GameListFilterType } from '@simeonradivoev/gameflow-sdk/shared';
 
 export function gamesQueryOptions (filter?: GameListFilterType)
 {

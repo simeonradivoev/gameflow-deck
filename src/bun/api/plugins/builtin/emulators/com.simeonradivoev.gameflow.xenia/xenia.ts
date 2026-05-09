@@ -1,6 +1,6 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
+import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
-import GameflowHooks from "@/bun/api/hooks/app";
+import { GameflowHooks } from "@simeonradivoev/gameflow-sdk";
 import { config } from "@/bun/api/app";
 import path from "node:path";
 import { ensureDir } from "fs-extra";

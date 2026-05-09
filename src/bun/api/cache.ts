@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { cache } from "./app";
 import cacheSchema from "@schema/cache";
-import { GithubReleaseSchema } from "@/shared/constants";
+import { GithubReleaseSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import PQueue from "p-queue";
 import z from "zod";
 
@@ -11,7 +11,8 @@ export const CACHE_KEYS = {
     STORE_GAME_MANIFEST: 'store-game-manifest'
 } as const;
 
-export const githubRequestQueue = new PQueue({ intervalCap: 10, interval: 1000 * 60 * 10, strict: true });
+// we aggressively cache github data so burst of calls is fine.
+export const githubRequestQueue = new PQueue({ intervalCap: 60, interval: 1000 * 60 * 60, strict: true });
 
 export async function getOrCached<T> (key: string, getter: (lastValue: T | undefined) => Promise<T>, options?: { expireMs?: number; force?: boolean; }): Promise<T>
 {

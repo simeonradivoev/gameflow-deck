@@ -1,15 +1,15 @@
 import { AnimatedBackground } from '@/mainview/components/AnimatedBackground';
 import { AutoFocus } from '@/mainview/components/AutoFocus';
 import GameLookupElement from '@/mainview/components/game/GameLookup';
-import { HeaderUI, StickyHeaderUI } from '@/mainview/components/Header';
+import { HeaderUI } from '@/mainview/components/Header';
 import { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { customUpdateMutation, gameInvalidationQuery, gameQuery } from '@/mainview/scripts/queries/romm';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { HandleGoBack } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
 export const Route = createFileRoute('/game/update/$source/$id')({

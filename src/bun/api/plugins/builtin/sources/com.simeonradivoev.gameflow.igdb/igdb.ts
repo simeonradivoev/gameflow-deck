@@ -1,10 +1,10 @@
-import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
+import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
 import secrets from "@/bun/api/secrets";
 import PQueue from 'p-queue';
 import * as igdb from '@phalcode/ts-igdb-client';
 import { checkLoginAndRefreshTwitch } from "@/bun/api/auth";
-import { GameLookup } from "@/shared/types";
+import { GameLookup } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default class IgdbIntegration implements PluginType
 {

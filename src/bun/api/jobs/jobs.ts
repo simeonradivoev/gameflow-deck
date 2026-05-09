@@ -6,7 +6,7 @@ import TwitchLoginJob from "./twitch-login-job";
 import UpdateStoreJob from "./update-store";
 import { EmulatorDownloadJob } from "./emulator-download-job";
 import { getErrorMessage } from "@/bun/utils";
-import { IJob } from "../task-queue";
+import { IJob } from "../../../packages/gameflow-sdk/task-queue";
 import { LaunchGameJob } from "./launch-game-job";
 import { BiosDownloadJob } from "./bios-download-job";
 import { InstallJob } from "./install-job";

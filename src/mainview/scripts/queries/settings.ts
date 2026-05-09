@@ -138,7 +138,7 @@ export const getPluginSettingsDefinitionQuery = (source: string) => queryOptions
     queryKey: ['settings', source, 'definitions'],
     queryFn: async () =>
     {
-        const { data: value, error } = await settingsApi.api.settings.definitions({ source }).get();
+        const { data: value, error } = await settingsApi.api.settings.definitions({ source: encodeURIComponent(source) }).get();
         if (error) throw error;
 
         return value;
@@ -148,7 +148,7 @@ export const getPluginSettingQuery = (source: string, id: string) => queryOption
     queryKey: ["setting", source, id],
     queryFn: async () =>
     {
-        const { data, error } = await settingsApi.api.settings({ source })({ id }).get();
+        const { data, error } = await settingsApi.api.settings({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get();
         if (error) throw error;
 
         return data;
@@ -158,7 +158,7 @@ export const setPluginSettingMutation = (source: string, id: string) => mutation
     mutationKey: ["setting", source, id],
     mutationFn: async (value: any) =>
     {
-        const { data, error } = await settingsApi.api.settings({ source })({ id }).put({ value });
+        const { data, error } = await settingsApi.api.settings({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).put({ value });
         if (error) throw error;
 
         return data;
@@ -167,7 +167,7 @@ export const setPluginSettingMutation = (source: string, id: string) => mutation
 export const getPluginActionsQuery = (source: string) => queryOptions({
     queryKey: ['plugin', source, 'actions'], queryFn: async () =>
     {
-        const { data, error } = await settingsApi.api.settings.actions({ source }).get();
+        const { data, error } = await settingsApi.api.settings.actions({ source: encodeURIComponent(source) }).get();
         if (error) throw error;
 
         return data;
@@ -177,7 +177,7 @@ export const pluginActionMutation = (source: string, id: string) => mutationOpti
     mutationKey: ["plugin", source, "action"],
     mutationFn: async () =>
     {
-        const { data, error, response } = await settingsApi.api.settings.actions({ source })({ id }).post();
+        const { data, error, response } = await settingsApi.api.settings.actions({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).post();
         if (error) throw error;
 
         return { data: data as any, response };

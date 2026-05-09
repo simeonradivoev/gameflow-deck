@@ -3,7 +3,7 @@ import DotsLoading from '@/mainview/components/backgrounds/dots';
 import { Button } from '@/mainview/components/options/Button';
 import { checkUpdateMutation, hasUpdateQuery, updateMutation } from '@/mainview/scripts/queries/system';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { CircleFadingArrowUp, RefreshCcw } from 'lucide-react';
 import { MarkdownAsync } from 'react-markdown';

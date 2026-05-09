@@ -50,7 +50,7 @@ import SelectMenu from "../components/SelectMenu";
 import HeaderSearchField from "../components/HeaderSearchField";
 import CardElement from "../components/CardElement";
 import { Router } from "..";
-import { FrontEndId } from "@/shared/types";
+import { FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,

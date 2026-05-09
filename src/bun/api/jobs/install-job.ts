@@ -1,4 +1,4 @@
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { config, events, plugins } from "../app";
@@ -11,7 +11,7 @@ import { ensureDir, move } from "fs-extra";
 import { path7za } from "7zip-bin";
 import StreamZip from 'node-stream-zip';
 import { which } from "bun";
-import { DownloadInfo } from "@/shared/types";
+import { DownloadInfo } from "@simeonradivoev/gameflow-sdk/shared";
 
 interface JobConfig
 {

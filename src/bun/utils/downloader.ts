@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from "node:fs";
 import { config, jar } from "../api/app";
 import { moveAllFiles } from "../utils";
-import { DownloadFileEntry } from "@/shared/types";
+import { DownloadFileEntry } from "@simeonradivoev/gameflow-sdk/shared";
 
 export interface ProgressStats
 {

@@ -8,7 +8,7 @@ import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { RPC_URL } from "@/shared/constants";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import { oneShot } from "@/mainview/scripts/audio/audio";
-import { FrontEndEmulator } from "@/shared/types";
+import { FrontEndEmulator } from "@simeonradivoev/gameflow-sdk/shared";
 
 // ── Single missing-emulator card ───────────────────────────────────────────
 interface MissingCardProps

@@ -4,7 +4,7 @@ import { FocusEventHandler, useContext, useRef, useState } from "react";
 import path from "pathe";
 import { Check, File, FileInput, Folder, FolderInput, FolderOutput, FolderPlus, HardDrive, Usb, X } from "lucide-react";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
-import { DirType } from "@/shared/constants";
+import { DirType } from '@simeonradivoev/gameflow-sdk/shared';
 import classNames from "classnames";
 import { twMerge } from "tailwind-merge";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts";

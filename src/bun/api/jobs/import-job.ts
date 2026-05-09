@@ -1,10 +1,10 @@
 import { eq, or } from "drizzle-orm";
 import { db, plugins } from "../app";
 import { createLocalGame } from "../games/services/utils";
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
 import * as schema from "@schema/app";
 import z from "zod";
-import { GameLookup } from "@/shared/types";
+import { GameLookup } from "@simeonradivoev/gameflow-sdk/shared";
 
 export class ImportJob implements IJob<z.infer<typeof ImportJob.dataSchema>, string>
 {

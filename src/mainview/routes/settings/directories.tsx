@@ -13,10 +13,13 @@ import { systemApi } from '@/mainview/scripts/clientApi';
 import useActiveControl from '@/mainview/scripts/gamepads';
 import { changeDownloadsMutation } from '@queries/settings';
 import { downloadDrivesQuery } from '@/mainview/scripts/queries/system';
-import { DownloadsDrive } from '@/shared/types';
+import { DownloadsDrive } from '@simeonradivoev/gameflow-sdk/shared';
+import { zodValidator } from '@tanstack/zod-adapter';
+import z from 'zod';
 
 export const Route = createFileRoute('/settings/directories')({
   component: RouteComponent,
+  validateSearch: zodValidator(z.object({ focus: z.string().optional() }))
 });
 
 function DriveComponent (data: { drive: DownloadsDrive; downloadsSize: number; refetchDrives: () => void; })

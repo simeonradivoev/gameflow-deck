@@ -5,7 +5,7 @@ import z from "zod";
 import path from 'node:path';
 import { config, events, plugins } from "../app";
 import { getLocalGame, updateLocalLastPlayed } from "../games/services/statusService";
-import { SaveFileChange } from "@/shared/types";
+import { SaveFileChange } from "@simeonradivoev/gameflow-sdk/shared";
 
 // TODO: use the retroarch cores based on ES-DE
 export const cores: Record<string, string> = {

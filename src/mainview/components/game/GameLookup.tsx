@@ -6,7 +6,7 @@ import HeaderSearchField from "../HeaderSearchField";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { scrollIntoViewHandler } from "@/mainview/scripts/utils";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
-import { FrontEndId, GameLookup } from "@/shared/types";
+import { FrontEndId, GameLookup } from "@simeonradivoev/gameflow-sdk/shared";
 import { gameLookupQuery } from "@/mainview/scripts/queries/romm";
 import { Button } from "../options/Button";
 import { useNavigate } from "@tanstack/react-router";

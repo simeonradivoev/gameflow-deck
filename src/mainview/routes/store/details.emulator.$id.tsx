@@ -29,7 +29,7 @@ import FocusTooltip from "@/mainview/components/FocusTooltip";
 import { AutoFocus } from "@/mainview/components/AutoFocus";
 import { FilterUI } from "@/mainview/components/Filters";
 import Markdown from "react-markdown";
-import { FrontEndEmulatorDetailed } from "@/shared/types";
+import { FrontEndEmulatorDetailed } from "@simeonradivoev/gameflow-sdk/shared";
 
 export const Route = createFileRoute('/store/details/emulator/$id')({
     component: RouteComponent,

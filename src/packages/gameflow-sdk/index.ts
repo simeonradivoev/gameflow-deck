@@ -1,7 +1,20 @@
 import z from "zod";
-import GameflowHooks from "../api/hooks/app";
-import Conf from "conf";
+import { GameflowHooks } from "./hooks/app";
+import { EmulatorDownloadInfoSchema, EmulatorPackageSchema, FrontendNotification, SettingsType } from "./shared";
 import { $ZodRegistry } from "zod/v4/core";
+import Conf from "conf";
+import { EventEmitter } from 'node:events';
+import { TaskQueue } from "./task-queue";
+
+export * from "./hooks/app";
+export * from "./task-queue";
+
+export interface AppEventMap
+{
+    exitapp: [];
+    notification: [FrontendNotification];
+    focus: [];
+}
 
 export const PluginContextSchema = z.object({
     hooks: z.instanceof(GameflowHooks)
@@ -10,16 +23,22 @@ export const PluginContextSchema = z.object({
 export const PluginLoadingContextSchema = z.object({
     setProgress: z.function().input([z.number(), z.string()]).output(z.void()),
     config: z.instanceof(Conf).describe("Per plugin config. It will use the settings schema defined in the plugin class"),
-    zodRegistry: z.instanceof($ZodRegistry).describe("Used by the settings to register metadata for the UI")
+    zodRegistry: z.instanceof($ZodRegistry).describe("Used by the settings to register metadata for the UI"),
+    app: z.object({
+        config: z.instanceof(Conf<SettingsType>),
+        events: z.instanceof(EventEmitter<AppEventMap>),
+        taskQueue: z.instanceof(TaskQueue)
+    })
 }).extend(PluginContextSchema.shape);
 
 export const PluginDescriptionSchema = z.object({
     name: z.string(),
-    displayName: z.string(),
+    displayName: z.string().optional(),
     version: z.string(),
-    description: z.string(),
+    description: z.string().optional(),
     icon: z.url().optional().describe("Can be an external URL to an image or a data url"),
     keywords: z.array(z.string()).optional(),
+    peerDependencies: z.record(z.string(), z.string()).optional(),
     category: z.string().default("other"),
     main: z.string().describe("The main entry. It must export a default class implementing PluginType"),
     canDisable: z.boolean().default(true).optional().describe("Can the plugin be disabled or enabled by the user")
@@ -42,16 +61,6 @@ export const PluginSchema = z.object({
     }).or(z.record(z.string(), z.any()))).optional()
 });
 
-export type PluginType<T extends Record<string, any> = Record<string, any>> = Omit<z.infer<typeof PluginSchema>, "load" | 'settingsMigrations'> & {
-    load: (ctx: PluginLoadingContextType<T>) => Promise<void>;
-    settingsMigrations?: Record<string, (conf: Conf<T>) => void>;
-};
-export type PluginContextType = z.infer<typeof PluginContextSchema>;
-export type PluginLoadingContextType<TSettings extends Record<string, any> = Record<string, any>> = z.infer<typeof PluginLoadingContextSchema> & {
-    config: Conf<TSettings>;
-};
-export type PluginDescriptionType = z.infer<typeof PluginDescriptionSchema>;
-
 export const ActiveGameSchema = z.object({
     process: z.any().optional(),
     gameId: z.object({ id: z.string(), source: z.string() }),
@@ -60,4 +69,24 @@ export const ActiveGameSchema = z.object({
     name: z.string(),
     command: z.object({ command: z.string().or(z.string().array()), startDir: z.string().optional() })
 });
+
+export const EmulatorPostInstallContextSchema = z.object({
+    emulator: z.string(),
+    emulatorPackage: EmulatorPackageSchema.optional(),
+    path: z.string(),
+    update: z.boolean(),
+    info: EmulatorDownloadInfoSchema,
+});
+
 export type ActiveGameType = z.infer<typeof ActiveGameSchema>;
+export type PluginDescriptionType = z.infer<typeof PluginDescriptionSchema>;
+export type PluginContextType = z.infer<typeof PluginContextSchema>;
+export type PluginLoadingContextType<TSettings extends Record<string, any> = Record<string, any>> = z.infer<typeof PluginLoadingContextSchema> & {
+    config: Conf<TSettings>;
+};
+export type PluginType<T extends Record<string, any> = Record<string, any>> = Omit<z.infer<typeof PluginSchema>, "load" | 'settingsMigrations'> & {
+    load: (ctx: PluginLoadingContextType<T>) => Promise<void>;
+    settingsMigrations?: Record<string, (conf: Conf<T>) => void>;
+};
+export type EmulatorPostInstallContextType = z.infer<typeof EmulatorPostInstallContextSchema>;
+

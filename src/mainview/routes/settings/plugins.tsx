@@ -3,13 +3,13 @@ import { pluginCategoryIcons, pluginCategoryPriorities } from '@/mainview/compon
 import { OptionInput } from '@/mainview/components/options/OptionInput';
 import { OptionSpace } from '@/mainview/components/options/OptionSpace';
 import { RoundButton } from '@/mainview/components/RoundButton';
-import { enablePluginMutation, getAllPluginsQuery } from '@/mainview/scripts/queries/plugins';
+import { enablePluginMutation, getAllPluginsQuery, uninstallPluginMutation } from '@/mainview/scripts/queries/plugins';
 import { GamePadButtonCode, Shortcut } from '@/mainview/scripts/shortcuts';
-import { FrontendPlugin } from '@/shared/types';
+import { FrontendPlugin } from '@simeonradivoev/gameflow-sdk/shared';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Eye, Puzzle, Search, Settings2 } from 'lucide-react';
+import { CircleFadingArrowUp, Eye, Puzzle, Settings2, Trash } from 'lucide-react';
 
 export const Route = createFileRoute('/settings/plugins')({
     component: RouteComponent,
@@ -33,7 +33,9 @@ function Plugin (data: {
 
             },
         });
-    const handleDetails = () => navigate({ to: '/settings/plugin/$source', params: { source: data.plugin.name }, replace: true, viewTransition: { types: ['slide-up'] } });
+    const uninstall = useMutation(uninstallPluginMutation(data.plugin.name));
+    const handleUninstall = () => uninstall.mutate();
+    const handleDetails = () => navigate({ to: '/settings/plugin/$source', params: { source: encodeURIComponent(data.plugin.name) }, replace: true, viewTransition: { types: ['slide-up'] } });
 
     return <OptionSpace
         label={
@@ -42,10 +44,13 @@ function Plugin (data: {
                     {data.plugin.icon ? <img src={data.plugin.icon}></img> : <Puzzle />}
                 </div>
                 <div className='flex flex-col'>
-                    <div>{data.plugin.displayName}</div>
+                    <div>{data.plugin.displayName ?? data.plugin.name}</div>
                     <div className='flex gap-2 items-center'>
                         <div className=' text-sm text-base-content/40'>{data.plugin.name} ({data.plugin.version})</div>
                         {data.plugin.hasSettings && <Settings2 className='bg-base-300 rounded-full p-1 size-6' />}
+                        {data.plugin.update && <div className={data.plugin.update.new} data-tip="hello">
+                            <CircleFadingArrowUp className='bg-warning text-warning-content rounded-full p-1 size-6' />
+                        </div>}
                     </div>
                 </div>
             </div>
@@ -55,6 +60,7 @@ function Plugin (data: {
     >
         <div className='flex gap-4'>
             <RoundButton className='size-12 p-1' onAction={handleDetails} id={`${data.plugin.name}-details`} >{data.plugin.hasSettings ? <Settings2 /> : <Eye />}</RoundButton>
+            {data.plugin.canUninstall && <RoundButton className='size-12 p-1' onAction={handleUninstall} id={`${data.plugin.name}-uninstall`} >{uninstall.isPending ? <span className="loading loading-spinner loading-lg"></span> : <Trash />}</RoundButton>}
             {data.plugin.canDisable && <OptionInput compact onChange={v => data.setEnabled(!!v)} value={data.plugin.enabled} name={data.plugin.name} type="checkbox" />}
         </div>
     </OptionSpace>;

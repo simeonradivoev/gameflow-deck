@@ -1,10 +1,9 @@
 import { $, sleep } from 'bun';
 import path from 'node:path';
-import { SettingsType } from '@/shared/constants';
+import { SettingsType, KeysWithValueAssignableTo } from '@simeonradivoev/gameflow-sdk/shared';
 import { config } from './api/app';
 import fs from 'node:fs/promises';
 import packageDef from '~/package.json';
-import { KeysWithValueAssignableTo } from '@/shared/types';
 
 export function checkRunning (pid: number)
 {

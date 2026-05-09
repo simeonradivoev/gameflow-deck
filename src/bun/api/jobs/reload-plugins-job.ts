@@ -1,5 +1,5 @@
 import z from "zod";
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk";
 import { plugins } from "../app";
 
 export default class ReloadPluginsJob implements IJob<never, string>

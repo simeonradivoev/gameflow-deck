@@ -1,5 +1,5 @@
 import z from "zod";
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk";
 import { events } from "../app";
 import { Downloader } from "@/bun/utils/downloader";
 import path from 'node:path';

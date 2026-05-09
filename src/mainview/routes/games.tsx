@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { CollectionsDetail } from '../components/CollectionsDetail';
 import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
-import { GameListFilterType } from '@/shared/constants';
+import { GameListFilterType } from '@simeonradivoev/gameflow-sdk/shared';
 import { useSessionStorage } from 'usehooks-ts';
 import HeaderSearchField from '../components/HeaderSearchField';
 import { useEffect } from 'react';

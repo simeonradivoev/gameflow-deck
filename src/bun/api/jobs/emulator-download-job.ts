@@ -1,6 +1,6 @@
-import { EmulatorPackageType } from "@/shared/constants";
+import { EmulatorPackageType } from '@simeonradivoev/gameflow-sdk/shared';
 import { getStoreEmulatorPackage } from "../store/services/gamesService";
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
 import z from "zod";
 import { config, plugins } from "../app";
 import path from 'node:path';
@@ -12,7 +12,7 @@ import { simulateProgress } from "@/bun/utils";
 import { path7za } from "7zip-bin";
 import { getEmulatorDownload, getEmulatorPath } from "../store/services/emulatorsService";
 import { $ } from "bun";
-import { EmulatorSourceEntryType } from "@/shared/types";
+import { EmulatorSourceEntryType } from "@simeonradivoev/gameflow-sdk/shared";
 
 type EmulatorDownloadStates = "download" | "extract";
 

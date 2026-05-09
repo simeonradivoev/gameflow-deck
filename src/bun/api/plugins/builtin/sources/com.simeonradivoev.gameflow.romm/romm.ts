@@ -1,6 +1,6 @@
 
 
-import { PluginLoadingContextType, PluginType } from "@/bun/types/types.schema";
+import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
 import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiCollectionsGet, getCurrentUserApiUsersMeGet, getPlatformApiPlatformsIdGet, getPlatformFirmwareApiFirmwareGet, getPlatformsApiPlatformsGet, getRomApiRomsIdGet, getRomByMetadataProviderApiRomsByMetadataProviderGet, getRomContentApiRomsIdContentFileNameGet, getRomFiltersApiRomsFiltersGet, getRomsApiRomsGet, getSavesSummaryApiSavesSummaryGet, PlatformSchema, SimpleRomSchema, updateRomUserApiRomsIdPropsPut } from "@/clients/romm";
 import { config, events } from "@/bun/api/app";
@@ -14,7 +14,7 @@ import { client } from "@/clients/romm/client.gen";
 import { validateGameSource } from "@/bun/api/games/services/statusService";
 import z from "zod";
 import { checkLoginAndRefreshRomm } from "@/bun/api/auth";
-import { DownloadFileEntry, DownloadInfo, FrontEndCollection, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement, FrontEndGameTypeWithIds, FrontEndPlatformType } from "@/shared/types";
+import { DownloadFileEntry, DownloadInfo, FrontEndCollection, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeDetailedAchievement, FrontEndGameTypeWithIds, FrontEndPlatformType } from "@simeonradivoev/gameflow-sdk/shared";
 import Conf from "conf";
 
 const SettingsSchema = z.object({

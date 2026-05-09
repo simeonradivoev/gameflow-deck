@@ -1,6 +1,6 @@
 import Elysia, { status } from "elysia";
 import { plugins } from "../app";
-import { FrontEndCollection } from "@/shared/types";
+import { FrontEndCollection } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default new Elysia()
     .get('/collections', async () =>

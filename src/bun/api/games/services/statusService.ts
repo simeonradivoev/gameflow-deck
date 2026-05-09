@@ -8,9 +8,10 @@ import z from "zod";
 import { InstallJob, InstallJobStates } from "../../jobs/install-job";
 import { LaunchGameJob } from "../../jobs/launch-game-job";
 import * as appSchema from "@schema/app";
-import { DownloadSourceSchema, RPC_URL } from "@/shared/constants";
+import { RPC_URL } from "@/shared/constants";
+import { DownloadSourceSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import { host } from "@/bun/utils/host";
-import { CommandEntry, FrontEndId, GameLookup, GameStatusType, LocalDownloadFileEntry } from "@/shared/types";
+import { CommandEntry, FrontEndId, GameLookup, GameStatusType, LocalDownloadFileEntry } from "@simeonradivoev/gameflow-sdk/shared";
 
 export class CommandSearchError extends Error
 {
@@ -115,11 +116,15 @@ export async function update (source: string, id: string)
         const paths_screenshots: string[] = [...sourceGame.paths_screenshots.map(s => `${RPC_URL(host)}${s}`)];
         if (paths_screenshots.length <= 0 && sourceGame.igdb_id)
         {
-            const matches: GameLookup[] = [];
-            await plugins.hooks.games.gameLookup.promise({ source: 'igdb', id: String(sourceGame.igdb_id), matches });
-            if (matches.length > 0)
+            const matches = new Map<string, GameLookup[]>();
+            await plugins.hooks.games.gameLookup.promise(matches, { source: 'igdb', id: String(sourceGame.igdb_id) });
+            if (matches.size > 0)
             {
-                paths_screenshots.push(...matches[0].screenshotUrls);
+                const firstMatches = matches.values().next().value;
+                if (firstMatches && firstMatches.length > 0)
+                {
+                    paths_screenshots.push(...firstMatches[0].screenshotUrls);
+                }
             }
         }
 
@@ -244,7 +249,31 @@ export async function getValidLaunchCommandsForGame (source: string, id: string)
                 commands: commands.filter(c => c.valid),
                 gameId: { id: String(localGame.id), source: 'local' },
                 source: localGame.source ?? source,
-                sourceId: String(localGame.source_id) ?? id,
+                sourceId: localGame.source_id ? String(localGame.source_id) : id,
+            };
+        }
+        else
+        {
+            return new CommandSearchError('missing-emulator', `Missing One Of Emulators: ${Array.from(new Set(commands.filter(e => e.emulator && e.emulator !== "OS-SHELL").map(e => e.emulator))).join(', ')}`);
+        }
+    } else if (source === 'emulator')
+    {
+        const commands = await plugins.hooks.games.buildLaunchCommands.promise({
+            source,
+            sourceId: id,
+            id: { source: source, id: id },
+            systemSlug: "",
+            gamePath: null
+        });
+
+        if (commands instanceof Error || !commands) return commands;
+
+        const validCommand = commands.find(c => c.valid);
+        if (validCommand)
+        {
+            return {
+                commands: commands.filter(c => c.valid),
+                gameId: { id, source }
             };
         }
         else

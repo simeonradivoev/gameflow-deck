@@ -1,5 +1,6 @@
-import { EmulatorPostInstallContext } from "@/bun/types/types";
-import { DownloadFileEntry, EmulatorSourceEntryType, EmulatorSystem } from "@/shared/types";
+
+import { EmulatorPostInstallContextType } from "../index";
+import { DownloadFileEntry, EmulatorSourceEntryType, EmulatorSystem } from "../shared";
 import { AsyncSeriesBailHook, AsyncSeriesHook } from "tapable";
 
 export default class EmulatorHooks
@@ -13,7 +14,7 @@ export default class EmulatorHooks
     /** 
      * Triggered when emulator is downloaded or updated
      */
-    emulatorPostInstall = new AsyncSeriesHook<[ctx: EmulatorPostInstallContext], { emulator: string; }>(['ctx']);
+    emulatorPostInstall = new AsyncSeriesHook<[ctx: EmulatorPostInstallContextType], { emulator: string; }>(['ctx']);
     findEmulatorSource = new AsyncSeriesHook<[ctx: { emulator: string; sources: EmulatorSourceEntryType[]; }]>(['ctx']);
     findEmulatorForSystem = new AsyncSeriesHook<[ctx: { system: string; emulators: string[]; }]>(['ctx']);
 
@@ -24,7 +25,7 @@ export default class EmulatorHooks
             {
                 return {
                     ...tap,
-                    fn: async (ctx: EmulatorPostInstallContext, ...rest: any[]) =>
+                    fn: async (ctx: EmulatorPostInstallContextType, ...rest: any[]) =>
                     {
                         if (ctx.emulator === tap.emulator)
                         {

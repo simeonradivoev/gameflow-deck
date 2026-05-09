@@ -3,7 +3,6 @@ import Elysia, { status } from "elysia";
 import { config, db, plugins, taskQueue } from "../app";
 import path from "node:path";
 import fs from 'node:fs/promises';
-import { EmulatorDownloadInfoSchema } from "@/shared/constants";
 import * as appSchema from '@schema/app';
 import z from "zod";
 import { convertLocalToFrontendDetailed, getLocalGameMatch } from "../games/services/utils";
@@ -13,7 +12,17 @@ import { getStoreFolder } from "./services/gamesService";
 import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
 import { BiosDownloadJob } from "../jobs/bios-download-job";
 import { findEmulatorPluginIntegration, getEmulatorPath } from "./services/emulatorsService";
-import { EmulatorSourceEntryType, FrontEndEmulator, FrontEndGameTypeDetailed } from "@/shared/types";
+import { EmulatorSourceEntryType, FrontEndEmulator, FrontEndGameTypeDetailed, PluginBunDetailsSchema, PluginEntrySchema, EmulatorDownloadInfoSchema } from "@simeonradivoev/gameflow-sdk/shared";
+import PQueue from "p-queue";
+import { hasPackage, runBunPackageCommand } from "../plugins/services";
+import { semver } from "bun";
+
+const npmQueue = new PQueue({ intervalCap: 60, interval: 1000 * 60, strict: true });
+const pluginsResponseSchema = z.object({
+    objects: z.array(PluginEntrySchema),
+    total: z.number(),
+    time: z.coerce.date()
+});
 
 export const store = new Elysia({ prefix: '/api/store' })
     .get('/emulators', async ({ query }) =>
@@ -108,6 +117,49 @@ export const store = new Elysia({ prefix: '/api/store' })
             storeEmulatorCount,
             gameCount
         };
+    })
+    .get('/plugin', async ({ query: { plugin } }) =>
+    {
+        const pluginsRes = await runBunPackageCommand(['info', plugin]);
+        const pluginData = await PluginBunDetailsSchema.parseAsync(JSON.parse(pluginsRes));
+        const existingVersion = plugins.plugins[plugin]?.description.version;
+
+        return {
+            ...pluginData,
+            installed: !!plugins.plugins[plugin] || await hasPackage(plugin),
+            update: existingVersion && semver.order(pluginData.version, existingVersion) > 0 ? { from: existingVersion } : undefined
+        };
+    },
+        {
+            query: z.object({ plugin: z.string() })
+        })
+    .get('/plugins', async ({ query: { search } }) =>
+    {
+        //TODO: Find a better way to search keywords and a search term at the same time
+        const pluginsRes = await npmQueue.add(() => fetch(`https://registry.npmjs.com/-/v1/search?text=keywords:gameflow-plugin`));
+        if (!pluginsRes.ok) return status(pluginsRes.status, pluginsRes.statusText);
+        const data: z.infer<typeof pluginsResponseSchema> = await pluginsRes.json();
+        if (search)
+        {
+            data.objects = data.objects.filter(o =>
+            {
+                if (o.package.description && o.package.description.includes(search)) return true;
+                if (o.package.name.includes(search)) return true;
+                if (o.package.keywords.includes(search)) return true;
+                return false;
+            });
+            data.total = data.objects.length;
+        }
+        await Promise.all(data.objects.map(async o =>
+        {
+            const existingVersion = plugins.plugins[o.package.name]?.description.version;
+            o.installed = !!plugins.plugins[o.package.name] || await hasPackage(o.package.name);
+            o.update = existingVersion && semver.order(o.package.version, existingVersion) > 0 ? { from: existingVersion } : undefined;
+        }));
+        return data as any;
+    }, {
+        query: z.object({ search: z.string().optional() }),
+        response: pluginsResponseSchema
     })
     .get('/media/*', async ({ params }) =>
     {

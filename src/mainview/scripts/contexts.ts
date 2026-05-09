@@ -1,8 +1,7 @@
-import { SystemInfoType } from "@/shared/constants";
+import { SystemInfoType, Drive } from '@simeonradivoev/gameflow-sdk/shared';
 import { Direction, FocusDetails } from "@noriginmedia/norigin-spatial-navigation";
 import { createContext } from "react";
 import { Shortcut } from "./shortcuts";
-import { Drive } from "@/shared/types";
 
 export const StoreContext = createContext({} as {
     showDetails: (type: 'emulator' | 'game', source: string, id: string, focusSource: string) => void;

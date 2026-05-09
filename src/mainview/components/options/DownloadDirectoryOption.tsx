@@ -2,8 +2,7 @@ import { useState } from "react";
 import { PathSettingsOptionBase, PathSettingsOptionParams } from "./PathSettingsOption";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { changeDownloadsMutation, getSettingQuery } from "@queries/settings";
-import { SettingsType } from "@/shared/constants";
-import { KeysWithValueAssignableTo } from "@/shared/types";
+import { KeysWithValueAssignableTo, SettingsType } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default function DownloadDirectoryOption (data: PathSettingsOptionParams & { id: KeysWithValueAssignableTo<SettingsType, string>; })
 {

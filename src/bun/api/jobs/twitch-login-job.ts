@@ -1,4 +1,4 @@
-import { IJob, JobContext } from "../task-queue";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk";
 import secrets from "../secrets";
 import open from "open";
 import z from "zod";

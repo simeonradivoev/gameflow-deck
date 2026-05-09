@@ -4,7 +4,7 @@ import { and, count, eq, getTableColumns, not, notExists, or } from "drizzle-orm
 import { config, db, plugins } from "../app";
 import * as schema from "@schema/app";
 import { findPlatform } from "./services/utils";
-import { FrontEndPlatformType } from "@/shared/types";
+import { FrontEndPlatformType } from "@simeonradivoev/gameflow-sdk/shared";
 
 export default new Elysia()
     .get('/platforms', async () =>

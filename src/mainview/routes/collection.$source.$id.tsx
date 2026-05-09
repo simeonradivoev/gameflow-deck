@@ -6,7 +6,7 @@ import { AnimatedBackgroundContext } from '../scripts/contexts';
 import { getCollectionQuery } from '@queries/romm';
 import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
-import { GameListFilterType } from '@/shared/constants';
+import { GameListFilterType } from '@simeonradivoev/gameflow-sdk/shared';
 import { useLocalStorage } from 'usehooks-ts';
 
 export const Route = createFileRoute('/collection/$source/$id')({

@@ -1,10 +1,9 @@
-import { EmulatorPackageSchema, EmulatorPackageType } from "@/shared/constants";
 import { and, eq, or } from "drizzle-orm";
 import { config, emulatorsDb } from '../../app';
 import path from "node:path";
 import fs from 'node:fs/promises';
 import * as emulatorSchema from '@schema/emulators';
-import { EmulatorSystem } from "@/shared/types";
+import { EmulatorSystem, EmulatorPackageType, EmulatorPackageSchema } from "@simeonradivoev/gameflow-sdk/shared";
 
 export function getStoreRootFolder ()
 {
