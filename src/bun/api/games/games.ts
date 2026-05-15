@@ -454,18 +454,18 @@ export default new Elysia()
     }, {
         params: z.object({ id: z.string(), source: z.string() }),
     })
-    .post('/game/:source/:id/install', async ({ params: { id, source }, body: { downloadId } }) =>
+    .post('/game/:source/:id/install', async ({ params: { id, source }, body }) =>
     {
         if (!taskQueue.findJob(InstallJob.query({ source, id }), InstallJob))
         {
-            return taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source, { downloadId }));
+            return taskQueue.enqueue(InstallJob.query({ source, id }), new InstallJob(id, source, body));
         } else
         {
             return status('Not Implemented');
         }
     }, {
         params: z.object({ id: z.string(), source: z.string() }),
-        body: z.object({ downloadId: z.string().optional() }),
+        body: z.object({ downloadId: z.string().optional() }).optional(),
         response: z.any()
     })
     .delete('/game/:source/:id/install', async ({ params: { id, source } }) =>

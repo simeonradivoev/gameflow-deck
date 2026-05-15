@@ -91,6 +91,11 @@ export class TaskQueue
         return this.activeQueue.length > 0;
     }
 
+    public hasQueued ()
+    {
+        return this.queue && this.queue.length > 0;
+    }
+
     public hasActiveOfType (type: any)
     {
         for (const entry of this.activeQueue)
@@ -107,6 +112,30 @@ export class TaskQueue
     {
         const job = this.queue?.find(j => j.id === id) ?? this.activeQueue?.find(j => j.id === id);
         return job?.promise.promise ?? Promise.resolve();
+    }
+
+    public waitForAll ()
+    {
+        return new Promise((resolve) =>
+        {
+            if (!this.hasActive())
+            {
+                resolve(true);
+                return;
+            }
+
+            const handleEnded = () =>
+            {
+                if (!this.hasActive() && !this.hasQueued())
+                {
+                    resolve(true);
+                    this.events?.removeListener('ended', handleEnded);
+                    this.events?.removeListener('abort', handleEnded);
+                }
+            };
+            this.events?.on('ended', handleEnded);
+            this.events?.on('abort', handleEnded);
+        });
     }
 
     public cancelJob (id: string)

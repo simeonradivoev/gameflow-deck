@@ -1,18 +1,20 @@
 import { beforeAll, beforeEach, afterEach } from 'bun:test';
 import { resolve } from 'node:path';
 import * as app from '@/bun/api/app';
-import { remove } from 'fs-extra';
+import { ensureDir, remove } from 'fs-extra';
 
 export async function LoadApp ()
 {
     console.log("Loading App");
     await app.load();
+    await app.taskQueue.waitForAll();
 }
 
 export async function CleanupApp ()
 {
     console.log("Cleaning Up App");
     await app.cleanup();
+    await app.resetCleanup();
 }
 
 beforeAll(async () =>
@@ -20,7 +22,7 @@ beforeAll(async () =>
     process.env.CUSTOM_STORE_PATH = resolve('./src/tests/mock-store');
     process.env.CONFIG_CWD = resolve('./src/tests/mock-config');
     process.env.DEFAULT_DOWNLOAD_PATH = resolve('./src/tests/mock-roms');
-    process.env.PLUGIN_BLACKLIST = 'com.simeonradivoev.gameflow.rclone';
+    process.env.PLUGIN_BLACKLIST = 'com.simeonradivoev.gameflow.rclone,@simeonradivoev/gameflow-store,com.simeonradivoev.gameflow.romm,com.simeonradivoev.gameflow.igdb,@simeonradivoev/gameflow-sdk';
 });
 
 async function FileCleanup ()

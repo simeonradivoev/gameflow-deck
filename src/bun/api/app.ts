@@ -116,6 +116,13 @@ export async function cleanup ()
     cleannedUp = true;
 }
 
+/** Reset the cleanup flags. This is mainly used by tests since they run the same app. */
+export async function resetCleanup ()
+{
+    cleaningUp = false;
+    cleannedUp = false;
+}
+
 export async function reloadDatabase ()
 {
     await ensureDir(config.get('downloadPath'));

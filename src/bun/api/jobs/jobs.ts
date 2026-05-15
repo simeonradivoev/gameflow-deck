@@ -3,7 +3,7 @@ import z, { _ZodType } from "zod";
 import { taskQueue } from "../app";
 import { LoginJob } from "./login-job";
 import TwitchLoginJob from "./twitch-login-job";
-import UpdateStoreJob from "./update-store";
+import EnsureStore from "./ensure-store";
 import { EmulatorDownloadJob } from "./emulator-download-job";
 import { getErrorMessage } from "@/bun/utils";
 import { BaseEvent, IJob } from "@simeonradivoev/gameflow-sdk/task-queue";
@@ -184,7 +184,7 @@ export const jobs = new Elysia({ prefix: '/api/jobs' })
     .use(registerJob(LaunchGameJob))
     .use(registerJob(LoginJob))
     .use(registerJob(TwitchLoginJob))
-    .use(registerJob(UpdateStoreJob))
+    .use(registerJob(EnsureStore))
     .use(registerJob(BiosDownloadJob))
     .use(registerJob(InstallJob))
     .use(registerJob(ReloadPluginsJob))

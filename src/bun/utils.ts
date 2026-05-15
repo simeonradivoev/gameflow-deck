@@ -186,3 +186,18 @@ export function isArchive (path: string)
 {
     return archiveRegex.test(path);
 }
+
+export function IsPluginAllowed (id: string)
+{
+    if (process.env.PLUGIN_WHITELIST && !process.env.PLUGIN_WHITELIST.includes(id))
+    {
+        return false;
+    }
+
+    if (process.env.PLUGIN_BLACKLIST && process.env.PLUGIN_BLACKLIST.includes(id))
+    {
+        return false;
+    }
+
+    return true;
+}

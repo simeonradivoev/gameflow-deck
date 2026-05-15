@@ -41,7 +41,8 @@ export const PluginDescriptionSchema = z.object({
     peerDependencies: z.record(z.string(), z.string()).optional(),
     category: z.string().default("other"),
     main: z.string().describe("The main entry. It must export a default class implementing PluginType"),
-    canDisable: z.boolean().default(true).optional().describe("Can the plugin be disabled or enabled by the user")
+    canDisable: z.boolean().default(true).optional().describe("Can the plugin be disabled or enabled by the user"),
+    autoUpdate: z.boolean().optional().describe("Should the plugin auto update to latest version")
 });
 
 export const PluginSchema = z.object({

@@ -6,8 +6,9 @@ import { runBunPackageCommand } from "../plugins/services";
 import { PluginRegistry } from "@/shared/constants";
 import path from "node:path";
 import sdkPkg from '@simeonradivoev/gameflow-sdk/package.json';
+import { IsPluginAllowed } from "@/bun/utils";
 
-export default class UpdateStoreJob implements IJob<never, string>
+export default class EnsureStore implements IJob<never, string>
 {
     static id = "update-store" as const;
     static dataSchema = z.never();
@@ -20,7 +21,7 @@ export default class UpdateStoreJob implements IJob<never, string>
         this.storeVersion = process.env.STORE_VERSION ?? "^0.1.0";
     }
 
-    async start (context: JobContext<UpdateStoreJob, never, string>)
+    async start (context: JobContext<EnsureStore, never, string>)
     {
         const storeFolder = getStoreRootFolder();
         await ensureDir(storeFolder);
@@ -32,17 +33,23 @@ export default class UpdateStoreJob implements IJob<never, string>
 
         const storePackage = await Bun.file(path.join(storeFolder, "package.json")).json();
 
-        if (!storePackage.dependencies?.[sdkPkg.name] || storePackage.dependencies?.[sdkPkg.name] !== sdkPkg.version)
+        if (IsPluginAllowed(sdkPkg.name))
         {
-            let response = await runBunPackageCommand(["add", `${sdkPkg.name}@${sdkPkg.version}`, "--registry", PluginRegistry, '--omit', 'peer']);
-            console.log(response);
-        }
+            if (!storePackage.dependencies?.[sdkPkg.name] || storePackage.dependencies?.[sdkPkg.name] !== sdkPkg.version)
+            {
+                let response = await runBunPackageCommand(["add", `${sdkPkg.name}@${sdkPkg.version}`, "--registry", PluginRegistry, '--omit', 'peer']);
+                console.log(response);
+            }
 
-        // probably just means we couldn't find a version of the sdk, just install latest
-        if (storePackage.dependencies?.[sdkPkg.name] !== sdkPkg.version)
+            // probably just means we couldn't find a version of the sdk, just install latest
+            if (storePackage.dependencies?.[sdkPkg.name] !== sdkPkg.version)
+            {
+                let response = await runBunPackageCommand(["add", '--exact', `${sdkPkg.name}@latest`, "--registry", PluginRegistry, '--omit', 'peer']);
+                console.log(response);
+            }
+        } else
         {
-            let response = await runBunPackageCommand(["add", '--exact', `${sdkPkg.name}@latest`, "--registry", PluginRegistry, '--omit', 'peer']);
-            console.log(response);
+            console.log("Ignoring SDK package");
         }
 
         if (process.env.CUSTOM_STORE_PATH) return;

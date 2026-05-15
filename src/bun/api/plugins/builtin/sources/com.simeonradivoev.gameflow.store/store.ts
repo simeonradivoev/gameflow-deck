@@ -2,14 +2,14 @@ import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-s
 import desc from './package.json';
 import path, { } from 'node:path';
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
-import { Glob, pathToFileURL, which } from "bun";
+import { Glob, pathToFileURL, sleep, which } from "bun";
 import { and, eq } from "drizzle-orm";
 import * as emulatorSchema from '@schema/emulators';
 
 import { config, emulatorsDb, taskQueue } from "@/bun/api/app";
 import fs from "node:fs/promises";
 import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
-import UpdateStoreJob from "@/bun/api/jobs/update-store";
+import EnsureStore from "@/bun/api/jobs/ensure-store";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import { buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
 import { DownloadInfo, FrontEndEmulatorDetailed, FrontEndGameTypeWithIds } from "@simeonradivoev/gameflow-sdk/shared";
@@ -20,7 +20,7 @@ import StreamZip from "node-stream-zip";
 import { path7za } from "7zip-bin";
 import Seven from 'node-7z';
 
-export default class RommIntegration implements PluginType
+export default class StoreIntegration implements PluginType
 {
     eventsNames = [{ id: 'updateStore', title: "Update Store", description: "Update the Store Manifest", action: "Update" }];
 
@@ -29,7 +29,7 @@ export default class RommIntegration implements PluginType
         switch (e)
         {
             case 'updateStore':
-                await taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
+                await taskQueue.enqueue(EnsureStore.id, new EnsureStore());
                 return { reload: true };
         }
     }
@@ -38,7 +38,7 @@ export default class RommIntegration implements PluginType
     {
         console.log("Store Directory is ", getStoreFolder());
         ctx.setProgress(0, "Updating Store");
-        await taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
+        await taskQueue.enqueue(EnsureStore.id, new EnsureStore());
     }
 
     async load (ctx: PluginLoadingContextType)

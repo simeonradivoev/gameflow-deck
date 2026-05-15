@@ -188,16 +188,16 @@ export const store = new Elysia({ prefix: '/api/store' })
         emulator.integrations = integrations;
         return emulator;
     }, { params: z.object({ id: z.string() }) })
-    .post('/install/emulator/:id/:source', async ({ params: { source, id }, body: { isUpdate } }) =>
+    .post('/install/emulator/:id/:source', async ({ params: { source, id }, body }) =>
     {
         if (taskQueue.hasActiveOfType(EmulatorDownloadJob))
         {
             return status("Conflict", "Installation already running");
         }
-        const job = new EmulatorDownloadJob(id, source, { isUpdate });
+        const job = new EmulatorDownloadJob(id, source, body);
         return taskQueue.enqueue(EmulatorDownloadJob.id, job);
     }, {
-        body: z.object({ isUpdate: z.boolean().optional() })
+        body: z.object({ isUpdate: z.boolean().optional() }).optional()
     })
     .delete('/emulator/:id', async ({ params: { id } }) =>
     {

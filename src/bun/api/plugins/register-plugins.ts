@@ -14,10 +14,12 @@ import rclone from './builtin/other/com.simeonradivoev.gameflow.rclone/package.j
 import { PluginDescriptionSchema, PluginDescriptionType, PluginSchema } from "@simeonradivoev/gameflow-sdk";
 import path from 'node:path';
 import { getStoreRootFolder } from "../store/services/gamesService";
-import { getUpdates } from "./services";
+import { getUpdates, runBunPackageCommand } from "./services";
 import { PluginSourceType } from "@simeonradivoev/gameflow-sdk/shared";
 import { taskQueue } from "../app";
-import UpdateStoreJob from "../jobs/update-store";
+import EnsureStore from "../jobs/ensure-store";
+import { PluginRegistry } from "@/shared/constants";
+import { IsPluginAllowed } from "@/bun/utils";
 
 type PluginEntry = PluginDescriptionType & { load: () => Promise<any>; };
 
@@ -58,15 +60,9 @@ export async function unregisterPlugin (id: string, pluginManager: PluginManager
 
 export async function registerPlugin (plugin: PluginEntry, source: PluginSourceType, pluginManager: PluginManager)
 {
-    if (process.env.PLUGIN_WHITELIST && !process.env.PLUGIN_WHITELIST.includes(plugin.name))
+    if (!IsPluginAllowed(plugin.name))
     {
-        console.log("Skipping", plugin.name, "missing in whitelist");
-        return;
-    }
-
-    if (process.env.PLUGIN_BLACKLIST && process.env.PLUGIN_BLACKLIST.includes(plugin.name))
-    {
-        console.log("Skipping", plugin.name, "found in whitelist");
+        console.log("Skipping", plugin.name, "plugin not allowed");
         return;
     }
 
@@ -101,39 +97,52 @@ export default async function register (pluginManager: PluginManager)
 
     await Promise.all(plugins.map(p => registerPlugin(p, 'builtin', pluginManager)));
 
-    const storePackageFilePath = path.join(getStoreRootFolder(), 'package.json');
-    if (!await Bun.file(storePackageFilePath).exists())
+    if (IsPluginAllowed('@simeonradivoev/gameflow-store'))
     {
-        console.log("Store is missing. Updating it.");
-        await taskQueue.enqueue(UpdateStoreJob.id, new UpdateStoreJob());
-        console.log("Store Updated");
-    }
-    const storePackage = await Bun.file(storePackageFilePath).json();
-
-    if (storePackage?.dependencies)
-    {
-        const storePlugins = await Promise.all(Object.keys(storePackage.dependencies).filter(p => !blacklist.has(p)).map(async p =>
+        const storePackageFilePath = path.join(getStoreRootFolder(), 'package.json');
+        if (!await Bun.file(storePackageFilePath).exists())
         {
-            return getPlugin(p, pluginManager);
-        }));
-
-        console.log("Checking for outdated packages");
-        const outdated = await getUpdates();
-
-        const validPlugins = storePlugins.filter(p => !!p);
-
-        if (outdated)
-        {
-            validPlugins.forEach(p =>
-            {
-                const newVersion = outdated[p.name];
-                if (newVersion)
-                {
-                    console.log("Plugin", p.name, "has update", p.version, "=>", newVersion);
-                }
-            });
+            console.log("Store is missing. Updating it.");
+            await taskQueue.enqueue(EnsureStore.id, new EnsureStore());
+            console.log("Store Updated");
         }
+        const storePackage = await Bun.file(storePackageFilePath).json();
 
-        await Promise.all(validPlugins.map(p => registerPlugin(p, 'store', pluginManager)));
+        if (storePackage?.dependencies)
+        {
+            const storePlugins = await Promise.all(Object.keys(storePackage.dependencies).filter(p => !blacklist.has(p)).map(async p =>
+            {
+                return getPlugin(p, pluginManager);
+            }));
+
+            console.log("Checking for outdated packages");
+            const outdated = await getUpdates();
+
+            const validPlugins = storePlugins.filter(p => !!p);
+
+            if (outdated)
+            {
+                for await (const plugin of validPlugins)
+                {
+                    const newVersion = outdated[plugin.name];
+                    if (newVersion)
+                    {
+                        console.log("Plugin", plugin.name, "has update", plugin.version, "=>", newVersion);
+                    }
+
+                    if (plugin.autoUpdate)
+                    {
+                        console.log("Auto Updating Plugin", plugin.name);
+                        let response = await runBunPackageCommand(["add", `${plugin.name}@${newVersion}`, "--registry", PluginRegistry, '--omit', 'peer']);
+                        console.log(response);
+                    }
+                }
+            }
+
+            await Promise.all(validPlugins.map(p => registerPlugin(p, 'store', pluginManager)));
+        }
+    } else
+    {
+        console.log('Skipping Store Packages');
     }
 }
