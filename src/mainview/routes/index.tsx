@@ -14,6 +14,7 @@ import
 import
 {
   createFileRoute,
+  useNavigate,
   useRouter,
 } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -40,7 +41,7 @@ import z from "zod";
 import CollectionList from "../components/CollectionList";
 import { zodValidator } from '@tanstack/zod-adapter';
 import { mobileCheck, scrollIntoViewHandler, useDragScroll } from "../scripts/utils";
-import { AnimatedBackgroundContext } from "../scripts/contexts";
+import { AnimatedBackgroundContext, GlobalDialogContext } from "../scripts/contexts";
 import Carousel from "../components/Carousel";
 import { closeMutation } from "@queries/system";
 import { gameQuery } from "../scripts/queries/romm";
@@ -51,6 +52,10 @@ import HeaderSearchField from "../components/HeaderSearchField";
 import CardElement from "../components/CardElement";
 import { Router } from "..";
 import { FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
+import { playGame, usePlayMutation } from "../components/game/MainActions";
+import { rommApi } from "../scripts/clientApi";
+import { ContextList, DialogEntry } from "../components/ContextDialog";
+import { FOCUS_KEYS } from "../scripts/types";
 
 export const Route = createFileRoute("/")({
   component: ConsoleHomeUI,
@@ -152,6 +157,9 @@ function HomeList (data: {
     focusKey: "home-list",
     preferredChildFocusKey: `${data.selectedFilter}-list`
   });
+  const navigate = useNavigate();
+  const playGameMut = usePlayMutation(navigate);
+  const globalDialog = useContext(GlobalDialogContext);
 
   const handleNodeFocus = (id: string, node: HTMLElement, details: FocusDetails) =>
   {
@@ -168,6 +176,52 @@ function HomeList (data: {
   {
     router.navigate({ to: '/game/$source/$id', params: { id: String(sourceId ?? id.id), source: source ?? id.source } });
   };
+
+  async function handleGamePlay (id: FrontEndId, source: string | null, sourceId: string | null)
+  {
+    const finalSource = source ?? id.source;
+    const finalId = String(sourceId ?? id.id);
+
+    const validCommands = await rommApi.api.romm.game({ source: finalSource })({ id: finalId }).commands.get();
+    if (validCommands.data)
+    {
+      const preferredCommand = localStorage.getItem(`${finalSource}-${finalId}-preferred-command`);
+      if (preferredCommand)
+      {
+        playGame(finalSource, finalId, validCommands.data.commands[JSON.parse(preferredCommand)], navigate, playGameMut.mutate);
+      } else
+      {
+        if (validCommands.data.commands.length > 1)
+        {
+          globalDialog.openContext({
+            content: <ContextList options={
+              validCommands.data.commands.map((c, i) =>
+              {
+                const option: DialogEntry = {
+                  id: String(c.id),
+                  content: c.label ?? String(c.id),
+                  type: "primary",
+                  action (ctx)
+                  {
+                    localStorage.setItem(`${finalSource}-${finalId}-preferred-command`, JSON.stringify(i));
+                    ctx.close();
+                    playGame(finalSource, finalId, validCommands.data.commands[0], navigate, playGameMut.mutate);
+                  },
+                };
+
+                return option;
+              })
+            } />
+          }, FOCUS_KEYS.GAME_LIST_CARD('games-list', id));
+        } else if (validCommands.data.commands.length === 1)
+        {
+          playGame(finalSource, finalId, validCommands.data.commands[0], navigate, playGameMut.mutate);
+        }
+
+      }
+    }
+
+  }
 
   let activeList: JSX.Element;
   switch (data.selectedFilter)
@@ -190,6 +244,7 @@ function HomeList (data: {
       activeList = <>
         <GameList
           onGameSelect={handleGameSelect}
+          onQuickAction={handleGamePlay}
           saveChildFocus="session"
           onFocus={(l, n, d) =>
           {
@@ -203,7 +258,7 @@ function HomeList (data: {
           setBackground={bg.setBackground}
           filters={{ limit: 12, orderBy: 'activity' }}
           finalElement={[
-            <AdditionalCard key='store-games-btn' icon={Store} badgeIcon={Search} route='/store/tab/games' id='store-games-btn' title="Gameflow Store" subTitle="Get Free Games" index={43} actionLabel="Go To Store" />,
+            <AdditionalCard key='store-games-btn' icon={Store} badgeIcon={Search} route='/store/tab/games' id='store-games-btn' title="Gameflow Store" subTitle="Get Free Games and Plugins" index={43} actionLabel="Go To Store" />,
             <AdditionalCard key='all-games-btn' icon={LayoutGrid} route='/games' id='all-games-btn' title="All Games" subTitle="All Owned Games" index={17} actionLabel="All Games" />
           ]}
           emptyElement={[

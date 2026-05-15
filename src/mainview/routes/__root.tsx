@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import AppCommunication from "../components/AppCommunication";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import GlobalContextDialog from "../components/GlobalContextDialog";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
@@ -39,9 +40,11 @@ function RootComponent ()
 
   return (
     <div data-device={isMobile ? 'mobile' : ''} data-active-control={control} className="w-screen h-screen overflow-hidden">
-      <AppCommunication>
-        <Outlet />
-      </AppCommunication>
+      <GlobalContextDialog>
+        <AppCommunication>
+          <Outlet />
+        </AppCommunication>
+      </GlobalContextDialog>
       <Notifications />
       <Toaster containerStyle={{ viewTimelineName: 'toasters', viewTransitionName: 'notifications' }} />
       {queryDevOptions && <ReactQueryDevtools buttonPosition="top-right" />}

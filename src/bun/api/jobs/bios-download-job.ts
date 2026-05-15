@@ -1,35 +1,44 @@
-import z from "zod";
-import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
 import { config, plugins } from "../app";
 import { simulateProgress } from "@/bun/utils";
 import { Downloader } from "@/bun/utils/downloader";
 import path from 'node:path';
 import { ensureDir } from "fs-extra";
 import { buildStoreFrontendEmulatorSystems, getStoreEmulatorPackage } from "../store/services/gamesService";
+import { DownloadJobData } from "@simeonradivoev/gameflow-sdk/shared";
 
-export class BiosDownloadJob implements IJob<z.infer<typeof BiosDownloadJob.dataSchema>, "download">
+interface BiosDownloadJobData extends DownloadJobData
+{
+    emulator: string;
+}
+
+export class BiosDownloadJob implements IJob<BiosDownloadJobData, "download">
 {
     static id = "bios-download-job" as const;
-    static dataSchema = z.object({ emulator: z.string() });
     static query = (q: { id: string; }) => `${BiosDownloadJob.id}-${q.id}`;
     group: string = "bios-download";
-    emulator: string;
+    data: BiosDownloadJobData;
     dryRun: boolean;
 
     constructor(emulator: string, init?: { dryRun?: boolean; })
     {
-        this.emulator = emulator;
+        this.data = {
+            emulator,
+            name: "Download Emulator Bios"
+        };
         this.dryRun = init?.dryRun ?? false;
     }
 
-    async start (context: JobContext<IJob<z.infer<typeof BiosDownloadJob.dataSchema>, "download">, z.infer<typeof BiosDownloadJob.dataSchema>, "download">)
+    async start (context: JobContext<IJob<BiosDownloadJobData, "download">, BiosDownloadJobData, "download">)
     {
-        const emulator = await getStoreEmulatorPackage(this.emulator);
+        const emulator = await getStoreEmulatorPackage(this.data.emulator);
         if (!emulator) throw new Error("Could Not Find Emulator");
+        this.data.name = `${emulator.name} Bios`;
+        this.data.preview_url = emulator.logo;
         const systems = await buildStoreFrontendEmulatorSystems(emulator);
-        const biosFolder = path.join(config.get('downloadPath'), "bios", this.emulator);
+        const biosFolder = path.join(config.get('downloadPath'), "bios", this.data.emulator);
         await ensureDir(biosFolder);
-        const files = await plugins.hooks.emulators.fetchBiosDownload.promise({ emulator: this.emulator, systems, biosFolder });
+        const files = await plugins.hooks.emulators.fetchBiosDownload.promise({ emulator: this.data.emulator, systems, biosFolder });
 
         if (!files) throw new Error("Could not find source to download from");
 
@@ -45,9 +54,12 @@ export class BiosDownloadJob implements IJob<z.infer<typeof BiosDownloadJob.data
             const downloader = new Downloader('bios-download', files.files, biosFolder, {
                 signal: context.abortSignal,
                 headers,
-                onProgress (stats)
+                onProgress: (stats) =>
                 {
                     context.setProgress(stats.progress, "download");
+                    this.data.downloaded = stats.downloaded;
+                    this.data.speed = stats.speed;
+                    this.data.total = stats.total;
                 },
             });
 
@@ -57,6 +69,6 @@ export class BiosDownloadJob implements IJob<z.infer<typeof BiosDownloadJob.data
 
     exposeData ()
     {
-        return { emulator: this.emulator };
+        return this.data;
     }
 }

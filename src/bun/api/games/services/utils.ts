@@ -8,7 +8,7 @@ import { RPC_URL } from "@shared/constants";
 import { hashFile } from "@/bun/utils";
 import { host } from "@/bun/utils/host";
 import * as emulatorSchema from "@schema/emulators";
-import { DownloadFileEntry, FrontEndGameType, FrontEndGameTypeDetailed, GameLookup, LocalDownloadFileEntry, LocalGameMetadata } from "@simeonradivoev/gameflow-sdk/shared";
+import { DownloadFileEntry, FrontEndGameType, FrontEndGameTypeDetailed, GameLookup, LocalDownloadFileEntry, LocalGameMetadata, ProgressStats } from "@simeonradivoev/gameflow-sdk/shared";
 
 export async function calculateSize (installPath: string | null)
 {
@@ -467,4 +467,40 @@ export async function createLocalGame (info: {
     });
 
     return id;
+}
+
+export async function downloadGame (ctx: {
+    downloads: DownloadFileEntry[],
+    auth?: string,
+    id: string,
+    abortSignal?: AbortSignal,
+    setProgress?: (progress: number, state: "download" | "extract", info: Partial<Omit<ProgressStats, 'progress'>>) => void,
+    extract_path?: string;
+    path_fs?: string;
+
+}): Promise<string[] | undefined>
+{
+    const downloadedFiles = await plugins.hooks.downloadFiles.promise({
+        id: ctx.id,
+        auth: ctx.auth,
+        files: ctx.downloads,
+        downloadPath: config.get('downloadPath'),
+        abortSignal: ctx.abortSignal,
+        updateProgress: (stats) => ctx.setProgress?.(stats.progress, 'download', stats)
+    });
+
+    if (!downloadedFiles)
+    {
+        return;
+    }
+
+    const finalFiles = await plugins.hooks.postDownloadFiles.promise({
+        files: downloadedFiles.files,
+        source: downloadedFiles.source,
+        extract_path: ctx.extract_path,
+        downloadPath: config.get('downloadPath'),
+        path_fs: ctx.path_fs
+    }) ?? downloadedFiles.files;
+
+    return finalFiles;
 }

@@ -6,11 +6,15 @@ import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { CircleFadingArrowUp, FileQuestion, IceCream2, Package, Store, WandSparkles } from "lucide-react";
 import { FOCUS_KEYS } from "@/mainview/scripts/types";
 import { FlatpackIcon } from "@/mainview/scripts/brandIcons";
-import { JSX } from "react";
+import { JSX, useContext } from "react";
 import { oneShot } from "@/mainview/scripts/audio/audio";
 import { useQuery } from "@tanstack/react-query";
 import { getUpdateInfoForEmulator } from "@/mainview/scripts/queries/store";
 import { FrontEndEmulator } from "@simeonradivoev/gameflow-sdk/shared";
+import { rommApi } from "@/mainview/scripts/clientApi";
+import { useNavigate } from "@tanstack/react-router";
+import { GlobalDialogContext } from "@/mainview/scripts/contexts";
+import { ContextList, DialogEntry } from "../ContextDialog";
 
 export const emulatorStatusIcons: Record<string, JSX.Element> = {
     store: <Store />,
@@ -28,6 +32,7 @@ export function StoreEmulatorCard (data: {
     className?: string;
 })
 {
+    const navigate = useNavigate();
     const handleSelect = () =>
     {
         data.onSelect?.(data.emulator.name, focusKey);
@@ -45,7 +50,32 @@ export function StoreEmulatorCard (data: {
 
     const { data: updateInfo } = useQuery(getUpdateInfoForEmulator(data.emulator.name));
 
-    useShortcuts(focusKey, () => [{ button: GamePadButtonCode.A, label: "Details", action: handleSelect }], [handleSelect]);
+    const globalDialogContext = useContext(GlobalDialogContext);
+    useShortcuts(focusKey, () => [{
+        button: GamePadButtonCode.A,
+        label: "Details",
+        action: handleSelect
+
+    }, {
+        button: GamePadButtonCode.Y,
+        label: "Launch Emulator",
+        action: e =>
+        {
+            const entries: DialogEntry[] = data.emulator.validSources.filter(s => s.exists).map(s => ({
+                content: `Launch: ${s.type}`,
+                type: 'primary',
+                icon: emulatorStatusIcons[s.type],
+                action (ctx)
+                {
+                    if (!data.emulator) return;
+                    rommApi.api.romm.game({ source: 'emulator' })({ id: data.emulator.name }).play.post({ command_id: s.type });
+                    ctx.close();
+                    navigate({ to: '/launcher/$source/$id', params: { source: 'emulator', id: data.emulator.name } });
+                }, id: `open-${s.type}`
+            } satisfies DialogEntry));
+            globalDialogContext.openContext({ content: <ContextList options={entries} /> }, focusKey);
+        }
+    }], [handleSelect]);
 
     return (
         <div

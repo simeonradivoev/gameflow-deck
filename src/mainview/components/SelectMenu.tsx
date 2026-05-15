@@ -2,7 +2,7 @@ import { ContextList, DialogEntry, useContextDialog } from "./ContextDialog";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import { useMatchRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
-import { DoorOpen, Gamepad2, Puzzle, RefreshCcw, Settings, Store } from "lucide-react";
+import { DoorOpen, Gamepad2, Home, Puzzle, RefreshCcw, Settings, Store } from "lucide-react";
 import { systemApi } from "../scripts/clientApi";
 import { FOCUS_KEYS } from "../scripts/types";
 
@@ -15,7 +15,7 @@ export default function SelectMenu (data: { rootFocusKey: string; })
     const options: DialogEntry[] = [
         {
             content: "Home",
-            icon: <Gamepad2 />,
+            icon: <Home />,
             action (ctx)
             {
                 setOpen(false);

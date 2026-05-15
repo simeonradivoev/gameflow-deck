@@ -2,13 +2,15 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { GameMetaExtra, CardList } from "./CardList";
 import { DefaultRommStaleTime, RPC_URL } from "@shared/constants";
 import { GameListFilterType } from '@simeonradivoev/gameflow-sdk/shared';
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { HardDrive } from "lucide-react";
 import { JSX, useContext } from "react";
 import { useLocalSetting } from "../scripts/utils";
 import { AnimatedBackgroundContext } from "../scripts/contexts";
 import { allGamesQuery } from "@queries/romm";
 import { FrontEndGameType, FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
+import { isUrl } from "@/shared/utils";
+import { FOCUS_KEYS } from "../scripts/types";
 
 export interface GameListParams extends FocusParams
 {
@@ -17,6 +19,7 @@ export interface GameListParams extends FocusParams
     grid?: boolean,
     setBackground?: (url: string) => void;
     onGameSelect?: (id: FrontEndId, source: string | null, sourceId: string | null) => void;
+    onQuickAction?: (id: FrontEndId, source: string | null, sourceId: string | null) => void;
     focus?: string;
     className?: string;
     finalElement?: JSX.Element | JSX.Element[];
@@ -97,7 +100,7 @@ export function GameList (data: GameListParams)
 
                             const previewUrls = g.path_covers.map(c =>
                             {
-                                const url = c.startsWith("http") ? new URL(c) : new URL(`${RPC_URL(__HOST__)}${c}`);
+                                const url = isUrl(c) ? new URL(c) : new URL(`${RPC_URL(__HOST__)}${c}`);
                                 url.searchParams.delete('ts');
                                 return url;
                             });
@@ -105,13 +108,13 @@ export function GameList (data: GameListParams)
                             let platformUrl: URL | undefined = undefined;
                             if (g.path_platform_cover)
                             {
-                                platformUrl = g.path_platform_cover.startsWith("http") ? new URL(g.path_platform_cover) : new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
+                                platformUrl = isUrl(g.path_platform_cover) ? new URL(g.path_platform_cover) : new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
                                 platformUrl.searchParams.set('width', "64");
                             }
 
                             return {
                                 id: `${g.id.source}@${g.id.id}`,
-                                focusKey: `${data.id}-${g.id.source}@${g.id.id}`,
+                                focusKey: FOCUS_KEYS.GAME_LIST_CARD(data.id, g.id),
                                 title: g.name ?? "",
                                 subtitle: (
                                     <div className="flex gap-1 items-center">
@@ -122,6 +125,7 @@ export function GameList (data: GameListParams)
                                 previewUrls: previewUrls,
                                 badges: badges,
                                 onSelect: () => data.onGameSelect ? data.onGameSelect(g.id, g.source, g.source_id) : handleDefaultSelect(g),
+                                onQuickAction: data.onQuickAction ? () => data.onQuickAction?.(g.id, g.source, g.source_id) : undefined,
                                 onFocus: () => handleFocus(g.id, g.source, g.source_id)
                             } satisfies GameMetaExtra;
                         },

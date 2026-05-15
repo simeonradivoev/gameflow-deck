@@ -33,7 +33,9 @@ export const Route = createFileRoute("/game/$source/$id")({
   },
   component: RouteComponent,
   errorComponent: Error,
-  validateSearch: zodValidator(z.object({ focus: z.string().optional() })),
+  validateSearch: zodValidator(z.object({
+    focus: z.string().optional(),
+  })),
   staticData: {
     enterSound: 'openDetails',
     goBackSound: "returnDetails"

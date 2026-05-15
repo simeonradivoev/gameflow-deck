@@ -96,10 +96,10 @@ export default function HeaderSearchField (data: {
         isFocusBoundary: data.compact && showInput
     });
 
-    return <div ref={ref} className='flex items-center'>
+    return <div ref={ref} className='flex items-center' style={{ viewTransitionName: 'header-search' }}>
         <FocusContext value={focusKey}>
             {(!data.compact || showInput) && <SearchInput className={data.className} autoSearch={data.autoSearch} onFocus={data.onFocus} id={`${data.id}-field`} search={data.search} onSubmit={data.onSubmit} compact={data.compact} setShowInput={setShowInput} onInputFocus={focusSelf} />}
-            {data.compact && !showInput && <RoundButton onAction={e => setShowInput(true)} className="header-icon sm:size-10 md:size-14" id={`${data.id}-field`} ><Search /></RoundButton>}
+            {data.compact && !showInput && <RoundButton cssStyle={{ viewTransitionName: 'search-button' }} onAction={e => setShowInput(true)} className="header-icon sm:size-10 md:size-14" id={`${data.id}-field`} ><Search /></RoundButton>}
         </FocusContext>
     </div>;
 }

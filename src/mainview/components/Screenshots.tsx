@@ -8,6 +8,7 @@ import Carousel from "./Carousel";
 import { ContextDialog } from "./ContextDialog";
 import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 import { twMerge } from "tailwind-merge";
+import { isUrl } from "@/shared/utils";
 
 function Screenshot (data: { path: string; index: number; setFocused?: (index: number) => void; } & InteractParams)
 {
@@ -21,8 +22,9 @@ function Screenshot (data: { path: string; index: number; setFocused?: (index: n
             scrollIntoNearestParent(ref.current, { behavior: details.instant ? 'instant' : 'smooth' });
         }
     }); 4096;
+    const url = isUrl(data.path) ? data.path : `${RPC_URL(__HOST__)}${data.path}`;
     return <div ref={ref} className="group relative flex min-w-fit aspect-video max-h-[60vh] rounded-3xl focusable focusable-accent not-focused:cursor-pointer overflow-hidden">
-        <img ref={imageRef} draggable={false} className="object-cover w-full h-full" onClick={e => focusSelf({ nativeEvent: e.nativeEvent })} src={`${RPC_URL(__HOST__)}${data.path}`} loading="lazy" decoding="async" />
+        <img ref={imageRef} draggable={false} className="object-cover w-full h-full" onClick={e => focusSelf({ nativeEvent: e.nativeEvent })} src={url} loading="lazy" decoding="async" />
         <div className="absolute flex justify-center items-center bottom-2 right-2 size-10 rounded-full bg-base-100 hover:bg-base-content hover:text-base-300 cursor-pointer opacity-60 not-control-mouse:hidden invisible group-has-hover:visible" onClick={e => data.onAction?.({ event: e.nativeEvent, focusKey })}> <Fullscreen /> </div>
     </div>;
 }
@@ -59,8 +61,9 @@ function Preview (data: { id: string; screenshots?: string[]; preview: number; s
             }
         }
     ], [data.preview, focusKey, data.screenshots?.length ?? 0]);
+    const url = isUrl(data.screenshots?.[data.preview]) ? data.screenshots?.[data.preview] : `${RPC_URL(__HOST__)}${data.screenshots?.[data.preview]}`;
 
-    return <img ref={ref} draggable={false} className="object-cover w-full h-full rounded-2xl" src={`${RPC_URL(__HOST__)}${data.screenshots?.[data.preview]}`} loading="lazy" />;
+    return <img ref={ref} draggable={false} className="object-cover w-full h-full rounded-2xl" src={url} loading="lazy" />;
 }
 
 export default function Screenshots (data: { screenshots?: string[]; className?: string; } & FocusParams)

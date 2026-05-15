@@ -29,10 +29,11 @@ import { twMerge } from "tailwind-merge";
 import { TwitchIcon } from "../scripts/brandIcons";
 import { rommLoggedInQuery } from "../scripts/queries/romm";
 import { twitchLoginVerificationQuery } from "../scripts/queries/settings";
-import { SystemInfoContext } from "../scripts/contexts";
+import { AppContext, SystemInfoContext } from "../scripts/contexts";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { oneShot } from "../scripts/audio/audio";
 import { hasUpdateQuery } from "../scripts/queries/system";
+import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
 
 function HeaderAvatar (data: {
   id: string;
@@ -73,6 +74,7 @@ export interface HeaderButton
   external?: boolean;
   action?: () => void;
   className?: string;
+  shortcutLabel?: string;
 }
 
 export interface HeaderAccount
@@ -111,14 +113,22 @@ function NotificationStatus ()
 
 function ClockStatus ()
 {
-  const ref = useRef<HTMLSpanElement>(null);
+  const navigate = useNavigate();
+  const app = useContext(AppContext);
+  const refClock = useRef<HTMLSpanElement>(null);
+  const activeTaskProgress = app.activeTaskProgress;
+  const handleTaskClick = () =>
+  {
+    navigate({ to: '/settings/tasks' });
+  };
+  const { ref, focusKey } = useFocusable({ focusKey: 'tasks-indicator', focusable: !!activeTaskProgress, onEnterPress: handleTaskClick });
   useEffect(() =>
   {
     function update ()
     {
-      if (ref.current)
+      if (refClock.current)
       {
-        ref.current.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        refClock.current.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
     }
 
@@ -142,7 +152,16 @@ function ClockStatus ()
     return () => clearTimeout(timeout);
   }, []);
 
-  return <div className="flex gap-3 sm:text-xs md:text-2xl items-center"><span ref={ref}></span><Clock className="sm:size-4 md:size-8" /></div>;
+  useShortcuts(focusKey, () => [{
+    label: "Downloads", button: GamePadButtonCode.A, action (e)
+    {
+      handleTaskClick();
+    },
+  }]);
+
+  return <div ref={ref} className="flex gap-3 sm:text-xs md:text-2xl items-center">
+    <span ref={refClock}></span>
+    {activeTaskProgress ? <div onClick={handleTaskClick} className={twMerge("radial-progress bg-primary text-primary-content border-primary border-4 in-focused:ring-7 in-focused:ring-primary in-focused:bg-base-content in-focused:text-base-200 in-focused:border-base-content", activeTaskProgress ? "cursor-pointer" : "")} style={{ "--value": activeTaskProgress, "--size": "2rem", "--thickness": "0.3rem" }} role="progressbar"></div> : <Clock className="sm:size-4 md:size-8" />}</div>;
 }
 
 function BluetoothStatus ()
@@ -288,6 +307,7 @@ export function HeaderStatusBar (data: { buttons?: HeaderButton[]; buttonElement
         {data.buttonElements}
         {data.buttons?.map(b => <RoundButton
           key={b.id}
+          shortcutLabel={b.shortcutLabel}
           className={twMerge("header-icon sm:size-10 md:size-14", b.className)}
           id={b.id}
           external={b.external}
@@ -327,7 +347,19 @@ export function HeaderUI (data: HeaderUIParams)
       <FocusContext value={focusKey}>
         <HeaderAccounts key={"header-accounts"} accounts={data.accounts} />
         {data.title}
-        <HeaderStatusBar key={"header-status-bar"} buttonElements={data.buttonElements} buttons={[...data.buttons ?? [], { icon: <Settings />, id: "header-settings-btn", action: goToSettings, external: true }]} />
+        <HeaderStatusBar
+          key={"header-status-bar"}
+          buttonElements={data.buttonElements}
+          buttons={[
+            ...data.buttons ?? [],
+            {
+              icon: <Settings />,
+              id: "header-settings-btn",
+              action: goToSettings,
+              external: true,
+              shortcutLabel: "Settings"
+            }
+          ]} />
 
       </FocusContext>
     </header >

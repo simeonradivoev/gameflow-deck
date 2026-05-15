@@ -85,6 +85,13 @@ watch("./src/bun", { recursive: true }, (event, filename) =>
     restart();
 });
 
+watch("./src/packages", { recursive: true }, (event, filename) =>
+{
+    if (restarting) return;
+    console.log(`[watcher] ${event}: ${filename} — restarting...`);
+    restart();
+});
+
 let server: Bun.Subprocess | undefined = spawnServer();
 if (!process.env.HEADLESS)
 {

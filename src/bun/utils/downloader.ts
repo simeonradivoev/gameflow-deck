@@ -5,12 +5,7 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from "node:fs";
 import { config, jar } from "../api/app";
 import { moveAllFiles } from "../utils";
-import { DownloadFileEntry } from "@simeonradivoev/gameflow-sdk/shared";
-
-export interface ProgressStats
-{
-    progress: number;
-}
+import { DownloadFileEntry, ProgressStats } from "@simeonradivoev/gameflow-sdk/shared";
 
 interface TmpDownloadMetadata
 {
@@ -32,6 +27,7 @@ export class Downloader
     id: string;
     tmpPath: string;
     tmpPathMeta: string;
+    downloadSpeed: number = 0;
 
     /**
      * 
@@ -163,10 +159,7 @@ export class Downloader
             });
 
             const totalBytes = totalSize || Number(res.headers.get("content-length")) || 0;
-            if (totalSize <= 0)
-                bytesReceived = 0;
-            else
-                bytesReceived += start;
+            bytesReceived += start;
 
             const reader = res.body!.getReader();
 
@@ -181,10 +174,11 @@ export class Downloader
                 if (totalBytes > 0 && this.onProgress)
                 {
                     const percent = (bytesReceived / totalBytes) * 100;
-
-                    if (Date.now() - lastUpdate > 100)
+                    const timeDelta = Date.now() - lastUpdate;
+                    if (timeDelta > 100)
                     {
-                        this.onProgress({ progress: percent });
+                        this.downloadSpeed = this.downloadSpeed * 0.8 + Math.round(value.length / (timeDelta / 1000)) * 0.2;
+                        this.onProgress({ progress: percent, downloaded: bytesReceived, total: totalBytes, speed: this.downloadSpeed });
                         lastUpdate = Date.now();
                     }
                 }
@@ -194,7 +188,7 @@ export class Downloader
                     if (this.signal.reason === 'cancel')
                     {
                         console.log("Canceling Download and cleaning up files");
-                        await fs.rm(this.tmpPath, { recursive: true });
+                        await fs.rm(this.tmpPath, { recursive: true, maxRetries: 3, retryDelay: 3 });
                         await fs.rm(this.tmpPathMeta);
                         return;
                     }

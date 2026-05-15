@@ -12,6 +12,7 @@ import mustache from "mustache";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import fs from "node:fs/promises";
 import { CommandEntry, EmulatorSourceEntryType, EmulatorSystem, FrontEndEmulator, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, SaveFileChange, EmulatorDownloadInfoType, StoreDownloadType, StoreGameType, EmulatorPackageType, EmulatorDownloadInfoSchema, StoreGameSchema } from "@simeonradivoev/gameflow-sdk/shared";
+import { isUrl } from "@/shared/utils";
 
 export async function getStoreGames (gamesManifest: any[], filter?: { limit?: number; offset?: number; })
 {
@@ -39,7 +40,7 @@ export async function getStoreGame (id: string)
 
 function convertStoreMediaToPath (c: string)
 {
-    if (c.startsWith('http'))
+    if (isUrl(c))
     {
         return `/api/romm/image?url=${encodeURIComponent(c)}`;
     } else

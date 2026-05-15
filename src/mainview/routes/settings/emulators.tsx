@@ -24,6 +24,7 @@ import { SettingsDropdown } from '@/mainview/components/options/SettingsDropdown
 import { FrontEndEmulator } from '@simeonradivoev/gameflow-sdk/shared';
 import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
+import { isUrl } from '@/shared/utils';
 
 export const Route = createFileRoute('/settings/emulators')({
   component: RouteComponent,
@@ -238,7 +239,7 @@ function EmulatorBadge (data: {
   let logoUrl: string | undefined = undefined;
   if (data.emulator.logo)
   {
-    if (data.emulator.logo.startsWith('http'))
+    if (isUrl(data.emulator.logo))
     {
       logoUrl = data.emulator.logo;
     } else

@@ -15,6 +15,7 @@ import { zodValidator } from '@tanstack/zod-adapter';
 import z from 'zod';
 import SideFilters from '@/mainview/components/SideFilters';
 import { gameFiltersQuery } from '@/mainview/scripts/queries/romm';
+import { isUrl } from '@/shared/utils';
 
 export const Route = createFileRoute('/store/tab/games')({
   component: RouteComponent,
@@ -68,7 +69,7 @@ function RouteComponent ()
             Games
           </h2>
         </div>
-        <div className="pl-12">
+        <div className="ml-12">
           <CardList grid finalElement={<LoadMoreButton
             hidden
             lastId={data?.pages.at(-1)?.data.at(-1)?.id}
@@ -90,7 +91,7 @@ function RouteComponent ()
 
               const previewUrls = g.path_covers.map(c =>
               {
-                const url = c.startsWith('http') ? new URL(c) : new URL(`${RPC_URL(__HOST__)}${c}`);
+                const url = isUrl(c) ? new URL(c) : new URL(`${RPC_URL(__HOST__)}${c}`);
                 url.searchParams.delete('ts');
                 return url;
               });

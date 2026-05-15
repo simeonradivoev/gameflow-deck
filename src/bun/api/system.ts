@@ -86,6 +86,7 @@ export const system = new Elysia({ prefix: '/api/system' })
             z.object({ type: z.literal('info'), data: SystemInfoSchema }),
             z.object({ type: z.literal('focus') }),
             z.object({ type: z.literal('loading'), progress: z.number(), state: z.string().optional() }),
+            z.object({ type: z.literal('activeTask'), progress: z.number().nullable() }),
             z.object({ type: z.literal('loaded') }),
         ]),
         async open (ws)
@@ -93,6 +94,8 @@ export const system = new Elysia({ prefix: '/api/system' })
             const existingLoading = taskQueue.findJob(ReloadPluginsJob.id, ReloadPluginsJob);
             if (existingLoading) ws.send({ type: 'loading', progress: existingLoading.progress, state: existingLoading.state });
             else ws.send({ type: 'loaded' });
+
+            ws.send({ type: 'activeTask', progress: taskQueue.getActiveJobs()[0]?.progress });
 
             const startInfo = async () =>
             {
@@ -116,6 +119,8 @@ export const system = new Elysia({ prefix: '/api/system' })
 
             dispose.push(taskQueue.on('progress', e =>
             {
+                ws.send({ type: 'activeTask', progress: e.progress });
+
                 if (e.id === ReloadPluginsJob.id)
                 {
                     ws.send({ type: "loading", progress: e.progress, state: e.state });
@@ -127,6 +132,8 @@ export const system = new Elysia({ prefix: '/api/system' })
             }));
             dispose.push(taskQueue.on('started', e =>
             {
+                ws.send({ type: 'activeTask', progress: 0 });
+
                 if (e.id === ReloadPluginsJob.id)
                     ws.send({ type: "loading", progress: e.job.progress, state: e.job.state });
                 else if (e.id === SelfUpdateJob.id)
@@ -134,6 +141,7 @@ export const system = new Elysia({ prefix: '/api/system' })
             }));
             dispose.push(taskQueue.on('ended', e =>
             {
+                ws.send({ type: 'activeTask', progress: null });
                 if (e.id !== ReloadPluginsJob.id && e.id !== SelfUpdateJob.id) return;
                 ws.send({ type: "loaded" });
             }));

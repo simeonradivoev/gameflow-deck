@@ -1,17 +1,12 @@
-import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { config, events, plugins } from "../app";
 import { simulateProgress } from "@/bun/utils";
-import { Downloader } from "@/bun/utils/downloader";
-import Seven from 'node-7z';
 import z from "zod";
-import { checkFiles, createLocalGame } from "../games/services/utils";
-import { ensureDir, move } from "fs-extra";
-import { path7za } from "7zip-bin";
-import StreamZip from 'node-stream-zip';
-import { which } from "bun";
-import { DownloadInfo } from "@simeonradivoev/gameflow-sdk/shared";
+import { checkFiles, createLocalGame, downloadGame } from "../games/services/utils";
+import { ensureDir } from "fs-extra";
+import { DownloadInfo, DownloadJobData } from "@simeonradivoev/gameflow-sdk/shared";
 
 interface JobConfig
 {
@@ -22,7 +17,7 @@ interface JobConfig
 
 export type InstallJobStates = 'download' | 'extract';
 
-export class InstallJob implements IJob<never, InstallJobStates>
+export class InstallJob implements IJob<DownloadJobData, InstallJobStates>
 {
     static id = "install-job" as const;
     static query = (q: { source: string; id: string; }) => `${InstallJob.id}-${q.source}-${q.id}`;
@@ -34,6 +29,9 @@ export class InstallJob implements IJob<never, InstallJobStates>
     public localGameId?: number;
     public group = InstallJob.id;
     public localPath?: string;
+    data: DownloadJobData = {
+        name: "Install Game"
+    };
 
     constructor(id: string, source: string, config?: JobConfig)
     {
@@ -42,7 +40,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
         this.source = source;
     }
 
-    public async start (cx: JobContext<InstallJob, never, InstallJobStates>)
+    public async start (cx: JobContext<InstallJob, DownloadJobData, InstallJobStates>)
     {
         cx.setProgress(0, 'download');
         await fs.mkdir(config.get('downloadPath'), { recursive: true });
@@ -58,131 +56,31 @@ export class InstallJob implements IJob<never, InstallJobStates>
 
             if (!info) throw new Error(`Could not find downloader for source ${this.source}`);
 
-            const files = await checkFiles(info.files, !!info.extract_path);
+            this.data.name = info.name;
+            this.data.preview_url = info.coverUrl;
 
+            const files = await checkFiles(info.files, !!info.extract_path);
 
             if (this.config?.dryDownload !== true && files.some(f => !f.exists || !f.matches))
             {
-                const headers: Record<string, string> = {};
-                if (info.auth)
-                    headers['Authorization'] = info.auth;
-                const downloader = new Downloader(`game-${this.source}-${this.gameId}`,
-                    files.filter(f => !f.exists || !f.matches),
-                    config.get('downloadPath'),
+                const downloadedFiles = await downloadGame({
+                    downloads: files.filter(f => !f.exists || !f.matches),
+                    extract_path: info.extract_path,
+                    path_fs: info.path_fs,
+                    abortSignal: cx.abortSignal,
+                    auth: info.auth,
+                    id: `game-${this.source}-${this.gameId}`,
+                    setProgress: (process, state, info) =>
                     {
-                        signal: cx.abortSignal,
-                        headers,
-                        onProgress (stats)
-                        {
-                            cx.setProgress(stats.progress, 'download');
-                        },
-                    });
+                        cx.setProgress(process, state);
+                        this.data.downloaded = info.downloaded;
+                        this.data.speed = info.speed;
+                        this.data.total = info.total;
+                    },
+                });
 
-                const downloadedFiles = await downloader.start();
-                if (!downloadedFiles)
-                {
-                    return;
-                }
-
-                if (info.extract_path && downloadedFiles)
-                {
-                    let progress = 0;
-                    const progressDelta = 1 / downloadedFiles.length;
-                    const extractPath = path.join(config.get('downloadPath'), info.path_fs ?? '', info.extract_path);
-
-                    for (const filePath of downloadedFiles)
-                    {
-                        await new Promise(async (resolve, reject) =>
-                        {
-                            let sevenZipPath = process.env.ZIP7_PATH ?? path7za;
-
-                            if (filePath.endsWith('.rar'))
-                            {
-                                let newPath: string | undefined;
-                                if (process.platform === 'win32' && await fs.exists("C:\\Program Files\\7-Zip\\7z.exe"))
-                                {
-                                    newPath = "C:\\Program Files\\7-Zip\\7z.exe";
-                                } else
-                                {
-                                    newPath = which('7z') ?? undefined;
-                                }
-
-                                if (!newPath)
-                                {
-                                    await fs.rm(filePath);
-                                    reject(new Error("No RAR Support"));
-                                    return;
-                                }
-
-                                sevenZipPath = newPath;
-                            }
-
-                            let rejected = false;
-                            const seven = Seven.extractFull(filePath, extractPath, { $bin: sevenZipPath, $progress: true });
-                            seven.on('progress', p =>
-                            {
-                                cx.setProgress(progress + p.percent * progressDelta, "extract");
-                            });
-                            seven.on('error', e =>
-                            {
-                                reject(e);
-                                rejected = true;
-                            });
-                            seven.on('end', async () =>
-                            {
-                                if (rejected) return;
-                                await fs.rm(filePath);
-                                resolve(true);
-                            });
-                        }).catch(async e =>
-                        {
-                            if (filePath.endsWith('.zip'))
-                            {
-                                cx.setProgress(0, "extract");
-                                console.error(e);
-                                console.warn("Could not extract", filePath, "with 7zip trying zip extractor");
-                                await ensureDir(extractPath);
-                                const zip = new StreamZip.async({ file: filePath });
-                                let entryCount = await zip.entriesCount;
-                                let entryCounter = entryCount;
-                                zip.on('extract', (entry, outPath) =>
-                                {
-                                    entryCounter--;
-                                    cx.setProgress(progress + (1 - (entryCounter / entryCount)) * 100 * progressDelta, "extract");
-                                });
-                                const count = await zip.extract(null, extractPath);
-                                console.log(`Extracted ${count} entries`);
-                                await zip.close();
-                                await fs.rm(filePath);
-                            } else
-                            {
-                                throw e;
-                            }
-                        });
-
-                        progress += progressDelta * 100;
-                    }
-
-                    // check if 1 root folder we need to get rid of
-                    const contents = await fs.readdir(extractPath);
-                    if (contents.length === 1)
-                    {
-                        const stat = await fs.stat(path.join(extractPath, contents[0]));
-                        if (stat.isDirectory())
-                        {
-                            console.log("Found 1 root folder, using that instead");
-                            const tmpGameFolder = `${extractPath} (1)`;
-                            await move(path.join(extractPath, contents[0]), tmpGameFolder, { overwrite: true });
-                            await move(tmpGameFolder, extractPath, { overwrite: true });
-                        }
-                    }
-
-                    finalFiles.push(extractPath);
-
-                } else
-                {
+                if (downloadedFiles)
                     finalFiles.push(...downloadedFiles);
-                }
             }
 
             if (this.config?.dryDownload === true && info.extract_path)
@@ -193,7 +91,7 @@ export class InstallJob implements IJob<never, InstallJobStates>
             const coverResponse = await fetch(info.coverUrl);
             const cover = Buffer.from(await coverResponse.arrayBuffer());
 
-            if (cx.abortSignal.aborted) return;
+            cx.abortSignal.throwIfAborted();
 
             this.localGameId = await createLocalGame({
                 cover,

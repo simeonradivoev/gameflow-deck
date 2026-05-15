@@ -6,7 +6,7 @@ import
 import CardElement, { GameCardParams } from "./CardElement";
 import { JSX } from "react";
 import { twMerge } from "tailwind-merge";
-import { GamePadButtonCode, useShortcuts } from "../scripts/shortcuts";
+import { GamePadButtonCode, Shortcut, useShortcuts } from "../scripts/shortcuts";
 import { oneShot } from "../scripts/audio/audio";
 
 export interface GameMetaExtra extends GameMeta
@@ -16,7 +16,7 @@ export interface GameMetaExtra extends GameMeta
   focusKey: string;
 }
 
-function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusParams & InteractParams)
+function LocalCardElement (data: { game: GameMetaExtra, i: number; onQuickAction?: (ctx: InteractParamsArgs) => void; } & FocusParams & InteractParams)
 {
   let preview: GameCardParams['preview'] = data.game.preview;
   if (!preview && data.game.previewUrls)
@@ -31,7 +31,28 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; } & FocusPara
     oneShot('click');
   };
 
-  useShortcuts(data.game.focusKey, () => [{ label: "Details", button: GamePadButtonCode.A, action: event => handleAction({ event, focusKey: data.game.focusKey }) }]);
+  const handleAltAction = (ctx: InteractParamsArgs) =>
+  {
+    data.game.onQuickAction?.();
+    data.onQuickAction?.({ event, focusKey: data.game.focusKey });
+    oneShot('click');
+  };
+
+  useShortcuts(data.game.focusKey, () =>
+  {
+    const options: Shortcut[] = [{
+      label: "Details",
+      button: GamePadButtonCode.A,
+      action: event => handleAction({ event, focusKey: data.game.focusKey })
+    }];
+
+    if (data.onQuickAction || data.game.onQuickAction)
+    {
+      options.push({ label: "Play", button: GamePadButtonCode.X, action: event => handleAltAction({ event, focusKey: data.game.focusKey }) });
+    }
+
+    return options;
+  }, [data.onQuickAction, data.game.onQuickAction, data.game.focusKey]);
 
   return (
     <CardElement
@@ -91,7 +112,12 @@ export function CardList (data: {
     >
       <FocusContext.Provider value={focusKey}>
         {data.games.map((g, i) => <LocalCardElement
-          key={g.id} onFocus={data.onFocus} game={g} onAction={() => data.onSelectGame?.(g.id)} i={i} />)}
+          key={g.id}
+          onFocus={data.onFocus}
+          game={g}
+          onAction={() => data.onSelectGame?.(g.id)}
+          i={i}
+        />)}
         {data.finalElement}
       </FocusContext.Provider>
     </ul>

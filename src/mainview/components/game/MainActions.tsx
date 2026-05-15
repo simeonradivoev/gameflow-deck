@@ -1,21 +1,20 @@
 import { rommApi } from "@/mainview/scripts/clientApi";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { JSX, useEffect, useRef, useState } from "react";
+import { JSX, useContext, useEffect, useRef, useState } from "react";
 import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
 import { useLocalStorage } from "usehooks-ts";
-import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
+import { ContextList, DialogEntry } from "../ContextDialog";
 import { Clock, Crosshair, Download, EllipsisVertical, Import, PackageOpen, Play, TriangleAlert } from "lucide-react";
 import { gameInvalidationQuery, installMutation, playMutation } from "@/mainview/scripts/queries/romm";
 import ActionButton from "./ActionButton";
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate, UseNavigateResult, useRouter } from "@tanstack/react-router";
 import { GamePadButtonCode, Shortcut, useShortcuts } from "@/mainview/scripts/shortcuts";
 import { CommandEntry, FrontEndGameTypeDetailed, DownloadSourceType } from "@simeonradivoev/gameflow-sdk/shared";
+import { GlobalDialogContext } from "@/mainview/scripts/contexts";
 
-export default function MainActions (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
+export function usePlayMutation (navigate: UseNavigateResult<string>)
 {
-    const installMut = useMutation(installMutation(data.source, data.id));
-    const router = useRouter();
     const playMut = useMutation({
         ...playMutation, onError (error)
         {
@@ -23,9 +22,36 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         },
         onSuccess (data, { source, id }, onMutateResult, context)
         {
-            router.navigate({ to: '/launcher/$source/$id', params: { source: source, id: id } });
+            navigate({ to: '/launcher/$source/$id', params: { source: source, id: id } });
         },
     });
+
+    return playMut;
+}
+
+export function playGame (source: string, id: string, cmd: CommandEntry, navigate: UseNavigateResult<string>, playMutation: (options: { source: string, id: string, command_id: string | number; }) => void)
+{
+    if (cmd.emulator === 'EMULATORJS')
+    {
+        const params = new URLSearchParams(Array.isArray(cmd.command) ? cmd.command[0] : cmd.command);
+        navigate({ to: '/embedded/$source/$id', params: { source: source, id: id }, search: Object.fromEntries(params.entries()) });
+    } else
+    {
+        playMutation({ source: source, id: id, command_id: cmd.id });
+    }
+}
+
+export default function MainActions (data: {
+    game?: FrontEndGameTypeDetailed,
+    source: string,
+    id: string;
+})
+{
+    const installMut = useMutation(installMutation(data.source, data.id));
+    const router = useRouter();
+
+    const navigate = useNavigate();
+    const globalDialog = useContext(GlobalDialogContext);
     const ws = useRef<{ send: (data: string) => void; }>(undefined);
     const [progress, setProgress] = useState<number | undefined>(undefined);
     const [status, setStatus] = useState<string | undefined>(undefined);
@@ -42,7 +68,7 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         if (preferredCommand && c.id !== preferredCommand) return false;
         return true;
     });
-
+    const playMut = usePlayMutation(navigate);
     useEffect(() =>
     {
         const sub = rommApi.api.romm.status({ source: data.source })({ id: data.id }).subscribe();
@@ -99,32 +125,33 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
     }
 
     const showProgress = progress !== null && !!progressIcon;
-    useEffect(() =>
-    {
-        if (showProgress) return;
-        showInstallOptions(false);
-    }, [showProgress]);
 
-    const handlePlay = (cmd?: CommandEntry) =>
-    {
-        if (!cmd) return;
-        if (cmd.emulator === 'EMULATORJS')
-        {
-            const params = new URLSearchParams(Array.isArray(cmd.command) ? cmd.command[0] : cmd.command);
-            router.navigate({ to: '/embedded/$source/$id', params: { source: data.source, id: data.id }, search: Object.fromEntries(params.entries()) });
-        } else
-        {
-            playMut.mutate({ source: data.source, id: data.id, command_id: cmd.id });
-        }
-    };
+
 
     let mainButton: any | undefined = undefined;
     let showAllCommandsAction: ((focusKey: string) => void) | undefined;
     let mainAction: () => void;
     if (status === 'installed')
     {
-        if (validCommands.length > 1) showAllCommandsAction = (focusKey) => showAllCommands(true, focusKey);
-        mainAction = () => handlePlay(validDefaultCommand);
+        if (validCommands.length > 1) showAllCommandsAction = (focusKey) => globalDialog.openContext({
+            content: <ContextList options={validCommands.map((c, i) =>
+            {
+                const commands: DialogEntry = {
+                    id: String(c.id),
+                    content: c.label ?? "",
+                    type: 'primary',
+                    selected: preferredCommand !== undefined ? preferredCommand === c.id : i === 0,
+                    action (ctx)
+                    {
+                        setPreferredCommand(c.id);
+                        playGame(data.source, data.id, c, navigate, playMut.mutate);
+                    },
+                };
+                return commands;
+            })} />,
+            preferredChildFocusKey: String(preferredCommand)
+        }, focusKey);
+        mainAction = () => validDefaultCommand ? playGame(data.source, data.id, validDefaultCommand, navigate, playMut.mutate) : undefined;
         mainButton = <div className="flex gap-2">
             <ActionButton onAction={mainAction} tooltip={validDefaultCommand?.label ?? details}
                 key="primary"
@@ -182,7 +209,18 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
                 case 'install':
                     if (installSources && installSources.length > 1)
                     {
-                        showInstallSource(true, 'mainAction');
+                        globalDialog.openContext({
+                            content: <ContextList options={installSources?.map(s => ({
+                                content: s.name,
+                                action (ctx)
+                                {
+                                    installMut.mutate({ downloadId: s.id });
+                                    ctx.close();
+                                },
+                                type: 'primary',
+                                id: s.id
+                            } satisfies DialogEntry)) ?? []} />
+                        }, 'mainAction');
                     } else
                     {
                         installMut.mutate({});
@@ -222,55 +260,21 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
         return shortcuts;
     }, [showAllCommandsAction, mainAction]);
 
-    const { dialog: allCommandDialog, setOpen: showAllCommands } = useContextDialog('all-commands-dialog', {
-        content: <ContextList options={validCommands.map((c, i) =>
-        {
-            const commands: DialogEntry = {
-                id: String(c.id),
-                content: c.label ?? "",
-                type: 'primary',
-                selected: preferredCommand !== undefined ? preferredCommand === c.id : i === 0,
-                action (ctx)
-                {
-                    setPreferredCommand(c.id);
-                    handlePlay(c);
-                },
-            };
-            return commands;
-        })} />,
-        preferredChildFocusKey: String(preferredCommand)
-    });
-
-    const { dialog: installOptionsDialog, setOpen: showInstallOptions } = useContextDialog('install-options-dialog', {
-        content: <ContextList options={[{
-            id: 'cancel',
-            content: "Cancel",
-            action (ctx)
-            {
-                ws.current?.send('cancel');
-                ctx.close();
-            },
-            type: 'primary'
-        }]} />
-    });
-
-    const { dialog: installSourcesDialog, setOpen: showInstallSource } = useContextDialog('install-source-dialog', {
-        content: <ContextList options={installSources?.map(s => ({
-            content: s.name,
-            action (ctx)
-            {
-                installMut.mutate({ downloadId: s.id });
-                ctx.close();
-            },
-            type: 'primary',
-            id: s.id
-        } satisfies DialogEntry)) ?? []} />
-    });
-
     return <div className="flex gap-2">
         {mainButton}
         <div className="divider divider-horizontal m-0"></div>
-        {showProgress && <ActionButton onAction={() => showInstallOptions(true, "progress")} key="progress" square tooltip={details} type="base" id="progress" >
+        {showProgress && <ActionButton onAction={() => globalDialog.openContext({
+            content: <ContextList options={[{
+                id: 'cancel',
+                content: "Cancel",
+                action (ctx)
+                {
+                    ws.current?.send('cancel');
+                    ctx.close();
+                },
+                type: 'primary'
+            }]} />
+        }, "progress")} key="progress" square tooltip={details} type="base" id="progress" >
             <div key={`install-${status}`} data-tooltip={details ?? status} className="flex flex-col gap-2 w-16 items-center text-2xl">
                 <div className="flex flex-row">
                     {progressIcon}
@@ -278,8 +282,5 @@ export default function MainActions (data: { game?: FrontEndGameTypeDetailed, so
                 <progress className="progress progress-secondary w-full" value={progress} max="100"></progress>
             </div>
         </ActionButton>}
-        {installSourcesDialog}
-        {installOptionsDialog}
-        {allCommandDialog}
     </div>;
 }

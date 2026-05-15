@@ -1,4 +1,4 @@
-import { SystemInfoType, Drive } from '@simeonradivoev/gameflow-sdk/shared';
+import { SystemInfoType, Drive, AppInfoContext } from '@simeonradivoev/gameflow-sdk/shared';
 import { Direction, FocusDetails } from "@noriginmedia/norigin-spatial-navigation";
 import { createContext } from "react";
 import { Shortcut } from "./shortcuts";
@@ -44,6 +44,16 @@ export const ShortcutsContext = createContext({} as {
 });
 
 export const SystemInfoContext = createContext({} as SystemInfoType | undefined);
+
+export const AppContext = createContext({} as AppInfoContext);
+
+export const GlobalDialogContext = createContext({} as {
+    openContext: (options: {
+        content: any;
+        preferredChildFocusKey?: string;
+        onClose?: () => void;
+    }, focusKey: string) => void;
+});
 
 export const GameDetailsContext = createContext<{
     update: () => void;

@@ -2,7 +2,7 @@ import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-s
 import desc from './package.json';
 import path, { } from 'node:path';
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
-import { Glob, pathToFileURL } from "bun";
+import { Glob, pathToFileURL, which } from "bun";
 import { and, eq } from "drizzle-orm";
 import * as emulatorSchema from '@schema/emulators';
 
@@ -13,6 +13,12 @@ import UpdateStoreJob from "@/bun/api/jobs/update-store";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import { buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
 import { DownloadInfo, FrontEndEmulatorDetailed, FrontEndGameTypeWithIds } from "@simeonradivoev/gameflow-sdk/shared";
+import { isUrl } from "@/shared/utils";
+import { Downloader } from "@/bun/utils/downloader";
+import { ensureDir, move } from "fs-extra";
+import StreamZip from "node-stream-zip";
+import { path7za } from "7zip-bin";
+import Seven from 'node-7z';
 
 export default class RommIntegration implements PluginType
 {
@@ -295,7 +301,7 @@ export default class RommIntegration implements PluginType
 
                 const info: DownloadInfo = {
                     id: validDownload.id,
-                    coverUrl: game.covers?.[0] ? game.covers[0].startsWith('http') ? game.covers[0] : pathToFileURL(path.join(getStoreFolder(), game.covers[0])).href : "",
+                    coverUrl: game.covers?.[0] ? isUrl(game.covers[0]) ? game.covers[0] : pathToFileURL(path.join(getStoreFolder(), game.covers[0])).href : "",
                     screenshotUrls: game.screenshots ?? [],
                     files: [{
                         url: new URL(validDownload.url),
@@ -324,6 +330,130 @@ export default class RommIntegration implements PluginType
 
                 return info;
             });
+        });
+
+        ctx.hooks.downloadFiles.tapPromise(desc.name, async ({ id, files, downloadPath, abortSignal, auth, updateProgress }) =>
+        {
+            const headers: Record<string, string> = {};
+            if (auth)
+                headers['Authorization'] = auth;
+            const downloader = new Downloader(id,
+                files,
+                downloadPath,
+                {
+                    signal: abortSignal,
+                    headers,
+                    onProgress: updateProgress,
+                });
+
+            const downloadedFiles = await downloader.start();
+            if (downloadedFiles)
+            {
+                return { source: desc.name, files: downloadedFiles };
+            }
+        });
+
+        ctx.hooks.postDownloadFiles.tapPromise(desc.name, async ({ files, extract_path, source, downloadPath, path_fs }) =>
+        {
+            if (extract_path && files && source === desc.name)
+            {
+                let progress = 0;
+                const progressDelta = 1 / files.length;
+                const extractPath = path.join(downloadPath, path_fs ?? '', extract_path);
+
+                for (const filePath of files)
+                {
+                    await new Promise(async (resolve, reject) =>
+                    {
+                        let sevenZipPath = process.env.ZIP7_PATH ?? path7za;
+
+                        if (filePath.endsWith('.rar'))
+                        {
+                            let newPath: string | undefined;
+                            if (process.platform === 'win32' && await fs.exists("C:\\Program Files\\7-Zip\\7z.exe"))
+                            {
+                                newPath = "C:\\Program Files\\7-Zip\\7z.exe";
+                            } else
+                            {
+                                newPath = which('7z') ?? undefined;
+                            }
+
+                            if (!newPath)
+                            {
+                                await fs.rm(filePath);
+                                reject(new Error("No RAR Support"));
+                                return;
+                            }
+
+                            sevenZipPath = newPath;
+                        }
+
+                        let rejected = false;
+                        const seven = Seven.extractFull(filePath, extractPath, { $bin: sevenZipPath, $progress: true });
+                        seven.on('progress', p =>
+                        {
+                            ctx.setProgress?.(progress + p.percent * progressDelta, "extract", {
+                                speed: 0,
+                                total: 0,
+                                downloaded: 0
+                            });
+                        });
+                        seven.on('error', e =>
+                        {
+                            reject(e);
+                            rejected = true;
+                        });
+                        seven.on('end', async () =>
+                        {
+                            if (rejected) return;
+                            await fs.rm(filePath);
+                            resolve(true);
+                        });
+                    }).catch(async e =>
+                    {
+                        if (filePath.endsWith('.zip'))
+                        {
+                            ctx.setProgress?.(0, "extract", {});
+                            console.error(e);
+                            console.warn("Could not extract", filePath, "with 7zip trying zip extractor");
+                            await ensureDir(extractPath);
+                            const zip = new StreamZip.async({ file: filePath });
+                            let entryCount = await zip.entriesCount;
+                            let entryCounter = entryCount;
+                            zip.on('extract', (entry, outPath) =>
+                            {
+                                entryCounter--;
+                                ctx.setProgress?.(progress + (1 - (entryCounter / entryCount)) * 100 * progressDelta, "extract", {});
+                            });
+                            const count = await zip.extract(null, extractPath);
+                            console.log(`Extracted ${count} entries`);
+                            await zip.close();
+                            await fs.rm(filePath);
+                        } else
+                        {
+                            throw e;
+                        }
+                    });
+
+                    progress += progressDelta * 100;
+                }
+
+                // check if 1 root folder we need to get rid of
+                const contents = await fs.readdir(extractPath);
+                if (contents.length === 1)
+                {
+                    const stat = await fs.stat(path.join(extractPath, contents[0]));
+                    if (stat.isDirectory())
+                    {
+                        console.log("Found 1 root folder, using that instead");
+                        const tmpGameFolder = `${extractPath} (1)`;
+                        await move(path.join(extractPath, contents[0]), tmpGameFolder, { overwrite: true });
+                        await move(tmpGameFolder, extractPath, { overwrite: true });
+                    }
+                }
+
+                return [extractPath];
+            }
         });
     }
 }

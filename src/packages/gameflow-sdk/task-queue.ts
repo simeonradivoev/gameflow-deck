@@ -18,14 +18,24 @@ export class TaskQueue
         });
     }
 
-    public enqueue<T> (id: string, job: T, throwOnError?: boolean): T extends IJob<infer TData, infer TState extends string>
+    public enqueue<T> (id: string, job: T, options?: { throwOnCancel?: boolean; }): T extends IJob<infer TData, infer TState extends string>
         ? Promise<TData>
         : never
     {
         this.disposeSafeguard();
         if (!this.queue || !this.events) throw new Error("Queue disposed");
-        const context = new JobContext<any, any, any>(id, this.events, job);
+        if (this.activeQueue.some(j => j.id === id)) throw new Error(`Job with ID ${id} already active`);
+        if (this.queue.some(j => j.id === id)) throw new Error(`Job with ${id} already queued`);
+        const context = new JobContext<any, any, any>(id, this.events, job, options);
         this.queue.push(context as any);
+        context.abortSignal.addEventListener('abort', () =>
+        {
+            const queueIndex = this.queue?.findIndex(c => c === context);
+            if (queueIndex !== undefined && queueIndex >= 0)
+            {
+                this.queue?.splice(queueIndex, 1);
+            }
+        });
         this.events?.emit('queued', { id: context.id, job: context });
         this.processQueue();
         return context.promise.promise as any;
@@ -35,7 +45,24 @@ export class TaskQueue
     {
         if (!this.queue) return Promise.resolve();
 
-        const next = this.queue.filter(j => !j.job.group || !this.activeQueue.some(a => a.job.group === j.job.group)).map((job, i) => ({ i, job }));
+        let activeGroupsSet = new Set(this.activeQueue.filter(j => j.job.group).map(j => j.job.group));
+        const next = this.queue.filter(j =>
+        {
+            if (j.job.group)
+            {
+                // Only take one task per group to be active
+                if (!activeGroupsSet.has(j.job.group))
+                {
+                    activeGroupsSet.add(j.job.group);
+                    return true;
+                }
+            } else
+            {
+                return true;
+            }
+
+            return false;
+        }).map((job, i) => ({ i, job }));
 
         next.reverse().forEach(({ i }) => this.queue!.splice(i, 1));
 
@@ -82,6 +109,14 @@ export class TaskQueue
         return job?.promise.promise ?? Promise.resolve();
     }
 
+    public cancelJob (id: string)
+    {
+        const job = this.queue?.find(j => j.id === id)
+            ?? this.activeQueue?.find(j => j.id === id);
+
+        job?.abort('cancel');
+    }
+
     public findJob<T> (
         id: string,
         type: new (...args: any[]) => T
@@ -97,6 +132,16 @@ export class TaskQueue
             return job as any;
         }
         return undefined as any;
+    }
+
+    public getActiveJobs ()
+    {
+        return this.activeQueue;
+    }
+
+    public getQueuedJobs ()
+    {
+        return this.queue;
     }
 
     public on<E extends keyof EventsList> (event: E, listener: E extends keyof EventsList ? EventsList[E] extends unknown[] ? (...args: EventsList[E]) => void : never : never): () => void
@@ -170,6 +215,7 @@ export interface CompletedEvent extends BaseEvent
 
 export interface IJob<TData, TState extends string>
 {
+    /** What group does the job belong to. Grouped jobs can only have 1 active job per group */
     group?: string;
     start (context: JobContext<IJob<TData, TState>, TData, TState>): Promise<any>;
     exposeData?(): TData;
@@ -210,12 +256,14 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
     private events: EventEmitter<EventsList>;
     private abortController: AbortController;
     private m_promise: PromiseWithResolvers<TData | undefined>;
+    private throwOnCancel: boolean;
     private readonly m_job: T;
 
-    constructor(id: string, events: EventEmitter<EventsList>, job: T)
+    constructor(id: string, events: EventEmitter<EventsList>, job: T, options?: { throwOnCancel?: boolean; })
     {
         this.m_id = id;
         this.m_job = job;
+        this.throwOnCancel = options?.throwOnCancel ?? false;
         this.abortController = new AbortController();
         this.abortController.signal.addEventListener('abort', () =>
         {
@@ -247,7 +295,13 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
             {
                 if (error.target instanceof AbortSignal)
                 {
-                    this.m_promise.resolve(undefined);
+                    if (this.throwOnCancel)
+                    {
+                        this.m_promise.reject(this.abortSignal.reason);
+                    } else
+                    {
+                        this.m_promise.resolve(undefined);
+                    }
                 } else
                 {
                     console.error(error);

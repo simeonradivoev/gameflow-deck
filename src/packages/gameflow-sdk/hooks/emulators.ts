@@ -5,6 +5,7 @@ import { AsyncSeriesBailHook, AsyncSeriesHook } from "tapable";
 
 export default class EmulatorHooks
 {
+    /** Download emulator bios files */
     fetchBiosDownload = new AsyncSeriesBailHook<[ctx: {
         emulator: string;
         systems: EmulatorSystem[];
@@ -15,7 +16,9 @@ export default class EmulatorHooks
      * Triggered when emulator is downloaded or updated
      */
     emulatorPostInstall = new AsyncSeriesHook<[ctx: EmulatorPostInstallContextType], { emulator: string; }>(['ctx']);
+    /** Find locations of emulators on the system. Be it already installed ones or ones downloaded by the store. */
     findEmulatorSource = new AsyncSeriesHook<[ctx: { emulator: string; sources: EmulatorSourceEntryType[]; }]>(['ctx']);
+    /** Match emulators for a given system */
     findEmulatorForSystem = new AsyncSeriesHook<[ctx: { system: string; emulators: string[]; }]>(['ctx']);
 
     constructor()

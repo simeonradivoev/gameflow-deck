@@ -16,6 +16,7 @@ import classNames from "classnames";
 import
 {
   ArrowBigLeft,
+  Cog,
   FingerprintPattern,
   HardDrive,
   Info,
@@ -154,6 +155,12 @@ function SettingsMenu (data: {})
         route="/settings/plugins"
         label="Plugins"
         icon={<Puzzle />}
+      />
+      <MenuItem
+        focusSelect
+        route="/settings/tasks"
+        label="Tasks"
+        icon={<Cog />}
       />
       <MenuItem
         focusSelect

@@ -5,7 +5,7 @@ import z from "zod";
 import * as schema from "@schema/app";
 import fs from "node:fs/promises";
 import { SERVER_URL } from "@shared/constants";
-import { GameListFilterSchema } from '@simeonradivoev/gameflow-sdk/shared';
+import { CommandEntry, DownloadLookupEntry, DownloadsLookupFilterValues, GameListFilterSchema } from '@simeonradivoev/gameflow-sdk/shared';
 import { InstallJob } from "../jobs/install-job";
 import path from "node:path";
 import { convertLocalToFrontend, getLocalGameMatch, getSourceGameDetailed } from "./services/utils";
@@ -512,7 +512,25 @@ export default new Elysia()
         await plugins.hooks.games.gameLookup.promise(matches, { source, id });
         return Array.from(matches.values()).flatMap(m => m);
     })
-    .post('/game/:source/:id/play', async ({ params: { id, source }, body, set }) =>
+    .get('/game/:source/:id/commands', async ({ params: { id, source }, set }) =>
+    {
+        const validCommands = await getValidLaunchCommandsForGame(source, id);
+        if (validCommands instanceof Error)
+        {
+            return errorToResponse(validCommands, set);
+        }
+        return validCommands as {
+            commands: CommandEntry[];
+            gameId: FrontEndId;
+            source?: string;
+            sourceId?: string;
+        } | undefined;
+    }, {
+        response: z.object({
+            commands: z.custom<CommandEntry>().array()
+        })
+    })
+    .post('/game/:source/:id/play', async ({ params: { id, source }, body: { command_id }, set }) =>
     {
         const validCommands = await getValidLaunchCommandsForGame(source, id);
         if (validCommands)
@@ -525,7 +543,7 @@ export default new Elysia()
             {
                 try
                 {
-                    const validCommand = body.command_id ? validCommands.commands.find(c => c.id === body.command_id) : validCommands.commands[0];
+                    const validCommand = command_id ? validCommands.commands.find(c => c.id === command_id) : validCommands.commands[0];
                     if (validCommand)
                     {
                         // launch command waits for the game to exit, we don't want that.
@@ -676,7 +694,10 @@ export default new Elysia()
     .post('/add/custom', async ({ body: { source, id, platformId, gamePath } }) =>
     {
         if (taskQueue.hasActiveOfType(ImportJob)) return status("Conflict", "Import Job Already Running");
-        const data = await taskQueue.enqueue(ImportJob.id, new ImportJob(source, id, gamePath, platformId), true);
+        const data = await taskQueue.enqueue(ImportJob.query({ source, id }), new ImportJob(source, id, gamePath, platformId), {
+            throwOnCancel: true
+
+        });
         return { source: 'local', id: data.localId };
     }, {
         body: z.object({
@@ -685,4 +706,41 @@ export default new Elysia()
             gamePath: z.string(),
             platformId: z.number()
         })
+    }).get('/downloads/lookup', async ({ query: { search, page, rows, orderBy, sortDirection, source } }) =>
+    {
+        const matches = new Map<string, { count: number, items: DownloadLookupEntry[]; }>();
+        await plugins.hooks.games.downloadsLookup.promise(matches, { search, page, rows, orderBy, sortDirection, source });
+        const allValues = Array.from(matches.values());
+        return { hadMatchers: matches.size > 0, matches: allValues.flatMap(m => m.items), totalCount: allValues.reduce((p, c) => p + c.count, 0) };
+    }, {
+        query: z.object({
+            search: z.string().optional(),
+            page: z.coerce.number().optional(),
+            rows: z.coerce.number().optional(),
+            orderBy: z.string().optional(),
+            sortDirection: z.literal(["desc", "asc"]).optional(),
+            source: z.string().optional()
+        })
+    }).get('/download/lookup/:source/:id', async ({ params: { source, id } }) =>
+    {
+        const match = await plugins.hooks.games.downloadLookup.promise({ source, id });
+        if (!match) return status("Not Found");
+        return match;
+    }).get('/download/file/info', async ({ query: { file_url } }) =>
+    {
+        const response = await fetch(file_url, { method: "HEAD" });
+        if (!response.ok) return status('Internal Server Error', response.statusText);
+        return { size: Number(response.headers.get('content-length')), content_type: response.headers.get('content-type') };
+    }, {
+        query: z.object({ file_url: z.url() })
+    }).get('/download/lookup/filters', async () =>
+    {
+        const filters: DownloadsLookupFilterValues = {
+            source: [],
+            orderBy: []
+        };
+
+        await plugins.hooks.games.downloadsLookupFilters.promise({ filters });
+
+        return filters;
     });

@@ -31,7 +31,7 @@ function RouteComponent ()
 
     return <CollectionsDetail
         headerButtonElements={
-            [<RoundButton external id={'add-game-btn'} onAction={(e) =>
+            [<RoundButton shortcutLabel='Add Game' external id={'add-game-btn'} onAction={(e) =>
             {
                 navigate({ to: '/game/add' });
             }} ><Plus /></RoundButton>,

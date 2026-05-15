@@ -12,7 +12,9 @@ export const FOCUS_KEYS = {
     EMULATOR_CARD: (id: string) => `EMULATOR_${id}`,
     GAME_SECTION: "GAME_SECTION",
     GAME_CARD: (id: FrontEndId) => `GAME_${id.source}_${id.id}`,
+    GAME_LIST_CARD: (list: string, id: FrontEndId) => `LIST_${list}_GAME_${id.source}_${id.id}`,
     GAME_MATCH: (id: FrontEndId) => `GAME_${id.source}_${id.id}`,
     STATS_SECTION: "STATS_SECTION",
-    PLUGIN_ENTRY: (id: string) => `PLUGIN_${id}`
+    PLUGIN_ENTRY: (id: string) => `PLUGIN_${id}`,
+    DOWNLOAD_ENTRY: (source: string, id: string) => `DOWNLOAD_${source}_${id}`
 } as const;

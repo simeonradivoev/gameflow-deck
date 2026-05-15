@@ -10,6 +10,8 @@ import { getRelevantEmulators } from "./services";
 import type { JSONSchema7 } from "json-schema";
 import ReloadPluginsJob from "../jobs/reload-plugins-job";
 import { pluginZodRegistry } from "../plugins/plugin-manager";
+import { TestDownloadJob } from "../jobs/test-download-job";
+import { randomUUIDv7 } from "bun";
 
 export const settings = new Elysia({ prefix: '/api/settings' })
     .get('/emulators/automatic', async () =>
@@ -111,6 +113,10 @@ export const settings = new Elysia({ prefix: '/api/settings' })
     .get('/:source/:id', async ({ params: { source, id } }) =>
     {
         return { value: plugins.plugins[decodeURIComponent(source)].config?.get(decodeURIComponent(id)) };
+    })
+    .post('/test/download', async () =>
+    {
+        taskQueue.enqueue(randomUUIDv7(), new TestDownloadJob());
     })
     .put('/:source/:id', async ({ params: { source, id }, body: { value } }) =>
     {

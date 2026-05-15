@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useMatchRoute, useRouter } from '@tanstack/react-router';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
-import { Gamepad2, Home, Joystick, Puzzle } from 'lucide-react';
+import { DownloadCloud, Gamepad2, Home, Joystick, Puzzle } from 'lucide-react';
 import { useRef } from 'react';
 import { useSessionStorage } from 'usehooks-ts';
 import z from 'zod';
@@ -97,6 +97,7 @@ function RouteComponent ()
     home: { label: "Home", icon: <Home />, selected: useIsSettings(''), },
     emulators: { label: "Emulators", icon: <Joystick />, selected: useIsSettings('emulators') },
     games: { label: "Games", icon: <Gamepad2 />, selected: useIsSettings('games') },
+    download: { label: "Download", icon: <DownloadCloud />, selected: useIsSettings('download') },
     plugins: { label: "Plugins", icon: <Puzzle />, selected: useIsSettings('plugins') }
   };
   const [search, setSearch] = useSessionStorage<string | undefined>(`${router.history.location.pathname}-search`, undefined);

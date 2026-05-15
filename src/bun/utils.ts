@@ -5,6 +5,8 @@ import { config } from './api/app';
 import fs from 'node:fs/promises';
 import packageDef from '~/package.json';
 
+const archiveRegex = /.(zip|rar|7zip|7z|tar|tar.gz)$/i;
+
 export function checkRunning (pid: number)
 {
     try
@@ -178,4 +180,9 @@ export async function moveAllFiles (srcDir: string, destDir: string)
 export function getAppVersion ()
 {
     return process.env.VERSION_OVERRIDE ?? packageDef.version;
+}
+
+export function isArchive (path: string)
+{
+    return archiveRegex.test(path);
 }

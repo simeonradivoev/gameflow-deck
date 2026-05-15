@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import
 {
     useFocusable,
@@ -11,7 +11,7 @@ import { AnimatedBackground } from "@/mainview/components/AnimatedBackground";
 import { rommApi, systemApi } from "@/mainview/scripts/clientApi";
 import { Button } from "@/mainview/components/options/Button";
 import { ChevronDown, CircleFadingArrowUp, CloudUpload, Cpu, Download, Fullscreen, Gamepad2, Info, Monitor, Puzzle, Settings, Settings2, Terminal, Trash2, TriangleAlert, WandSparkles } from "lucide-react";
-import { ContextList, DialogEntry, useContextDialog } from "@/mainview/components/ContextDialog";
+import { ContextList, DialogEntry } from "@/mainview/components/ContextDialog";
 import { RPC_URL } from "@/shared/constants";
 import Screenshots from "@/mainview/components/Screenshots";
 import { StickyHeaderUI } from "@/mainview/components/Header";
@@ -30,6 +30,7 @@ import { AutoFocus } from "@/mainview/components/AutoFocus";
 import { FilterUI } from "@/mainview/components/Filters";
 import Markdown from "react-markdown";
 import { FrontEndEmulatorDetailed } from "@simeonradivoev/gameflow-sdk/shared";
+import { GlobalDialogContext } from "@/mainview/scripts/contexts";
 
 export const Route = createFileRoute('/store/details/emulator/$id')({
     component: RouteComponent,
@@ -65,6 +66,7 @@ function TitleArea (data: {
     onUpdate: (source: string) => void;
 })
 {
+    const globalDialog = useContext(GlobalDialogContext);
     const navigation = useNavigate();
     const queryClient = useQueryClient();
     const deleteMutation = useMutation({
@@ -253,14 +255,12 @@ function TitleArea (data: {
         installButtonContent = <><TriangleAlert />Unsupported</>;
     }
 
-    const { dialog: installOptionsDialog, setOpen } = useContextDialog("install-context-menu", {
-        content: <ContextList options={options} />
-    });
+    const openOptionsDialog = (focusKey: string) => globalDialog.openContext({ content: <ContextList options={options} /> }, focusKey);
 
     const handleOptionsOpen = () =>
     {
         if (isInstalling || !data.emulator) return false;
-        setOpen(true, 'install-btn');
+        openOptionsDialog('install-btn');
     };
 
     return <div ref={ref} className="flex flex-wrap gap-4 sm:portrait:justify-center md:justify-normal items-center">
@@ -294,10 +294,10 @@ function TitleArea (data: {
             <div className="flex relative sm:portrait:grow md:grow-0 justify-center gap-4 items-center">
                 <FocusTooltip visible={hasFocusedChild} parentRef={ref} />
                 {(data.emulator?.storeDownloadInfo?.hasUpdate || !data.emulator?.storeDownloadInfo) && installedFromStore && !!updateToVersion && <div className="tooltip tooltip-warning" data-tip="Update Available">
-                    <Button id="update-warning-bt" tooltipType="warning" tooltip="Update Available" style="warning" className="rounded-full size-14 focusable focusable-warning shadow-lg" onAction={() => setOpen(true, 'update-warning-bt')}><CircleFadingArrowUp /></Button>
+                    <Button id="update-warning-bt" tooltipType="warning" tooltip="Update Available" style="warning" className="rounded-full size-14 focusable focusable-warning shadow-lg" onAction={() => openOptionsDialog('update-warning-bt')}><CircleFadingArrowUp /></Button>
                 </div>}
                 {(!data.emulator?.bios || data.emulator.bios.length <= 0) && (data.emulator?.biosRequirement === 'required') && installedFromStore && <div className="tooltip tooltip-error" data-tip="Missing BIOS">
-                    <Button id="bios-warning-bt" tooltipType="error" tooltip="Missing BIOS" style="error" className="rounded-full size-14 focusable focusable-error shadow-lg" onAction={() => setOpen(true, 'bios-warning-bt')}><TriangleAlert /></Button>
+                    <Button id="bios-warning-bt" tooltipType="error" tooltip="Missing BIOS" style="error" className="rounded-full size-14 focusable focusable-error shadow-lg" onAction={() => openOptionsDialog('bios-warning-bt')}><TriangleAlert /></Button>
                 </div>}
                 <Button style="accent" id="install-btn" className="px-8 py-3 rounded-4xl focusable focusable-accent sm:portrait:grow flex-col gap-2 light:ring-offset-7 light:ring-offset-base-100 light:focused:ring-offset-0  shadow-lg" onAction={handleOptionsOpen} >
                     <div className="flex gap-4">
@@ -309,7 +309,6 @@ function TitleArea (data: {
                     {isInstalling && <progress ref={installProgressRef} className="progress" value={0} max="100"></progress>}
                 </Button>
             </div>
-            {installOptionsDialog}
         </FocusContext >
     </div >;
 }

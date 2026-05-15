@@ -1,5 +1,5 @@
 import z from "zod";
-import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
 import { ActiveGameSchema, ActiveGameType } from "@simeonradivoev/gameflow-sdk";
 import { config, db, events, plugins } from "../app";
 import * as appSchema from "@schema/app";

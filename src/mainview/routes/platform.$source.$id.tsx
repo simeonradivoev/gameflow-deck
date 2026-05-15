@@ -8,8 +8,10 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import z from "zod";
 import { useLocalStorage } from "usehooks-ts";
 import { RefreshCcw, Settings2 } from "lucide-react";
-import { ContextList, DialogEntry, useContextDialog } from "../components/ContextDialog";
+import { ContextList, DialogEntry } from "../components/ContextDialog";
 import toast from "react-hot-toast";
+import { useContext } from "react";
+import { GlobalDialogContext } from "../scripts/contexts";
 
 export const Route = createFileRoute("/platform/$source/$id")({
   component: RouteComponent,
@@ -45,6 +47,7 @@ function RouteComponent ()
       context.client.invalidateQueries(localPlatformFilter(id));
     },
   });
+  const globalDialog = useContext(GlobalDialogContext);
   const deletePlatform = useMutation({
     ...deletePlatformMutation(id),
     onError (error, variables, onMutateResult, context)
@@ -77,7 +80,7 @@ function RouteComponent ()
   if (source === 'local')
   {
     settingsOptions.push({
-      id: 'update-platform',
+      id: 'delete-platform',
       type: "error",
       content: "Delete",
       icon: deletePlatform.isPending ? <span className="loading loading-spinner loading-lg"></span> : <RefreshCcw />,
@@ -87,10 +90,6 @@ function RouteComponent ()
       },
     });
   }
-
-  const { dialog: platformSettingsDialog, setOpen: setPlatformSettingsOpen } = useContextDialog('platform-settings-dialog', {
-    content: <ContextList options={settingsOptions} />
-  });
 
   return (
     <div className="w-full h-full">
@@ -102,14 +101,13 @@ function RouteComponent ()
           icon: <Settings2 />,
           action ()
           {
-            setPlatformSettingsOpen(true, 'open-platform-settings-btn');
+            globalDialog.openContext({ content: <ContextList options={settingsOptions} /> }, 'open-platform-settings-btn');
           },
         }]}
         countHint={countHint}
         title={<PlatformTitle />}
         filters={{ platform_id: Number(id), platform_source: source }}
       />
-      {platformSettingsDialog}
     </div>
   );
 }

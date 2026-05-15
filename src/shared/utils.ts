@@ -23,3 +23,11 @@ export async function delay (delay: number | Date, signal?: AbortSignal)
 
     });
 };
+
+const urlRegex = /^https?:\/\//;
+
+export function isUrl (value: string | undefined)
+{
+    if (!value) return false;
+    return urlRegex.test(value);
+}

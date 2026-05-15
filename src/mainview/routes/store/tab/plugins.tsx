@@ -6,17 +6,12 @@ import { PluginEntryType } from '@simeonradivoev/gameflow-sdk/shared';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { QueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { CircleFadingArrowUp, Dot, Download, HardDrive, Puzzle } from 'lucide-react';
 import prettyMilliseconds from 'pretty-ms';
 import { useSessionStorage } from 'usehooks-ts';
-import z from 'zod';
 
 export const Route = createFileRoute('/store/tab/plugins')({
-    component: RouteComponent,
-    validateSearch: zodValidator(z.object({
-        search: z.string().optional()
-    }))
+    component: RouteComponent
 });
 
 function PluginCard (data: { plugin: PluginEntryType; })
@@ -107,7 +102,7 @@ function PluginCard (data: { plugin: PluginEntryType; })
                 {(install.isPending || uninstall.isPending) && <span className="loading loading-spinner loading-lg"></span>}
             </div>
             <div className='text-base-content/40'>{data.plugin.package.description}</div>
-            <ul className='flex flex-wrap gap-2'>{data.plugin.package.keywords.concat(...data.plugin.installed ? ["installed"] : []).map(k => <li className='bg-base-300 px-2 rounded-full'>{k}</li>)}</ul>
+            <ul className='flex flex-wrap gap-2'>{data.plugin.package.keywords.concat(...data.plugin.installed ? ["installed"] : []).map((k, i) => <li key={i} className='bg-base-300 px-2 rounded-full'>{k}</li>)}</ul>
             <ul className='flex flex-wrap gap-2'>
                 <li>{data.plugin.package.publisher.username}</li>
                 <Dot />

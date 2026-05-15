@@ -387,10 +387,6 @@ export function GamepadKeyboard ()
                     const magnitudeSqr = (x * x) + (y * y);
                     const magnitude = Math.sqrt(magnitudeSqr);
 
-                    const elementPos = keyIndex < 0 ? undefined : elements[side].positions[keyIndex];
-                    //const lerpX = (element?.left ?? 0);
-                    //const lerpY = (element?.top ?? 0);
-                    const size = 12;
                     circle.style.left = `calc(50% + ${50 * x}% - 16px)`;
                     circle.style.top = `calc(50% + ${50 * y}% - 16px)`;
                     circle.style.opacity = `${1 - Math.pow(magnitude, 2)}`;

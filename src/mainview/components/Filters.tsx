@@ -116,7 +116,7 @@ export function FilterUI (data: {
       style={{ viewTransitionName: `filter-${data.id}` }}
     >
       <FocusContext.Provider value={focusKey}>
-        <ul className={twMerge("flex flex-row bg-base-100 rounded-full p-1 drop-shadow-sm sm:portrait:h-12 sm:landscape:h-9 md:h-14!", data.className)}>
+        <ul className={twMerge("flex flex-row bg-base-100 rounded-full gap-0.5 p-1 drop-shadow-sm sm:portrait:h-12 sm:landscape:h-9 md:h-14!", data.className)}>
           {!!data.rootFocusKey && (data.showShortcuts ?? true) && <li className=" flex px-4 items-center justify-center rounded-full">
             <SvgIcon className="sm:size-5 md:size-8" icon="steamdeck_button_l1_outline" />
           </li>}

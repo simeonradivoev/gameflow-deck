@@ -72,7 +72,6 @@ export class GamepadWindows implements IGamepadBackend
     private index: number;
     private buffer = new ArrayBuffer(16);
     private view = new DataView(this.buffer);
-    private prevButtons = 0;
     private currButtons = 0;
 
     constructor(index = 0) { this.index = index; }

@@ -250,6 +250,7 @@ export interface EmulatorSourceEntryType
     binPath: string;
     rootPath?: string;
     type: EmulatorSourceType;
+    /** Does the emulator exist in the file system */
     exists: boolean;
 }
 
@@ -489,6 +490,15 @@ export interface GameInstallProgress
 export type JobStatus = 'completed' | 'error' | 'running' | 'queued' | 'aborted';
 export type GameInstallProgressEvent = 'refresh';
 
+export interface FrontEndJob
+{
+    id: string;
+    data: any;
+    progress: number;
+    state?: string;
+    status: string;
+}
+
 export interface FrontendPlugin
 {
     name: string;
@@ -622,10 +632,79 @@ export interface GameLookup
     }[];
 }
 
+export interface DownloadLookupEntry
+{
+    source: string;
+    id: string;
+    cover_url: string | null | undefined;
+    name: string;
+    summary: string | null | undefined;
+    size: number | null | undefined;
+    date: Date | null | undefined;
+    rating: number | null | undefined;
+    view_count: number | null | undefined;
+    download_count: number | null | undefined;
+    comment_count: number | null | undefined;
+}
+
+export interface DownloadLookupDetailsFile
+{
+    id: string;
+    format: string | null | undefined;
+    mtime: Date | null | undefined;
+    size: number | null | undefined;
+    download_url: string;
+}
+
+export interface DownloadLookupDetails
+{
+    source: string;
+    id: string;
+    cover_url: string | null | undefined;
+    name: string;
+    summary: string | null | undefined;
+    date: Date | null | undefined;
+    files: DownloadLookupDetailsFile[];
+}
+
 export interface AutoSaveChange
 {
     subPath: string;
     cwd: string;
 }
 
+export interface AppInfoContext
+{
+    activeTaskProgress: number | null;
+}
+
 export type SaveSlots = Record<string, { cwd: string; }>;
+
+/** Jobs that are downloading stuff can implement this data interface to show up in the downloads screen */
+export interface DownloadJobData extends Partial<Omit<ProgressStats, 'progress'>>
+{
+    preview_url?: string | null;
+    name?: string;
+}
+
+export interface ProgressStats
+{
+    progress: number;
+    speed: number;
+    total: number;
+    downloaded: number;
+}
+
+export interface DownloadsLookupFilter
+{
+    source?: string,
+    orderBy?: string,
+    search?: string;
+    sortDirection?: "desc" | "asc";
+}
+
+export interface DownloadsLookupFilterValues
+{
+    orderBy: string[],
+    source: string[];
+}

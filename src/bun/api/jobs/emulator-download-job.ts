@@ -1,14 +1,13 @@
-import { EmulatorPackageType } from '@simeonradivoev/gameflow-sdk/shared';
+import { DownloadJobData, EmulatorPackageType } from '@simeonradivoev/gameflow-sdk/shared';
 import { getStoreEmulatorPackage } from "../store/services/gamesService";
-import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
-import z from "zod";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
 import { config, plugins } from "../app";
 import path from 'node:path';
 import Seven from 'node-7z';
 import fs from "node:fs/promises";
 import { Downloader } from "@/bun/utils/downloader";
 import { ensureDir, move } from "fs-extra";
-import { simulateProgress } from "@/bun/utils";
+import { isArchive, simulateProgress } from "@/bun/utils";
 import { path7za } from "7zip-bin";
 import { getEmulatorDownload, getEmulatorPath } from "../store/services/emulatorsService";
 import { $ } from "bun";
@@ -16,31 +15,40 @@ import { EmulatorSourceEntryType } from "@simeonradivoev/gameflow-sdk/shared";
 
 type EmulatorDownloadStates = "download" | "extract";
 
-export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownloadJob.dataSchema>, EmulatorDownloadStates>
+interface EmulatorDownloadJobData extends DownloadJobData
+{
+    emulator: string;
+}
+
+export class EmulatorDownloadJob implements IJob<EmulatorDownloadJobData, EmulatorDownloadStates>
 {
     static id = "download-emulator" as const;
-    static dataSchema = z.object({ emulator: z.string() });
-    emulator: string;
     downloadSource: string;
     emulatorPackage?: EmulatorPackageType;
     dryRun: boolean;
     isUpdate: boolean;
+    data: EmulatorDownloadJobData = {
+        name: "Download Emulator",
+        emulator: ""
+    };
 
     constructor(emulator: string, downloadSource: string, init?: { dryRun?: boolean; isUpdate?: boolean; })
     {
-        this.emulator = emulator;
+        this.data.emulator = emulator;
         this.downloadSource = downloadSource;
         this.dryRun = init?.dryRun ?? false;
         this.isUpdate = init?.isUpdate ?? false;
     }
 
-    async start (context: JobContext<EmulatorDownloadJob, z.infer<typeof EmulatorDownloadJob.dataSchema>, EmulatorDownloadStates>)
+    async start (context: JobContext<EmulatorDownloadJob, EmulatorDownloadJobData, EmulatorDownloadStates>)
     {
-        this.emulatorPackage = await getStoreEmulatorPackage(this.emulator);
+        this.emulatorPackage = await getStoreEmulatorPackage(this.data.emulator);
         if (!this.emulatorPackage) throw new Error("Emulator not found");
+        this.data.name = this.emulatorPackage.name;
+        this.data.preview_url = this.emulatorPackage.logo;
         const { url, info } = await getEmulatorDownload(this.emulatorPackage, this.downloadSource);
 
-        const emulatorsFolder = getEmulatorPath(this.emulator);
+        const emulatorsFolder = getEmulatorPath(this.data.emulator);
 
         if (this.dryRun)
         {
@@ -49,29 +57,33 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
         } else
         {
             const tmpFolder = path.join(config.get("downloadPath"), ".tmp");
-            const downloader = new Downloader(this.emulator,
-                [{ url, file_name: path.basename(url.pathname), file_path: this.emulator }],
+            const downloader = new Downloader(this.data.emulator,
+                [{ url, file_name: path.basename(url.pathname), file_path: this.data.emulator }],
                 tmpFolder,
                 {
                     signal: context.abortSignal,
-                    onProgress (stats)
+                    onProgress: (stats) =>
                     {
                         context.setProgress(stats.progress, 'download');
+                        this.data.total = stats.total;
+                        this.data.downloaded = stats.downloaded;
+                        this.data.speed = stats.speed;
                     },
                 });
 
             const destinationPaths = await downloader.start();
+            context.abortSignal.throwIfAborted();
             if (destinationPaths)
             {
-                const isArchive = destinationPaths[0].endsWith('.7z') || destinationPaths[0].endsWith('.zip') || destinationPaths[0].endsWith('.tar');
+                const archive = isArchive(destinationPaths[0]);
                 const isAppImage = destinationPaths[0].endsWith(".AppImage");
 
-                if (!isArchive && !isAppImage)
+                if (!archive && !isAppImage)
                 {
                     throw new Error("Invalid Download Type");
                 }
 
-                if (isArchive)
+                if (archive)
                 {
                     if (destinationPaths[0])
                     {
@@ -120,10 +132,10 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
                 await Bun.write(`${emulatorsFolder}.json`, JSON.stringify(info, null, 3));
 
                 const execs: EmulatorSourceEntryType[] = [];
-                await plugins.hooks.emulators.findEmulatorSource.promise({ emulator: this.emulator, sources: execs });
+                await plugins.hooks.emulators.findEmulatorSource.promise({ emulator: this.data.emulator, sources: execs });
 
                 await plugins.hooks.emulators.emulatorPostInstall.promise({
-                    emulator: this.emulator,
+                    emulator: this.data.emulator,
                     emulatorPackage: this.emulatorPackage,
                     path: execs.find(e => e.type === 'store')?.binPath ?? emulatorsFolder,
                     info,
@@ -136,7 +148,7 @@ export class EmulatorDownloadJob implements IJob<z.infer<typeof EmulatorDownload
 
     exposeData ()
     {
-        return { emulator: this.emulator };
+        return this.data;
     }
 
 }

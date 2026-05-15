@@ -11,10 +11,15 @@ import { useQuery } from '@tanstack/react-query';
 import { storeEmulatorsQuery } from '@queries/store';
 import InvalidStoreError from '@/mainview/components/store/InvalidStoreError';
 import { useSessionStorage } from 'usehooks-ts';
+import { zodValidator } from '@tanstack/zod-adapter';
+import z from 'zod';
 
 export const Route = createFileRoute('/store/tab/emulators')({
   component: RouteComponent,
-  errorComponent: InvalidStoreError
+  errorComponent: InvalidStoreError,
+  validateSearch: zodValidator(z.object({
+    search: z.string().optional()
+  }))
 });
 
 function RouteComponent ()
@@ -26,7 +31,11 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
   const storeContext = useContext(StoreContext);
-  const { data: emulators } = useQuery({ ...storeEmulatorsQuery({ search }), retry: false, throwOnError: true });
+  const { data: emulators } = useQuery({
+    ...storeEmulatorsQuery({ search }),
+    retry: false,
+    throwOnError: true
+  });
 
   useEffect(() =>
   {
@@ -62,6 +71,7 @@ function RouteComponent ()
             />
           )) ?? Array.from({ length: 10 }).map((_, i) => <div key={i} className="skeleton rounded-3xl" />)}
         </div>
+
       </FocusContext>
     </section>
   </>;

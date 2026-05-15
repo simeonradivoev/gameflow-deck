@@ -6,7 +6,7 @@ import { DetailedRomSchema, getCollectionApiCollectionsIdGet, getCollectionsApiC
 import { config, events } from "@/bun/api/app";
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { hashFile, isSteamDeckGameMode } from "@/bun/utils";
+import { hashFile, isArchive, isSteamDeckGameMode } from "@/bun/utils";
 import { CACHE_KEYS, getOrCached } from "@/bun/api/cache";
 import secrets from "@/bun/api/secrets";
 import { getAuthToken } from "@/clients/romm/core/auth.gen";
@@ -254,8 +254,7 @@ export default class RommIntegration implements PluginType<SettingsType>
             let path_fs = path.join(rom.fs_path, rom.fs_name);
             if (files.length === 1)
             {
-                const name = files[0].file_name.toLocaleLowerCase();
-                if (name.endsWith('.zip') || name.endsWith('.7z') || name.endsWith('.rar'))
+                if (isArchive(files[0].file_name))
                 {
                     extract_path = '.';
                     path_fs = path.join(rom.fs_path, rom.slug ?? rom.fs_name_no_ext);

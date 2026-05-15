@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { SystemInfoContext } from "../scripts/contexts";
+import { AppContext, SystemInfoContext } from "../scripts/contexts";
 import { systemApi } from "../scripts/clientApi";
-import { SystemInfoType } from '@simeonradivoev/gameflow-sdk/shared';
+import { AppInfoContext, SystemInfoType } from '@simeonradivoev/gameflow-sdk/shared';
 import LoadingScreen from "./LoadingScreen";
 import { GamepadKeyboard } from "./GamepadKeyboard";
 
 export default function AppCommunication (data: { children: any; })
 {
     const [systemInfo, setSystemInfo] = useState<SystemInfoType | undefined>();
+    const [appContext, setAppContext] = useState<AppInfoContext>({} as AppInfoContext);
     const [loadingInfo, setLoadingInfo] = useState<string | undefined>(undefined);
     const [loading, setLoading] = useState(true);
     const loadingProgressBarRef = useRef<HTMLProgressElement>(null);
@@ -24,6 +25,9 @@ export default function AppCommunication (data: { children: any; })
                     break;
                 case "focus":
                     window.focus();
+                    break;
+                case "activeTask":
+                    setAppContext(c => ({ ...c, activeTaskProgress: data.progress }));
                     break;
                 case "loading":
                     setLoadingInfo(data.state);
@@ -45,17 +49,19 @@ export default function AppCommunication (data: { children: any; })
     }, []);
 
     return <SystemInfoContext value={systemInfo}>
-        {loading ?
-            <LoadingScreen>
-                <div className="flex flex-col items-center gap-4">
-                    <div className="flex gap-2">
-                        <span className="loading loading-spinner loading-xl"></span>
-                        {loadingInfo}
+        <AppContext value={appContext}>
+            {loading ?
+                <LoadingScreen>
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="flex gap-2">
+                            <span className="loading loading-spinner loading-xl"></span>
+                            {loadingInfo}
+                        </div>
+                        <progress ref={loadingProgressBarRef} className="progress w-[20vw]" value={0} max="100"></progress>
                     </div>
-                    <progress ref={loadingProgressBarRef} className="progress w-[20vw]" value={0} max="100"></progress>
-                </div>
-            </LoadingScreen>
-            : data.children}
-        <GamepadKeyboard />
+                </LoadingScreen>
+                : data.children}
+            <GamepadKeyboard />
+        </AppContext>
     </SystemInfoContext>;
 } 

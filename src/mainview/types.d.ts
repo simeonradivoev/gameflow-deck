@@ -50,6 +50,7 @@ declare interface GameMeta extends FocusParams
 {
   id: string,
   onSelect?: () => void,
+  onQuickAction?: () => void,
   title: string,
   subtitle?: any,
   previewUrls?: string | URL[];

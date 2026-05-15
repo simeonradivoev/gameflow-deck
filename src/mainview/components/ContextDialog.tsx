@@ -64,7 +64,7 @@ export function OptionElement (data: DialogEntry & { onFocus?: () => void; class
         className={
             twMerge("flex cursor-pointer sm:text-sm md:text-base group-focusable scroll-m-4")}>
         <FocusContext value={focusKey}>
-            <div className={twMerge("flex bg-base-200 in-data-[selected=true]:border-4 in-focused:border-4 border-base-300 w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl gap-2 in-focused:font-semibold focusable not-active:control-mouse:hover:bg-base-300 in-focused:z-100",
+            <div className={twMerge("flex bg-base-200 in-data-[selected=true]:border-4 in-focused:border-4 border-base-300 w-full sm:h-12 md:h-14 items-center px-4 rounded-2xl gap-2 in-focused:font-semibold focusable light:not-in-data-[selected=true]:control-mouse:hover:bg-base-100 dark:not-in-data-[selected=true]:control-mouse:hover:bg-base-300 in-focused:z-100",
                 data.className,
                 colors[data.type],
                 "in-focused:bg-base-content in-focused:text-base-100")}>
@@ -166,7 +166,7 @@ export function ContextDialog (data: {
     }] : [], [data.open]);
 
     return <dialog ref={ref} open={data.open} closedby="any" className={
-        twMerge("fixed modal cursor-pointer bg-base-300/80 not-mobile:backdrop-blur-md backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
+        twMerge("fixed modal cursor-pointer bg-base-300/60 not-mobile:backdrop-blur-md backdrop-brightness-50 duration-300 ease-in-out transition-all text-base-content",
             classNames({ "opacity-0": !data.open }), data.backdropClassName)
     }
         onClick={handleClose}>
@@ -174,7 +174,7 @@ export function ContextDialog (data: {
             <ContextDialogContext value={{ id: data.id, close: handleClose }} >
                 <div
                     className={twMerge(
-                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] max-h-[80vh] overflow-y-auto cursor-auto not-mobile:backdrop-blur-2xl",
+                        "bg-base-100/80 delay-200 rounded-4xl sm:p-4 md:p-6 sm:min-w-[80vw] md:min-w-[20vw] max-h-[80vh] overflow-y-auto cursor-auto not-mobile:backdrop-blur-2xl not-mobile:drop-shadow-2xl",
                         data.open ? "animate-scale-delayed" : "opacity-0",
                         data.className)
                     }

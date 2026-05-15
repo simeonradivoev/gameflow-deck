@@ -13,10 +13,6 @@
     "peerDependencies": {
         "7zip-bin": "^5.2.0",
         "@auth/core": "^0.34.3",
-        "@elysiajs/cors": "^1.4.2",
-        "@elysiajs/eden": "^1.4.9",
-        "@jimp/wasm-webp": "^1.6.1",
-        "@phalcode/ts-igdb-client": "^1.0.26",
         "cheerio": "^1.2.0",
         "conf": "^15.1.0",
         "drizzle-orm": "^0.45.2",
@@ -36,12 +32,8 @@
         "pathe": "^2.0.3",
         "slugify": "^1.6.9",
         "smol-toml": "^1.6.1",
-        "systeminformation": "^5.31.5",
         "tapable": "^2.3.3",
-        "tough-cookie": "^6.0.1",
-        "tough-cookie-file-store": "^3.3.0",
         "unzip-stream": "^0.3.4",
-        "webview-bun": "^2.4.0",
         "zod": "^4.4.3"
     },
     "keywords": [

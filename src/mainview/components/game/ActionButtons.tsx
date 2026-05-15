@@ -30,7 +30,11 @@ function AchievementsInfo (data: { game: FrontEndGameTypeDetailed; } & InteractP
     </ActionButton>;
 }
 
-export default function ActionButtons (data: { game?: FrontEndGameTypeDetailed, source: string, id: string; })
+export default function ActionButtons (data: {
+    game?: FrontEndGameTypeDetailed,
+    source: string,
+    id: string;
+})
 {
     const [, setDetailsSection] = useLocalStorage('details-section', 'screenshots');
     const navigate = useNavigate();

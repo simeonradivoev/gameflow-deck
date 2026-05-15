@@ -8,7 +8,7 @@ import
   RouterProvider,
 } from "@tanstack/react-router";
 import { routeTree } from "./gen/routeTree.gen";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import "./scripts/gamepads";
 import "./scripts/windowEvents";
 import "./scripts/spatialNavigation";
@@ -16,6 +16,16 @@ import NotFound from "./components/NotFound";
 import Error from "./components/Error";
 import serviceWorker from './scripts/serviceWorker?worker&url';
 import App from "./App";
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createStore, get, set, del } from "idb-keyval";
+import
+{
+  PersistedClient,
+  Persister,
+} from '@tanstack/react-query-persist-client';
+import pkg from '../../package.json';
+
+const idbStore = createStore("tanstack-query", "cache");
 
 if ('serviceWorker' in navigator)
 {
@@ -24,7 +34,31 @@ if ('serviceWorker' in navigator)
 
 const hashHistory = createHashHistory({});
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 24 * 5, // 5 days
+    }
+  }
+});
+
+export function createIDBPersister (idbValidKey: IDBValidKey = 'reactQuery'): Persister
+{
+  return {
+    persistClient: async (client: PersistedClient) =>
+    {
+      await set(idbValidKey, client, idbStore);
+    },
+    restoreClient: async () =>
+    {
+      return await get<PersistedClient>(idbValidKey, idbStore);
+    },
+    removeClient: async () =>
+    {
+      await del(idbValidKey, idbStore);
+    },
+  } satisfies Persister;
+}
 
 export interface RouterContext
 {
@@ -74,9 +108,9 @@ if (!rootElement.innerHTML)
   root.render(
     <StrictMode>
       <App>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: createIDBPersister(), buster: pkg.version }}>
           <RouterProvider router={Router} />
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </App>
     </StrictMode>,
   );

@@ -1,7 +1,7 @@
 import { DefaultRommStaleTime } from "@/shared/constants";
-import { GameListFilterType, RommLoginDataSchema, FrontEndId } from '@simeonradivoev/gameflow-sdk/shared';
+import { GameListFilterType, RommLoginDataSchema, FrontEndId, DownloadLookupEntry, DownloadsLookupFilter } from '@simeonradivoev/gameflow-sdk/shared';
 import { rommApi, settingsApi } from "../clientApi";
-import { InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions } from "@tanstack/react-query";
+import { infiniteQueryOptions, InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
 
@@ -290,6 +290,38 @@ export const addManualGameMutation = mutationOptions({
             gamePath: args.gamePath,
             platformId: args.platformId
         });
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const downloadsLookupQuery = (filter: DownloadsLookupFilter) => infiniteQueryOptions<{ data: DownloadLookupEntry[], totalCount: number, nextPage: number; }>({
+    initialPageParam: 1,
+    queryKey: ["downloads", filter],
+    getNextPageParam: (lastPage, pages) => lastPage.nextPage,
+    queryFn: async (params) =>
+    {
+        const pageParam = params.pageParam as number;
+        const { data, error } = await rommApi.api.romm.downloads.lookup.get({ query: { ...filter, page: pageParam } });
+        if (error) throw error;
+        return { data: data.matches, totalCount: data.totalCount, nextPage: pageParam + 1 };
+    }
+});
+
+export const downloadLookupQuery = (source: string, id: string) => queryOptions({
+    queryKey: ["downloads", source, id],
+    queryFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.download.lookup({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get();
+        if (error) throw error;
+        return data;
+    }
+});
+
+export const downloadLookupFiltersQuery = queryOptions({
+    queryKey: ['game', 'filters'], queryFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.download.lookup.filters.get();
         if (error) throw error;
         return data;
     }

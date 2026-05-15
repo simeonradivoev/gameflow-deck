@@ -8,15 +8,18 @@ import { PathSettingsOptionBase } from '@/mainview/components/options/PathSettin
 import SelectMenu from '@/mainview/components/SelectMenu';
 import { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { oneShot } from '@/mainview/scripts/audio/audio';
+import { rommApi } from '@/mainview/scripts/clientApi';
 import { addManualGameMutation, allGamesInvalidateQuery, gameLookupDetails, platformLookupMatchQuery } from '@/mainview/scripts/queries/romm';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { HandleGoBack } from '@/mainview/scripts/utils';
+import { isUrl } from '@/shared/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { zodValidator } from '@tanstack/zod-adapter';
-import { ArrowBigRightDash, Check, CirclePlus, CircleQuestionMark, CircleX, FileSearch, FolderOpen, HardDrive } from 'lucide-react';
+import { ArrowBigRightDash, Check, CirclePlus, CircleQuestionMark, CircleX, File, FileSearch, FolderOpen, Globe, HardDrive, Link, Save } from 'lucide-react';
 import { basename } from 'pathe';
+import prettyBytes from 'pretty-bytes';
 import { JSX, useState } from 'react';
 import toast from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
@@ -39,6 +42,7 @@ export const Route = createFileRoute('/game/add')({
 function FileSelectionField (data: { location: string | undefined, setLocation: (location: string | undefined) => void; })
 {
     const [localLocation, setLocalLocation] = useState<string | undefined>(data.location);
+    const navigate = useNavigate();
     return <PathSettingsOptionBase
         isDirty={false}
         label={"Game Location"}
@@ -51,7 +55,9 @@ function FileSelectionField (data: { location: string | undefined, setLocation: 
         localValue={localLocation}
         setLocalValue={setLocalLocation}
         defaultValue={data.location}
-    />;
+    >
+        <Button className='focusable focusable-accent' external onAction={e => navigate({ to: '/store/tab/download' })} shortcutLabel='Search In Shop' id='download-lookup-btn'><Globe /></Button>
+    </PathSettingsOptionBase>;
 }
 
 const TAG_REGEX = /\(([^)]+)\)|\[([^\]]+)\]/g;
@@ -95,6 +101,17 @@ function Overview (data: {})
     const navigate = useNavigate();
     const router = useRouter();
     const state = Route.useSearch();
+    const linkInfo = useQuery({
+        enabled (query)
+        {
+            return isUrl(query.queryKey[1]);
+        },
+        queryKey: ['dl-link-info', state.gameLocation],
+        queryFn: async () =>
+        {
+            return rommApi.api.romm.download.file.info.get({ query: { file_url: state.gameLocation! } });
+        }
+    });
     const { data: game } = useQuery(gameLookupDetails(state.selectedGame?.source, state.selectedGame?.id));
     const { data: platform } = useQuery(platformLookupMatchQuery(state.selectedGame?.source, state.platformId));
     const addGame = useMutation({
@@ -105,7 +122,7 @@ function Overview (data: {})
         },
         async onSuccess (data, variables, onMutateResult, context)
         {
-            if (data.id === null) return;
+            if (data.id === null || isUrl(state.gameLocation)) return;
             await context.client.invalidateQueries(allGamesInvalidateQuery);
             navigate({
                 to: '/game/$source/$id', params: {
@@ -136,7 +153,13 @@ function Overview (data: {})
                         <div> {platform?.match.type}</div>
                     </div>
                 </div>
-                <div className='flex gap-2'><FolderOpen />{state.gameLocation}</div>
+                <div className='flex gap-2'>{isUrl(state.gameLocation) ? <Link /> : <FolderOpen />}{state.gameLocation}</div>
+                <div className='flex gap-2'>
+                    <Save />
+                    {linkInfo.isFetching ? <span className="loading loading-spinner loading-md"></span> : (linkInfo.data?.data?.size && prettyBytes(linkInfo.data.data.size))}
+                    <File />
+                    {linkInfo.isFetching ? <span className="loading loading-spinner loading-md"></span> : (linkInfo.data?.data?.content_type && linkInfo.data.data.content_type)}
+                </div>
             </div>
         </div>
         <div className="divider">Actions</div>
@@ -150,6 +173,11 @@ function Overview (data: {})
                     gamePath: state.gameLocation,
                     platformId: state.platformId
                 });
+                if (isUrl(state.gameLocation))
+                {
+                    navigate({ to: '/settings/tasks' });
+                }
+
             }} ><CirclePlus /> Add Game</Button>
             <Button id="cancel-btn" style='warning' type='button' className='gap-2 focusable focusable-primary' onAction={e =>
             {
@@ -224,7 +252,6 @@ const StepDetails = [{ label: "Select Location" }, { label: "Find Match" }, { la
 
 function Location ()
 {
-
     const state = Route.useSearch();
     const navigate = useNavigate();
     const handleSetLocation = (location: string | undefined) =>
@@ -246,7 +273,7 @@ function Location ()
         <div className="divider"><FolderOpen className='size-12' /> Select Game Rom</div>
         <FileSelectionField location={state.gameLocation ?? ''} setLocation={handleSetLocation} />
         <div className='flex justify-center text-base-content/60'>
-            Select The Rom File from your local storage
+            Select The Rom File from your local storage or use a link
         </div>
     </div>;
 }

@@ -1,5 +1,5 @@
 import Elysia, { status } from "elysia";
-import { IJob, JobContext } from "../../../packages/gameflow-sdk/task-queue";
+import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
 import { LOGIN_PORT, SERVER_URL } from "@/shared/constants";
 import { host, localIp } from "@/bun/utils/host";
 import cors from "@elysiajs/cors";
