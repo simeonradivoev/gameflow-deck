@@ -1,6 +1,6 @@
 {
     "name": "@simeonradivoev/gameflow-sdk",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "types": "index.d.ts",
     "description": "plugin SDK for the Gameflow Deck Launcher",
     "exports": {

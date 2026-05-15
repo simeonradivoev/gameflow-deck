@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.7.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.6.0...v1.7.0) (2026-05-15)
+
+
+### Features
+
+* Implemented link game importing ([9141fb3](https://github.com/simeonradivoev/gameflow-deck/commit/9141fb35d48ae272e5ba73f28683d13ba5ca49a3)), closes [#6](https://github.com/simeonradivoev/gameflow-deck/issues/6)
+
+
+### Bug Fixes
+
+* Moved to manual plugin version checking and fixed some steam deck issues. ([641eb2f](https://github.com/simeonradivoev/gameflow-deck/commit/641eb2fcd550129a61c3ead60b8e26092da291a2))
+
 ## [1.6.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.5.0...v1.6.0) (2026-05-09)
 
 
