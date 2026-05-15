@@ -122,19 +122,24 @@ export default async function register (pluginManager: PluginManager)
 
             if (outdated)
             {
-                for await (const plugin of validPlugins)
+                for (let i = 0; i < validPlugins.length; i++)
                 {
-                    const newVersion = outdated[plugin.name];
+                    const plugin = validPlugins[i];
+                    const newVersion = outdated.find(i => i.package === plugin.name);
                     if (newVersion)
                     {
-                        console.log("Plugin", plugin.name, "has update", plugin.version, "=>", newVersion);
-                    }
+                        console.log("Plugin", plugin.name, "has update", plugin.version, "=>", newVersion.update);
 
-                    if (plugin.autoUpdate)
-                    {
-                        console.log("Auto Updating Plugin", plugin.name);
-                        let response = await runBunPackageCommand(["add", `${plugin.name}@${newVersion}`, "--registry", PluginRegistry, '--omit', 'peer']);
-                        console.log(response);
+                        if (plugin.autoUpdate || plugin.name === '@simeonradivoev/gameflow-store')
+                        {
+                            console.log("Auto Updating Plugin", plugin.name);
+                            let response = await runBunPackageCommand(["add", `${plugin.name}@${newVersion?.update}`, "--registry", PluginRegistry, '--omit', 'peer']);
+                            console.log(response);
+                            // Update plugin package
+                            const newPlugin = await getPlugin(plugin.name, pluginManager);
+                            if (newPlugin)
+                                validPlugins[i] = newPlugin;
+                        }
                     }
                 }
             }

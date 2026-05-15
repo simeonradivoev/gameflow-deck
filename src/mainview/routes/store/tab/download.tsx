@@ -1,5 +1,6 @@
 import DotsLoading from '@/mainview/components/backgrounds/dots';
 import LoadMoreButton from '@/mainview/components/LoadMoreButton';
+import { Button } from '@/mainview/components/options/Button';
 import { SideDownloadFilters } from '@/mainview/components/SideFilters';
 import { downloadLookupFiltersQuery, downloadsLookupQuery } from '@/mainview/scripts/queries/romm';
 import { scrollIntoViewHandler } from '@/mainview/scripts/utils';
@@ -7,7 +8,7 @@ import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-naviga
 import { DownloadLookupEntry, DownloadsLookupFilter } from '@simeonradivoev/gameflow-sdk/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { DownloadIcon, Eye, MessageCircle, Save, Star } from 'lucide-react';
+import { ArrowRight, DownloadIcon, Eye, MessageCircle, Puzzle, Save, Star } from 'lucide-react';
 import prettyBytes from 'pretty-bytes';
 import { useSessionStorage } from 'usehooks-ts';
 
@@ -49,6 +50,7 @@ function Downloads (data: {
   pages: {
     data: DownloadLookupEntry[];
     totalCount: number;
+    hadMatchers: boolean;
     nextPage: number;
   }[];
   hasNextPage: boolean,
@@ -58,12 +60,15 @@ function Downloads (data: {
   error: string | undefined;
 })
 {
+  const navigate = useNavigate();
   const { ref, focusKey } = useFocusable({ focusKey: 'downloads-list' });
   return <ul ref={ref} className='grid ml-12 h-fit sm:gap-2 md:gap-5 auto-rows-[10rem] grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
     <FocusContext value={focusKey}>
       {data.pages.flatMap((page, p) => page.data.map((match, i) => <Download focusKey={`dl-${p}-${i}`} key={match.id} match={match} />))}
-      {data.hasNextPage && <LoadMoreButton
+      {!data.pages[0].hadMatchers && <div className='flex justify-center items-center gap-2 font-semibold text-2xl col-span-3'><Button id='install-plugins-btn' className='gap-2 text-2xl!' onAction={e => navigate({ to: '/store/tab/plugins' })}><Puzzle />Get Donwloads Plugin <ArrowRight /></Button></div>}
+      {data.hasNextPage && data.pages[0].hadMatchers && <LoadMoreButton
         isFetching={data.isFetchingNextPage || data.isFetching}
+        hidden
         onAction={() =>
         {
           if (data.isFetchingNextPage || data.isFetching)

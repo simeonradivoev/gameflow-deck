@@ -138,6 +138,12 @@ export async function checkLoginAndRefreshTwitch ()
 
 export async function checkLoginAndRefreshRomm ()
 {
+    //TODO: move to plugin logic
+    if (plugins.plugins['com.simeonradivoev.gameflow.romm'].config?.get('clientApiToken'))
+    {
+        return { hasLogin: true };
+    }
+
     const access_token = await secrets.get({ service: 'gameflow', name: 'romm_access_token' });
     if (!access_token)
     {

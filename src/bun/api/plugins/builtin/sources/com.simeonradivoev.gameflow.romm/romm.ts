@@ -44,7 +44,7 @@ export default class RommIntegration implements PluginType<SettingsType>
     async getAccessToken (config: Conf<SettingsType>)
     {
         if (process.env.ROMM_CLIENT_TOKEN) return process.env.ROMM_CLIENT_TOKEN;
-        const client_token = await config.get('clientApiToken');
+        const client_token = config.get('clientApiToken');
         if (client_token) return client_token;
         return (await secrets.get({ service: 'gameflow', name: 'romm_access_token' })) ?? undefined;
     }

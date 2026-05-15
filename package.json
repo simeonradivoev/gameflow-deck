@@ -76,7 +76,6 @@
     "node-downloader-helper": "^2.1.11",
     "node-stream-zip": "^1.15.0",
     "node-unrar-js": "^2.0.2",
-    "npm-check-updates": "^22.2.0",
     "open": "^11.0.0",
     "p-queue": "^9.2.0",
     "pathe": "^2.0.3",
@@ -89,6 +88,11 @@
     "unzip-stream": "^0.3.4",
     "webview-bun": "^2.4.0",
     "zod": "^4.4.3"
+  },
+  "overrides": {
+    "@tanstack/router-generator": {
+      "zod": "^3.23.8"
+    }
   },
   "devDependencies": {
     "@ap0nia/eden": "^1.6.1",

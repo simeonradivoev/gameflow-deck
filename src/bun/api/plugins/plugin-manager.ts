@@ -91,7 +91,7 @@ export class PluginManager
         return true;
     }
 
-    private async reload (name: string, reloadCtx: { setProgress: (progress: number, state: string) => void; }, update: string | undefined)
+    private async reload (name: string, reloadCtx: { setProgress: (progress: number, state: string) => void; }, update: string | undefined | null)
     {
         const plugin = this.plugins[name];
         if (plugin)
@@ -149,7 +149,7 @@ export class PluginManager
         for await (const id of Object.keys(this.plugins))
         {
             ctx.setProgress(0, `Loading ${id}`);
-            await this.reload(id, ctx, outdated?.[id]);
+            await this.reload(id, ctx, outdated.find(i => i.package === id)?.update);
         }
     }
 

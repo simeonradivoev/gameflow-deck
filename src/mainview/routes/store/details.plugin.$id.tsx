@@ -112,10 +112,10 @@ function Details ()
                     {!!data.update && <Button onAction={e => update.mutate()} className='gap-2' style='warning' id='install-btn' >
                         {update.isPending ? <span className="loading loading-spinner loading-lg"></span> : <CircleFadingArrowUp />} Update
                     </Button>}
-                    <Button onAction={e => uninstall.mutate()} className='gap-2' style='accent' id='install-btn' >
+                    <Button onAction={e => uninstall.mutate()} className='gap-2' style='accent' id='uninstall-btn' >
                         {uninstall.isPending ? <span className="loading loading-spinner loading-lg"></span> : <Trash />} Uninstall
                     </Button>
-                    <Button external onAction={e => { navigate({ to: '/settings/plugin/$source', params: { source: encodeURIComponent(plugin) } }); }} className='gap-2' style='info' id='install-btn' >
+                    <Button external onAction={e => { navigate({ to: '/settings/plugin/$source', params: { source: encodeURIComponent(plugin) } }); }} className='gap-2' style='info' id='plugin-settings-btn' >
                         <Settings /> Settings
                     </Button>
 

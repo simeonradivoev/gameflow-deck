@@ -2,7 +2,7 @@ import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-s
 import desc from './package.json';
 import path, { } from 'node:path';
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
-import { Glob, pathToFileURL, sleep, which } from "bun";
+import { Glob, pathToFileURL, which } from "bun";
 import { and, eq } from "drizzle-orm";
 import * as emulatorSchema from '@schema/emulators';
 

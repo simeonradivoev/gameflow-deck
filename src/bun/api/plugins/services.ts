@@ -2,8 +2,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { getStoreRootFolder } from '../store/services/gamesService';
 import { PluginDescriptionType } from '@simeonradivoev/gameflow-sdk';
-import { run } from 'npm-check-updates';
 import { existsSync } from 'node:fs';
+import { checkOutdated } from './update-check';
 
 export function canDisable (description: PluginDescriptionType)
 {
@@ -16,9 +16,9 @@ export function canDisable (description: PluginDescriptionType)
 
 export async function getUpdates ()
 {
-    if (!existsSync(getStoreRootFolder())) return {};
-    const updated = await run({ packageManager: 'bun', peer: true, cwd: getStoreRootFolder(), jsonUpgraded: true, reject: ['@simeonradivoev/gameflow-sdk'] });
-    return updated as Record<string, string>;
+    if (!existsSync(getStoreRootFolder())) return [];
+    const results = await checkOutdated(getStoreRootFolder());
+    return results;
 }
 
 export function canUninstall (description: PluginDescriptionType, source: string)

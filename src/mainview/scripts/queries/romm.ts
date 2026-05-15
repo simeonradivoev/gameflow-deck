@@ -295,7 +295,12 @@ export const addManualGameMutation = mutationOptions({
     }
 });
 
-export const downloadsLookupQuery = (filter: DownloadsLookupFilter) => infiniteQueryOptions<{ data: DownloadLookupEntry[], totalCount: number, nextPage: number; }>({
+export const downloadsLookupQuery = (filter: DownloadsLookupFilter) => infiniteQueryOptions<{
+    data: DownloadLookupEntry[],
+    totalCount: number,
+    nextPage: number;
+    hadMatchers: boolean;
+}>({
     initialPageParam: 1,
     queryKey: ["downloads", filter],
     getNextPageParam: (lastPage, pages) => lastPage.nextPage,
@@ -304,7 +309,7 @@ export const downloadsLookupQuery = (filter: DownloadsLookupFilter) => infiniteQ
         const pageParam = params.pageParam as number;
         const { data, error } = await rommApi.api.romm.downloads.lookup.get({ query: { ...filter, page: pageParam } });
         if (error) throw error;
-        return { data: data.matches, totalCount: data.totalCount, nextPage: pageParam + 1 };
+        return { data: data.matches, totalCount: data.totalCount, hadMatchers: data.hadMatchers, nextPage: pageParam + 1 };
     }
 });
 
