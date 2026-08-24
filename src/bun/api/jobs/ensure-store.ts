@@ -1,12 +1,34 @@
 import { ensureDir } from "fs-extra";
 import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk";
-import { getStoreRootFolder } from "../store/services/gamesService";
+import { getStoreFolder, getStoreRootFolder } from "../store/services/gamesService";
 import z from "zod";
 import { runBunPackageCommand } from "../plugins/services";
 import { PluginRegistry } from "@/shared/constants";
 import path from "node:path";
 import sdkPkg from '@simeonradivoev/gameflow-sdk/package.json';
 import { IsPluginAllowed } from "@/bun/utils";
+import { semver } from "bun";
+
+async function getLatestMatchingVersion (packageName: string, versionRange: string)
+{
+    try
+    {
+        const response = await fetch(`${PluginRegistry}/${packageName}`);
+        if (!response.ok) return;
+        const metadata = await response.json() as {
+            versions?: Record<string, unknown>;
+            "dist-tags"?: Record<string, string>;
+        };
+        const taggedVersion = metadata["dist-tags"]?.[versionRange];
+        if (taggedVersion) return taggedVersion;
+        return Object.keys(metadata.versions ?? {})
+            .filter(version => semver.satisfies(version, versionRange))
+            .sort((a, b) => semver.order(b, a))[0];
+    } catch (error)
+    {
+        console.warn(`Could not check the latest ${packageName} version`, error);
+    }
+}
 
 export default class EnsureStore implements IJob<never, string>
 {
@@ -54,10 +76,20 @@ export default class EnsureStore implements IJob<never, string>
 
         if (process.env.CUSTOM_STORE_PATH) return;
 
-        if (!storePackage.dependencies?.['@simeonradivoev/gameflow-store'])
+        const installedStorePackageFile = Bun.file(path.join(getStoreFolder(), "package.json"));
+        const installedStoreVersion = await installedStorePackageFile.exists()
+            ? (await installedStorePackageFile.json()).version as string | undefined
+            : undefined;
+        const latestStoreVersion = await getLatestMatchingVersion(this.packageName, this.storeVersion);
+        const storeNeedsUpdate = !storePackage.dependencies?.[this.packageName]
+            || !installedStoreVersion
+            || !!latestStoreVersion && installedStoreVersion !== latestStoreVersion;
+
+        if (storeNeedsUpdate)
         {
-            context.setProgress(0.5, "Adding Store");
-            let response = await runBunPackageCommand(["add", `${this.packageName}@${this.storeVersion}`, "--registry", PluginRegistry, '--omit', 'peer']);
+            context.setProgress(0.5, installedStoreVersion ? "Updating Store" : "Adding Store");
+            const requestedVersion = latestStoreVersion ?? this.storeVersion;
+            let response = await runBunPackageCommand(["add", `${this.packageName}@${requestedVersion}`, "--registry", PluginRegistry, '--omit', 'peer']);
             console.log(response);
         }
     }
