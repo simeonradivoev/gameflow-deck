@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.8.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.7.0...v1.8.0) (2026-08-24)
+
+
+### Features
+
+* **web:** support pathless web games ([b8a7bcf](https://github.com/simeonradivoev/gameflow-deck/commit/b8a7bcfb0cff15ab077b7ef026ba53e0a3f353d1))
+
 ## [1.7.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.6.0...v1.7.0) (2026-05-15)
 
 
