@@ -31,6 +31,7 @@ if (!await fs.exists('./bin/nw/nw'))
 {
     await import('./download-nw');
 }
+await import('./install-nw-codecs');
 
 await ensureDir(path.join(APPDIR, `usr`, 'lib', 'nw'));
 await fs.cp('./bin/nw', path.join(APPDIR, `usr`, 'lib', 'nw'), { recursive: true });

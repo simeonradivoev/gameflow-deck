@@ -42,6 +42,11 @@ console.log('Renaming to nw');
 await fs.rename(`./bin/nwjs-sdk-v${VERSION}-${platformMap[process.platform] ?? process.platform}-${process.arch}`, './bin/nw');
 await fs.rm(downlodPath);
 
+if (process.platform === 'linux')
+{
+    await import('./install-nw-codecs');
+}
+
 async function extractZip (src: string, outDir: string)
 {
     console.log(`Extracting zip -> ${outDir}`);

@@ -138,6 +138,7 @@ Use `ctx.config` for plugin-owned settings and `ctx.app.config` only for global 
 - While a web game is actively playing, suspend Gameflow's global gamepad-to-spatial-navigation and A-to-Enter fallback so inputs reach the iframe without moving or activating hidden launcher controls. Match EmulatorJS overlay input: Steam opens it immediately and holding View/Select for one second is the controller fallback. Both shortcuts bypass the suspension; closing with B must restore focus to the web-game boundary so the overlay can be opened again.
 - Treat `source=store` as a virtual catalog query, not a persisted local source. Merge remote store results against local records by their original `source@source_id` (with provider-ID fallbacks) and return the local card for installed matches, including pathless `web` installs.
 - Embedded itch/WebGL games can require `SharedArrayBuffer`. The embedding document and proxied game response must retain the required cross-origin isolation headers, and development must use a secure context such as `localhost`; plain HTTP on a LAN IP does not qualify.
+- Linux runs Gameflow through the bundled NW.js runtime. Unity WebGL titles can use AAC audio that the stock NW.js FFmpeg library cannot decode, so Linux AppImage and Flatpak packaging replace `lib/libffmpeg.so` with the exact version-matched, checksum-pinned community build. Keep its NW.js version, archive URL, checksum, and package placement synchronized; review the codec project's GPL and patent notice before redistribution.
 
 ### Building and verifying plugins
 
