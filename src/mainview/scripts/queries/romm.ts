@@ -4,6 +4,7 @@ import { rommApi, settingsApi } from "../clientApi";
 import { infiniteQueryOptions, InvalidateQueryFilters, mutationOptions, QueryClient, QueryFilters, queryOptions } from "@tanstack/react-query";
 import z from "zod";
 import { statsApiStatsGetOptions } from "@/clients/romm/@tanstack/react-query.gen";
+import { getDownloadsNextPageParam } from './downloadsPagination';
 
 export const allGamesQuery = (filter?: GameListFilterType) => queryOptions({
     queryKey: ['games', filter ?? 'all'],
@@ -303,7 +304,7 @@ export const downloadsLookupQuery = (filter: DownloadsLookupFilter) => infiniteQ
 }>({
     initialPageParam: 1,
     queryKey: ["downloads", filter],
-    getNextPageParam: (lastPage, pages) => lastPage.nextPage,
+    getNextPageParam: getDownloadsNextPageParam,
     queryFn: async (params) =>
     {
         const pageParam = params.pageParam as number;
