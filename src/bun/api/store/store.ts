@@ -12,7 +12,7 @@ import { getStoreFolder } from "./services/gamesService";
 import { EmulatorDownloadJob } from "../jobs/emulator-download-job";
 import { BiosDownloadJob } from "../jobs/bios-download-job";
 import { findEmulatorPluginIntegration, getEmulatorPath } from "./services/emulatorsService";
-import { EmulatorSourceEntryType, FrontEndEmulator, FrontEndGameTypeDetailed, PluginBunDetailsSchema, PluginEntrySchema, EmulatorDownloadInfoSchema } from "@simeonradivoev/gameflow-sdk/shared";
+import { EmulatorSourceEntryType, FrontEndEmulator, FrontEndGameTypeDetailed, PluginBunDetailsSchema, PluginEntrySchema, EmulatorDownloadInfoSchema, StoreGameSection } from "@simeonradivoev/gameflow-sdk/shared";
 import PQueue from "p-queue";
 import { hasPackage, runBunPackageCommand } from "../plugins/services";
 import { semver } from "bun";
@@ -106,6 +106,21 @@ export const store = new Elysia({ prefix: '/api/store' })
             if (localGame) return convertLocalToFrontendDetailed(localGame);
             return g;
         }));
+    })
+    .get('/games/sections', async () =>
+    {
+        const sections: StoreGameSection[] = [];
+        await plugins.hooks.store.fetchGameSections.promise({ sections });
+
+        return Promise.all(sections.map(async section => ({
+            ...section,
+            games: await Promise.all(section.games.map(async game =>
+            {
+                const localGame = await db.query.games.findFirst({ where: getLocalGameMatch(game.id.id, game.id.source) });
+                if (localGame) return convertLocalToFrontendDetailed(localGame);
+                return game;
+            }))
+        })));
     })
     .get('/stats', async () =>
     {

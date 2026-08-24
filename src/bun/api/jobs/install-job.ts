@@ -111,7 +111,10 @@ export class InstallJob implements IJob<DownloadJobData, InstallJobStates>
                 screenshotUrls: info.screenshotUrls,
                 version_system: info.version_system,
                 metadata: info.metadata,
-                platform: info.platform
+                platform: info.platform ? {
+                    ...info.platform,
+                    source_slug: info.platform.slug
+                } : undefined
             });
 
             if (this.source && this.gameId) await plugins.hooks.games.postInstall.promise({ source: this.source, id: this.gameId, files: finalFiles, info });

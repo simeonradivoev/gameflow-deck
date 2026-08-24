@@ -12,6 +12,7 @@ import { oneShot } from "../scripts/audio/audio";
 export interface GameMetaExtra extends GameMeta
 {
   preview?: GameCardParams['preview'];
+  pauseAnimatedPreview?: boolean;
   badges?: JSX.Element[];
   focusKey: string;
 }
@@ -69,6 +70,7 @@ function LocalCardElement (data: { game: GameMetaExtra, i: number; onQuickAction
       }}
       onAction={handleAction}
       preview={preview}
+      pauseAnimatedPreview={data.game.pauseAnimatedPreview}
       badges={data.game.badges}
       id={data.game.id}
     />

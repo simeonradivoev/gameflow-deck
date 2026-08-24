@@ -11,6 +11,8 @@ import { useQuery } from "@tanstack/react-query";
 import { validateSourceQuery } from "@/mainview/scripts/queries/romm";
 import { sourceIconMap } from "../Constants";
 import { FrontEndGameTypeDetailed } from "@simeonradivoev/gameflow-sdk/shared";
+import { isUrl } from "@/shared/utils";
+import PlatformIcon from '../PlatformIcon';
 
 export function DetailElement (data: { icon: JSX.Element; tooltip?: string | null, children?: any | any[]; })
 {
@@ -38,10 +40,13 @@ export default function Details (data: {
 
     const { data: validation } = useQuery(validateSourceQuery(data.source, data.id));
 
-    const platformCoverImg = data.game?.path_platform_cover ? new URL(`${RPC_URL(__HOST__)}${data.game?.path_platform_cover}`) : undefined;
+    const platformCoverImg = data.game?.path_platform_cover
+        ? new URL(isUrl(data.game.path_platform_cover) ? data.game.path_platform_cover : `${RPC_URL(__HOST__)}${data.game.path_platform_cover}`)
+        : undefined;
     if (platformCoverImg)
         platformCoverImg.searchParams.set("width", "64");
-    const gameCoverImg = data.game?.path_covers ? `${RPC_URL(__HOST__)}${data.game?.path_covers[0]}` : undefined;
+    const coverPath = data.game?.path_covers[0];
+    const gameCoverImg = coverPath ? isUrl(coverPath) ? coverPath : `${RPC_URL(__HOST__)}${coverPath}` : undefined;
 
     let fileSizeIcon: JSX.Element | undefined;
     if (!data.game)
@@ -74,7 +79,7 @@ export default function Details (data: {
                             <div className={classNames("flex items-center", { "text-error": data.game.missing })}>
                                 <DetailElement tooltip={data.game.path_fs} icon={fileSizeIcon} >{data.game.missing ? 'Missing' : prettyBytes(data.game.fs_size_bytes!)}</DetailElement>
                             </div>}
-                        <DetailElement icon={platformCoverImg ? <img className="size-6" src={platformCoverImg.href}></img> : <div className="skeleton size-6 rounded-full shrink-0"></div>} >{data.game?.platform_display_name ?? <div className="skeleton h-4 w-32"></div>}</DetailElement>
+                        <DetailElement icon={platformCoverImg ? <PlatformIcon className="size-6" slug={data.game?.platform_slug} src={platformCoverImg.href} /> : <div className="skeleton size-6 rounded-full shrink-0"></div>} >{data.game?.platform_display_name ?? <div className="skeleton h-4 w-32"></div>}</DetailElement>
                         {data.game?.emulators?.some(e => e.integrations.some(i => i.capabilities?.includes('saves'))) && <DetailElement tooltip={"Save Backup"} icon={<CloudUpload />} />}
                         <DetailElement tooltip={validation?.reason} icon={
                             validation ? validation.valid ? sourceIconMap[data.game?.source ?? data.game?.id.source ?? ''] : <TriangleAlert className="text-error" /> : <span className="loading loading-spinner loading-lg"></span>

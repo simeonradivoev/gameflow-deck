@@ -31,12 +31,12 @@ const Jimp = createJimp({
     plugins: defaultPlugins,
 });
 
-async function processImage (img: string | Buffer | ArrayBuffer, { blur, width, height, noBlur }: { blur?: number, width?: number, height?: number; noBlur?: boolean; })
+async function processImage (img: string | Buffer | ArrayBuffer, { blur, width, height, noBlur, firstFrame }: { blur?: number, width?: number, height?: number; noBlur?: boolean; firstFrame?: boolean; })
 {
 
     try
     {
-        if ((blur && !noBlur))
+        if (firstFrame || (blur && !noBlur))
         {
             const jimp = await Jimp.read(img);
 
@@ -85,7 +85,12 @@ export default new Elysia()
         {
             return status(404);
         }
-        if (coverBlob.cover_type)
+        if (query.firstFrame)
+        {
+            set.headers["content-type"] = 'image/png';
+            set.headers["cache-control"] = 'public, max-age=86400';
+        }
+        else if (coverBlob.cover_type)
         {
             set.headers["content-type"] = coverBlob.cover_type;
         }
@@ -93,7 +98,7 @@ export default new Elysia()
         return processImage(coverBlob.cover, query);
     }, {
         params: z.object({ id: z.coerce.number() }),
-        query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() })
+        query: z.object({ blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional(), firstFrame: z.coerce.boolean().optional() })
     })
     .get('/image/:source/*', async ({ params: { source, "*": path }, query, set }) =>
     {
@@ -108,8 +113,13 @@ export default new Elysia()
     .get('/image', async ({ query, set }) =>
     {
         set.headers["cross-origin-resource-policy"] = 'cross-origin';
+        if (query.firstFrame)
+        {
+            set.headers["content-type"] = 'image/png';
+            set.headers["cache-control"] = 'public, max-age=86400';
+        }
         return processImage(query.url, query);
-    }, { query: z.object({ url: z.url(), blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional() }) })
+    }, { query: z.object({ url: z.url(), blur: z.coerce.number().optional(), width: z.coerce.number().optional(), height: z.coerce.number().optional(), firstFrame: z.coerce.boolean().optional() }) })
     .get('/screenshot/:id', async ({ params: { id }, query, set }) =>
     {
         set.headers["cross-origin-resource-policy"] = 'cross-origin';
@@ -131,7 +141,15 @@ export default new Elysia()
     })
     .get("/game/local/:id/installed", async ({ params: { id } }) =>
     {
-        const data = await db.query.games.findFirst({ where: eq(schema.games.id, id) });
+        const data = await db.query.games.findFirst({
+            where: eq(schema.games.id, id),
+            with: { platform: { columns: { slug: true } } }
+        });
+
+        if (data?.platform?.slug === 'web' && !data.path_fs)
+        {
+            return { installed: true };
+        }
         if (data && data.path_fs)
         {
             return { installed: await fs.exists(data.path_fs) };
@@ -139,7 +157,7 @@ export default new Elysia()
 
         return { installed: false };
     }, {
-        params: z.object({ id: z.number() }),
+        params: z.object({ id: z.coerce.number() }),
         response: z.object({ installed: z.boolean() })
     })
     .get('/games', async ({ query, set }) =>
@@ -147,7 +165,6 @@ export default new Elysia()
         const games: FrontEndGameType[] = [];
 
         const where: any[] = [];
-        let localGamesSet: Set<string> | undefined;
 
         if (query.platform_slug)
         {
@@ -165,12 +182,12 @@ export default new Elysia()
             }
         }
 
-        if (query.search)
+        if (query.search && query.source !== 'store')
         {
             where.push(like(schema.games.name, query.search));
         }
 
-        if (query.source)
+        if (query.source && query.source !== 'store')
         {
             where.push(eq(schema.games.source, query.source));
         }
@@ -208,17 +225,15 @@ export default new Elysia()
             .orderBy(...ordering)
             .where(and(...where));
 
-        localGamesSet = new Set(
-            localGames.filter(g => !!g.source_id && !!g.source).map(g => `${g.source}@${g.source_id}`)
-                .concat(localGames.filter(g => !!g.igdb_id).map(g => `igdb@${g.igdb_id}`))
-        );
-
-        function localGameExistsPredicate (game: { id: FrontEndId, igdb_id?: number | null, ra_id?: number | null; })
+        function findLocalGame (game: { id: FrontEndId, igdb_id?: number | null, ra_id?: number | null; })
         {
-            if (localGamesSet?.has(`${game.id.source}@${game.id.id}`)) return true;
-            if (game.igdb_id && localGamesSet?.has(`igdb@${game.igdb_id}`)) return true;
-            if (game.ra_id && localGamesSet?.has(`ra@${game.ra_id}`)) return true;
-            return false;
+            return localGames.find(localGame =>
+            {
+                if (localGame.source_id !== null && localGame.source === game.id.source && localGame.source_id === game.id.id) return true;
+                if (game.igdb_id !== null && game.igdb_id !== undefined && localGame.igdb_id === game.igdb_id) return true;
+                if (game.ra_id !== null && game.ra_id !== undefined && localGame.ra_id === game.ra_id) return true;
+                return false;
+            });
         }
 
         if (query.collection_id)
@@ -228,9 +243,10 @@ export default new Elysia()
             await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
             games.push(...remoteGames.map(g =>
             {
-                if (localGameExistsPredicate(g))
+                const localGame = findLocalGame(g);
+                if (localGame)
                 {
-                    return convertLocalToFrontend(localGames.find(g => localGameExistsPredicate({ id: { id: g.source_id ?? '', source: g.source ?? '' }, igdb_id: g.igdb_id, ra_id: g.ra_id }))!);
+                    return convertLocalToFrontend(localGame);
                 }
                 else
                 {
@@ -240,7 +256,7 @@ export default new Elysia()
 
         } else
         {
-            games.push(...localGames.slice(query.offset, query.limit !== undefined ? ((query.offset ?? 0) + query.limit) : undefined).filter(g =>
+            games.push(...(query.source === 'store' ? [] : localGames.slice(query.offset, query.limit !== undefined ? ((query.offset ?? 0) + query.limit) : undefined)).filter(g =>
             {
                 if (query.genres && query.genres.length > 0)
                 {
@@ -260,28 +276,34 @@ export default new Elysia()
                 const remoteGames: FrontEndGameTypeWithIds[] = [];
                 const remoteGameSet = new Set<string>();
                 await plugins.hooks.games.fetchGames.promise({ query, games: remoteGames }).catch(e => console.error(e));
-                games.push(...remoteGames.filter(g =>
+                games.push(...remoteGames.flatMap(g =>
                 {
-                    if (localGameExistsPredicate(g))
+                    const localGame = findLocalGame(g);
+                    if (localGame)
                     {
-                        return false;
+                        if (query.source === 'store')
+                        {
+                            return [convertLocalToFrontend(localGame)];
+                        }
+
+                        return [];
                     }
 
                     if (g.igdb_id)
                     {
                         const igdbId = `igdb@${g.igdb_id}`;
-                        if (remoteGameSet.has(igdbId)) return false;
+                        if (remoteGameSet.has(igdbId)) return [];
                         remoteGameSet.add(igdbId);
                     }
 
                     if (g.ra_id)
                     {
                         const raId = `ra@${g.ra_id}`;
-                        if (remoteGameSet.has(raId)) return false;
+                        if (remoteGameSet.has(raId)) return [];
                         remoteGameSet.add(raId);
                     }
 
-                    return true;
+                    return [g];
                 }));
             }
         }

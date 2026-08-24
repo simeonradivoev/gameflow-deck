@@ -6,6 +6,7 @@ import { oneShot } from "./audio/audio";
 import { Router } from "@/mainview";
 
 let loopStarted = false;
+const gamepadUiInputSuspensions = new Set<symbol>();
 let isTouching = false;
 type ActiveControlType = 'keyboard' | 'gamepad' | 'mouse' | 'touch' | undefined;
 let activeControls: ActiveControlType = sessionStorage.getItem('active-controls') as any;
@@ -20,6 +21,20 @@ if (!activeControls)
     }
 }
 let mouseUpdateTimeout: any | undefined = undefined;
+export function suspendGamepadUiInput ()
+{
+    const token = Symbol('gamepad-ui-input');
+    gamepadUiInputSuspensions.add(token);
+    return () =>
+    {
+        gamepadUiInputSuspensions.delete(token);
+    };
+}
+
+export function isGamepadUiInputSuspended ()
+{
+    return gamepadUiInputSuspensions.size > 0;
+}
 
 const handleLoop = () =>
 {
@@ -98,6 +113,11 @@ const throttleMap = new Map<string, number>();
 const throttleAcceleration = new Map<string, number>();
 function throttleNav (key: string, dir: string, event: Event)
 {
+    if (isGamepadUiInputSuspended())
+    {
+        return false;
+    }
+
     if (isTextInputFocused())
     {
         return false;

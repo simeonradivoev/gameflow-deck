@@ -1,6 +1,6 @@
 import { useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import classNames from "classnames";
-import { JSX } from "react";
+import { JSX, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import useActiveControl from "../scripts/gamepads";
 import { oneShot } from "../scripts/audio/audio";
@@ -33,10 +33,12 @@ export interface GameCardParams extends FocusParams
   onBlur?: (id: string) => void;
   clickFocuses?: boolean;
   previewClassName?: string;
+  pauseAnimatedPreview?: boolean;
 }
 
 export default function CardElement (data: GameCardParams & InteractParams)
 {
+  const [hovered, setHovered] = useState(false);
   const handleAction = (event?: Event) =>
   {
     data.onAction?.({ event, focusKey });
@@ -56,7 +58,7 @@ export default function CardElement (data: GameCardParams & InteractParams)
     preview = <img draggable={false} srcSet={data.srcset} className={classNames("object-cover aspect-3/4", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} src={data.preview} ></img>;
   } else if (Array.isArray(data.preview))
   {
-    preview = <ImageWithFallbacks src={data.preview} draggable={false} className={classNames("object-cover aspect-3/4 w-full h-full", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} />;
+    preview = <ImageWithFallbacks src={data.preview} draggable={false} playAnimated={!data.pauseAnimatedPreview || focused || hovered} className={classNames("object-cover aspect-3/4 w-full h-full", data.previewClassName, { "animate-rotate-small": focused && !isPointer })} />;
   } else if (typeof data.preview === 'function')
   {
     preview = data.preview({ focused });
@@ -76,6 +78,8 @@ export default function CardElement (data: GameCardParams & InteractParams)
         scrollSnapAlign: isPointer ? "center" : "none"
       }}
       onFocus={focusSelf}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onClick={(e) =>
       {
         focusSelf();

@@ -12,7 +12,7 @@ import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { HandleGoBack } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { Download } from 'lucide-react';
+import { Download, Gamepad2 } from 'lucide-react';
 import prettyBytes from 'pretty-bytes';
 import { useContext } from 'react';
 
@@ -42,6 +42,7 @@ const downloadsBlacklist = new Set(['JPEG Thumb', 'Metadata', 'Thumbnail', 'Item
 function Details (data: { onDownload: (focusKey: string) => void; })
 {
     const { data: download } = Route.useLoaderData();
+    const navigate = useNavigate();
     const screenshots = download.files.filter(f => f.format && imagesMap.has(f.format)).map(f => f.download_url);
     if (screenshots.length <= 0 && download.cover_url) screenshots.push(download.cover_url);
     return <div className='flex flex-col'>
@@ -60,7 +61,11 @@ function Details (data: { onDownload: (focusKey: string) => void; })
                     </div>
                 </div>
                 <div className='flex items-center'>
-                    <Button external id='download-btn' className='gap-2 font-semibold text-2xl' style='accent' onAction={(ctx) => data.onDownload(ctx.focusKey!)} ><Download />Download</Button>
+                    {download.game_id ? <Button external id='download-btn' className='gap-2 font-semibold text-2xl' style='accent' onAction={() => navigate({
+                        to: '/game/$source/$id',
+                        params: { source: download.game_id!.source, id: download.game_id!.id }
+                    })}><Gamepad2 />View Game</Button> :
+                        <Button external id='download-btn' className='gap-2 font-semibold text-2xl' style='accent' onAction={(ctx) => data.onDownload(ctx.focusKey!)} ><Download />Download</Button>}
                 </div>
             </div>
             <div className='flex gap-4 px-16 py-4 justify-center'>

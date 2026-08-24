@@ -114,3 +114,11 @@ export const pluginDetailsQuery = (id: string) => queryOptions({
         return data;
     }
 });
+export const storeGameSectionsQuery = queryOptions({
+    queryKey: ['store-games', 'sections'], queryFn: async () =>
+    {
+        const { data, error } = await storeApi.api.store.games.sections.get();
+        if (error) throw error;
+        return data;
+    }
+});

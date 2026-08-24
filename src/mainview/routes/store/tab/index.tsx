@@ -14,9 +14,10 @@ import { Gamepad2, HardDrive, Search, Star } from 'lucide-react';
 import { GetFocusedElement } from '@/mainview/scripts/spatialNavigation';
 import { useQuery } from '@tanstack/react-query';
 import { autoEmulatorsQuery } from '@queries/settings';
-import { storeEmulatorsRecommendedQuery, storeFeaturedGamesQuery } from '@queries/store';
+import { storeEmulatorsRecommendedQuery, storeFeaturedGamesQuery, storeGameSectionsQuery } from '@queries/store';
 import ImageWithFallbacks from '@/mainview/components/ImageWithFallbacks';
 import { FrontEndGameTypeDetailed } from '@simeonradivoev/gameflow-sdk/shared';
+import PlatformIcon from '@/mainview/components/PlatformIcon';
 
 export const Route = createFileRoute('/store/tab/')({
     component: RouteComponent
@@ -91,7 +92,7 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
                     <div key={i} data-active={i === selectedGame} className='flex grow flex-col gap-1 transition-opacity duration-500 data-[active=true]:opacity-50 rounded-3xl bg-base-100 p-4 justify-center shadow-md'>
 
                         <div className='flex gap-2'>
-                            <img className='size-6' src={`${RPC_URL(__HOST__)}${g.path_platform_cover}`}></img>
+                            <PlatformIcon className='size-6' slug={g.platform_slug} src={`${RPC_URL(__HOST__)}${g.path_platform_cover}`} />
                             <div className='flex gap-2 items-center grow'>
                                 {g.name}
                             </div>
@@ -108,6 +109,7 @@ export function RouteComponent ()
     const { focus } = useSearch({ from: '/store/tab' });
     const { data: crucialEmulators, isSuccess } = useQuery({ ...autoEmulatorsQuery, select: (data) => data.filter(e => !e.validSources.some(s => s.exists) && e.isCritical) });
     const { data: featuredGames } = useQuery(storeFeaturedGamesQuery);
+    const { data: gameSections } = useQuery(storeGameSectionsQuery);
     const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery());
 
     const { focusKey, ref, focusSelf } = useFocusable({ focusKey: 'main-area', preferredChildFocusKey: focus ?? "recommended-emulators" });
@@ -152,6 +154,25 @@ export function RouteComponent ()
                         games={featuredGames}
                     />
                 </div>
+
+                {gameSections?.map(section => <div className="px-6 py-3" key={section.id}>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-5 rounded-full bg-secondary shadow-sm" />
+                        <Gamepad2 className="text-secondary text-shadow-sm" />
+                        <div className="grow">
+                            <h2 className="font-bold uppercase tracking-widest text-secondary text-shadow-sm">
+                                {section.title}
+                            </h2>
+                            {!!section.description && <p className="text-sm text-base-content/60">{section.description}</p>}
+                        </div>
+                    </div>
+                    <GamesSection
+                        onSelect={(id, focus) => storeContext.showDetails('game', id.source, id.id, focus)}
+                        onFocus={scrollIntoViewHandler({ block: 'center' })}
+                        games={section.games}
+                        showSources
+                    />
+                </div>)}
 
 
                 <StatsSection

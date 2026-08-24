@@ -68,7 +68,8 @@ export async function convertLocalToFrontendDetailed (g: typeof schema.games.$in
 })
 {
 
-    const exists = await checkInstalled(g.path_fs);
+    const isPathlessWebGame = g.platform?.slug === 'web' && !g.path_fs;
+    const exists = isPathlessWebGame || await checkInstalled(g.path_fs);
     const fileSize = await calculateSize(g.path_fs);
 
     const game: FrontEndGameTypeDetailed = {

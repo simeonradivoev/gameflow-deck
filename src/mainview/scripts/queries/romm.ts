@@ -18,7 +18,7 @@ export const gameQuery = (source: string, id: string) => queryOptions({
     queryKey: ['game', source, id],
     queryFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).get();
+        const { data, error } = await rommApi.api.romm.game({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get();
         if (error) throw error;
         return data;
     },
@@ -95,7 +95,7 @@ export const rommHostnameQuery = queryOptions({ queryKey: ['romm', 'auth', 'host
 export const rommUsernameQuery = queryOptions({ queryKey: ['romm', 'auth', 'username'], queryFn: () => settingsApi.api.settings({ source: 'local' })({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
 export const deleteGameMutation = (id: FrontEndId) => mutationOptions({
     mutationKey: ['delete', id],
-    mutationFn: () => rommApi.api.romm.game({ source: id.source })({ id: id.id }).delete()
+    mutationFn: () => rommApi.api.romm.game({ source: encodeURIComponent(id.source) })({ id: encodeURIComponent(id.id) }).delete()
 });
 export const getCollectionsQuery = queryOptions({
     queryKey: ['collections', 'all'],
@@ -111,7 +111,7 @@ export const getCollectionsQuery = queryOptions({
 export const getCollectionQuery = (source: string, id: string) => queryOptions({
     queryKey: ['collection', source, id], queryFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.collection({ source })({ id }).get();
+        const { data, error } = await rommApi.api.romm.collection({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get();
         if (error) throw error;
         return data;
     }, staleTime: DefaultRommStaleTime
@@ -119,7 +119,7 @@ export const getCollectionQuery = (source: string, id: string) => queryOptions({
 export const platformQuery = (source: string, id: string) => queryOptions({
     queryKey: ['platform', source, id], queryFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.platforms({ source })({ id }).get();
+        const { data, error } = await rommApi.api.romm.platforms({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get();
         if (error) throw error;
         return data;
     }, staleTime: DefaultRommStaleTime
@@ -128,7 +128,7 @@ export const installMutation = (source: string, id: string) => mutationOptions({
     mutationKey: ['install', source, id],
     mutationFn: async (init: { downloadId?: string; }) =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).install.post({ downloadId: init.downloadId });
+        const { data, error } = await rommApi.api.romm.game({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).install.post({ downloadId: init.downloadId });
         if (error) throw error;
         return data;
     }
@@ -137,7 +137,7 @@ export const cancelInstallMutation = (source: string, id: string) => mutationOpt
     mutationKey: ['install', 'cancel', source, id],
     mutationFn: async () =>
     {
-        const { error } = await rommApi.api.romm.game({ source })({ id }).install.delete();
+        const { error } = await rommApi.api.romm.game({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).install.delete();
         if (error) throw error;
     }
 });
@@ -145,7 +145,7 @@ export const playMutation = mutationOptions({
     mutationKey: ['play'],
     mutationFn: async (data: { source: string, id: string; command_id?: string | number; }) =>
     {
-        const { error } = await rommApi.api.romm.game({ source: data.source })({ id: data.id }).play.post({ command_id: data.command_id });
+        const { error } = await rommApi.api.romm.game({ source: encodeURIComponent(data.source) })({ id: encodeURIComponent(data.id) }).play.post({ command_id: data.command_id });
         if (error)
             throw error;
     }
@@ -162,7 +162,7 @@ export const gamesRecommendedBasedOnGameQuery = (source: string, id: string) => 
     queryKey: ['games', 'recommended', 'game', source, id],
     queryFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.recommended.games.game({ source })({ id }).get();
+        const { data, error } = await rommApi.api.romm.recommended.games.game({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get();
         if (error) throw error;
         return data;
     }
@@ -181,14 +181,14 @@ export const gameInvalidationQuery = (source: string, id: string): QueryFilters 
 export const validateSourceQuery = (source: string, id: string) => queryOptions({
     queryKey: ["game", source, id, "validate"], queryFn: async () =>
     {
-        const { data } = await rommApi.api.romm.game({ source })({ id }).validate.get();
+        const { data } = await rommApi.api.romm.game({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).validate.get();
         return data;
     }
 });
 export const fixSourceMutation = mutationOptions({
     mutationKey: ['game', "fix_source"], mutationFn: async ({ source, id }: { source: string, id: string; }) =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).fix_source.post();
+        const { data, error } = await rommApi.api.romm.game({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).fix_source.post();
         if (error) throw error;
         return data;
     }
@@ -196,7 +196,7 @@ export const fixSourceMutation = mutationOptions({
 export const updateSourceMutation = mutationOptions({
     mutationKey: ['game', "update_source"], mutationFn: async ({ source, id }: { source: string, id: string; }) =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source })({ id }).update.post({
+        const { data, error } = await rommApi.api.romm.game({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).update.post({
             source: source,
             id: id
         });
@@ -208,7 +208,7 @@ export const updatePlatformMutation = (source: string, id: string) => mutationOp
     mutationKey: ['platform', source, 'update', id],
     mutationFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.platform({ source })({ id }).update.post();
+        const { data, error } = await rommApi.api.romm.platform({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).update.post();
         if (error) throw error;
         return data;
     }
@@ -254,7 +254,7 @@ export const gameLookupDetails = (source: string | undefined, id: string | undef
     queryKey: ['game', 'lookup', source, id],
     queryFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.lookup({ source: source! })({ id: id! }).get();
+        const { data, error } = await rommApi.api.romm.lookup({ source: encodeURIComponent(source!) })({ id: encodeURIComponent(id!) }).get();
         if (error) throw error;
         return data;
     }
@@ -265,7 +265,7 @@ export const platformLookupMatchQuery = (source: string | undefined, id: number 
     queryKey: ['platform', 'lookup', 'match', source, id],
     queryFn: async () =>
     {
-        const { data, error } = await rommApi.api.romm.platform.lookup.match({ source: source! })({ id: id! }).get();
+        const { data, error } = await rommApi.api.romm.platform.lookup.match({ source: encodeURIComponent(source!) })({ id: encodeURIComponent(id!) }).get();
         if (error) throw error;
         return data;
     }
@@ -274,7 +274,7 @@ export const platformLookupMatchQuery = (source: string | undefined, id: number 
 export const customUpdateMutation = mutationOptions({
     mutationKey: ['game', 'custom-update'], mutationFn: async (args: { source: string, id: string, destination: string, destinationId: string; }) =>
     {
-        const { data, error } = await rommApi.api.romm.game({ source: args.source })({ id: args.id }).update.post({ source: args.destination, id: args.destinationId });
+        const { data, error } = await rommApi.api.romm.game({ source: encodeURIComponent(args.source) })({ id: encodeURIComponent(args.id) }).update.post({ source: args.destination, id: args.destinationId });
         if (error) throw error;
         return data;
     }

@@ -5,6 +5,21 @@ import { JSX } from "react";
 import { FOCUS_KEYS } from "../scripts/types";
 import { useRouter } from "@tanstack/react-router";
 import { FrontEndGameType, FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
+import { isUrl } from "@/shared/utils";
+import PlatformIcon from './PlatformIcon';
+
+function resolveImageUrl (value: string | null | undefined)
+{
+    if (!value) return;
+
+    try
+    {
+        return new URL(isUrl(value) ? value : `${RPC_URL(__HOST__)}${value}`);
+    } catch
+    {
+        return;
+    }
+}
 
 export default function FrontEndGameCard (data: { index: number, game: FrontEndGameType; showSource?: boolean; } & FocusParams & InteractParams)
 {
@@ -17,20 +32,21 @@ export default function FrontEndGameCard (data: { index: number, game: FrontEndG
     let subtitle: any = undefined;
     if (data.game.path_platform_cover)
     {
-        const platformUrl = new URL(`${RPC_URL(__HOST__)}${data.game.path_platform_cover}`);
-        platformUrl.searchParams.set('width', "64");
+        const platformUrl = resolveImageUrl(data.game.path_platform_cover);
+        platformUrl?.searchParams.set('width', "64");
         subtitle = <div className="flex gap-1 items-center">
-            {!!data.game.path_platform_cover && <img className="sm:hidden md:inline size-4" src={platformUrl.href} />}
+            {!!platformUrl && <PlatformIcon className="sm:hidden md:inline size-4" slug={data.game.platform_slug} src={platformUrl.href} />}
             <p className="opacity-80">{data.game.platform_display_name}</p>
         </div>;
     }
 
-    const previewUrls = data.game.path_covers.map(c =>
+    const previewUrls = data.game.path_covers.flatMap(c =>
     {
-        const url = new URL(`${RPC_URL(__HOST__)}${c}`);
+        const url = resolveImageUrl(c);
+        if (!url) return [];
         url.searchParams.delete('ts');
         url.searchParams.set('width', "640");
-        return url;
+        return [url];
     });
 
     const badges: JSX.Element[] = [];
@@ -63,6 +79,7 @@ export default function FrontEndGameCard (data: { index: number, game: FrontEndG
         onFocus={data.onFocus}
         onAction={(e) => data.onAction ? data.onAction(e) : handleDefaultSelect(data.game.id, data.game.source, data.game.source_id)}
         preview={previewUrls}
+        pauseAnimatedPreview={data.game.platform_slug === 'web'}
         title={data.game.name ?? ""}
         subtitle={subtitle}
         focusKey={FOCUS_KEYS.GAME_CARD(data.game.id)}

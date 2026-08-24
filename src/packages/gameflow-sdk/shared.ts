@@ -322,6 +322,14 @@ export interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameTypeWithId
     };
 };
 
+export interface StoreGameSection
+{
+    id: string;
+    title: string;
+    description?: string;
+    games: FrontEndGameTypeDetailed[];
+}
+
 export interface Drive
 {
     parent: string | null;
@@ -372,6 +380,8 @@ export interface CommandEntry
     startDir?: string;
     /** Is the command valid, for example does the executable exists */
     valid: boolean;
+    /** How the frontend should launch this command. Defaults to an application process. */
+    launchType?: "application" | "emulatorjs" | "web";
     /** Run the command as shell. Defaults is true */
     shell?: boolean;
     /** For what emulator is the command */
@@ -384,6 +394,8 @@ export interface CommandEntry
         emulatorBin?: string;
         /** The root directory of the emulator */
         emulatorDir?: string;
+        /** HTTPS URL loaded by the frontend for web game commands. */
+        webUrl?: string;
     };
 }
 
@@ -665,6 +677,8 @@ export interface DownloadLookupDetails
     summary: string | null | undefined;
     date: Date | null | undefined;
     files: DownloadLookupDetailsFile[];
+    /** Optional Gameflow game entry associated with this discovery result. */
+    game_id?: FrontEndId;
 }
 
 export interface AutoSaveChange

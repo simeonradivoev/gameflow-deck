@@ -1,5 +1,5 @@
 import { DependencyList, useEffect, useState } from "react";
-import { GamepadButtonEvent } from "./gamepads";
+import { GamepadButtonEvent, isGamepadUiInputSuspended } from "./gamepads";
 import { dispatchFocusedEvent, GetFocusedTree } from "./spatialNavigation";
 import { getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 import { isTextInputFocused } from "./utils";
@@ -36,6 +36,7 @@ export interface Shortcut
     heldTime?: number;
     action?: (e: GamepadButtonEvent) => void;
     side?: "left" | "right";
+    allowWhenGamepadUiInputSuspended?: boolean;
 }
 
 let isDirty = false;
@@ -97,7 +98,7 @@ export function useShortcutContext ()
             if (shortcuts.has(event.button))
             {
                 const shortcut = shortcuts.get(event.button);
-                if (shortcut)
+                if (shortcut && (!isGamepadUiInputSuspended() || shortcut.allowWhenGamepadUiInputSuspended))
                 {
                     if (shortcut.heldTime && shortcut.heldTime > 0)
                     {
@@ -112,7 +113,7 @@ export function useShortcutContext ()
 
                 }
             }
-            else if (event.button === GamePadButtonCode.A)
+            else if (!isGamepadUiInputSuspended() && event.button === GamePadButtonCode.A)
             {
                 dispatchFocusedEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', charCode: 13, keyCode: 13, view: window, bubbles: true }));
                 hadEnterDown = true;

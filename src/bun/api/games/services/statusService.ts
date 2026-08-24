@@ -211,10 +211,15 @@ export async function validateGameSource (source: string, id: string): Promise<{
     {
         const sourceGame = await plugins.hooks.games.fetchGame.promise({ source: localGame.source, id: localGame.source_id });
         if (!sourceGame) return { valid: false, reason: "Source Missing", localGame };
+        const sourceIgdbId = sourceGame.igdb_id ?? undefined;
+        const sourceRaId = sourceGame.ra_id ?? undefined;
+        const localIgdbId = localGame.igdb_id ?? undefined;
+        const localRaId = localGame.ra_id ?? undefined;
+
         // Store should be immutable
-        if (localGame.source !== 'store' && sourceGame.igdb_id !== (localGame.igdb_id ?? undefined) && sourceGame.ra_id !== (localGame.ra_id ?? undefined))
+        if (localGame.source !== 'store' && sourceIgdbId !== localIgdbId && sourceRaId !== localRaId)
         {
-            return { valid: false, reason: "Metadata Missmatch", localGame };
+            return { valid: false, reason: "Metadata Mismatch", localGame };
         }
     }
 

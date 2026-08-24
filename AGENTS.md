@@ -59,6 +59,34 @@ Use Bun for package management, scripts, and tests. Do not substitute npm, pnpm,
 
 Use the sibling repositories `../gameflow-ryujinx` and `../gameflow-internet-archive` as concrete external-plugin examples. Ryujinx is an `emulators` integration; Internet Archive is a `sources` integration. External plugins are independent npm packages rather than folders copied into this repository.
 
+### Local Windows development layout
+
+- The main application repository is `E:\Apps\gameflow-deck`.
+- External plugin repositories are sibling folders such as `E:\Apps\gameflow-ryujinx`, `E:\Apps\gameflow-internet-archive`, and `E:\Apps\gameflow-itch`. Each is its own npm package with its own `package.json`, lockfile, `node_modules`, source, tests, and build output.
+- `F:\gameflow` is the local Gameflow runtime/data directory used for testing. Its managed plugin package project is `F:\gameflow\store`, and installed packages live under `F:\gameflow\store\node_modules`.
+- The SDK is an independently installed package at `F:\gameflow\store\node_modules\@simeonradivoev\gameflow-sdk`. External plugins declare the published SDK range as a peer dependency; do not add a `file:` dependency or symlink back to `gameflow-deck/src/packages/gameflow-sdk`.
+- Never symlink a plugin's entire `node_modules` to `F:\gameflow\store\node_modules`. Run `bun install` in the plugin repository so it has a real, package-local dependency tree.
+
+Before any package-altering command, explicitly change to the package directory and verify it. Do not run `bun install`, `bun add`, build, test, link, or publish commands for an external plugin while the shell is in `gameflow-deck`.
+
+```powershell
+Set-Location E:\Apps\gameflow-itch
+Get-Location
+bun install
+bun run test
+bun run build
+```
+
+For local runtime testing, follow the existing Ryujinx link arrangement: register the link from the external plugin directory, then consume that named link from `F:\gameflow\store`. Keep the SDK as the separately installed store dependency.
+
+```powershell
+Set-Location E:\Apps\gameflow-itch
+bun link
+
+Set-Location F:\gameflow\store
+bun link @simeonradivoev/gameflow-itch
+```
+
 ### Discovery, installation, and loading
 
 1. The store discovers packages from the npm registry using the `gameflow-plugin` keyword.
@@ -94,6 +122,22 @@ Use `ctx.config` for plugin-owned settings and `ctx.app.config` only for global 
 - Bail hooks stop after the first defined result. Waterfall hooks must return or mutate the accumulated value according to their declared contract. Async work belongs in `tapPromise`.
 - Validate untrusted remote payloads before converting them to SDK types. Handle failed responses, missing fields, invalid dates and sizes, URL encoding, cancellation where available, and partial results without breaking other plugins.
 - Await filesystem preparation and other asynchronous setup before returning launch data. Build paths with `node:path` and keep emulator storage inside Gameflow's configured directories.
+
+### Web source integrations
+
+- Use `games.fetchGames` when an external source should contribute games to the Store **Games** tab. Reserve store-home sections for intentional curated content rather than duplicating the same source catalog on the home page.
+- External plugin names can be scoped npm package names such as `@simeonradivoev/gameflow-itch`. Always URL-encode dynamic `source` and `id` path segments at the frontend request boundary; an unencoded slash in a scoped name changes the API route.
+- Remote cover, screenshot, platform-icon, and iframe URLs may already be absolute. Preserve valid absolute URLs and only prepend the Gameflow RPC origin to application-relative paths.
+- Browser-hosted installs may intentionally have no files and no `path_fs`. Identify them by their platform slug (`web`), keep their local database record as the installation marker, and do not report them as missing solely because a filesystem path is absent.
+- Source metadata IDs are optional. Normalize `null` and `undefined` before comparing IGDB or RetroAchievements IDs so a source with no provider IDs does not produce a false metadata mismatch.
+- Launch pathless web games through source-specific launch commands and the web route; do not require an emulator executable or synthesize a local file location.
+- Render the `web` platform with a theme-aware application icon (currently the Lucide globe) instead of a fixed white remote logo, so it remains visible in both light and dark themes.
+- Treat animated Web cover art as an interaction preview: render a server-generated first-frame PNG while a card is idle, and load the original animation only while the card has controller/keyboard focus or mouse hover. Do not infer animation solely from the URL extension because installed covers use local routes.
+- Launch `*.itch.zone` embeds through the allowlisted same-origin `/web/itch` proxy and keep the iframe on `referrerPolicy="no-referrer"`. itch.io's public `htmlgame.js` checks `location.ancestorOrigins` before `document.referrer`, so an iframe policy or redirect cannot hide Gameflow's origin; the proxy must strip only that hotlink guard and proxy relative game assets under the same origin. Keep the proxy restricted to HTTPS `*.itch.zone` targets and redirects.
+- Stream proxied itch assets rather than buffering large Unity payloads, preserve their content type and range/cache metadata, and request upstream assets with `Accept-Encoding: identity`; Bun can otherwise raise a zlib error while proxying compressed itch WASM responses.
+- While a web game is actively playing, suspend Gameflow's global gamepad-to-spatial-navigation and A-to-Enter fallback so inputs reach the iframe without moving or activating hidden launcher controls. Match EmulatorJS overlay input: Steam opens it immediately and holding View/Select for one second is the controller fallback. Both shortcuts bypass the suspension; closing with B must restore focus to the web-game boundary so the overlay can be opened again.
+- Treat `source=store` as a virtual catalog query, not a persisted local source. Merge remote store results against local records by their original `source@source_id` (with provider-ID fallbacks) and return the local card for installed matches, including pathless `web` installs.
+- Embedded itch/WebGL games can require `SharedArrayBuffer`. The embedding document and proxied game response must retain the required cross-origin isolation headers, and development must use a secure context such as `localhost`; plain HTTP on a LAN IP does not qualify.
 
 ### Building and verifying plugins
 
@@ -155,6 +199,7 @@ There is no dedicated lint script. Do not claim lint verification unless one is 
 
 ## Change hygiene
 
+- Use Conventional Commits for every commit message, including an appropriate type and optional scope such as `feat(web):`, `fix(store):`, or `docs:`.
 - Check `git status` before and after work. Preserve unrelated user changes in a dirty worktree.
 - Never commit `dist/`, `build/`, local logs, downloaded runtimes, test residue, or secret-bearing environment/config files unless the repository already tracks the exact artifact and the task requires updating it.
 - Keep generated diffs explainable and tied to their source inputs.

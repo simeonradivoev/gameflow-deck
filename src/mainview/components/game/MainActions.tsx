@@ -31,7 +31,11 @@ export function usePlayMutation (navigate: UseNavigateResult<string>)
 
 export function playGame (source: string, id: string, cmd: CommandEntry, navigate: UseNavigateResult<string>, playMutation: (options: { source: string, id: string, command_id: string | number; }) => void)
 {
-    if (cmd.emulator === 'EMULATORJS')
+    if (cmd.launchType === 'web' && cmd.metadata.webUrl)
+    {
+        navigate({ to: '/web/$source/$id', params: { source, id }, search: { url: cmd.metadata.webUrl } });
+    }
+    else if (cmd.launchType === 'emulatorjs' || cmd.emulator === 'EMULATORJS')
     {
         const params = new URLSearchParams(Array.isArray(cmd.command) ? cmd.command[0] : cmd.command);
         navigate({ to: '/embedded/$source/$id', params: { source: source, id: id }, search: Object.fromEntries(params.entries()) });
@@ -71,7 +75,7 @@ export default function MainActions (data: {
     const playMut = usePlayMutation(navigate);
     useEffect(() =>
     {
-        const sub = rommApi.api.romm.status({ source: data.source })({ id: data.id }).subscribe();
+        const sub = rommApi.api.romm.status({ source: encodeURIComponent(data.source) })({ id: encodeURIComponent(data.id) }).subscribe();
         ws.current = sub.ws;
 
         sub.subscribe((e) =>

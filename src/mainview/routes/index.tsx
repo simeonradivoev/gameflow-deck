@@ -182,7 +182,7 @@ function HomeList (data: {
     const finalSource = source ?? id.source;
     const finalId = String(sourceId ?? id.id);
 
-    const validCommands = await rommApi.api.romm.game({ source: finalSource })({ id: finalId }).commands.get();
+    const validCommands = await rommApi.api.romm.game({ source: encodeURIComponent(finalSource) })({ id: encodeURIComponent(finalId) }).commands.get();
     if (validCommands.data)
     {
       const preferredCommand = localStorage.getItem(`${finalSource}-${finalId}-preferred-command`);

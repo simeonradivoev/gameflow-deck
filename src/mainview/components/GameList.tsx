@@ -11,6 +11,7 @@ import { allGamesQuery } from "@queries/romm";
 import { FrontEndGameType, FrontEndId } from "@simeonradivoev/gameflow-sdk/shared";
 import { isUrl } from "@/shared/utils";
 import { FOCUS_KEYS } from "../scripts/types";
+import PlatformIcon from './PlatformIcon';
 
 export interface GameListParams extends FocusParams
 {
@@ -118,11 +119,12 @@ export function GameList (data: GameListParams)
                                 title: g.name ?? "",
                                 subtitle: (
                                     <div className="flex gap-1 items-center">
-                                        <img className="sm:hidden md:inline size-4" src={platformUrl?.href} />
+                                        {!!platformUrl && <PlatformIcon className="sm:hidden md:inline size-4" slug={g.platform_slug} src={platformUrl.href} />}
                                         <p className="opacity-80">{g.platform_display_name}</p>
                                     </div>
                                 ),
                                 previewUrls: previewUrls,
+                                pauseAnimatedPreview: g.platform_slug === 'web',
                                 badges: badges,
                                 onSelect: () => data.onGameSelect ? data.onGameSelect(g.id, g.source, g.source_id) : handleDefaultSelect(g),
                                 onQuickAction: data.onQuickAction ? () => data.onQuickAction?.(g.id, g.source, g.source_id) : undefined,

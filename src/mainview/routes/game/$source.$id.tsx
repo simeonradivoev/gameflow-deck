@@ -10,6 +10,7 @@ import { FloatingShortcuts } from "../../components/Shortcuts";
 import { GamePadButtonCode, useShortcuts } from "@/mainview/scripts/shortcuts";
 import Screenshots from "@/mainview/components/Screenshots";
 import { HandleGoBack, scrollIntoViewHandler, useOnNavigateBack } from "@/mainview/scripts/utils";
+import { isUrl } from "@/shared/utils";
 import { FilterUI } from "@/mainview/components/Filters";
 import StatList, { StatEntry } from "@/mainview/components/StatList";
 import { useIntersectionObserver, useLocalStorage } from "usehooks-ts";
@@ -29,7 +30,7 @@ import { FrontEndGameTypeDetailed } from "@simeonradivoev/gameflow-sdk/shared";
 export const Route = createFileRoute("/game/$source/$id")({
   loader: async ({ params, context }) =>
   {
-    context.queryClient.prefetchQuery(gameQuery(params.source, params.id));
+    await context.queryClient.ensureQueryData(gameQuery(params.source, params.id));
   },
   component: RouteComponent,
   errorComponent: Error,
@@ -151,7 +152,10 @@ function RouteComponent ()
   const [, setUpdate] = useState(0);
   const { ref, focusKey, focusSelf } = useFocusable({ focusKey: "game-details", preferredChildFocusKey: "main-details", forceFocus: true });
   const headerRef = useRef(null);
-  const backgroundImage = data ? new URL(`${RPC_URL(__HOST__)}${data.path_covers[0]}`) : undefined;
+  const backgroundPath = data?.path_covers[0];
+  const backgroundImage = backgroundPath
+    ? new URL(isUrl(backgroundPath) ? backgroundPath : `${RPC_URL(__HOST__)}${backgroundPath}`)
+    : undefined;
   const { data: recommendedGames } = useQuery({ ...gamesRecommendedBasedOnGameQuery(data?.id.source ?? source, data?.id.id ?? id), enabled: !!data && recommendedGamesVisible });
 
   useShortcuts(focusKey, () => [{

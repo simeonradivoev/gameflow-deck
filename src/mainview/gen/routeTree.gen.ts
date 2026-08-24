@@ -23,6 +23,7 @@ import { Route as SettingsAboutRouteImport } from './../routes/settings/about'
 import { Route as GameAddRouteImport } from './../routes/game/add'
 import { Route as StoreTabRouteRouteImport } from './../routes/store/tab/route'
 import { Route as StoreTabIndexRouteImport } from './../routes/store/tab/index'
+import { Route as WebSourceIdRouteImport } from './../routes/web.$source.$id'
 import { Route as StoreTabPluginsRouteImport } from './../routes/store/tab/plugins'
 import { Route as StoreTabGamesRouteImport } from './../routes/store/tab/games'
 import { Route as StoreTabEmulatorsRouteImport } from './../routes/store/tab/emulators'
@@ -107,6 +108,11 @@ const StoreTabIndexRoute = StoreTabIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => StoreTabRouteRoute,
+} as any)
+const WebSourceIdRoute = WebSourceIdRouteImport.update({
+  id: '/web/$source/$id',
+  path: '/web/$source/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StoreTabPluginsRoute = StoreTabPluginsRouteImport.update({
   id: '/plugins',
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
   '/store/tab/plugins': typeof StoreTabPluginsRoute
+  '/web/$source/$id': typeof WebSourceIdRoute
   '/store/tab/': typeof StoreTabIndexRoute
   '/game/update/$source/$id': typeof GameUpdateSourceIdRoute
   '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
   '/store/tab/plugins': typeof StoreTabPluginsRoute
+  '/web/$source/$id': typeof WebSourceIdRoute
   '/store/tab': typeof StoreTabIndexRoute
   '/game/update/$source/$id': typeof GameUpdateSourceIdRoute
   '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/store/tab/emulators': typeof StoreTabEmulatorsRoute
   '/store/tab/games': typeof StoreTabGamesRoute
   '/store/tab/plugins': typeof StoreTabPluginsRoute
+  '/web/$source/$id': typeof WebSourceIdRoute
   '/store/tab/': typeof StoreTabIndexRoute
   '/game/update/$source/$id': typeof GameUpdateSourceIdRoute
   '/store/details/emulator/$id': typeof StoreDetailsEmulatorIdRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/store/tab/emulators'
     | '/store/tab/games'
     | '/store/tab/plugins'
+    | '/web/$source/$id'
     | '/store/tab/'
     | '/game/update/$source/$id'
     | '/store/details/emulator/$id'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/store/tab/emulators'
     | '/store/tab/games'
     | '/store/tab/plugins'
+    | '/web/$source/$id'
     | '/store/tab'
     | '/game/update/$source/$id'
     | '/store/details/emulator/$id'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/store/tab/emulators'
     | '/store/tab/games'
     | '/store/tab/plugins'
+    | '/web/$source/$id'
     | '/store/tab/'
     | '/game/update/$source/$id'
     | '/store/details/emulator/$id'
@@ -373,6 +385,7 @@ export interface RootRouteChildren {
   GameSourceIdRoute: typeof GameSourceIdRoute
   LauncherSourceIdRoute: typeof LauncherSourceIdRoute
   PlatformSourceIdRoute: typeof PlatformSourceIdRoute
+  WebSourceIdRoute: typeof WebSourceIdRoute
   GameUpdateSourceIdRoute: typeof GameUpdateSourceIdRoute
   StoreDetailsEmulatorIdRoute: typeof StoreDetailsEmulatorIdRoute
   StoreDetailsPluginIdRoute: typeof StoreDetailsPluginIdRoute
@@ -478,6 +491,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/store/tab/'
       preLoaderRoute: typeof StoreTabIndexRouteImport
       parentRoute: typeof StoreTabRouteRoute
+    }
+    '/web/$source/$id': {
+      id: '/web/$source/$id'
+      path: '/web/$source/$id'
+      fullPath: '/web/$source/$id'
+      preLoaderRoute: typeof WebSourceIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/store/tab/plugins': {
       id: '/store/tab/plugins'
@@ -639,6 +659,7 @@ const rootRouteChildren: RootRouteChildren = {
   GameSourceIdRoute: GameSourceIdRoute,
   LauncherSourceIdRoute: LauncherSourceIdRoute,
   PlatformSourceIdRoute: PlatformSourceIdRoute,
+  WebSourceIdRoute: WebSourceIdRoute,
   GameUpdateSourceIdRoute: GameUpdateSourceIdRoute,
   StoreDetailsEmulatorIdRoute: StoreDetailsEmulatorIdRoute,
   StoreDetailsPluginIdRoute: StoreDetailsPluginIdRoute,

@@ -10,10 +10,12 @@ export function RoundButton (data: {
   style?: ButtonStyle;
   cssStyle?: CSSProperties;
   shortcutLabel?: string;
+  tooltip?: string;
+  tooltipType?: "base" | "accent" | "error" | "warning";
 } & InteractParams & FocusParams)
 {
   return (
-    <Button shortcutLabel={data.shortcutLabel} cssStyle={data.cssStyle} onFocus={data.onFocus} id={data.id} style={data.style} className={twMerge("rounded-full aspect-square", data.external && "focusable focusable-primary focusable-hover", data.className)} onAction={data.onAction}>
+    <Button shortcutLabel={data.shortcutLabel} tooltip={data.tooltip} tooltipType={data.tooltipType} cssStyle={data.cssStyle} onFocus={data.onFocus} id={data.id} style={data.style} className={twMerge("rounded-full aspect-square", data.external && "focusable focusable-primary focusable-hover", data.className)} onAction={data.onAction}>
       {data.children}
     </Button>
 

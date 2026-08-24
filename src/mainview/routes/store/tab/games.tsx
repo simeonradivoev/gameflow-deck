@@ -16,6 +16,7 @@ import z from 'zod';
 import SideFilters from '@/mainview/components/SideFilters';
 import { gameFiltersQuery } from '@/mainview/scripts/queries/romm';
 import { isUrl } from '@/shared/utils';
+import PlatformIcon from '@/mainview/components/PlatformIcon';
 
 export const Route = createFileRoute('/store/tab/games')({
   component: RouteComponent,
@@ -100,10 +101,10 @@ function RouteComponent ()
               let subtitle: string | JSX.Element | undefined = undefined;
               if (g.path_platform_cover)
               {
-                const platformUrl = new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
+                const platformUrl = isUrl(g.path_platform_cover) ? new URL(g.path_platform_cover) : new URL(`${RPC_URL(__HOST__)}${g.path_platform_cover}`);
                 platformUrl.searchParams.set('width', "64");
                 subtitle = <div className="flex gap-1 items-center">
-                  {!!g.path_platform_cover && <img className="sm:hidden md:inline size-4" src={platformUrl.href} />}
+                  <PlatformIcon className="sm:hidden md:inline size-4" slug={g.platform_slug} src={platformUrl.href} />
                   <p className="opacity-80">{g.platform_display_name}</p>
                 </div>;
               }
@@ -115,6 +116,7 @@ function RouteComponent ()
                 title: g.name ?? "",
                 subtitle,
                 previewUrls,
+                pauseAnimatedPreview: g.platform_slug === 'web',
                 badges: badges,
                 onSelect: () => handleDefaultSelect(g),
                 onFocus: (k, n, d) => handleFocus(k, n, d)
