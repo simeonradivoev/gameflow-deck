@@ -464,6 +464,17 @@ export async function createStoreLaunchWrapper (downloadPath: string, info: Pick
             '#!/usr/bin/env bash',
             'set -euo pipefail',
             'SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"',
+            '# Steam Input can expose both the Deck controller and its virtual SDL gamepad.',
+            'if [ -z "${SDL_GAMECONTROLLER_IGNORE_DEVICES:-}" ]; then',
+            '    for GAMEFLOW_INPUT_DEVICE in /sys/class/input/event*/device; do',
+            '        [ -r "$GAMEFLOW_INPUT_DEVICE/id/vendor" ] || continue',
+            '        [ -r "$GAMEFLOW_INPUT_DEVICE/id/product" ] || continue',
+            '        if [ "$(cat -- "$GAMEFLOW_INPUT_DEVICE/id/vendor")" = "28de" ] && [ "$(cat -- "$GAMEFLOW_INPUT_DEVICE/id/product")" = "11ff" ]; then',
+            '            export SDL_GAMECONTROLLER_IGNORE_DEVICES="0x28de/0x1205"',
+            '            break',
+            '        fi',
+            '    done',
+            'fi',
             workingDirectory,
             `exec "$SCRIPT_DIR"/${shellQuote(info.store_launch.executable)}${args ? ` ${args}` : ''}`
         ].join('\n');
