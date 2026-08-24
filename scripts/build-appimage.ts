@@ -35,7 +35,16 @@ await import('./install-nw-codecs');
 
 await ensureDir(path.join(APPDIR, `usr`, 'lib', 'nw'));
 await fs.cp('./bin/nw', path.join(APPDIR, `usr`, 'lib', 'nw'), { recursive: true });
-await fs.symlink(path.join(APPDIR, `usr`, 'lib', 'nw', 'nw'), path.join(APPDIR, `usr`, `bin`, 'nw'));
+const stagedNwPath = path.join(APPDIR, 'usr', 'lib', 'nw', 'nw');
+const stagedCodecPath = path.join(APPDIR, 'usr', 'lib', 'nw', 'lib', 'libffmpeg.so');
+const nwLinkPath = path.join(APPDIR, 'usr', 'bin', 'nw');
+await fs.access(stagedNwPath, fs.constants.X_OK);
+await fs.access(stagedCodecPath, fs.constants.R_OK);
+await fs.symlink('../lib/nw/nw', nwLinkPath);
+if (await fs.realpath(nwLinkPath) !== await fs.realpath(stagedNwPath))
+{
+    throw new Error('AppImage NW.js launcher symlink does not resolve to the staged runtime');
+}
 
 const templateVars = {
     APP_NAME,
