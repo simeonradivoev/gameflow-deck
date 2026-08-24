@@ -3,6 +3,7 @@ import browser from '../src/bun/browser';
 import { tmpdir } from "os";
 import path from "path";
 import { watch } from "fs";
+import fs from "node:fs/promises";
 import { sleep } from "bun";
 const events = new EventEmitter();
 const abortController = new AbortController();
@@ -10,6 +11,17 @@ let restarting = false;
 
 process.env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222";
 process.env.NODE_ENV = "development";
+if (process.platform === 'linux' && await fs.exists('./bin/nw/nw'))
+{
+    try
+    {
+        await import('./install-nw-codecs');
+    }
+    catch (error)
+    {
+        console.warn('Unable to update NW.js Linux media codecs; continuing with the existing runtime', error);
+    }
+}
 
 function spawnServer ()
 {
