@@ -11,10 +11,11 @@ import fs from "node:fs/promises";
 import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
 import EnsureStore from "@/bun/api/jobs/ensure-store";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
-import { buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, getExistingStoreEmulatorDownload, getShuffledStoreGames, getStoreGame, getValidDownloads } from "./services";
+import { applyStoreLaunchDefaults, buildFilters, buildLaunchCommand, buildSaves, convertStoreEmulatorToFrontend, convertStoreToFrontend, convertStoreToFrontendDetailed, createStoreLaunchWrapper, getExistingStoreEmulatorDownload, getModDbDownloadHeaders, getShuffledStoreGames, getStoreGame, getValidDownloads, isModDbDownloadUrl, resolveModDbDownloadUrl } from "./services";
 import { DownloadInfo, FrontEndEmulatorDetailed, FrontEndGameTypeWithIds } from "@simeonradivoev/gameflow-sdk/shared";
 import { isUrl } from "@/shared/utils";
 import { Downloader } from "@/bun/utils/downloader";
+import { isArchive } from "@/bun/utils";
 import { ensureDir, move } from "fs-extra";
 import StreamZip from "node-stream-zip";
 import { path7za } from "7zip-bin";
@@ -125,6 +126,11 @@ export default class StoreIntegration implements PluginType
             if (!localGame.version_source) return;
 
             const download = storeGame.downloads[localGame.version_source];
+            if (localGame.path_fs && download?.type === 'moddb' && download.launch)
+            {
+                await applyStoreLaunchDefaults(config.get('downloadPath'), localGame.path_fs, download.launch);
+                await createStoreLaunchWrapper(config.get('downloadPath'), { path_fs: localGame.path_fs, store_launch: download.launch });
+            }
             const saves = buildSaves(command, storeGame, download);
 
             saves?.forEach(([slot, save]) => saveFolderSlots[slot] = { cwd: save.cwd });
@@ -176,6 +182,8 @@ export default class StoreIntegration implements PluginType
         ctx.hooks.games.postInstall.tapPromise(desc.name, async ({ source, id, files, info }) =>
         {
             if (source !== 'store') return;
+            if (info.store_launch)
+                await createStoreLaunchWrapper(config.get('downloadPath'), info);
             if (files.length === 1)
             {
                 const command = await buildLaunchCommand({ gamePath: files[0], systemSlug: info.system_slug, mainGlob: info.main_glob });
@@ -294,31 +302,41 @@ export default class StoreIntegration implements PluginType
 
             const validDownloads = getValidDownloads(game, downloadId);
 
-            return validDownloads.map(validDownload =>
+            return Promise.all(validDownloads.map(async validDownload =>
             {
                 let system = validDownload.system.split(":")[0];
                 if (system === 'win32') system = 'win';
+                const installPath = path.join('roms', system, id);
+                const downloadUrl = validDownload.type === 'moddb'
+                    ? await resolveModDbDownloadUrl(validDownload.file_id)
+                    : new URL(validDownload.url);
 
                 const info: DownloadInfo = {
                     id: validDownload.id,
                     coverUrl: game.covers?.[0] ? isUrl(game.covers[0]) ? game.covers[0] : pathToFileURL(path.join(getStoreFolder(), game.covers[0])).href : "",
                     screenshotUrls: game.screenshots ?? [],
                     files: [{
-                        url: new URL(validDownload.url),
+                        url: downloadUrl,
                         file_path: `roms/${system}`,
-                        file_name: path.basename(decodeURI(validDownload.url)),
+                        file_name: validDownload.type === 'moddb' ? validDownload.file_name : path.basename(decodeURI(validDownload.url)),
                         size: 0
-                    }],
+                    }, ...(validDownload.type === 'moddb' ? (validDownload.additional_files ?? []).map(file => ({
+                        url: new URL(file.url),
+                        file_path: installPath,
+                        file_name: file.file_name,
+                        size: 0
+                    })) : [])],
                     slug: id,
                     source_id: id,
                     name: game.name,
                     summary: game.description,
                     system_slug: system,
-                    path_fs: path.join('roms', system, game.id),
+                    path_fs: installPath,
                     extract_path: '.',
                     main_glob: validDownload.main,
                     version: game.version,
                     version_system: validDownload.system,
+                    store_launch: validDownload.type === 'moddb' ? validDownload.launch : undefined,
                     version_source: validDownload.id,
                     platform: {
                         source: 'store',
@@ -329,7 +347,7 @@ export default class StoreIntegration implements PluginType
                 };
 
                 return info;
-            });
+            }));
         });
 
         ctx.hooks.downloadFiles.tapPromise(desc.name, async ({ id, files, downloadPath, abortSignal, auth, updateProgress }) =>
@@ -337,6 +355,8 @@ export default class StoreIntegration implements PluginType
             const headers: Record<string, string> = {};
             if (auth)
                 headers['Authorization'] = auth;
+            if (files.some(file => isModDbDownloadUrl(file.url)))
+                Object.assign(headers, getModDbDownloadHeaders());
             const downloader = new Downloader(id,
                 files,
                 downloadPath,
@@ -353,91 +373,86 @@ export default class StoreIntegration implements PluginType
             }
         });
 
-        ctx.hooks.postDownloadFiles.tapPromise(desc.name, async ({ files, extract_path, source, downloadPath, path_fs }) =>
+        ctx.hooks.postDownloadFiles.tapPromise(desc.name, async ({ files, extract_path, source, downloadPath, path_fs, updateProgress }) =>
         {
             if (extract_path && files && source === desc.name)
             {
+                const archives = files.filter(isArchive);
                 let progress = 0;
-                const progressDelta = 1 / files.length;
+                const progressDelta = archives.length > 0 ? 1 / archives.length : 1;
                 const extractPath = path.join(downloadPath, path_fs ?? '', extract_path);
 
-                for (const filePath of files)
+                for (const filePath of archives)
                 {
-                    await new Promise(async (resolve, reject) =>
+                    if (filePath.toLowerCase().endsWith('.zip'))
                     {
-                        let sevenZipPath = process.env.ZIP7_PATH ?? path7za;
-
-                        if (filePath.endsWith('.rar'))
+                        await ensureDir(extractPath);
+                        const zip = new StreamZip.async({ file: filePath });
+                        try
                         {
-                            let newPath: string | undefined;
-                            if (process.platform === 'win32' && await fs.exists("C:\\Program Files\\7-Zip\\7z.exe"))
+                            const entryCount = await zip.entriesCount;
+                            let extractedEntries = 0;
+                            zip.on('extract', () =>
                             {
-                                newPath = "C:\\Program Files\\7-Zip\\7z.exe";
-                            } else
-                            {
-                                newPath = which('7z') ?? undefined;
-                            }
-
-                            if (!newPath)
-                            {
-                                await fs.rm(filePath);
-                                reject(new Error("No RAR Support"));
-                                return;
-                            }
-
-                            sevenZipPath = newPath;
+                                extractedEntries++;
+                                const archiveProgress = entryCount > 0 ? extractedEntries / entryCount : 1;
+                                updateProgress({ progress: progress + archiveProgress * 100 * progressDelta });
+                            });
+                            const count = await zip.extract(null, extractPath);
+                            console.log(`Extracted ${count} entries`);
+                        } finally
+                        {
+                            await zip.close();
                         }
 
-                        let rejected = false;
-                        const seven = Seven.extractFull(filePath, extractPath, { $bin: sevenZipPath, $progress: true });
+                        await fs.rm(filePath, { force: true }).catch(error =>
+                            console.warn("Could not remove extracted archive", filePath, error));
+                        progress += progressDelta * 100;
+                        continue;
+                    }
+
+                    let sevenZipPath = process.env.ZIP7_PATH ?? path7za;
+
+                    if (filePath.endsWith('.rar'))
+                    {
+                        let newPath: string | undefined;
+                        if (process.platform === 'win32' && await fs.exists("C:\\Program Files\\7-Zip\\7z.exe"))
+                        {
+                            newPath = "C:\\Program Files\\7-Zip\\7z.exe";
+                        } else
+                        {
+                            newPath = which('7z') ?? undefined;
+                        }
+
+                        if (!newPath)
+                        {
+                            await fs.rm(filePath, { force: true });
+                            throw new Error("No RAR Support");
+                        }
+
+                        sevenZipPath = newPath;
+                    }
+
+                    await new Promise<void>((resolve, reject) =>
+                    {
+                        const seven = Seven.extractFull(filePath, extractPath, { $bin: sevenZipPath, $progress: true, $spawnOptions: { windowsHide: true, detached: false } });
                         seven.on('progress', p =>
                         {
-                            ctx.setProgress?.(progress + p.percent * progressDelta, "extract", {
+                            updateProgress({
+                                progress: progress + p.percent * progressDelta,
                                 speed: 0,
                                 total: 0,
                                 downloaded: 0
                             });
                         });
-                        seven.on('error', e =>
-                        {
-                            reject(e);
-                            rejected = true;
-                        });
-                        seven.on('end', async () =>
-                        {
-                            if (rejected) return;
-                            await fs.rm(filePath);
-                            resolve(true);
-                        });
-                    }).catch(async e =>
-                    {
-                        if (filePath.endsWith('.zip'))
-                        {
-                            ctx.setProgress?.(0, "extract", {});
-                            console.error(e);
-                            console.warn("Could not extract", filePath, "with 7zip trying zip extractor");
-                            await ensureDir(extractPath);
-                            const zip = new StreamZip.async({ file: filePath });
-                            let entryCount = await zip.entriesCount;
-                            let entryCounter = entryCount;
-                            zip.on('extract', (entry, outPath) =>
-                            {
-                                entryCounter--;
-                                ctx.setProgress?.(progress + (1 - (entryCounter / entryCount)) * 100 * progressDelta, "extract", {});
-                            });
-                            const count = await zip.extract(null, extractPath);
-                            console.log(`Extracted ${count} entries`);
-                            await zip.close();
-                            await fs.rm(filePath);
-                        } else
-                        {
-                            throw e;
-                        }
+                        seven.once('error', reject);
+                        seven.once('end', resolve);
                     });
 
+                    await fs.rm(filePath, { force: true }).catch(error =>
+                        console.warn("Could not remove extracted archive", filePath, error));
                     progress += progressDelta * 100;
                 }
-
                 // check if 1 root folder we need to get rid of
                 const contents = await fs.readdir(extractPath);
                 if (contents.length === 1)
@@ -452,6 +467,7 @@ export default class StoreIntegration implements PluginType
                     }
                 }
 
+                updateProgress({ progress: 100, speed: 0, total: 0, downloaded: 0 });
                 return [extractPath];
             }
         });

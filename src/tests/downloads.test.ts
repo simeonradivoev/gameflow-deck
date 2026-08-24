@@ -120,9 +120,18 @@ describe("Download Tests", () =>
             } satisfies DownloadInfo];
         });
 
+        const extractProgressJobs: string[] = [];
+        const stopProgress = app.taskQueue.on('progress', event =>
+        {
+            if (event.state === 'extract') extractProgressJobs.push(event.id);
+        });
+
         const res = await client.rommApi.api.romm.game({ source: 'test' })({ id: '0' }).install.post();
+        stopProgress();
         if (res.error) throw res.error;
         expect(mock).toHaveBeenCalled();
+        expect(extractProgressJobs.length).toBeGreaterThan(0);
+        expect(extractProgressJobs.every(id => id === 'install-job-test-0')).toBeTrue();
         expect(await fs.exists(path.join(app.config.get('downloadPath'), 'test/files/Unzip Test File.txt'))).toBeTrue();
         expect(res.response.ok).toBeTrue();
     });

@@ -57,6 +57,7 @@ function RouteComponent ()
                     setQueuedJobs(jobs => jobs.filter(j => j.id !== newJob.id));
                     break;
 
+                case 'completed':
                 case 'ended':
                     const endedJobId = e.data.id;
                     setActiveJobs(jobs => jobs.filter(j => j.id !== endedJobId));
@@ -82,9 +83,9 @@ function RouteComponent ()
             {activeJobs.map((job, i) => <li key={i} className='flex items-center gap-4 justify-between'>
                 <div className='flex items-center gap-4'>
                     <div className='bg-primary text-primary-content w-32 h-21 rounded-2xl overflow-hidden'>
-                        {job.data.preview_url ? <img className='object-cover' src={job.data.preview_url} /> : <Cog size={128} />}
+                        {job.data?.preview_url ? <img className='object-cover' src={job.data?.preview_url} /> : <Cog size={128} />}
                     </div>
-                    <div className='font-semibold text-2xl'>{job.data.name ?? job.id}</div>
+                    <div className='font-semibold text-2xl'>{job.data?.name ?? job.id}</div>
                 </div>
                 <div className='flex gap-2 items-center'>
                     <div className='flex flex-col'>
@@ -94,8 +95,8 @@ function RouteComponent ()
                         </div>
                         <progress className="progress progress-primary w-sm mb-2" value={job.progress} max="100"></progress>
                         <div className='flex gap-4'>
-                            {job.data.downloaded != null && job.data.total != null && <div className='flex gap-1 items-center'><Download />{prettyBytes(job.data.downloaded)}/{prettyBytes(job.data.total)}</div>}
-                            {job.data.speed != null && <div className='flex gap-1 items-center'><Gauge />{prettyBytes(job.data.speed)}/s</div>}
+                            {job.data?.downloaded != null && job.data?.total != null && <div className='flex gap-1 items-center'><Download />{prettyBytes(job.data?.downloaded)}/{prettyBytes(job.data?.total)}</div>}
+                            {job.data?.speed != null && <div className='flex gap-1 items-center'><Gauge />{prettyBytes(job.data?.speed)}/s</div>}
                         </div>
                     </div>
                     <Button style='warning' onAction={e => handleCancel(job.id)} id={`'cancel-dl-${job.id}-btn'`}>{job.status === 'aborted' ? <span className="loading loading-spinner loading-lg"></span> : <Ban />}</Button>
@@ -107,12 +108,12 @@ function RouteComponent ()
             {queuedJobs.map((job, i) => <li key={i} className='flex items-center gap-4 justify-between'>
                 <div className='flex items-center gap-4'>
                     <div className='bg-primary w-32 h-21 rounded-2xl'></div>
-                    <div className='font-semibold text-2xl'>{job.data.name ?? job.id}</div>
+                    <div className='font-semibold text-2xl'>{job.data?.name ?? job.id}</div>
                 </div>
                 <div className='flex gap-2 items-center'>
                     <div className='flex flex-col'>
                         <div className='flex gap-4'>
-                            {job.data.total !== undefined && <div className='flex gap-1 items-center'><DownloadCloud />{prettyBytes(job.data.total)}</div>}
+                            {job.data?.total !== undefined && <div className='flex gap-1 items-center'><DownloadCloud />{prettyBytes(job.data?.total)}</div>}
                         </div>
                     </div>
                     <Button style='warning' onAction={e => handleCancel(job.id)} id={`'cancel-dl-${job.id}-btn'`}>{job.status === 'aborted' ? <span className="loading loading-spinner loading-lg"></span> : <Ban />}</Button>

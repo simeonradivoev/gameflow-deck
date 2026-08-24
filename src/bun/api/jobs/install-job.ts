@@ -21,7 +21,7 @@ export class InstallJob implements IJob<DownloadJobData, InstallJobStates>
 {
     static id = "install-job" as const;
     static query = (q: { source: string; id: string; }) => `${InstallJob.id}-${q.source}-${q.id}`;
-    static dataSchema = z.never();
+    static dataSchema = z.custom<DownloadJobData>();
     public gameId: string;
     public source: string;
     public config?: JobConfig;
@@ -123,5 +123,10 @@ export class InstallJob implements IJob<DownloadJobData, InstallJobStates>
         {
             await simulateProgress(p => cx.setProgress(p, "download"), cx.abortSignal);
         }
+    }
+
+    exposeData (): DownloadJobData
+    {
+        return this.data;
     }
 }

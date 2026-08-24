@@ -500,7 +500,8 @@ export async function downloadGame (ctx: {
         source: downloadedFiles.source,
         extract_path: ctx.extract_path,
         downloadPath: config.get('downloadPath'),
-        path_fs: ctx.path_fs
+        path_fs: ctx.path_fs,
+        updateProgress: (stats) => ctx.setProgress?.(stats.progress, 'extract', stats)
     }) ?? downloadedFiles.files;
 
     return finalFiles;

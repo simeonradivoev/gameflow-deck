@@ -266,10 +266,11 @@ export function useStickyDataAttr<T extends HTMLElement, T2 extends HTMLElement,
 type ExtractField<T, TYPE, K extends string> =
   T extends { type: TYPE; } & Record<K, infer V> ? V : never;
 
-type JobResponse<JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> =
+type JobRoute = Exclude<keyof JobsAPIType['~Routes']['api']['jobs'], 'list'>;
+type JobResponse<JOB extends JobRoute> =
   JobsAPIType['~Routes']['api']['jobs'][JOB]['subscribe']['response'][200];
 
-export function useJobStatus<const JOB extends keyof JobsAPIType['~Routes']['api']['jobs']> (
+export function useJobStatus<const JOB extends JobRoute> (
   id: JOB,
   init?: {
     query?: Record<string, any>,

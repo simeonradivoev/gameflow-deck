@@ -11,7 +11,7 @@ import { shuffleInPlace } from "@/bun/utils";
 import mustache from "mustache";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import fs from "node:fs/promises";
-import { CommandEntry, EmulatorSourceEntryType, EmulatorSystem, FrontEndEmulator, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, SaveFileChange, EmulatorDownloadInfoType, StoreDownloadType, StoreGameType, EmulatorPackageType, EmulatorDownloadInfoSchema, StoreGameSchema } from "@simeonradivoev/gameflow-sdk/shared";
+import { CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSystem, FrontEndEmulator, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, SaveFileChange, EmulatorDownloadInfoType, StoreDownloadType, StoreGameType, EmulatorPackageType, EmulatorDownloadInfoSchema, StoreGameSchema } from "@simeonradivoev/gameflow-sdk/shared";
 import { isUrl } from "@/shared/utils";
 
 export async function getStoreGames (gamesManifest: any[], filter?: { limit?: number; offset?: number; })
@@ -133,11 +133,11 @@ export async function convertStoreToFrontendDetailed (id: string, storeGame: Sto
 {
     const validDownloads = getValidDownloads(storeGame);
     let size: number | null = null;
-    if (validDownloads.length > 0 && validDownloads[0].url)
+    if (validDownloads[0]?.type === 'direct')
     {
         try
         {
-            const fileResponse = await fetch(validDownloads[0]?.url, { method: 'HEAD' });
+            const fileResponse = await fetch(validDownloads[0].url, { method: 'HEAD' });
             size = Number(fileResponse.headers.get('content-length'));
         } catch (error)
         {
@@ -171,7 +171,7 @@ export async function convertStoreToFrontendDetailed (id: string, storeGame: Sto
 export function getValidDownloads (game: StoreGameType, downloadId?: string)
 {
     const downloads = Object.entries(game.downloads).map(([k, d]) => ({ id: k, ...d }));
-    const supportedDownloads = downloads.filter(d => d.type === 'direct');
+    const supportedDownloads = downloads.filter(d => d.type === 'direct' || d.type === 'moddb');
 
     if (downloadId)
     {
@@ -195,6 +195,35 @@ export function getValidDownloads (game: StoreGameType, downloadId?: string)
             return bScore - aScore;
         });
     }
+}
+
+const MODDB_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36';
+
+export async function resolveModDbDownloadUrl (fileId: number)
+{
+    const startUrl = new URL(`/downloads/start/${fileId}`, 'https://www.moddb.com');
+    const response = await fetch(startUrl, {
+        headers: getModDbDownloadHeaders()
+    });
+    if (!response.ok) throw new Error(`Could not resolve ModDB file ${fileId}: ${response.status} ${response.statusText}`);
+
+    const html = await response.text();
+    const mirrorPath = html.match(new RegExp(`(?:https://www\\.moddb\\.com)?(/downloads/mirror/${fileId}/[^"'<>\\s]+)`))?.[1];
+    if (!mirrorPath) throw new Error(`Could not find a ModDB mirror for file ${fileId}`);
+    return new URL(mirrorPath, startUrl);
+}
+
+export function isModDbDownloadUrl (url: URL)
+{
+    return url.hostname === 'www.moddb.com' && url.pathname.startsWith('/downloads/mirror/');
+}
+
+export function getModDbDownloadHeaders ()
+{
+    return {
+        'User-Agent': MODDB_USER_AGENT,
+        'Referer': 'https://www.moddb.com/'
+    };
 }
 
 export async function getShuffledStoreGames ()
@@ -321,6 +350,132 @@ export async function getExistingStoreEmulatorDownload (emulator: EmulatorPackag
     return undefined;
 }
 
+function resolveInstallPath (root: string, relativePath: string)
+{
+    if (path.isAbsolute(relativePath)) throw new Error(`Store launch path must be relative: ${relativePath}`);
+    const resolved = path.resolve(root, relativePath);
+    if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`))
+        throw new Error(`Store launch path escapes the install directory: ${relativePath}`);
+    return resolved;
+}
+
+function shellQuote (value: string)
+{
+    if (value.includes("'")) throw new Error(`Store launch values cannot contain single quotes: ${value}`);
+    return `'${value}'`;
+}
+
+function commandPath (value: string)
+{
+    if (/[\r\n"%]/.test(value)) throw new Error(`Store launch values contain unsupported command characters: ${value}`);
+    return value;
+}
+
+function commandQuote (value: string)
+{
+    return `"${commandPath(value)}"`;
+}
+
+export async function applyStoreLaunchDefaults (downloadPath: string, gamePath: string, launch: NonNullable<DownloadInfo['store_launch']>)
+{
+    const joystickIndex = launch.args.indexOf('+use_joystick');
+    const joystickValue = launch.args[joystickIndex + 1]?.toLowerCase();
+    if (joystickIndex < 0 || (joystickValue !== 'true' && joystickValue !== '1')) return;
+
+    const configIndex = launch.args.indexOf('-config');
+    const configArgument = launch.args[configIndex + 1];
+    if (configIndex < 0 || !configArgument) return;
+
+    const installRoot = path.resolve(downloadPath, gamePath);
+    const configPath = resolveInstallPath(installRoot, path.join(launch.cwd ?? '', configArgument));
+    if (!await fs.exists(configPath)) return;
+
+    const config = await fs.readFile(configPath, 'utf8');
+    let updatedConfig = config.replace(/^use_joystick[ \t]*=[ \t]*false[ \t]*(\r?)$/mi, 'use_joystick=true$1');
+    if (launch.bindings)
+    {
+        const newline = updatedConfig.includes('\r\n') ? '\r\n' : '\n';
+        const lines = updatedConfig.split(/\r?\n/);
+        const sectionStart = lines.findIndex(line => line.trim().toLowerCase() === '[doom.bindings]');
+        if (sectionStart >= 0)
+        {
+            let sectionEnd = lines.findIndex((line, index) => index > sectionStart && /^\s*\[[^\]]+\]\s*$/.test(line));
+            if (sectionEnd < 0) sectionEnd = lines.length;
+
+            for (const [button, action] of Object.entries(launch.bindings))
+            {
+                const normalizedButton = button.toLowerCase();
+                const bindingIndex = lines.findIndex((line, index) =>
+                {
+                    if (index <= sectionStart || index >= sectionEnd) return false;
+                    const separator = line.indexOf('=');
+                    return separator >= 0 && line.slice(0, separator).trim().toLowerCase() === normalizedButton;
+                });
+                if (bindingIndex < 0)
+                {
+                    lines.splice(sectionEnd, 0, `${button}=${action}`);
+                    sectionEnd++;
+                } else
+                {
+                    const separator = lines[bindingIndex].indexOf('=');
+                    if (!lines[bindingIndex].slice(separator + 1).trim())
+                        lines[bindingIndex] = `${button}=${action}`;
+                }
+            }
+            updatedConfig = lines.join(newline);
+        }
+    }
+    if (updatedConfig !== config)
+        await fs.writeFile(configPath, updatedConfig);
+}
+
+export async function createStoreLaunchWrapper (downloadPath: string, info: Pick<DownloadInfo, 'path_fs' | 'store_launch'>)
+{
+    if (!info.store_launch || !info.path_fs) return;
+
+    const installRoot = path.resolve(downloadPath, info.path_fs);
+    const wrapperPath = resolveInstallPath(installRoot, info.store_launch.wrapper);
+    const executablePath = resolveInstallPath(installRoot, info.store_launch.executable);
+    if (info.store_launch.cwd) resolveInstallPath(installRoot, info.store_launch.cwd);
+
+    const extension = path.extname(info.store_launch.wrapper).toLowerCase();
+    let script: string;
+    if (extension === '.cmd' || extension === '.bat')
+    {
+        const executable = commandPath(info.store_launch.executable);
+        const workingDirectory = info.store_launch.cwd
+            ? `cd /d "%~dp0${commandPath(info.store_launch.cwd)}"`
+            : 'cd /d "%~dp0"';
+        const args = info.store_launch.args.map(commandQuote).join(' ');
+        script = [
+            '@echo off',
+            'setlocal',
+            workingDirectory,
+            `"%~dp0${executable}"${args ? ` ${args}` : ''}`,
+            'exit /b %errorlevel%'
+        ].join('\r\n');
+    } else if (extension === '.sh')
+    {
+        const workingDirectory = info.store_launch.cwd
+            ? `cd -- "$SCRIPT_DIR"/${shellQuote(info.store_launch.cwd)}`
+            : 'cd -- "$SCRIPT_DIR"';
+        const args = info.store_launch.args.map(shellQuote).join(' ');
+        script = [
+            '#!/usr/bin/env bash',
+            'set -euo pipefail',
+            'SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"',
+            workingDirectory,
+            `exec "$SCRIPT_DIR"/${shellQuote(info.store_launch.executable)}${args ? ` ${args}` : ''}`
+        ].join('\n');
+    } else
+    {
+        throw new Error(`Unsupported store launch wrapper: ${info.store_launch.wrapper}`);
+    }
+
+    await fs.writeFile(wrapperPath, `${script}${extension === '.sh' ? '\n' : '\r\n'}`);
+    if (extension === '.sh')
+        await Promise.all([fs.chmod(wrapperPath, 0o755), fs.chmod(executablePath, 0o755)]);
+}
 export async function buildLaunchCommand (ctx: { gamePath: string; systemSlug: string; mainGlob?: string | null; }): Promise<CommandEntry | undefined>
 {
     if (ctx.systemSlug !== 'win' && ctx.systemSlug !== 'linux' && ctx.systemSlug !== 'mac') return;
@@ -337,9 +492,14 @@ export async function buildLaunchCommand (ctx: { gamePath: string; systemSlug: s
         const fileGlob = new Glob(mainGlob);
         for await (const file of fileGlob.scan({ cwd: path.join(downloadPath, ctx.gamePath) }))
         {
+            const extension = path.extname(file).toLowerCase();
+            const isWindowsScript = process.platform === 'win32' && (extension === '.bat' || extension === '.cmd');
+            const executable = process.platform === 'linux'
+                ? path.join(downloadPath, ctx.gamePath, file)
+                : `./${path.basename(file)}`;
             return {
                 startDir: path.join(downloadPath, ctx.gamePath, path.dirname(file)),
-                command: [`./${path.basename(file)}`],
+                command: isWindowsScript ? ['cmd.exe', '/d', '/s', '/c', 'call', path.basename(file)] : [executable],
                 id: `store-${process.platform}`,
                 shell: false,
                 valid: true,

@@ -81,6 +81,26 @@ export const StoreDownloadSchema = z.discriminatedUnion('type', [
         name: z.string().optional(),
         system: z.string(),
         saves: z.record(z.string(), StoreGameSaveSchema).optional()
+    }),
+    z.object({
+        type: z.literal('moddb'),
+        file_id: z.number().int().positive(),
+        file_name: z.string(),
+        name: z.string().optional(),
+        system: z.string(),
+        main: z.string().optional(),
+        saves: z.record(z.string(), StoreGameSaveSchema).optional(),
+        additional_files: z.array(z.object({
+            url: z.url(),
+            file_name: z.string()
+        })).optional(),
+        launch: z.object({
+            wrapper: z.string(),
+            executable: z.string(),
+            cwd: z.string().optional(),
+            args: z.array(z.string()),
+            bindings: z.record(z.string(), z.string()).optional()
+        }).optional()
     })
 ]);
 export const NewGameSchema = z.object({
@@ -562,6 +582,13 @@ export interface DownloadInfo
     version?: string;
     version_source?: string;
     version_system?: string;
+    store_launch?: {
+        wrapper: string;
+        executable: string;
+        cwd?: string;
+        args: string[];
+        bindings?: Record<string, string>;
+    };
 }
 
 export interface DownloadPlatform

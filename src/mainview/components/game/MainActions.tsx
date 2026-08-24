@@ -89,16 +89,14 @@ export default function MainActions (data: {
             if (e.data.status === 'refresh')
             {
                 const localId = e.data.localId;
-                queryClient.refetchQueries(gameInvalidationQuery(localId ? 'local' : data.source, localId ? String(localId) : data.id)).then(() =>
+                void queryClient.invalidateQueries(gameInvalidationQuery(localId ? 'local' : data.source, localId ? String(localId) : data.id));
+                if (localId)
                 {
-                    if (localId)
-                    {
-                        router.navigate({ to: '/game/$source/$id', params: { id: String(localId), source: 'local' }, replace: true });
-                    } else
-                    {
-                        router.navigate({ to: '/game/$source/$id', params: { id: data.id, source: data.source }, replace: true });
-                    }
-                });
+                    void router.navigate({ to: '/game/$source/$id', params: { id: String(localId), source: 'local' }, replace: true });
+                } else
+                {
+                    void router.navigate({ to: '/game/$source/$id', params: { id: data.id, source: data.source }, replace: true });
+                }
             } else if (e.data.status === 'error')
             {
                 const errorMessage = getErrorMessage(e.data.error);

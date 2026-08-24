@@ -313,7 +313,6 @@ export default function buildStatusResponse ()
         },
         async open (ws)
         {
-            sendLatests().catch(e => ws.send({ status: 'error', error: JSON.stringify(e) }));
             const installJobId = InstallJob.query({ source: ws.data.params.source, id: ws.data.params.id });
 
             async function sendLatests ()
@@ -322,6 +321,12 @@ export default function buildStatusResponse ()
                 const activeTask = taskQueue.findJob(InstallJob.query({ source: ws.data.params.source, id: ws.data.params.id }), InstallJob);
                 if (activeTask)
                 {
+                    if (activeTask.status === 'completed')
+                    {
+                        ws.send({ status: 'refresh', localId: (activeTask.job as InstallJob).localGameId });
+                        return;
+                    }
+
                     if (activeTask.status === 'queued')
                     {
                         ws.send({ status: 'queued' });
@@ -438,12 +443,16 @@ export default function buildStatusResponse ()
                     ws.send({ status: 'queued' });
                 }
             }));
-            dispose.push(taskQueue.on('ended', (data) =>
+            dispose.push(taskQueue.on('completed', (data) =>
             {
                 if (data.id === installJobId)
                 {
                     ws.send({ status: 'refresh', localId: (data.job.job as InstallJob).localGameId });
-                } else if (data.job.job instanceof LaunchGameJob)
+                }
+            }));
+            dispose.push(taskQueue.on('ended', (data) =>
+            {
+                if (data.job.job instanceof LaunchGameJob)
                 {
                     handleActiveExit({});
                 }
@@ -461,6 +470,8 @@ export default function buildStatusResponse ()
                     handleActiveExit({ error: data.error });
                 }
             }));
+
+            sendLatests().catch(e => ws.send({ status: 'error', error: JSON.stringify(e) }));
 
             (ws.data as any).cleanup = () =>
             {

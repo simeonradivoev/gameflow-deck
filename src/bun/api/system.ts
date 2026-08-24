@@ -91,12 +91,6 @@ export const system = new Elysia({ prefix: '/api/system' })
         ]),
         async open (ws)
         {
-            const existingLoading = taskQueue.findJob(ReloadPluginsJob.id, ReloadPluginsJob);
-            if (existingLoading) ws.send({ type: 'loading', progress: existingLoading.progress, state: existingLoading.state });
-            else ws.send({ type: 'loaded' });
-
-            ws.send({ type: 'activeTask', progress: taskQueue.getActiveJobs()[0]?.progress });
-
             const startInfo = async () =>
             {
                 const battery = await si.battery();
@@ -141,7 +135,7 @@ export const system = new Elysia({ prefix: '/api/system' })
             }));
             dispose.push(taskQueue.on('ended', e =>
             {
-                ws.send({ type: 'activeTask', progress: null });
+                ws.send({ type: 'activeTask', progress: taskQueue.getActiveJobs()[0]?.progress ?? null });
                 if (e.id !== ReloadPluginsJob.id && e.id !== SelfUpdateJob.id) return;
                 ws.send({ type: "loaded" });
             }));
@@ -150,6 +144,12 @@ export const system = new Elysia({ prefix: '/api/system' })
             {
                 events.removeListener('focus', handleFocus);
             }];
+
+            const existingLoading = taskQueue.findJob(ReloadPluginsJob.id, ReloadPluginsJob);
+            if (existingLoading) ws.send({ type: 'loading', progress: existingLoading.progress, state: existingLoading.state });
+            else ws.send({ type: 'loaded' });
+
+            ws.send({ type: 'activeTask', progress: taskQueue.getActiveJobs()[0]?.progress ?? null });
             (ws.data as any).observer = setInterval(async () =>
             {
                 const battery = await si.battery();

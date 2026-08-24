@@ -376,6 +376,8 @@ export class JobContext<T extends IJob<TData, TState>, TData, TState extends str
      */
     public setProgress (progress: number, state?: TState)
     {
+        // A retained job context must not resurrect UI for a job that already ended.
+        if (this.completed || this.aborted || this.error) return;
         this.m_progress = progress;
         if (state)
             this.m_state = state;

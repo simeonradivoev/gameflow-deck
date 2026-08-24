@@ -111,7 +111,7 @@ export const jobs = new Elysia({ prefix: '/api/jobs' })
             z.object({ type: z.literal("progress"), job: z.custom<FrontEndJob>() }),
             z.object({ type: z.literal("queued"), job: z.custom<FrontEndJob>() }),
             z.object({ type: z.literal("aborted"), id: z.string() }),
-            z.object({ type: z.literal("ended"), id: z.string() }),
+            z.object({ type: z.literal(["completed", "ended"]), id: z.string() }),
         ]),
         body: z.discriminatedUnion('type', [
             z.object({ type: z.literal("cancel"), id: z.string() })
@@ -127,6 +127,30 @@ export const jobs = new Elysia({ prefix: '/api/jobs' })
         },
         open (ws)
         {
+            (ws.data as any).dispose = [taskQueue.on('started', (e: BaseEvent) =>
+            {
+                ws.send({ type: "started", job: { id: e.id, data: e.job.job.exposeData?.(), progress: e.job.progress, state: e.job.state, status: e.job.status } });
+            }),
+            taskQueue.on('progress', (e: BaseEvent) =>
+            {
+                ws.send({ type: "progress", job: { id: e.id, data: e.job.job.exposeData?.(), progress: e.job.progress, state: e.job.state, status: e.job.status } });
+            }),
+            taskQueue.on('queued', (e: BaseEvent) =>
+            {
+                ws.send({ type: "queued", job: { id: e.id, data: e.job.job.exposeData?.(), progress: e.job.progress, state: e.job.state, status: e.job.status } });
+            }),
+            taskQueue.on('abort', (e: BaseEvent) =>
+            {
+                ws.send({ type: "aborted", id: e.id });
+            }),
+            taskQueue.on('completed', (e: BaseEvent) =>
+            {
+                ws.send({ type: "completed", id: e.id });
+            }),
+            taskQueue.on('ended', (e: BaseEvent) =>
+            {
+                ws.send({ type: "ended", id: e.id });
+            })];
             ws.send({
                 type: 'allJobs',
                 active: taskQueue.getActiveJobs().map(j =>
@@ -155,26 +179,6 @@ export const jobs = new Elysia({ prefix: '/api/jobs' })
                 }) ?? []
             });
 
-            (ws.data as any).dispose = [taskQueue.on('started', (e: BaseEvent) =>
-            {
-                ws.send({ type: "started", job: { id: e.id, data: e.job.job.exposeData?.(), progress: e.job.progress, state: e.job.state, status: e.job.status } });
-            }),
-            taskQueue.on('progress', (e: BaseEvent) =>
-            {
-                ws.send({ type: "progress", job: { id: e.id, data: e.job.job.exposeData?.(), progress: e.job.progress, state: e.job.state, status: e.job.status } });
-            }),
-            taskQueue.on('queued', (e: BaseEvent) =>
-            {
-                ws.send({ type: "queued", job: { id: e.id, data: e.job.job.exposeData?.(), progress: e.job.progress, state: e.job.state, status: e.job.status } });
-            }),
-            taskQueue.on('abort', (e: BaseEvent) =>
-            {
-                ws.send({ type: "aborted", id: e.id });
-            }),
-            taskQueue.on('ended', (e: BaseEvent) =>
-            {
-                ws.send({ type: "ended", id: e.id });
-            })];
         },
         close (ws, code, reason)
         {

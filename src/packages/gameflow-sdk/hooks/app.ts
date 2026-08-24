@@ -45,5 +45,7 @@ export class GameflowHooks
         extract_path?: string;
         /** This is the parent path for the extracted files. */
         path_fs?: string;
+        /** Call it to update post-download processing progress in the UI. */
+        updateProgress: (stats: Pick<ProgressStats, 'progress'> & Partial<Omit<ProgressStats, 'progress'>>) => void;
     }], string[] | undefined>(['ctx']);
 }
