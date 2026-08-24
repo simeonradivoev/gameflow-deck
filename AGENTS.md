@@ -151,6 +151,8 @@ The default entry is `src/index.ts` and the default output directory is `dist`. 
 
 Use `prepublishOnly: "bun run build"` and inspect the npm/Bun pack contents before publishing. Confirm that `package.json` and the exact `main` file are included, then install the packed artifact through the same managed-store flow used by the UI. Test SDK incompatibility, disable/enable, reload, update, uninstall, and application shutdown in addition to the plugin's domain behavior.
 
+Do not define a package script named `publish` that invokes `bun publish`: `publish` is itself a package lifecycle hook and recursively invokes the command. Set `publishConfig.access` to `public`, use a non-lifecycle script such as `release` when a wrapper is useful, and verify the package with `bun publish --dry-run` before uploading. Do not hand-edit invalid generated lockfiles; regenerate them package-locally or omit them from a publishable external-plugin repository when the host SDK peer graph cannot produce a valid lock with the current Bun version.
+
 Direct `tsc --noEmit` in an external plugin may also type-check the SDK's TypeScript sources and currently surface SDK-internal errors. Do not mistake those for plugin-local failures; still report them, and verify the bundle and packaged artifact separately.
 
 ## Generated and vendored files
