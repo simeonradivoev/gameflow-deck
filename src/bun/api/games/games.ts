@@ -465,12 +465,28 @@ export default new Elysia()
     .use(buildStatusResponse())
     .delete('/game/:source/:id', async ({ params: { source, id } }) =>
     {
-        const deleted = await db.delete(schema.games).where(getLocalGameMatch(id, source)).returning({ path_fs: schema.games.path_fs });
+        const installedGames = await db.select({
+            source: schema.games.source,
+            sourceId: schema.games.source_id,
+            pathFs: schema.games.path_fs
+        }).from(schema.games).where(getLocalGameMatch(id, source));
         const downloadPath = config.get('downloadPath');
-        await Promise.all(deleted.filter(d => !!d.path_fs).map(async d =>
+        for (const game of installedGames)
         {
-            await fs.rm(path.join(downloadPath, d.path_fs!), { recursive: true, force: true });
+            if (!game.source || !game.sourceId) continue;
+            await plugins.hooks.games.performUninstall.promise({
+                source: game.source,
+                id: game.sourceId,
+                gamePath: game.pathFs,
+                downloadPath
+            });
+        }
+        // Preserve the local record if file removal fails so uninstall can be retried.
+        await Promise.all(installedGames.filter(game => !!game.pathFs).map(async game =>
+        {
+            await fs.rm(path.join(downloadPath, game.pathFs!), { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
         }));
+        const deleted = await db.delete(schema.games).where(getLocalGameMatch(id, source)).returning({ path_fs: schema.games.path_fs });
 
         return status(deleted.length > 0 ? 'OK' : 'Not Modified');
     }, {

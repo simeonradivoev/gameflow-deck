@@ -1,5 +1,5 @@
 
-import { EmulatorPackageType, GameListFilterType, CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSlots, DownloadLookupEntry, DownloadLookupDetails, DownloadsLookupFilterValues, DownloadsLookupFilter } from '../shared';
+import { EmulatorPackageType, GameListFilterType, CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSlots, DownloadLookupEntry, DownloadLookupDetails, DownloadsLookupFilterValues, DownloadsLookupFilter, ProgressStats } from '../shared';
 import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfallHook } from 'tapable';
 
 export default class GameHooks
@@ -72,6 +72,37 @@ export default class GameHooks
         /** If there are multiple downloads, use the one with same ID */
         downloadId?: string;
     }], DownloadInfo[] | undefined>(['ctx']);
+    /**
+     * Let a source own its installation lifecycle instead of using Gameflow's
+     * generic HTTP downloader and archive extractor.
+     *
+     * The returned info is persisted after installation. This allows installers
+     * such as butler to report a final directory or executable selected while
+     * installing rather than guessing it before the operation starts.
+     */
+    performInstall = new AsyncSeriesBailHook<[ctx: {
+        source: string;
+        id: string;
+        downloadId?: string;
+        info: DownloadInfo;
+        downloadPath: string;
+        abortSignal: AbortSignal;
+        updateProgress: (
+            progress: number,
+            state: 'download' | 'extract',
+            info?: Partial<Omit<ProgressStats, 'progress'>>
+        ) => void;
+    }], { info: DownloadInfo; files: string[]; } | undefined>(['ctx']);
+    /**
+     * Let a source remove installation state it owns before Gameflow deletes
+     * the local database record. Return true when the source handled files.
+     */
+    performUninstall = new AsyncSeriesBailHook<[ctx: {
+        source: string;
+        id: string;
+        gamePath: string | null;
+        downloadPath: string;
+    }], boolean | undefined>(['ctx']);
     /** Get the paths to rom files. This is mainly used for emulator js. */
     fetchRomFiles = new AsyncSeriesBailHook<[ctx: {
         source: string;

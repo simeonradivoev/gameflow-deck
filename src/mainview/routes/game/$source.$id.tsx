@@ -101,6 +101,19 @@ function Stats (data: { game: FrontEndGameTypeDetailed | undefined; })
   {
     if (data.game.path_fs)
       stats.push({ label: "Location", content: data.game.path_fs, icon: <Folder /> });
+    const saveLocations = Object.entries(data.game.save_locations ?? {});
+    stats.push({
+      label: "Save locations",
+      icon: <Folder />,
+      content: saveLocations.length ? <div className="min-w-0 space-y-2">
+        {saveLocations.map(([slot, location]) => <div key={slot} className="min-w-0">
+          <div className="text-xs opacity-70">{slot}</div>
+          <div className="select-text break-all">{location.cwd}</div>
+        </div>)}
+      </div> : data.game.platform_slug === 'web'
+        ? "Managed by the game's browser storage; no standalone save folder is reported."
+        : "No save location reported. Launch the game with a save-enabled integration to discover its folders."
+    });
     if (data.game.metadata.companies)
       stats.push({ label: "Companies", content: data.game.metadata.companies });
     if (data.game.metadata.genres)

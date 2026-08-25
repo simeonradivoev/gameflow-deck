@@ -1,4 +1,5 @@
 import { AutoFocus } from '@/mainview/components/AutoFocus';
+import { ContextDialog } from '@/mainview/components/ContextDialog';
 import DotsLoading from '@/mainview/components/backgrounds/dots';
 import { Button } from '@/mainview/components/options/Button';
 import { OptionDropdown } from '@/mainview/components/options/OptionDropdown';
@@ -9,13 +10,16 @@ import { allPluginsFilter, getPluginDetailsQuery, updatePluginMutation } from '@
 import { getPluginActionsQuery, getPluginSettingQuery, getPluginSettingsDefinitionQuery, pluginActionMutation, setPluginSettingMutation } from '@/mainview/scripts/queries/settings';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { scrollIntoViewHandler } from '@/mainview/scripts/utils';
-import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import { FocusContext, setFocus, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
+import type { PluginActionType } from '@simeonradivoev/gameflow-sdk';
 import { PluginUpdateCheck } from '@simeonradivoev/gameflow-sdk/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { JSONSchema7 } from 'json-schema';
 import { ArrowLeft, ArrowRight, CircleFadingArrowUp, CirclePlay, Settings2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from 'react-error-boundary';
+import { useState } from 'react';
 export const Route = createFileRoute('/settings/plugin/$source')({
     component: RouteComponent,
     pendingComponent: Loading,
@@ -38,34 +42,127 @@ function Loading ()
     </>;
 }
 
-function PluginAction (data: { id: string, title: string | undefined, description: string | undefined; action: string; reload: () => void; })
+function PluginAction (data: PluginActionType & { reload: () => void; })
 {
     const { source: sourceRaw } = Route.useParams();
     const source = decodeURIComponent(sourceRaw);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const queryClient = useQueryClient();
+    const actionButtonId = `plugin-action-${data.id}-button`;
+    const [values, setValues] = useState<Record<string, string>>({});
+    const clearValues = () => setValues({});
+    const closeDialog = () =>
+    {
+        const restoreFocus = dialogOpen;
+        setDialogOpen(false);
+        clearValues();
+        if (restoreFocus)
+        {
+            requestAnimationFrame(() => setFocus(actionButtonId, { instant: true }));
+        }
+    };
     const action = useMutation({
         ...pluginActionMutation(source, data.id),
-        onSuccess (acitonData, variables, onMutateResult, context)
+        onSuccess (actionData)
         {
-            if (acitonData.data?.openTab)
+            if (actionData.data?.openTab)
             {
-                window.open(acitonData.data?.openTab, "_blank");
-            } else if (acitonData.data?.reload)
+                const url = new URL(actionData.data.openTab);
+                if (url.protocol === 'http:' || url.protocol === 'https:')
+                {
+                    window.open(url.href, "_blank", "noopener,noreferrer");
+                } else
+                {
+                    toast.error("Plugin returned an unsafe URL");
+                }
+            }
+            if (actionData.data?.reload)
             {
                 data.reload();
             }
-
+        },
+        onError (error)
+        {
+            toast.error(getErrorMessage(error) ?? "Plugin action failed");
+        },
+        async onSettled ()
+        {
+            closeDialog();
+            action.reset();
+            await queryClient.invalidateQueries({ queryKey: ['plugin', source, 'actions'] });
         },
     });
 
-    return <OptionSpace
-        id={`${data.id}-option`}
-        label={
-            <div className='flex flex-col'>
-                <div>{data.title ?? data.id}</div>
-                <div className='text-sm text-base-content/40 text-wrap'>{data.description}</div>
-            </div>}>
-        <Button id={`${data.id}-btn`} onAction={e => action.mutate()} >{action.isPending && <span className="loading loading-spinner loading-lg"></span>}{data.action}</Button>
-    </OptionSpace>;
+    const runAction = () =>
+    {
+        if (data.fields?.length)
+        {
+            setDialogOpen(true);
+        } else
+        {
+            action.mutate({});
+        }
+    };
+
+    const requiredMissing = data.fields?.some(field =>
+        field.required
+        && (!Object.hasOwn(values, field.id) || !values[field.id])
+    );
+
+    return <>
+        <OptionSpace
+            id={`${data.id}-option`}
+            label={
+                <div className='flex flex-col'>
+                    <div>{data.title ?? data.id}</div>
+                    <div className='text-sm text-base-content/40 text-wrap'>{data.description}</div>
+                    {!!data.status && <div className='badge badge-info mt-1'>{data.status}</div>}
+                </div>}>
+            <Button id={actionButtonId} disabled={action.isPending} onAction={runAction}>
+                {action.isPending && <span className="loading loading-spinner loading-lg"></span>}{data.action}
+            </Button>
+        </OptionSpace>
+        <ContextDialog
+            id={`plugin-action-${data.id}`}
+            open={dialogOpen}
+            close={closeDialog}
+            preferredChildFocusKey={`plugin-action-${data.id}-${data.fields?.[0]?.id}`}
+            className='flex flex-col gap-3'
+        >
+            <h2 className='text-xl font-semibold'>{data.title ?? data.action}</h2>
+            {data.fields?.map(field => <OptionSpace
+                key={field.id}
+                id={`plugin-action-${data.id}-${field.id}-option`}
+                className='list-none'
+                label={<div className='flex flex-col gap-1'>
+                    <span>{field.label ?? field.id}</span>
+                    {!!field.description && <small className='text-base-content/60'>{field.description}</small>}
+                </div>}>
+                <OptionInput
+                    name={`plugin-action-${data.id}-${field.id}`}
+                    type={field.type}
+                    value={Object.hasOwn(values, field.id) ? values[field.id] : ''}
+                    autocomplete={field.type === 'password' ? 'new-password' : undefined}
+                    placeholder={field.placeholder}
+                    onChange={value => setValues(current => ({
+                        ...current,
+                        [field.id]: String(value).slice(0, field.maxLength)
+                    }))}
+                />
+            </OptionSpace>)}
+            <div className='flex justify-end gap-2'>
+                <Button id={`plugin-action-${data.id}-cancel`} onAction={closeDialog}>Cancel</Button>
+                <Button
+                    id={`plugin-action-${data.id}-submit`}
+                    style='primary'
+                    disabled={action.isPending || requiredMissing}
+                    onAction={() => action.mutate(values)}
+                >
+                    {action.isPending && <span className='loading loading-spinner loading-sm'></span>}{data.action}
+                </Button>
+            </div>
+        </ContextDialog>
+    </>;
 }
 
 function PluginOption (data: { name: string, title?: string, prop: JSONSchema7; })
@@ -114,9 +211,10 @@ function PluginOption (data: { name: string, title?: string, prop: JSONSchema7; 
 
 function Settings (data: { update: PluginUpdateCheck | undefined; })
 {
-    const { definitions, actions } = Route.useLoaderData();
+    const { definitions, actions: initialActions } = Route.useLoaderData();
     const { source: sourceRaw } = Route.useParams();
     const source = decodeURIComponent(sourceRaw);
+    const { data: actions = initialActions } = useQuery(getPluginActionsQuery(source));
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const update = useMutation({
@@ -170,7 +268,7 @@ function Settings (data: { update: PluginUpdateCheck | undefined; })
                     </div>}>
                 <Button style='warning' id='update-plugin-btn' onAction={e => update.mutate()} >{update.isPending ? <span className="loading loading-spinner loading-lg"></span> : <CircleFadingArrowUp />}Update</Button>
             </OptionSpace>}
-            {actions?.map(a => <PluginAction key={a.id} id={a.id} title={a.title} description={a.description} action={a.action} reload={handleReload} />)}
+            {actions?.map(action => <PluginAction key={action.id} {...action} reload={handleReload} />)}
         </FocusContext>
     </div>;
 }

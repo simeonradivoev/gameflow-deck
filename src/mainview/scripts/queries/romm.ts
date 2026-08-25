@@ -96,7 +96,12 @@ export const rommHostnameQuery = queryOptions({ queryKey: ['romm', 'auth', 'host
 export const rommUsernameQuery = queryOptions({ queryKey: ['romm', 'auth', 'username'], queryFn: () => settingsApi.api.settings({ source: 'local' })({ id: 'rommUser' }).get().then(d => d.data?.value as string) });
 export const deleteGameMutation = (id: FrontEndId) => mutationOptions({
     mutationKey: ['delete', id],
-    mutationFn: () => rommApi.api.romm.game({ source: encodeURIComponent(id.source) })({ id: encodeURIComponent(id.id) }).delete()
+    mutationFn: async () =>
+    {
+        const { data, error } = await rommApi.api.romm.game({ source: encodeURIComponent(id.source) })({ id: encodeURIComponent(id.id) }).delete();
+        if (error) throw error;
+        return data;
+    }
 });
 export const getCollectionsQuery = queryOptions({
     queryKey: ['collections', 'all'],

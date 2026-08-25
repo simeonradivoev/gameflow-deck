@@ -26,6 +26,7 @@ export async function getLocalGame (source: string, id: string)
 {
     const localGame = await db.query.games.findFirst({
         columns: {
+            metadata: true,
             id: true,
             path_fs: true,
             source: true,
@@ -89,6 +90,7 @@ export async function customUpdate (source: string, id: string, destination: str
         await tx.update(appSchema.games).set({
             cover,
             metadata: {
+                save_locations: localGame.metadata.save_locations,
                 age_ratings: match.age_ratings,
                 genres: match.genres,
                 player_count: match.player_count ?? undefined,
@@ -147,6 +149,7 @@ export async function update (source: string, id: string)
 
         await tx.update(appSchema.games).set({
             metadata: {
+                save_locations: localGame.metadata.save_locations,
                 age_ratings: sourceGame.metadata.age_ratings,
                 genres: sourceGame.metadata.genres,
                 player_count: sourceGame.metadata.player_count ?? undefined,
@@ -179,6 +182,7 @@ export async function fixSource (source: string, id: string)
                 source: foundGame.id.source,
                 source_id: foundGame.id.id,
                 metadata: {
+                    save_locations: valid.localGame.metadata.save_locations,
                     age_ratings: foundGame.metadata.age_ratings,
                     genres: foundGame.metadata.genres,
                     player_count: foundGame.metadata.player_count ?? undefined,
@@ -201,7 +205,7 @@ export async function fixSource (source: string, id: string)
 
 export async function validateGameSource (source: string, id: string): Promise<{
     valid: boolean,
-    localGame?: { id: number; igdb_id: number | null; ra_id: number | null; source: string | null; },
+    localGame?: Awaited<ReturnType<typeof getLocalGame>>,
     reason?: string;
 }>
 {
@@ -361,7 +365,7 @@ export default function buildStatusResponse ()
                     } else if (!localGame && ws.data.params.source === 'store')
                     {
                         const downloads = await plugins.hooks.games.fetchDownloads.promise({ source: ws.data.params.source, id: ws.data.params.id });
-                        const sources = downloads?.map(d => ({ id: d.id, name: d.id })) ?? [];
+                        const sources = downloads?.map(d => ({ id: d.id, name: d.metadata?.itchUpload?.name ?? d.name ?? d.id })) ?? [];
                         /*const storeGame = await getStoreGame(ws.data.params.id);
                         const fileResponse = await fetch(storeGame.file, { method: 'HEAD' });
                         const size = Number(fileResponse.headers.get('content-length'));
@@ -382,7 +386,7 @@ export default function buildStatusResponse ()
                             source: ws.data.params.source,
                             id: ws.data.params.id
                         });
-                        const sources = files?.map(d => ({ id: d.id, name: d.id })) ?? [];
+                        const sources = files?.map(d => ({ id: d.id, name: d.metadata?.itchUpload?.name ?? d.name ?? d.id })) ?? [];
 
                         let filesChecked: LocalDownloadFileEntry[] | undefined;
 
@@ -391,7 +395,7 @@ export default function buildStatusResponse ()
                             filesChecked = await checkFiles(files[0].files, !!files[0].extract_path);
                         }
 
-                        if (filesChecked && !filesChecked.some(f => f.exists === false || f.matches === false))
+                        if (filesChecked && filesChecked.length > 0 && !filesChecked.some(f => f.exists === false || f.matches === false))
                         {
                             ws.send({ status: 'present', details: "Files Exist On Disk, Import" });
                         } else
@@ -424,7 +428,7 @@ export default function buildStatusResponse ()
                 {
                     ws.send({
                         status: 'error',
-                        error: data.error
+                        error: getErrorMessage(data.error)
                     });
                 }
                 await sendLatests();
@@ -471,7 +475,7 @@ export default function buildStatusResponse ()
                 }
             }));
 
-            sendLatests().catch(e => ws.send({ status: 'error', error: JSON.stringify(e) }));
+            sendLatests().catch(e => ws.send({ status: 'error', error: getErrorMessage(e) }));
 
             (ws.data as any).cleanup = () =>
             {

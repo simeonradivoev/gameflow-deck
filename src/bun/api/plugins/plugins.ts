@@ -22,7 +22,7 @@ export default new Elysia({ prefix: '/plugins' })
                 canDisable: canDisable(p.description),
                 icon: p.description.icon,
                 category: p.description.category,
-                hasSettings: !!p.config || !!p.plugin.eventsNames,
+                hasSettings: !!p.config || !!p.plugin.eventsNames || !!p.plugin.getEventsNames,
                 canUninstall: canUninstall(p.description, p.source),
                 update: p.update
             };

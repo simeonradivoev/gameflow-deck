@@ -68,10 +68,28 @@ export default function ActionButtons (data: {
     const router = useRouter();
     const deleteMutation = useMutation({
         ...deleteGameMutation({ id: data.id, source: data.source }),
-        onSuccess: (d, v, r, ctx) =>
+        onSuccess: async (d, v, r, ctx) =>
         {
-            ctx.client.invalidateQueries(gameInvalidationQuery(data.id, data.source));
-            router.history.back();
+            // Mark the deleted local query stale without fetching its now-missing record.
+            await ctx.client.invalidateQueries({ ...gameInvalidationQuery(data.source, data.id), refetchType: 'none' });
+            if (data.game?.source && data.game.source_id && data.game.source !== 'local')
+            {
+                const source = data.game.source;
+                const id = data.game.source_id;
+                await ctx.client.invalidateQueries({ ...gameInvalidationQuery(source, id), refetchType: 'none' });
+                await router.navigate({
+                    to: '/game/$source/$id',
+                    params: { source, id },
+                    replace: true,
+                    ignoreBlocker: true
+                });
+                await ctx.client.invalidateQueries(gameInvalidationQuery(source, id));
+            }
+            else
+            {
+                await router.navigate({ to: '/games', replace: true, ignoreBlocker: true });
+                await ctx.client.invalidateQueries({ queryKey: ['games'] });
+            }
         },
         onError (error)
         {
@@ -93,6 +111,7 @@ export default function ActionButtons (data: {
             id: 'delete',
             action: (ctx) =>
             {
+                if (deleteMutation.isPending) return;
                 deleteMutation.mutate();
                 ctx.close();
             },
@@ -156,7 +175,12 @@ export default function ActionButtons (data: {
 
     return <div ref={ref} className="flex sm:gap-2 md:gap-4 sm:h-16 md:h-32 overflow-hidden p-2 items-center shrink-0">
         <FocusContext value={focusKey}>
-            <MainActions game={data.game} source={data.source} id={data.id} />
+            {deleteMutation.isPending ? <ActionButton id="mainAction" type="base" square>
+                <div role="status" aria-live="polite" className="flex flex-col gap-2 w-40 md:w-56 px-2">
+                    <span className="text-sm md:text-lg">Deleting game…</span>
+                    <progress aria-label="Deleting game" className="progress progress-primary w-full" />
+                </div>
+            </ActionButton> : <MainActions game={data.game} source={data.source} id={data.id} />}
             {data.game && <AchievementsInfo game={data.game} onAction={() =>
             {
                 setDetailsSection("achievements");

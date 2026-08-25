@@ -1,5 +1,6 @@
 import z from "zod";
 import { SettingsSchema } from '@simeonradivoev/gameflow-sdk/shared';
+import { PluginActionResponseSchema, PluginActionsSchema, PluginActionValuesSchema } from '@simeonradivoev/gameflow-sdk';
 import Elysia, { status } from "elysia";
 import { config, customEmulators, plugins, taskQueue } from "../app";
 import fs from 'node:fs/promises';
@@ -12,6 +13,7 @@ import ReloadPluginsJob from "../jobs/reload-plugins-job";
 import { pluginZodRegistry } from "../plugins/plugin-manager";
 import { TestDownloadJob } from "../jobs/test-download-job";
 import { randomUUIDv7 } from "bun";
+import { validatePluginActionValues } from "./pluginActions";
 
 export const settings = new Elysia({ prefix: '/api/settings' })
     .get('/emulators/automatic', async () =>
@@ -103,12 +105,27 @@ export const settings = new Elysia({ prefix: '/api/settings' })
     .get('/actions/:source', async ({ params: { source } }) =>
     {
         const plugin = plugins.plugins[decodeURIComponent(source)]?.plugin;
-        if (!plugin.eventsNames) return [];
-        return plugin.eventsNames;
+        if (!plugin) return [];
+        return PluginActionsSchema.parse(await plugin.getEventsNames?.() ?? plugin.eventsNames ?? []);
     })
-    .post('/actions/:source/:id', async ({ params: { source, id } }) =>
+    .post('/actions/:source/:id', async ({ params: { source, id }, body }) =>
     {
-        return await plugins.plugins[decodeURIComponent(source)]?.plugin.onEvent?.(decodeURIComponent(id));
+        const plugin = plugins.plugins[decodeURIComponent(source)]?.plugin;
+        if (!plugin?.onEvent) return status("Not Found", "Plugin action not found");
+
+        const actionId = decodeURIComponent(id);
+        const actions = PluginActionsSchema.parse(await plugin.getEventsNames?.() ?? plugin.eventsNames ?? []);
+        const action = actions.find(action => action.id === actionId);
+        if (!action) return status("Not Found", "Plugin action not found");
+
+        const values = validatePluginActionValues(action, body.values);
+        if (values instanceof Error) return status("Bad Request", values.message);
+
+        const result = PluginActionResponseSchema.safeParse(await plugin.onEvent(actionId, values));
+        if (!result.success) return status("Internal Server Error", "Plugin action returned an invalid response");
+        return result.data;
+    }, {
+        body: z.object({ values: PluginActionValuesSchema.default({}) })
     })
     .get('/:source/:id', async ({ params: { source, id } }) =>
     {

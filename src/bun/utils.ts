@@ -20,8 +20,62 @@ export function checkRunning (pid: number)
 
 export function getErrorMessage (error: unknown): string
 {
-    if (error instanceof Error) return error.message;
-    return String(error);
+    const seen = new Set<object>();
+
+    function findMessage (value: unknown, depth = 0): string | undefined
+    {
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+        if (!value || typeof value !== 'object' || depth > 3 || seen.has(value)) return;
+        seen.add(value);
+
+        const record = value as Record<string, unknown>;
+        const apiError = record.data && typeof record.data === 'object'
+            ? (record.data as Record<string, unknown>).apiError
+            : undefined;
+        if (apiError && typeof apiError === 'object')
+        {
+            const messages = (apiError as Record<string, unknown>).messages;
+            if (Array.isArray(messages))
+            {
+                const message = messages.filter((entry): entry is string => typeof entry === 'string' && !!entry.trim()).join('; ');
+                if (message) return message;
+            }
+        }
+
+        if (value instanceof Error && value.message) return value.message;
+
+        for (const key of ['message', 'detail', 'statusText', 'reason'])
+        {
+            const message = findMessage(record[key], depth + 1);
+            if (message) return message;
+        }
+
+        for (const key of ['error', 'cause'])
+        {
+            const message = findMessage(record[key], depth + 1);
+            if (message) return message;
+        }
+    }
+
+    const message = (findMessage(error) ?? 'Unknown error')
+        .replace(/\b(Bearer)\s+\S+/gi, '$1 [redacted]')
+        .replace(/\b(api[_-]?key|access[_-]?token|token|secret|authorization|password)(\s*[:=]\s*|\s+)[^\s,;]+/gi, '$1$2[redacted]')
+        .replace(/https?:\/\/[^\s"'<>]+/gi, value =>
+        {
+            try
+            {
+                const url = new URL(value);
+                return `${url.origin}${url.pathname}${url.search ? '?[redacted]' : ''}`;
+            } catch
+            {
+                return '[redacted URL]';
+            }
+        })
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return message.slice(0, 500) || 'Unknown error';
 }
 
 export function isSteamDeckGameMode ()

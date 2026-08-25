@@ -106,7 +106,7 @@
     },
     "src/packages/gameflow-sdk": {
       "name": "@simeonradivoev/gameflow-sdk",
-      "version": "1.6.0",
+      "version": "1.10.0",
       "bin": {
         "gameflow-build": "build.ts",
       },

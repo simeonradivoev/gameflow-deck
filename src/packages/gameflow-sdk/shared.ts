@@ -327,6 +327,7 @@ export interface FrontEndGameTypeDetailedEmulator extends FrontEndEmulator
 export interface FrontEndGameTypeDetailed extends Exclude<FrontEndGameTypeWithIds, "metadata">
 {
     summary: string | null;
+    save_locations?: SaveSlots;
     fs_size_bytes: number | null;
     missing: boolean;
     local: boolean;
@@ -428,6 +429,7 @@ export interface FrontEndId
 // Stuff stored in the local sqlite metadata field
 export interface LocalGameMetadata
 {
+    save_locations?: SaveSlots;
     genres?: string[],
     companies?: string[],
     game_modes?: string[],

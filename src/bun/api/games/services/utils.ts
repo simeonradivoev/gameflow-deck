@@ -96,6 +96,7 @@ export async function convertLocalToFrontendDetailed (g: typeof schema.games.$in
         version_source: g.version_source,
         version_system: g.version_system,
         igdb_id: g.igdb_id,
+        save_locations: g.metadata.save_locations,
         metadata: {
             genres: g.metadata.genres ?? [],
             companies: g.metadata.companies ?? [],

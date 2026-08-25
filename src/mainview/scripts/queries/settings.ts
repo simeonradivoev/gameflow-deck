@@ -175,11 +175,11 @@ export const getPluginActionsQuery = (source: string) => queryOptions({
 });
 export const pluginActionMutation = (source: string, id: string) => mutationOptions({
     mutationKey: ["plugin", source, "action"],
-    mutationFn: async () =>
+    mutationFn: async (values: Record<string, string>) =>
     {
-        const { data, error, response } = await settingsApi.api.settings.actions({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).post();
+        const { data, error, response } = await settingsApi.api.settings.actions({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).post({ values });
         if (error) throw error;
 
-        return { data: data as any, response };
+        return { data: data as { openTab?: string; reload?: boolean; } | undefined, response };
     },
 });

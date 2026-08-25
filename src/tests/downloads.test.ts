@@ -47,6 +47,160 @@ describe("Download Tests", () =>
         server.stop();
     });
 
+    test("Source-owned install and uninstall lifecycle", async () =>
+    {
+        const source = 'custom-installer';
+        const id = 'owned-game';
+        const initialInfo: DownloadInfo = {
+            id: 'native-linux',
+            name: 'Owned Game',
+            source_id: id,
+            system_slug: 'unknown',
+            coverUrl: 'data:image/png;base64,iVBORw0KGgo=',
+            screenshotUrls: [],
+            files: [{
+                file_name: 'not-used.zip',
+                file_path: 'not-used',
+                url: new URL('http://127.0.0.1:1/not-used.zip')
+            }]
+        };
+
+        app.plugins.hooks.games.fetchDownloads.tapPromise('custom-installer-download', async ({ source: requestedSource }) =>
+        {
+            if (requestedSource === source) return [initialInfo];
+        });
+
+        const finalPath = path.join('itch', 'owned-game', 'cave');
+        const executable = path.join(app.config.get('downloadPath'), finalPath, 'game.bin');
+        const performInstall = jest.fn(async ({ source: requestedSource, downloadId, info, updateProgress }) =>
+        {
+            if (requestedSource !== source) return;
+            expect(downloadId).toBe('native-linux');
+            await fs.mkdir(path.dirname(executable), { recursive: true });
+            await Bun.write(executable, 'installed');
+            updateProgress(50, 'download', { downloaded: 5, total: 10, speed: 1 });
+            return {
+                info: { ...info, path_fs: finalPath, main_glob: 'game.bin', version: 'butler-build-1' },
+                files: [executable]
+            };
+        });
+        app.plugins.hooks.games.performInstall.tapPromise('custom-installer', performInstall);
+
+        const result = await client.rommApi.api.romm.game({ source })({ id }).install.post({ downloadId: 'native-linux' });
+        if (result.error) throw result.error;
+
+        const installed = await app.db.query.games.findFirst({
+            where: (games, { and, eq }) => and(eq(games.source, source), eq(games.source_id, id))
+        });
+        expect(result.response.ok).toBeTrue();
+        expect(performInstall).toHaveBeenCalledTimes(1);
+        expect(installed?.path_fs).toBe(finalPath);
+        expect(installed?.main_glob).toBe('game.bin');
+        expect(installed?.version).toBe('butler-build-1');
+        const performUninstall = jest.fn(async (request: {
+            source: string;
+            id: string;
+            gamePath: string | null;
+            downloadPath: string;
+        }) =>
+        {
+            expect(request).toMatchObject({ source, id, gamePath: finalPath, downloadPath: app.config.get('downloadPath') });
+            return true;
+        });
+        app.plugins.hooks.games.performUninstall.tapPromise('custom-uninstaller', performUninstall);
+
+        const originalRm = fs.rm.bind(fs);
+        const remove = jest.spyOn(fs, 'rm').mockImplementation(async (target, options) =>
+        {
+            if (String(target) === path.join(app.config.get('downloadPath'), finalPath))
+                throw Object.assign(new Error('File is locked'), { code: 'EBUSY' });
+            return originalRm(target, options);
+        });
+        try
+        {
+            await client.rommApi.api.romm.game({ source })({ id }).delete();
+            expect(await app.db.query.games.findFirst({
+                where: (games, { and, eq }) => and(eq(games.source, source), eq(games.source_id, id))
+            })).toBeDefined();
+            expect(await Bun.file(executable).exists()).toBeTrue();
+        } finally
+        {
+            remove.mockRestore();
+        }
+        performUninstall.mockClear();
+
+        const deleted = await client.rommApi.api.romm.game({ source })({ id }).delete();
+        if (deleted.error) throw deleted.error;
+        expect(deleted.response.ok).toBeTrue();
+        expect(performUninstall).toHaveBeenCalledTimes(1);
+        expect(await app.db.query.games.findFirst({
+            where: (games, { and, eq }) => and(eq(games.source, source), eq(games.source_id, id))
+        })).toBeUndefined();
+
+    });
+
+    test("Empty source-owned downloads remain installable", async () =>
+    {
+        const source = 'empty-source-installer';
+        app.plugins.hooks.games.fetchDownloads.tapPromise('empty-source-installer-download', async ({ source: requestedSource }) =>
+        {
+            if (requestedSource !== source) return;
+            return [{
+                id: 'linux-x64',
+                name: 'Owned Game',
+                source_id: 'empty-game',
+                system_slug: 'linux',
+                coverUrl: '',
+                screenshotUrls: [],
+                files: [],
+                metadata: { itchUpload: { name: 'Linux 64-bit' } }
+            } satisfies DownloadInfo];
+        });
+
+        const subscription = client.rommApi.api.romm.status({ source })({ id: 'empty-game' }).subscribe();
+        const message = await new Promise<any>((resolve, reject) =>
+        {
+            const timeout = setTimeout(() => reject(new Error('Timed out waiting for game status')), 5000);
+            subscription.subscribe(({ data }) =>
+            {
+                clearTimeout(timeout);
+                resolve(data);
+            });
+        });
+        subscription.close();
+
+        expect(message.status).toBe('install');
+        expect(message.sources).toEqual([{ id: 'linux-x64', name: 'Linux 64-bit' }]);
+    });
+
+    test("Status errors are readable and redact secrets", async () =>
+    {
+        const source = 'failing-source-installer';
+        app.plugins.hooks.games.fetchDownloads.tapPromise('failing-source-installer-download', async ({ source: requestedSource }) =>
+        {
+            if (requestedSource === source)
+                throw new Error('Butler daemon failed; api_key=supersecret');
+            return undefined;
+        });
+
+        const subscription = client.rommApi.api.romm.status({ source })({ id: 'failed-game' }).subscribe();
+        const message = await new Promise<any>((resolve, reject) =>
+        {
+            const timeout = setTimeout(() => reject(new Error('Timed out waiting for game status')), 5000);
+            subscription.subscribe(({ data }) =>
+            {
+                clearTimeout(timeout);
+                resolve(data);
+            });
+        });
+        subscription.close();
+
+        expect(message.status).toBe('error');
+        expect(message.error).toBe('Butler daemon failed; api_key=[redacted]');
+        expect(message.error).not.toContain('supersecret');
+        expect(message.error).not.toBe('{}');
+    });
+
     test("Download Single Non Archive File", async () =>
     {
         const mock = jest.fn();

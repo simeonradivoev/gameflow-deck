@@ -59,7 +59,33 @@ export class InstallJob implements IJob<DownloadJobData, InstallJobStates>
             this.data.name = info.name;
             this.data.preview_url = info.coverUrl;
 
-            const files = await checkFiles(info.files, !!info.extract_path);
+            const sourceInstall = this.config?.dryDownload !== true
+                ? await plugins.hooks.games.performInstall.promise({
+                    source: this.source,
+                    id: this.gameId,
+                    downloadId: this.config?.downloadId,
+                    info,
+                    downloadPath,
+                    abortSignal: cx.abortSignal,
+                    updateProgress: (progress, state, stats) =>
+                    {
+                        cx.setProgress(progress, state);
+                        this.data.downloaded = stats?.downloaded;
+                        this.data.speed = stats?.speed;
+                        this.data.total = stats?.total;
+                    }
+                })
+                : undefined;
+
+            if (sourceInstall)
+            {
+                info = sourceInstall.info;
+                finalFiles.push(...sourceInstall.files);
+                this.data.name = info.name;
+                this.data.preview_url = info.coverUrl;
+            }
+
+            const files = sourceInstall ? [] : await checkFiles(info.files, !!info.extract_path);
 
             if (this.config?.dryDownload !== true && files.some(f => !f.exists || !f.matches))
             {

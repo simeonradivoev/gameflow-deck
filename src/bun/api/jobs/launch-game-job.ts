@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process';
 import { updateLocalLastPlayed } from "../games/services/statusService";
 import { getErrorMessage } from "@/bun/utils";
 import { CommandEntry, FrontEndId, SaveSlots } from "@simeonradivoev/gameflow-sdk/shared";
+import { rememberSaveLocations } from "../games/services/saveLocations";
 
 export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSchema>, string>
 {
@@ -63,15 +64,20 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
         });
     }
 
-    prePlay (setProgress: (progress: number, state: string) => void, gameInfo: { platformSlug?: string; })
+    async prePlay (setProgress: (progress: number, state: string) => void, gameInfo: { platformSlug?: string; })
     {
-        return plugins.hooks.games.prePlay.promise({
+        await plugins.hooks.games.prePlay.promise({
             source: this.gameSource ?? this.gameId.source,
             id: this.gameSourceId ?? this.gameId.id,
             saveFolderSlots: this.saveSlots,
             command: this.validCommand,
             setProgress: setProgress,
             gameInfo
+        });
+        await rememberSaveLocations(this.gameId, this.saveSlots, this.validCommand.startDir).catch(() =>
+        {
+            // Optional stats must not prevent a game from launching.
+            console.warn("Could not remember game save locations");
         });
     }
 
