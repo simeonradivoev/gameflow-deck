@@ -1,4 +1,5 @@
 import Elysia, { status } from "elysia";
+import { discoverSaveLocations } from "./services/saveLocations";
 import { config, db, emulatorsDb, plugins, taskQueue } from "../app";
 import { and, desc, eq, getTableColumns, inArray, like, sql } from "drizzle-orm";
 import z from "zod";
@@ -453,6 +454,7 @@ export default new Elysia()
                 }
             }
 
+            sourceData.save_locations = await discoverSaveLocations(sourceData);
             return sourceData;
         } else
         {

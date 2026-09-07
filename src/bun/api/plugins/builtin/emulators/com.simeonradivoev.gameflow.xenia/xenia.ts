@@ -37,6 +37,13 @@ export default class XENIAIntegration implements PluginType
             args.push(`--fullscreen`);
         }
 
+        if (ctx.dryRun && ctx.autoValidCommand.metadata.romPath)
+        {
+            const savesPath = path.join(config.get('downloadPath'), 'saves', ctx.autoValidCommand.emulator!);
+            const cwd = await getXeniaSavePaths(ctx.autoValidCommand.metadata.romPath, savesPath);
+            return { args, savesPath: { [ctx.autoValidCommand.emulator!]: { cwd } } };
+        }
+
         if (!ctx.dryRun)
         {
             await ensureDir(path.join(config.get('downloadPath'), 'storage', ctx.autoValidCommand.emulator!));

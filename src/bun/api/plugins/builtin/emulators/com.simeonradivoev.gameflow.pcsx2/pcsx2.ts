@@ -58,6 +58,11 @@ export default class PCSX2Integration implements PluginType
             }
             args.push(...["-bigpicture", "-portable", "--"]);
 
+            if (ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir && ctx.dryRun)
+            {
+                return { args, savesPath: { [this.emulator]: { cwd: path.join(config.get('downloadPath'), 'saves', this.emulator, 'saves') } } };
+            }
+
             if (ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir && !ctx.dryRun)
             {
                 let pscx2Path = '';

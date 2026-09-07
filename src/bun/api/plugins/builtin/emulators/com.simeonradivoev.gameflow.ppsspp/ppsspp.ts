@@ -75,6 +75,14 @@ export default class PPSSPPIntegration implements PluginType
                 args.push("--fullscreen");
             }
 
+            const saveDataPath = process.platform === 'win32'
+                ? path.join(config.get('downloadPath'), 'saves', this.emulator, 'PSP', 'SAVEDATA')
+                : path.join(homedir(), '.config', 'ppsspp', 'PSP', 'SAVEDATA');
+            if (ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir && ctx.dryRun)
+            {
+                return { args, savesPath: { [this.emulator]: { cwd: saveDataPath } } };
+            }
+
             if (ctx.autoValidCommand.emulatorSource === 'store' && ctx.autoValidCommand.metadata.emulatorDir && !ctx.dryRun)
             {
                 let defaultConfigPath: string | undefined = undefined;
@@ -135,7 +143,7 @@ export default class PPSSPPIntegration implements PluginType
                     args,
                     savesPath: {
                         [this.emulator]: {
-                            cwd: path.join(config.get('downloadPath'), 'saves', this.emulator, "PSP", "SAVEDATA")
+                            cwd: saveDataPath
                         }
                     }
                 };

@@ -116,6 +116,19 @@ export default class StoreIntegration implements PluginType
                 })));
         });
 
+        ctx.hooks.games.findSaveLocations.tapPromise(desc.name, async ({ game, commands, locations }) =>
+        {
+            if (game.source !== 'store' || !game.source_id || !game.path_fs) return;
+            const storeGame = await getStoreGame(game.source_id);
+            if (!storeGame) return;
+            const download = game.version_source ? storeGame.downloads[game.version_source] : undefined;
+            for (const command of commands)
+            {
+                const saves = buildSaves(command, storeGame, download);
+                saves?.forEach(([slot, save]) => locations[slot] = { cwd: save.cwd });
+            }
+        });
+
         ctx.hooks.games.prePlay.tapPromise(desc.name, async ({ source, id, saveFolderSlots, command }) =>
         {
             if (source !== 'store') return;

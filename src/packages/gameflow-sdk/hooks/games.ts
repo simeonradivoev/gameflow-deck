@@ -4,6 +4,12 @@ import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfal
 
 export default class GameHooks
 {
+    /** Discover save folders without launching, writing config, or syncing saves. */
+    findSaveLocations = new AsyncSeriesHook<[ctx: {
+        game: FrontEndGameTypeDetailed;
+        commands: CommandEntry[];
+        locations: SaveSlots;
+    }]>(['ctx']);
     /** Build commands the game can be launched with. */
     buildLaunchCommands = new AsyncSeriesBailHook<[ctx: {
         source: string | null;
@@ -21,7 +27,7 @@ export default class GameHooks
     emulatorLaunch = new AsyncSeriesBailHook<[ctx: {
         /** The auto generated command for example based on the ES-DE listing */
         autoValidCommand: CommandEntry;
-        /** Don't actually launch just see if it can be launched */
+        /** Read-only: return launch arguments and known save paths without writing files or launching. */
         dryRun: boolean,
         game: {
             /** The source of the game */
