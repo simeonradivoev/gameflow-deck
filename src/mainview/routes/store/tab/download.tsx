@@ -1,4 +1,5 @@
 import DotsLoading from '@/mainview/components/backgrounds/dots';
+import { downloadIdentity, uniqueDownloads } from '@/mainview/scripts/queries/downloadsPagination';
 import LoadMoreButton from '@/mainview/components/LoadMoreButton';
 import { Button } from '@/mainview/components/options/Button';
 import { SideDownloadFilters } from '@/mainview/components/SideFilters';
@@ -64,7 +65,7 @@ function Downloads (data: {
   const { ref, focusKey } = useFocusable({ focusKey: 'downloads-list' });
   return <ul ref={ref} className='grid ml-12 h-fit sm:gap-2 md:gap-5 auto-rows-[10rem] grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
     <FocusContext value={focusKey}>
-      {data.pages.flatMap((page, p) => page.data.map((match, i) => <Download focusKey={`dl-${p}-${i}`} key={match.id} match={match} />))}
+      {uniqueDownloads(data.pages).map(match => <Download focusKey={`dl-${downloadIdentity(match)}`} key={downloadIdentity(match)} match={match} />)}
       {!data.pages[0].hadMatchers && <div className='flex justify-center items-center gap-2 font-semibold text-2xl col-span-3'><Button id='install-plugins-btn' className='gap-2 text-2xl!' onAction={e => navigate({ to: '/store/tab/plugins' })}><Puzzle />Get Donwloads Plugin <ArrowRight /></Button></div>}
       {data.hasNextPage && data.pages[0].hadMatchers && <LoadMoreButton
         isFetching={data.isFetchingNextPage || data.isFetching}
@@ -86,7 +87,6 @@ function RouteComponent ()
   const [filter, setFilter] = useSessionStorage<DownloadsLookupFilter>('store-download-lookup-filters', {});
   const { data, error, isPending, isFetching, isFetchingNextPage, fetchNextPage, hasNextPage } = useInfiniteQuery({
     ...downloadsLookupQuery({ ...filter, search }),
-    maxPages: 10,
     refetchOnMount: false
   });
   const { ref, focusKey } = useFocusable({
