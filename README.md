@@ -7,6 +7,12 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 > This app is actively in development, it is constantly changing and improving.
 > It will have an opinionated design and will be used as an experiment in discovering a good UX.
 
+## AI use
+
+Partway through development, I started using AI to help work on this project because I no longer had enough time to work on it myself. Since then, the project has also become a test bed for seeing how well AI can handle real development work.
+
+I used a ChatGPT trial for this experiment, as I don't want to pay for AI tools.
+
 ## Community
 
 Join us on Discord, where you can ask questions, submit ideas and get help.
