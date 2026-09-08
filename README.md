@@ -7,12 +7,6 @@ Focused on building a simple user experience and intuitive UI as a curated commu
 > This app is actively in development, it is constantly changing and improving.
 > It will have an opinionated design and will be used as an experiment in discovering a good UX.
 
-## AI use
-
-Partway through development, I started using AI to help work on this project because I no longer had enough time to work on it myself. Since then, the project has also become a test bed for seeing how well AI can handle real development work.
-
-I used a ChatGPT trial for this experiment, as I don't want to pay for AI tools.
-
 ## Community
 
 Join us on Discord, where you can ask questions, submit ideas and get help.
@@ -123,6 +117,13 @@ To create a plugin create a new npm project and install:
 
 Then publish the package to npmjs with a tag `gameflow-plugin` to appear in the UI.
 For more info check the [SDK README](./scripts/sdk/README.md)
+
+
+## AI use
+
+At one point I wanted to test AI on a bigger existing project. 
+Open AI had a trail and I didn't want to give money for AI so I just used that. 
+It did reasonably well, but I probably won't be using my own money for AI if I get access for free I might do some more neat features.
 
 ### Tech Stack
 
