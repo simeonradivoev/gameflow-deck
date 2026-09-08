@@ -321,9 +321,10 @@ export const downloadsLookupQuery = (filter: DownloadsLookupFilter) => infiniteQ
 
 export const downloadLookupQuery = (source: string, id: string) => queryOptions({
     queryKey: ["downloads", source, id],
-    queryFn: async () =>
+    retry: false,
+    queryFn: async ({ signal }) =>
     {
-        const { data, error } = await rommApi.api.romm.download.lookup({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get();
+        const { data, error } = await rommApi.api.romm.download.lookup({ source: encodeURIComponent(source) })({ id: encodeURIComponent(id) }).get({ fetch: { signal } });
         if (error) throw error;
         return data;
     }

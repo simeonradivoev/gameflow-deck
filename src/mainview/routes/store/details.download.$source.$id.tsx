@@ -8,6 +8,7 @@ import SelectMenu from '@/mainview/components/SelectMenu';
 import { FloatingShortcuts } from '@/mainview/components/Shortcuts';
 import { GlobalDialogContext } from '@/mainview/scripts/contexts';
 import { downloadLookupQuery } from '@/mainview/scripts/queries/romm';
+import { withRouteCancellation } from '@/mainview/scripts/queries/routeCancellation';
 import { GamePadButtonCode, useShortcuts } from '@/mainview/scripts/shortcuts';
 import { HandleGoBack } from '@/mainview/scripts/utils';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
@@ -19,20 +20,48 @@ import { useContext } from 'react';
 export const Route = createFileRoute('/store/details/download/$source/$id')({
     component: RouteComponent,
     pendingComponent: Loading,
+    errorComponent: DownloadError,
     async loader (ctx)
     {
-        const data = await ctx.context.queryClient.fetchQuery(downloadLookupQuery(decodeURIComponent(ctx.params.source), decodeURIComponent(ctx.params.id)));
+        const query = downloadLookupQuery(decodeURIComponent(ctx.params.source), decodeURIComponent(ctx.params.id));
+        const cancel = () => { void ctx.context.queryClient.cancelQueries({ queryKey: query.queryKey, exact: true }); };
+        const data = await withRouteCancellation(ctx.abortController.signal,
+            () => ctx.context.queryClient.fetchQuery(query), cancel);
         return { data };
     }
 });
 
 function Loading ()
 {
-    const { ref, focusSelf } = useFocusable({ focusKey: 'download-details' });
-    return <>
-        <DotsLoading ref={ref} />
-        <AutoFocus focus={focusSelf} />
-    </>;
+    return <DownloadRequestState />;
+}
+
+function DownloadError ()
+{
+    return <DownloadRequestState failed />;
+}
+
+function DownloadRequestState ({ failed = false }: { failed?: boolean })
+{
+    const navigate = useNavigate();
+    const router = useRouter();
+    const { ref, focusKey, focusSelf } = useFocusable({
+        focusKey: 'download-details-pending', preferredChildFocusKey: 'cancel-download-details'
+    });
+    const cancel = () => { void navigate({ to: '/store/tab/download', replace: true }); };
+    useShortcuts(focusKey, () => [{ label: 'Return', action: cancel, button: GamePadButtonCode.B }], [navigate]);
+    return <div ref={ref} className='absolute inset-0 flex flex-col items-center justify-center gap-6'>
+        <FocusContext value={focusKey}>
+            <p role={failed ? 'alert' : 'status'}>{failed ? 'Could not load download details.' : 'Loading download details…'}</p>
+            {!failed && <div aria-hidden='true' className='pointer-events-none'><DotsLoading /></div>}
+            <div className='relative z-10 flex gap-4'>
+                <Button id='cancel-download-details' onAction={cancel}>{failed ? 'Return to Downloads' : 'Cancel and return'}</Button>
+                {failed && <Button id='retry-download-details' onAction={() => { void router.invalidate(); }}>Retry</Button>}
+            </div>
+            <FloatingShortcuts />
+        </FocusContext>
+        <AutoFocus focus={focusSelf} force />
+    </div>;
 }
 
 const imagesMap = new Set(['JPEG', 'PNG', 'Motion JPEG', 'Item Image']);
