@@ -142,7 +142,7 @@ export default class UmuIntegration implements PluginType<Settings>
             }
         });
 
-        ctx.hooks.games.prePlay.tapPromise(desc.name, async ({ command, saveFolderSlots }) =>
+        ctx.hooks.games.prePlay.tapPromise(desc.name, async ({ command }) =>
         {
             if (command.emulator !== 'UMU' || !command.env?.WINEPREFIX) return;
             const env = command.env;
@@ -152,14 +152,6 @@ export default class UmuIntegration implements PluginType<Settings>
                 env.WINEPREFIX, env.UMU_FOLDERS_PATH, env.XDG_CACHE_HOME, env.XDG_CONFIG_HOME,
                 env.XDG_STATE_HOME, env.PROTON_LOG_DIR, env.DXVK_STATE_CACHE_PATH
             ].map(directory => fs.mkdir(directory, { recursive: true })));
-            const saves = path.join(env.WINEPREFIX, 'drive_c', 'users');
-            await fs.mkdir(saves, { recursive: true });
-            saveFolderSlots.UMU = { cwd: saves };
-        });
-        ctx.hooks.games.findSaveLocations.tapPromise(desc.name, async ({ commands, locations }) =>
-        {
-            const prefix = commands.find(command => command.emulator === 'UMU')?.env?.WINEPREFIX;
-            if (prefix) locations.UMU = { cwd: path.join(prefix, 'drive_c', 'users') };
         });
 
         const platform = (): FrontEndPlatformType => ({

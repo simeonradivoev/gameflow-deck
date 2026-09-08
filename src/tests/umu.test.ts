@@ -152,3 +152,20 @@ test('default and saved UMU-Proton settings use automatic selection instead of a
     expect(getUmuEnvironment(library, ['store', 'test'], SettingsSchema.parse({ proton: 'custom', protonPath: 'tools/My Proton' })).PROTONPATH)
         .toBe(path.resolve(library, 'tools/My Proton'));
 });
+
+test('umu does not register the Windows users directory as a save slot', async () =>
+{
+    const ctx = context();
+    await new UmuIntegration('linux', 'x64').load(ctx);
+    const env = getUmuEnvironment(app.config.get('downloadPath'), ['store', 'save-scope'], SettingsSchema.parse({}));
+    const command = { id: 'umu', command: [], valid: true, emulator: 'UMU', env, metadata: {} };
+    const saveFolderSlots = { specific: { cwd: path.join(env.WINEPREFIX, 'drive_c', 'users', 'steamuser', 'Saved Games', 'Test') } };
+    const expected = structuredClone(saveFolderSlots);
+    await ctx.hooks.games.prePlay.promise({ source: 'store', id: 'test', command, saveFolderSlots, setProgress: () => {}, gameInfo: {} });
+    expect(saveFolderSlots).toEqual(expected);
+    expect(await fs.exists(env.WINEPREFIX)).toBe(true);
+    const locations = {};
+    await ctx.hooks.games.findSaveLocations.promise({ game: {} as never, commands: [command], locations });
+    expect(locations).toEqual({});
+    expect(buildSaves(command, catalog)).toBeUndefined();
+});
