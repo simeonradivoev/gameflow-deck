@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.10.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.9.0...v1.10.0) (2026-09-08)
+
+
+### Features
+
+* **launchers:** show plugin launch progress from process output ([0db1b44](https://github.com/simeonradivoev/gameflow-deck/commit/0db1b445a18fdc15134f45cc44f17a51e5a13dc0))
+* **updates:** show cumulative changes with version caching ([7d75acc](https://github.com/simeonradivoev/gameflow-deck/commit/7d75acccacec8a0f5d700ee653e10079bbc5cb0c))
+
+
+### Bug Fixes
+
+* **umu:** use automatic Proton selection for default settings ([f11c5d9](https://github.com/simeonradivoev/gameflow-deck/commit/f11c5d9fb8462cef5c1b61f13325e3fddbd116a6))
+* **updates:** safely replace AppImages and report plugin update failures ([39eb214](https://github.com/simeonradivoev/gameflow-deck/commit/39eb21462231fafb8bf0554d898804ff0a9cce40))
+
 ## [1.9.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.8.0...v1.9.0) (2026-09-08)
 
 
