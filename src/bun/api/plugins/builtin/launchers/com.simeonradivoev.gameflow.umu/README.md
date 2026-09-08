@@ -20,3 +20,16 @@ Relative custom executable and Proton paths also resolve under the library. Pref
 The launcher respects a game's main executable glob; otherwise it offers each `.exe` found in the installation. Commands pass paths as separate arguments and retain the executable's working directory, including when using Flatpak's host launcher. The default GAMEID is `umu-default`; automatic per-title umu database matching is not implemented.
 
 Upstream references: [launch options](https://github.com/Open-Wine-Components/umu-launcher/blob/main/docs/umu.1.scd), [runtime/cache locations](https://github.com/Open-Wine-Components/umu-launcher/blob/main/umu/umu_consts.py).
+
+## umu 1.4.0 GE-Proton download recovery
+
+GE-Proton releases with both aarch64 and x86_64 assets expose an upstream umu 1.4.0 asset-selection bug: it expects exactly one archive/checksum pair and reports `Failed to acquire release assets` when it finds both architectures. Without an existing Proton installation, this ends with an empty `PROTONPATH` error. The Steam Linux Runtime can still download and validate successfully; reinstalling that runtime does not fix Proton selection.
+
+Until using an umu build containing the upstream architecture-selection fix:
+
+1. Download the **x86_64** binary archive and its matching `.sha512sum` from the [official GE-Proton releases](https://github.com/GloriousEggroll/proton-ge-custom/releases). Verify the archive with `sha512sum -c <checksum-file>` from the download directory.
+2. Extract the archive under `storage/umu/proton` in the configured library folder.
+3. In umu plugin settings, set **Proton version** to **custom** and **Custom Proton directory** to the extracted directory containing `proton` and `toolmanifest.vdf`, for example `storage/umu/proton/GE-Proton11-6`. Use the actual extracted folder name, not the archive filename or its parent directory.
+4. Launch the game again. This selects the local Proton directly while retaining the runtime, prefixes, saves, and caches already in the library.
+
+The default UMU selection also downloads Proton from GitHub, so changing release families is not a reliable workaround for release-asset selection failures. Upstream's [current asset-selection implementation](https://github.com/Open-Wine-Components/umu-launcher/blob/main/umu/umu_proton.py) filters out foreign architectures; the [1.4.0 implementation](https://github.com/Open-Wine-Components/umu-launcher/blob/1.4.0/umu/umu_proton.py) does not.
