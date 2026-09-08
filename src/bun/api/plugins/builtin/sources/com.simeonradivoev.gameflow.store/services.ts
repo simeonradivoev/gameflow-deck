@@ -168,33 +168,28 @@ export async function convertStoreToFrontendDetailed (id: string, storeGame: Sto
     return detailed;
 }
 
-export function getValidDownloads (game: StoreGameType, downloadId?: string)
+export function getValidDownloads (game: StoreGameType, downloadId?: string, runtime = {
+    platform: process.platform as string,
+    arch: process.arch as string,
+    umu: plugins.hooks.games.emulatorLaunchSupport.call({ emulator: 'UMU' })?.id === 'com.simeonradivoev.gameflow.umu'
+})
 {
     const downloads = Object.entries(game.downloads).map(([k, d]) => ({ id: k, ...d }));
     const supportedDownloads = downloads.filter(d => d.type === 'direct' || d.type === 'moddb');
-
-    if (downloadId)
+    return supportedDownloads.filter(d =>
     {
-        return supportedDownloads.filter(d => d.id === downloadId);
-    } else
+        if (downloadId && d.id !== downloadId) return false;
+        if (['win', 'win32', 'windows'].includes(d.system))
+            return runtime.platform === 'win32' || (runtime.umu && runtime.platform === 'linux' && runtime.arch === 'x64');
+        if (d.system === `${runtime.platform}:${runtime.arch}`) return true;
+        if (runtime.umu && runtime.platform === 'linux' && runtime.arch === 'x64'
+            && (d.system === 'win32:x64' || d.system === 'win32:ia32')) return true;
+        return !d.system.includes(':');
+    }).toSorted((a, b) =>
     {
-        return supportedDownloads.filter(d =>
-        {
-            if (d.system === `${process.platform}:${process.arch}`) return true;
-
-            // TODO: Add linux proton support
-            //if (process.platform === 'linux' && d.system === `win32:${process.arch}`) return true;
-
-            // emulator fallback
-            return !d.system.includes(':');
-        }).toSorted((a, b) =>
-        {
-            const bScore = b.system.includes(':') ? 0 : 1;
-            const aScore = a.system.includes(':') ? 0 : 1;
-
-            return bScore - aScore;
-        });
-    }
+        const score = (system: string) => system === `${runtime.platform}:${runtime.arch}` ? 0 : system.includes(':') ? 1 : 2;
+        return score(a.system) - score(b.system);
+    });
 }
 
 const MODDB_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36';
@@ -228,7 +223,7 @@ export function getModDbDownloadHeaders ()
 
 export async function getShuffledStoreGames ()
 {
-    return getOrCached('shuffled-store-games', async () =>
+    const games = await getOrCached('shuffled-store-games', async () =>
     {
         const files = new Glob(path.join(getStoreFolder(), 'buckets', 'games', '*.json')).scan();
         const allGamePaths = await Array.fromAsync(files);
@@ -236,6 +231,8 @@ export async function getShuffledStoreGames ()
         shuffleInPlace(allStoreGames, Math.round(new Date().getTime() / 1000 / 60 / 60));
         return allStoreGames;
     }, { expireMs: 1000 / 60 / 60 });
+    // Apply live plugin capabilities after the manifest cache so toggling umu takes effect immediately.
+    return games.filter(game => getValidDownloads(game).length > 0);
 }
 
 export async function buildFilters (filters: FrontEndFilterSets)
@@ -269,6 +266,8 @@ function getLocalAppData ()
 
 export function buildSaves (command: CommandEntry, storeGame: StoreGameType, download?: StoreDownloadType)
 {
+    const wineUser = command.emulator === 'UMU' && command.env?.WINEPREFIX
+        ? path.join(command.env.WINEPREFIX, 'drive_c', 'users', 'steamuser') : undefined;
     let saveFileGlobs: Record<string, {
         cwd: string;
         globs: string[];
@@ -279,7 +278,7 @@ export function buildSaves (command: CommandEntry, storeGame: StoreGameType, dow
 
     } else if (storeGame.saves)
     {
-        const platformSaves = storeGame.saves[`${process.platform}:${process.arch}`];
+        const platformSaves = storeGame.saves[wineUser ? 'win32:x64' : `${process.platform}:${process.arch}`];
         if (platformSaves)
         {
             saveFileGlobs = platformSaves;
@@ -288,17 +287,18 @@ export function buildSaves (command: CommandEntry, storeGame: StoreGameType, dow
 
     const view = {
         GAMEDIR: command.startDir,
-        HOMEDIR: os.homedir(),
+        HOMEDIR: wineUser ?? os.homedir(),
         TMPDIR: os.tmpdir(),
-        APPDATA: getAppData(),
-        LOCALAPPDATA: getLocalAppData(),
+        APPDATA: wineUser ? path.join(wineUser, 'AppData', 'Roaming') : getAppData(),
+        LOCALAPPDATA: wineUser ? path.join(wineUser, 'AppData', 'Local') : getLocalAppData(),
     };
 
     if (!saveFileGlobs) return;
 
     return Object.entries(saveFileGlobs).map(([slot, save]) =>
     {
-        const cwd = mustache.render(save.cwd, view);
+        const rendered = mustache.render(save.cwd, view);
+        const cwd = wineUser ? rendered.replaceAll('\\', path.sep) : rendered;
         const change: SaveFileChange = {
             cwd,
             shared: false,
@@ -491,7 +491,8 @@ export async function buildLaunchCommand (ctx: { gamePath: string; systemSlug: s
 {
     if (ctx.systemSlug !== 'win' && ctx.systemSlug !== 'linux' && ctx.systemSlug !== 'mac') return;
     const downloadPath = config.get('downloadPath');
-    const gamePathAbsolute = path.join(downloadPath, ctx.gamePath);
+    if (ctx.systemSlug === 'win' && process.platform !== 'win32') return;
+    const gamePathAbsolute = path.resolve(downloadPath, ctx.gamePath);
     if (!(await fs.exists(gamePathAbsolute))) return;
     const gamePathStat = await fs.stat(gamePathAbsolute);
 

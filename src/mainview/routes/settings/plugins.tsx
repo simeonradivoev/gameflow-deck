@@ -74,6 +74,10 @@ function RouteComponent ()
         ...enablePluginMutation, onSuccess (data, variables, onMutateResult, context)
         {
             refetchPlugins();
+            // Launcher capabilities can change platforms, store downloads and launch commands.
+            context.client.invalidateQueries({ predicate: query =>
+                ['game', 'games', 'platform', 'platforms', 'store-games', 'emulator', 'store-emulator', 'store-emulators']
+                    .some(key => query.queryKey.includes(key)) });
         },
     });
 

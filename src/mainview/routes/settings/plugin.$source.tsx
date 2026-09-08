@@ -179,6 +179,7 @@ function PluginOption (data: { name: string, title?: string, prop: JSONSchema7; 
         onSuccess (data, variables, onMutateResult, context)
         {
             refetchValue();
+            context.client.invalidateQueries({ predicate: query => query.queryKey.includes('game') || query.queryKey.includes('emulator') });
         },
     });
     let input: any = undefined;

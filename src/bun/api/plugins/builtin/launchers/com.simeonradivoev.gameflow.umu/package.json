@@ -1,0 +1,11 @@
+{
+    "name": "com.simeonradivoev.gameflow.umu",
+    "displayName": "umu Launcher",
+    "version": "0.0.1",
+    "description": "Launch Windows games on Linux with umu and Proton. Install UMU from the emulator store or provide umu-run in settings.",
+    "main": "./umu.ts",
+    "icon": "https://avatars.githubusercontent.com/u/119976475",
+    "canDisable": true,
+    "category": "launchers",
+    "keywords": ["umu", "proton", "wine", "windows", "linux"]
+}

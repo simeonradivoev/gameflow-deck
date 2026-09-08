@@ -1,4 +1,5 @@
 import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
+import * as appSchema from '@schema/app';
 import desc from './package.json';
 import path, { } from 'node:path';
 import { buildStoreFrontendEmulatorSystems, getAllStoreEmulatorPackages, getStoreEmulatorPackage, getStoreFolder } from "@/bun/api/store/services/gamesService";
@@ -6,7 +7,7 @@ import { Glob, pathToFileURL, which } from "bun";
 import { and, eq } from "drizzle-orm";
 import * as emulatorSchema from '@schema/emulators';
 
-import { config, emulatorsDb, taskQueue } from "@/bun/api/app";
+import { config, db, emulatorsDb, taskQueue } from "@/bun/api/app";
 import fs from "node:fs/promises";
 import { getSourceGameDetailed } from "@/bun/api/games/services/utils";
 import EnsureStore from "@/bun/api/jobs/ensure-store";
@@ -236,9 +237,15 @@ export default class StoreIntegration implements PluginType
             if (!query.source || query.source !== 'store') return;
             if (query.collection_source || query.collection_id) return;
 
+            let platformSlug = query.platform_slug;
+            if (!platformSlug && query.platform_id && query.platform_source === 'local')
+                platformSlug = (await db.query.platforms.findFirst({ where: eq(appSchema.platforms.id, query.platform_id) }))?.slug;
+            else if (!platformSlug && query.platform_id && query.platform_source)
+                platformSlug = (await ctx.hooks.games.platformLookup.promise({ source: query.platform_source, id: String(query.platform_id) }))?.slug;
             const shuffledGames = await getShuffledStoreGames();
             const storeGames = await Promise.all(shuffledGames.filter(g =>
             {
+                if (platformSlug && !getValidDownloads(g).some(d => (d.system.split(':')[0] === 'win32' ? 'win' : d.system.split(':')[0]) === platformSlug)) return false;
                 if (query.search)
                     return path.basename(g.name).toLocaleLowerCase().includes(query.search.toLocaleLowerCase());
                 return true;

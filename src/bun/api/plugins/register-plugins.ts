@@ -10,6 +10,7 @@ import romm from './builtin/sources/com.simeonradivoev.gameflow.romm/package.jso
 import igdb from './builtin/sources/com.simeonradivoev.gameflow.igdb/package.json';
 import store from './builtin/sources/com.simeonradivoev.gameflow.store/package.json';
 import es from './builtin/launchers/com.simeonradivoev.gameflow.es/package.json';
+import umu from './builtin/launchers/com.simeonradivoev.gameflow.umu/package.json';
 import rclone from './builtin/other/com.simeonradivoev.gameflow.rclone/package.json';
 import { PluginDescriptionSchema, PluginDescriptionType, PluginSchema } from "@simeonradivoev/gameflow-sdk";
 import path from 'node:path';
@@ -90,6 +91,7 @@ export default async function register (pluginManager: PluginManager)
         { ...xemu, load: () => import('./builtin/emulators/com.simeonradivoev.gameflow.xemu/xemu') },
         { ...romm, load: () => import('./builtin/sources/com.simeonradivoev.gameflow.romm/romm') },
         { ...igdb, load: () => import('./builtin/sources/com.simeonradivoev.gameflow.igdb/igdb') },
+        { ...umu, load: () => import('./builtin/launchers/com.simeonradivoev.gameflow.umu/umu') },
         { ...es, load: () => import('./builtin/launchers/com.simeonradivoev.gameflow.es/es-de') },
         { ...store, load: () => import('./builtin/sources/com.simeonradivoev.gameflow.store/store') },
         { ...rclone, load: () => import('./builtin/other/com.simeonradivoev.gameflow.rclone/rclone') },
