@@ -37,11 +37,13 @@ export default class PluginOperationJob implements IJob<never, string>
                 if (!existingPlugin.update?.new) throw new Error(`No Update Found`);
                 let updatePlugin = await getPlugin(this.plugin, plugins);
                 if (!updatePlugin) throw new Error(`${this.plugin} Not Found`);
-                await unregisterPlugin(this.plugin, plugins);
                 const updateResponse = await runBunPackageCommand(["update", `${this.plugin}@${existingPlugin.update?.new}`, '--omit', 'peer', "--registry", PluginRegistry, '--latest']);
                 console.log(updateResponse);
                 updatePlugin = await getPlugin(this.plugin, plugins);
                 if (!updatePlugin) throw new Error(`Something Went Wrong during update. Missing Plugin: ${this.plugin}`);
+                if (updatePlugin.version !== existingPlugin.update.new)
+                    throw new Error('The requested plugin version was not installed. Check whether this package is a local development link.');
+                await unregisterPlugin(this.plugin, plugins);
                 await registerPlugin(updatePlugin, existingPlugin.source, plugins);
                 break;
             case "remove":

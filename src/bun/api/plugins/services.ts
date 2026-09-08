@@ -45,11 +45,15 @@ export async function runBunPackageCommand (commands: string[])
         }
     });
 
-    let stdout = await new Response(proc.stdout).text();
-    let stderr = await new Response(proc.stderr).text();
+    const [stdout, stderr, exitCode] = await Promise.all([
+        new Response(proc.stdout).text(),
+        new Response(proc.stderr).text(),
+        proc.exited
+    ]);
     if (stderr)
         console.error(stderr);
-    await proc.exited;
+    if (exitCode !== 0)
+        throw new Error(`Plugin package command failed (exit code ${exitCode}). Check the application logs for details.`);
     return stdout;
 }
 

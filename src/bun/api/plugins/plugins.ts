@@ -61,9 +61,17 @@ export default new Elysia({ prefix: '/plugins' })
         body: z.object({ id: z.string() })
     }).post('/update', async ({ body: { id } }) =>
     {
-        if (taskQueue.hasActiveOfType(PluginOperationJob) || taskQueue.hasActiveOfType(ReloadPluginsJob)) return;
-        await taskQueue.enqueue(PluginOperationJob.id, new PluginOperationJob("update", id));
-        await taskQueue.enqueue(ReloadPluginsJob.id, new ReloadPluginsJob());
+        if (taskQueue.hasActiveOfType(PluginOperationJob) || taskQueue.hasActiveOfType(ReloadPluginsJob))
+            return status("Conflict", "Another plugin operation is still running. Please wait and retry.");
+        try
+        {
+            await taskQueue.enqueue(PluginOperationJob.id, new PluginOperationJob("update", id));
+            await taskQueue.enqueue(ReloadPluginsJob.id, new ReloadPluginsJob());
+            return { updated: true };
+        } catch (error)
+        {
+            return status("Internal Server Error", error instanceof Error ? error.message : "Could not update the plugin.");
+        }
     }, {
         body: z.object({ id: z.string() })
     })

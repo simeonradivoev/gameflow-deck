@@ -45,7 +45,7 @@ function Details ()
     const handleRefresh = (client: QueryClient) =>
     {
         client.invalidateQueries(pluginFilter(plugin));
-        navigate({ to: '/store/details/plugin/$id', params: { id: encodeURIComponent(id) }, replace: true });
+        navigate({ to: '/store/details/plugin/$id', params: { id: encodeURIComponent(plugin) }, replace: true });
     };
     const update = useMutation({
         ...updatePluginMutation(plugin),

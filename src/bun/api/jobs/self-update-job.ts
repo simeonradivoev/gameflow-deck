@@ -1,11 +1,11 @@
 import z from "zod";
 import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk";
-import { events } from "../app";
+import { config, events } from "../app";
 import { Downloader } from "@/bun/utils/downloader";
 import path from 'node:path';
 import os from "node:os";
 import winUpdateScript from '@/bun/utils/update-gameflow-windows.bat' with { type: "text" };
-import linuxUpdateScript from '@/bun/utils/update-gameflow-linux.sh' with { type: "text" };
+import { installAppImageUpdate } from '@/bun/utils/appimage-update';
 import mustache from "mustache";
 import pkg from '~/package.json';
 import { sleep } from "bun";
@@ -18,7 +18,7 @@ export default class SelfUpdateJob implements IJob<never, string>
 
     async downloadUpdate (url: URL, dest: string | undefined, filename: string, ctx: JobContext<IJob<never, string>, never, string>)
     {
-        const downloader = new Downloader('update',
+        const downloader = new Downloader(`update-${Bun.hash(url.href).toString(16)}`,
             [{
                 url: url,
                 file_path: "",
@@ -26,6 +26,7 @@ export default class SelfUpdateJob implements IJob<never, string>
             }],
             dest,
             {
+                signal: ctx.abortSignal,
                 onProgress (stats)
                 {
                     ctx.setProgress(stats.progress, "Downloading Update");
@@ -38,11 +39,14 @@ export default class SelfUpdateJob implements IJob<never, string>
     {
         context.setProgress(0, "Downloading Update");
         await sleep(1000);
-        const latest = await fetch('https://api.github.com/repos/simeonradivoev/gameflow-deck/releases/latest');
+        const latest = await fetch('https://api.github.com/repos/simeonradivoev/gameflow-deck/releases/latest', { signal: context.abortSignal });
         if (latest.ok)
         {
-            const data = await latest.json();
-            let validAsset: any | undefined;
+            const data = z.object({ assets: z.array(z.object({
+                name: z.string(), browser_download_url: z.url(), size: z.number().int().positive(),
+                digest: z.string().nullable().optional()
+            })) }).parse(await latest.json());
+            let validAsset: typeof data.assets[number] | undefined;
             switch (process.platform)
             {
                 case "win32":
@@ -54,10 +58,6 @@ export default class SelfUpdateJob implements IJob<never, string>
                     break;
                 case "linux":
                     validAsset = data.assets.find((e: any) => new Bun.Glob(`Gameflow-${process.platform}-${process.arch}.AppImage`).match(e.name));
-                    if (!validAsset)
-                    {
-                        validAsset = data.assets.find((e: any) => new Bun.Glob(`*.AppImage`).match(e.name));
-                    }
                     break;
                 default:
                     events.emit('notification', { message: "Unsupported Platfrom", title: 'Failed Update', type: "error" });
@@ -88,15 +88,14 @@ export default class SelfUpdateJob implements IJob<never, string>
                     }
                     const linuxDownloads = await this.downloadUpdate(new URL(validAsset.browser_download_url), undefined, path.basename(appimage), context);
                     if (!linuxDownloads) return;
-                    const shPath = path.join(os.tmpdir(), "update-gameflow.sh");
-                    await Bun.write(shPath, mustache.render(linuxUpdateScript, {
-                        tempFile: linuxDownloads[0],
-                        appImagePath: appimage
-                    }));
-                    context.setProgress(0, "Restarting App To Update");
-                    events.emit('exitapp');
-                    Bun.spawn(["bash", shPath], { detached: true });
-                    process.exit(0);
+                    context.abortSignal.throwIfAborted();
+                    context.setProgress(0, "Verifying And Installing Update");
+                    await installAppImageUpdate(linuxDownloads[0], appimage, validAsset,
+                        path.join(config.get('downloadPath'), 'storage', 'updates', 'appimage-update.log'), context.abortSignal);
+                    context.setProgress(100, "Restarting App To Update");
+                    // Let this job finish before graceful shutdown closes the task queue.
+                    setTimeout(() => events.emit('exitapp'), 100);
+                    return;
                 case "win32":
                     const winDownloads = await this.downloadUpdate(new URL(validAsset.browser_download_url), undefined, "Gameflow-update.zip", context);
                     if (!winDownloads) return;

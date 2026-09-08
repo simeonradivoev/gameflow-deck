@@ -1,5 +1,6 @@
 import { mutationOptions, QueryFilters, queryOptions } from "@tanstack/react-query";
 import { pluginsApi } from "../clientApi";
+import toast from "react-hot-toast";
 
 export const getAllPluginsQuery = queryOptions({
     queryKey: ['plugins', 'all'], queryFn: async () =>
@@ -43,9 +44,16 @@ export const updatePluginMutation = (id: string) => mutationOptions({
     mutationKey: ['plugin', 'update', id],
     mutationFn: async () =>
     {
-        const { data, error } = await pluginsApi.plugins.update.post({ id });
-        if (error) throw error;
-        return data;
+        return toast.promise((async () =>
+        {
+            const { data, error } = await pluginsApi.plugins.update.post({ id });
+            if (error) throw new Error(typeof error.value === 'string' ? error.value : 'Could not update the plugin. Check the application logs for details.');
+            return data;
+        })(), {
+            loading: 'Updating plugin…',
+            success: 'Plugin updated',
+            error: error => error instanceof Error ? error.message : 'Could not update the plugin'
+        });
     }
 });
 
