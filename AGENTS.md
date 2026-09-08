@@ -204,6 +204,7 @@ There is no dedicated lint script. Do not claim lint verification unless one is 
 ## Change hygiene
 
 - Use Conventional Commits for every commit message, including an appropriate type and optional scope such as `feat(web):`, `fix(store):`, or `docs:`.
+- Automatically commit completed new features and bug fixes after running the required verification, without waiting for a separate commit request. Include only changes belonging to the task, preserve unrelated user changes, and report any verification failures or limitations.
 - Check `git status` before and after work. Preserve unrelated user changes in a dirty worktree.
 - Never commit `dist/`, `build/`, local logs, downloaded runtimes, test residue, or secret-bearing environment/config files unless the repository already tracks the exact artifact and the task requires updating it.
 - Keep generated diffs explainable and tied to their source inputs.
