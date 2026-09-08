@@ -4,7 +4,7 @@ import { Button } from '@/mainview/components/options/Button';
 import { checkUpdateMutation, hasUpdateQuery, updateMutation } from '@/mainview/scripts/queries/system';
 import { FocusContext, useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { useMutation } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { CircleFadingArrowUp, RefreshCcw } from 'lucide-react';
 import { MarkdownAsync } from 'react-markdown';
 
@@ -30,20 +30,21 @@ function Loading ()
 function RouteComponent ()
 {
     const { data } = Route.useLoaderData();
-    const navigate = useNavigate();
+    const router = useRouter();
     const update = useMutation(updateMutation);
     const forceCheckUpdate = useMutation({
         ...checkUpdateMutation,
-        onSuccess (data, variables, onMutateResult, context)
+        async onSuccess (data, variables, onMutateResult, context)
         {
-            context.client.invalidateQueries(hasUpdateQuery);
-            navigate({ to: '/settings/update', replace: true });
+            context.client.setQueryData(hasUpdateQuery.queryKey, data);
+            await router.invalidate();
         },
     });
     const { ref, focusKey } = useFocusable({ focusKey: 'updates' });
     return <div ref={ref}>
         <FocusContext value={focusKey}>
-            <h1 className='text-2xl text-center'>Version: {data.version}</h1>
+            <h1 className='text-2xl text-center'>Current version: {data.currentVersion}</h1>
+            {data.hasUpdate > 0 && <p className='text-center'>Latest version: {data.version}</p>}
             <div className='flex flex-flex-wrap gap-2'>
                 {
                     data.hasUpdate > 0 ?
@@ -52,7 +53,8 @@ function RouteComponent ()
                 }
                 {<Button className='gap-3' id='force-update-btn' onAction={() => update.mutate()}><CircleFadingArrowUp /> Force Update</Button>}
             </div>
-            <div className="divider">Version Info</div>
+            <div className="divider">{data.hasUpdate > 0 ? `Changes since ${data.currentVersion}` : 'Version Info'}</div>
+            {data.changelogUnavailable && <p role='status'>The full changelog is unavailable. Showing the latest release notes.</p>}
             <div className="prose lg:prose-xl">
                 <MarkdownAsync components={{
                     a ({ node, children, ...props })

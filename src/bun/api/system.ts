@@ -14,18 +14,36 @@ import si from 'systeminformation';
 import { getStoreFolder } from "./store/services/gamesService";
 import ReloadPluginsJob from "./jobs/reload-plugins-job";
 import { semver } from "bun";
-import { getOrCachedGithubRelease } from "./cache";
+import { getOrCachedGameflowChangelog, getOrCachedGithubRelease } from "./cache";
+import { getUpdateChangelog } from "../utils/update-changelog";
 import SelfUpdateJob from "./jobs/self-update-job";
 
 async function checkUpdate (force?: boolean)
 {
+    const currentVersion = getAppVersion();
     const latest = await getOrCachedGithubRelease('simeonradivoev/gameflow-deck', force);
     if (!latest || !latest.tag_name) return {
         hasUpdate: 0,
-        version: getAppVersion()
+        version: currentVersion,
+        currentVersion
     };
-    const hasUpdate = semver.order(latest.tag_name, getAppVersion());
-    return { hasUpdate, version: latest.tag_name, info: latest.body };
+    const hasUpdate = semver.order(latest.tag_name, currentVersion);
+    let info = latest.body;
+    let changelogUnavailable = false;
+    if (hasUpdate > 0)
+    {
+        try
+        {
+            const changelog = getUpdateChangelog(await getOrCachedGameflowChangelog(latest.tag_name), currentVersion, latest.tag_name);
+            if (!changelog) throw new Error('No matching changelog entries');
+            info = changelog;
+        } catch
+        {
+            // Keep updating available if the versioned changelog cannot be fetched.
+            changelogUnavailable = true;
+        }
+    }
+    return { hasUpdate, version: latest.tag_name, currentVersion, info, changelogUnavailable };
 }
 
 export const system = new Elysia({ prefix: '/api/system' })
