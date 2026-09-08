@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.10.1](https://github.com/simeonradivoev/gameflow-deck/compare/v1.10.0...v1.10.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **umu:** report only game-specific save locations ([896a7ca](https://github.com/simeonradivoev/gameflow-deck/commit/896a7ca50497fdb76a9aaa0fba154c609106d8dd))
+
 ## [1.10.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.9.0...v1.10.0) (2026-09-08)
 
 
