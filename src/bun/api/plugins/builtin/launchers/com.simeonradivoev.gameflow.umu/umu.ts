@@ -79,6 +79,11 @@ export default class UmuIntegration implements PluginType<Settings>
     async load (ctx: PluginLoadingContextType<Settings>)
     {
         if (!supportsUmu(this.platform, this.arch)) return;
+        ctx.hooks.games.launchOutput.tap(desc.name, ({ command, line }) =>
+        {
+            if (command.emulator !== 'UMU') return;
+            return getUmuLaunchStatus(line);
+        });
         const library = () => path.resolve(ctx.app.config.get('downloadPath'));
         const settings = () => SettingsSchema.parse(ctx.config.store);
         const executable = async () =>
@@ -174,4 +179,24 @@ export default class UmuIntegration implements PluginType<Settings>
             if ((source === desc.name && id === '1') || slug === 'win') return { slug: 'win', name: 'Windows' };
         });
     }
+}
+
+/** Match known stages without forwarding executable paths, environment values, or raw logs. */
+export function getUmuLaunchStatus(line: string): { message: string } | undefined
+{
+    if (/Failed to acquire release assets|Environment variable not set or is empty: PROTONPATH/.test(line))
+        return { message: 'Could not obtain Proton. Check your connection or select a custom Proton installation in umu settings.' };
+    if (/PROTONPATH .*not valid|toolmanifest.vdf not found/.test(line))
+        return { message: 'Proton installation is invalid. Check the selected Proton directory in umu settings.' };
+    if (/Connection broken, trying to resume/.test(line)) return { message: 'Download interrupted. Retrying…' };
+    if (/Downloading.*(?:steamrt|SteamLinuxRuntime)/i.test(line)) return { message: 'Downloading Steam Linux Runtime…' };
+    if (/Downloading.*(?:Proton|\.sha512sum)/i.test(line)) return { message: 'Downloading Proton…' };
+    if (/Verifying integrity|mtree is OK|SHA(?:256|512) is OK/.test(line)) return { message: 'Verifying downloaded components…' };
+    if (/Extracting|Unpacking/i.test(line)) return { message: 'Extracting launcher components…' };
+    if (/Using steamrt/.test(line)) return { message: 'Steam Linux Runtime ready. Preparing Proton…' };
+    if (/Using (?:GE|UMU)-Proton|Proton: Upgrading|wine:.*configuration/.test(line)) return { message: 'Preparing Wine prefix…' };
+    if (/steamrt\d validation failed|Could not find sniper_platform/.test(line)) return { message: 'Steam Linux Runtime needs setup. Checking downloads…' };
+    if (/Setting up Unified Launcher|umu-launcher version/.test(line)) return { message: 'Setting up umu and checking dependencies…' };
+    if (/Running.*(?:waitforexitandrun|wine)|Proton: Executable/.test(line)) return { message: 'Starting Windows game…' };
+    return undefined;
 }

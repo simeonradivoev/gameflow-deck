@@ -4,6 +4,16 @@ import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfal
 
 export default class GameHooks
 {
+    /** Translate process output into safe UI status. Return undefined for other launchers
+     * or unrecognized lines. Never return raw logs, paths, or credentials.
+     * Called synchronously for bounded, ANSI-stripped stdout and stderr lines.
+     * Omit progress for an indeterminate stage; otherwise use 0–100.
+     */
+    launchOutput = new SyncBailHook<[ctx: {
+        command: CommandEntry;
+        stream: 'stdout' | 'stderr';
+        line: string;
+    }], { message: string; progress?: number; } | undefined>(['ctx']);
     /** Discover save folders without launching, writing config, or syncing saves. */
     findSaveLocations = new AsyncSeriesHook<[ctx: {
         game: FrontEndGameTypeDetailed;

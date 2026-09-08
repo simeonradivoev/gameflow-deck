@@ -33,3 +33,5 @@ Until using an umu build containing the upstream architecture-selection fix:
 4. Launch the game again. This selects the local Proton directly while retaining the runtime, prefixes, saves, and caches already in the library.
 
 The default UMU selection also downloads Proton from GitHub, so changing release families is not a reliable workaround for release-asset selection failures. Upstream's [current asset-selection implementation](https://github.com/Open-Wine-Components/umu-launcher/blob/main/umu/umu_proton.py) filters out foreign architectures; the [1.4.0 implementation](https://github.com/Open-Wine-Components/umu-launcher/blob/1.4.0/umu/umu_proton.py) does not.
+
+Launch progress is shown through the shared SDK `games.launchOutput` hook. UMU translates dependency checks, Proton/runtime downloads, retries, verification, extraction, and Wine setup into short status messages. Recognized Proton setup errors include recovery guidance. Unrecognized game output is not displayed, and raw paths and environment values are not forwarded to the launch screen.

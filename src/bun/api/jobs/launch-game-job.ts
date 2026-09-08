@@ -1,3 +1,4 @@
+import { createLaunchOutputReporter } from "@/bun/utils/launch-output";
 import z from "zod";
 import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
 import { ActiveGameSchema, ActiveGameType } from "@simeonradivoev/gameflow-sdk";
@@ -125,6 +126,27 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
             dryRun: false
         });
 
+        const reporter = createLaunchOutputReporter(plugins.hooks, this.validCommand, context.setProgress.bind(context));
+        const outputTasks: Promise<void>[] = [];
+        const outputReaders = new Set<ReadableStreamDefaultReader<Uint8Array>>();
+        const readOutput = async (stream: ReadableStream<Uint8Array>, name: 'stdout' | 'stderr') =>
+        {
+            const reader = reporter(name);
+            const source = stream.getReader();
+            outputReaders.add(source);
+            try
+            {
+                while (true)
+                {
+                    const { done, value } = await source.read();
+                    if (done) break;
+                    reader.write(value);
+                }
+            }
+            catch { /* Aborting a process can close its output streams. */ }
+            finally { reader.end(); outputReaders.delete(source); source.releaseLock(); }
+        };
+        context.setProgress(0, 'Preparing game');
         await new Promise(async (resolve, reject) =>
         {
             try
@@ -132,7 +154,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 let game: any;
                 if (!commandArgs)
                 {
-                    await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug }).catch(e => reject(e));
+                    await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug });
 
                     if (Array.isArray(this.validCommand.command))
                     {
@@ -140,6 +162,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                         if (process.env.FLATPAK_BUILD) command = ['flatpak-spawn', '--host', `--directory=${config.get('downloadPath')}`, ...command];
 
                         const bunGame = Bun.spawn(command, {
+                            stdout: 'pipe', stderr: 'pipe',
                             cwd: this.validCommand.startDir,
                             signal: context.abortSignal,
                             env: {
@@ -148,10 +171,10 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                             },
                             onExit (subprocess, exitCode, signalCode, error)
                             {
-                                if (error)
+                                if (error || (exitCode !== null && exitCode !== 0 && !context.abortSignal.aborted))
                                 {
-                                    console.error(error);
-                                    reject(error);
+                                    if (error) console.error(error);
+                                    reject(error ?? new Error(`Game process exited with code ${exitCode}. Check the launcher settings and application logs.`));
                                 } else
                                 {
                                     resolve(true);
@@ -161,6 +184,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                         context.setProgress(0, "playing");
 
+                        outputTasks.push(readOutput(bunGame.stdout, 'stdout'), readOutput(bunGame.stderr, 'stderr'));
                         game = bunGame;
                     } else
                     {
@@ -182,15 +206,21 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                         context.setProgress(0, "playing");
 
-                        spawnGame.stdout.on('data', data => console.log(data));
+                        for (const name of ['stdout', 'stderr'] as const)
+                        {
+                            const reader = reporter(name);
+                            spawnGame[name].on('data', chunk => reader.write(chunk));
+                            spawnGame[name].on('end', () => reader.end());
+                        }
                         spawnGame.on('close', (code) =>
                         {
-                            resolve(code);
+                            if (code && !context.abortSignal.aborted) reject(new Error(`Game process exited with code ${code}. Check the launcher settings and application logs.`));
+                            else resolve(code);
                         });
                         spawnGame.on('error', e =>
                         {
                             console.error(e);
-                            resolve(1);
+                            reject(e);
                         });
 
                         game = spawnGame;
@@ -207,6 +237,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                     // We have full control over launching integrated emulators better to use bun spawn
                     const bunGame = Bun.spawn(command, {
+                        stdout: 'pipe', stderr: 'pipe',
                         cwd: this.validCommand.startDir,
                         signal: context.abortSignal,
                         env: {
@@ -215,10 +246,10 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                         },
                         onExit (subprocess, exitCode, signalCode, error)
                         {
-                            if (error)
+                            if (error || (exitCode !== null && exitCode !== 0 && !context.abortSignal.aborted))
                             {
-                                console.error(error);
-                                reject(error);
+                                if (error) console.error(error);
+                                reject(error ?? new Error(`Game process exited with code ${exitCode}. Check the launcher settings and application logs.`));
                             } else
                             {
                                 resolve(true);
@@ -249,6 +280,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                         });
                     }*/
 
+                    outputTasks.push(readOutput(bunGame.stdout, 'stdout'), readOutput(bunGame.stderr, 'stderr'));
                     game = bunGame;
 
                 } else
@@ -267,12 +299,15 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 };
             } catch (e)
             {
-                context.abort(e);
-                resolve(e);
+                reject(e);
             }
+        }).finally(async () =>
+        {
+            // Descendants may inherit pipes; they must not hold the launch job open after exit.
+            await Promise.allSettled([...outputReaders].map(reader => reader.cancel()));
+            await Promise.all(outputTasks);
+            await this.postPlay({ platformSlug: gameInfo?.platformSlug });
         });
-
-        await this.postPlay({ platformSlug: gameInfo?.platformSlug });
     }
 
     exposeData ()

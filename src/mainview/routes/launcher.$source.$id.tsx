@@ -5,7 +5,7 @@ import { GamePadButtonCode, useShortcuts } from '../scripts/shortcuts';
 import { useFocusable } from '@noriginmedia/norigin-spatial-navigation';
 import { FloatingShortcuts } from '../components/Shortcuts';
 import { useJobStatus } from '../scripts/utils';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 export const Route = createFileRoute('/launcher/$source/$id')({
   component: RouteComponent,
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/launcher/$source/$id')({
 });
 
 const stateLookup: Record<string, string> = {
-  saves: "Syncing Saves"
+  saves: "Syncing saves…", playing: "Game process started"
 };
 
 function RouteComponent ()
@@ -33,27 +33,28 @@ function RouteComponent ()
     }
   }
 
-  const progressRef = useRef<HTMLProgressElement>(null);
+  const launchFailed = useRef(false);
+  const [progress, setProgress] = useState(0);
   const { source, id } = Route.useParams();
   const { ref, focusKey } = useFocusable({ focusKey: `launching-${source}-${id}` });
 
   useShortcuts(focusKey, () => [{ label: "Back", button: GamePadButtonCode.B, action: HandleGoBack }]);
 
-  const { state, data } = useJobStatus('launch-game', {
+  const { state, data, error } = useJobStatus('launch-game', {
     onProgress (process, data)
     {
-      if (progressRef.current)
-        progressRef.current.value = process;
+      setProgress(process);
     },
+    onError () { launchFailed.current = true; },
     onEnded (data)
     {
-      HandleGoBack();
+      if (!launchFailed.current) HandleGoBack();
     },
     onWaiting ()
     {
-      HandleGoBack();
+      if (!launchFailed.current) HandleGoBack();
     },
-  }, [progressRef.current, HandleGoBack]);
+  }, [HandleGoBack]);
 
 
   useBlocker({ shouldBlockFn: () => !!data });
@@ -61,12 +62,11 @@ function RouteComponent ()
   return <AnimatedBackground ref={ref} backgroundKey='game-details'>
     <div className='flex shadow-2xs shadow-black flex-col absolute w-screen h-screen overflow-hidden justify-center items-center gap-4'>
       <DotsLoading />
-      {!!state && !!stateLookup[state] ?
-        <>
-          <h1 className='font-semibold'>Launching {data?.name} ...</h1> <progress ref={progressRef} className="progress w-56" value={0} max="100"></progress>
-        </>
-        :
-        <h1 className='font-semibold'>Launching {data?.name} ...</h1>}
+      <h1 className='font-semibold'>{error ? 'Could not launch game' : `Launching ${data?.name ?? 'game'}…`}</h1>
+      <p role={error ? 'alert' : 'status'} aria-live='polite' className='text-center max-w-lg px-6 break-words'>
+        {error ?? (state ? stateLookup[state] ?? state : 'Preparing launch…')}
+      </p>
+      {!error && <progress className="progress w-56" aria-label='Launch progress' value={progress > 0 ? progress : undefined} max="100" />}
     </div>
     <FloatingShortcuts />
   </AnimatedBackground>;
