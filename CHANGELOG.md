@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.9.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.8.0...v1.9.0) (2026-09-08)
+
+
+### Features
+
+* **downloads:** support source-owned installs ([f9f85d0](https://github.com/simeonradivoev/gameflow-deck/commit/f9f85d0882b8e9b103e63440d1205ca28bec5ecc))
+* **games:** discover existing save locations in details API ([997b265](https://github.com/simeonradivoev/gameflow-deck/commit/997b2654da1f5fbd97b3fd6227b1f9cd5ec8725d))
+* **umu:** launch Windows games on Linux with library-contained storage ([c2fd5e6](https://github.com/simeonradivoev/gameflow-deck/commit/c2fd5e63d9cf382667ed20c8bb0aeca2b323584f))
+
+
+### Bug Fixes
+
+* **dev:** refresh Linux NW.js codecs ([690f106](https://github.com/simeonradivoev/gameflow-deck/commit/690f1063bfdc8bcb131aae1d921d1f1d3f7420ab))
+* **downloads:** allow cancelling pending detail loads ([2a86e4c](https://github.com/simeonradivoev/gameflow-deck/commit/2a86e4cd5662c7baef3a6a95001736d4c6f71275))
+* **downloads:** deduplicate paginated source results ([c0ff190](https://github.com/simeonradivoev/gameflow-deck/commit/c0ff19090dcc5e2d72a93871dafc8f1f5eeecc22))
+* **linux:** bundle AAC codecs for web games ([5f1cbce](https://github.com/simeonradivoev/gameflow-deck/commit/5f1cbcef46dd00dbf679e9bdac8fd022d62dc130))
+* **linux:** deduplicate Steam Deck game input ([9c5d124](https://github.com/simeonradivoev/gameflow-deck/commit/9c5d1243ae673ff618d80ec23916676d949a9d18))
+* **linux:** launch bundled NW.js from AppImage ([3b1ed01](https://github.com/simeonradivoev/gameflow-deck/commit/3b1ed0192f52f606a3f43c408a8e430cbae933e0))
+* **store:** complete Ashes installs reliably ([bc7d251](https://github.com/simeonradivoev/gameflow-deck/commit/bc7d251ce73b951ccc5fc7dc851ff5f9d545f0d4))
+* **store:** refresh managed catalog package ([098a507](https://github.com/simeonradivoev/gameflow-deck/commit/098a5078e5aa3963c44ad763b90d9f871f5d1c6a))
+* **store:** stop repeating download results ([d296d2a](https://github.com/simeonradivoev/gameflow-deck/commit/d296d2aa93a1e97625bb2ddae76982dedc1a7a96))
+
 ## [1.8.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.7.0...v1.8.0) (2026-08-24)
 
 
