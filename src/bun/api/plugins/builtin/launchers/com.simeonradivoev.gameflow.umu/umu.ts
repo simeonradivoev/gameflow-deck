@@ -39,7 +39,6 @@ export function getUmuEnvironment (library: string, identity: [string, string], 
         WINEPREFIX: path.resolve(library, 'saves', 'umu', key),
         GAMEID: 'umu-default',
         STORE: 'none',
-        PROTONPATH: settings.proton === 'custom' ? path.resolve(library, settings.protonPath) : settings.proton,
         PROTON_VERB: 'waitforexitandrun',
         UMU_FOLDERS_PATH: path.join(storage, 'data'),
         XDG_DATA_HOME: path.join(storage, 'data'),
@@ -53,6 +52,10 @@ export function getUmuEnvironment (library: string, identity: [string, string], 
         UMU_LOG: settings.debug ? 'debug' : '0',
         PROTON_LOG: settings.protonLog ? '1' : '0'
     };
+    // Keep the stored UMU-Proton setting, but let umu select its default release.
+    // umu 1.4 resolves an explicit "UMU-Proton" as a directory, not a download token.
+    if (settings.proton !== 'UMU-Proton')
+        environment.PROTONPATH = settings.proton === 'custom' ? path.resolve(library, settings.protonPath.trim()) : settings.proton;
     // protonfixes treats the presence of PROTONFIXES_DISABLE as disabled, even when it is 0.
     if (!settings.protonFixes) environment.PROTONFIXES_DISABLE = '1';
     return environment;
@@ -120,7 +123,7 @@ export default class UmuIntegration implements PluginType<Settings>
                     id: `umu:${file}`,
                     label: `umu / ${path.basename(file)}`,
                     // env runs on the host too when LaunchGameJob uses flatpak-spawn.
-                    command: ['env', '-u', 'PROTONFIXES_DISABLE', `--chdir=${path.dirname(file)}`, ...Object.entries(env).map(([key, value]) => `${key}=${value}`), bin, file],
+                    command: ['env', '-u', 'PROTONPATH', '-u', 'PROTONFIXES_DISABLE', `--chdir=${path.dirname(file)}`, ...Object.entries(env).map(([key, value]) => `${key}=${value}`), bin, file],
                     startDir: path.dirname(file),
                     shell: false,
                     valid: true,

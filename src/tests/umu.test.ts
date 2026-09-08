@@ -70,6 +70,9 @@ test('umu claims Windows launches before native fallbacks and keeps command buil
     expect(command.shell).toBe(false);
     expect(command.metadata.romPath).toBe(path.join(gamePath, 'Game.EXE'));
     expect(command.command[0]).toBe('env');
+    expect((command.command as string[]).slice(0, 5)).toEqual(['env', '-u', 'PROTONPATH', '-u', 'PROTONFIXES_DISABLE']);
+    expect(command.env).not.toHaveProperty('PROTONPATH');
+    expect((command.command as string[]).some(arg => arg.startsWith('PROTONPATH='))).toBe(false);
     expect(command.command).toContain(Bun.which('bun')!);
     expect(command.startDir).toBe(gamePath);
     expect(await fs.exists(command.env!.WINEPREFIX)).toBe(false);
@@ -137,4 +140,15 @@ test('unqualified Windows downloads are not mistaken for emulator fallback syste
     const game = { ...catalog, downloads: { windows: { ...catalog.downloads.windows, system: 'win' } } };
     expect(getValidDownloads(game, undefined, { platform: 'linux', arch: 'x64', umu: false })).toEqual([]);
     expect(getValidDownloads(game, undefined, { platform: 'linux', arch: 'x64', umu: true })).toHaveLength(1);
+});
+
+test('default and saved UMU-Proton settings use automatic selection instead of an invalid directory', () =>
+{
+    const library = app.config.get('downloadPath');
+    for (const settings of [SettingsSchema.parse({}), SettingsSchema.parse({ proton: 'UMU-Proton' })])
+        expect(getUmuEnvironment(library, ['store', 'test'], settings)).not.toHaveProperty('PROTONPATH');
+    expect(getUmuEnvironment(library, ['store', 'test'], SettingsSchema.parse({ proton: 'GE-Proton' })).PROTONPATH)
+        .toBe('GE-Proton');
+    expect(getUmuEnvironment(library, ['store', 'test'], SettingsSchema.parse({ proton: 'custom', protonPath: 'tools/My Proton' })).PROTONPATH)
+        .toBe(path.resolve(library, 'tools/My Proton'));
 });
