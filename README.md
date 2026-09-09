@@ -122,7 +122,7 @@ For more info check the [SDK README](./scripts/sdk/README.md)
 ## AI use
 
 At one point I wanted to test AI on a bigger existing project. 
-Open AI had a trail and I didn't want to give money for AI so I just used that. 
+Open AI had a trial and I didn't want to give money for AI so I just used that. 
 It did reasonably well, but I probably won't be using my own money for AI if I get access for free I might do some more neat features.
 
 ### Tech Stack
