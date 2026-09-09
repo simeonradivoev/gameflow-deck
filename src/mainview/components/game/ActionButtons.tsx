@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
 import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
-import { Hammer, RefreshCcw, RefreshCcwDot, Settings, Trash, Trophy } from "lucide-react";
+import { Download, Store, Hammer, RefreshCcw, RefreshCcwDot, Settings, Trash, Trophy } from "lucide-react";
 import MainActions from "./MainActions";
 import ActionButton from "./ActionButton";
 import { useLocalStorage } from "usehooks-ts";
@@ -104,7 +104,27 @@ export default function ActionButtons (data: {
         }
     });
 
-    const contextOptions: DialogEntry[] = [];
+    const contextOptions: DialogEntry[] = [{
+        id: 'go-to-store',
+        type: 'primary',
+        content: 'Go to Store',
+        icon: <Store />,
+        action (ctx)
+        {
+            ctx.close();
+            navigate({ to: '/store/tab/games' });
+        }
+    }, {
+        id: 'go-to-downloads',
+        type: 'primary',
+        content: 'Go to Downloads',
+        icon: <Download />,
+        action (ctx)
+        {
+            ctx.close();
+            navigate({ to: '/store/tab/download' });
+        }
+    }];
     if (data.game?.local)
     {
         contextOptions.push({

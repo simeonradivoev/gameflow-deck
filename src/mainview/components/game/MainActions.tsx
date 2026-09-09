@@ -267,6 +267,16 @@ export default function MainActions (data: {
         <div className="divider divider-horizontal m-0"></div>
         {showProgress && <ActionButton onAction={() => globalDialog.openContext({
             content: <ContextList options={[{
+                id: 'view-download-task',
+                content: 'Go to Download Task',
+                icon: <Download />,
+                action (ctx)
+                {
+                    ctx.close();
+                    navigate({ to: '/settings/tasks', search: { task: `install-job-${data.source}-${data.id}` } });
+                },
+                type: 'primary'
+            }, {
                 id: 'cancel',
                 content: "Cancel",
                 action (ctx)
