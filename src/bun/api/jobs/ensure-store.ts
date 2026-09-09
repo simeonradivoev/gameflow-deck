@@ -13,7 +13,7 @@ async function getLatestMatchingVersion (packageName: string, versionRange: stri
 {
     try
     {
-        const response = await fetch(`${PluginRegistry}/${packageName}`);
+        const response = await fetch(`${PluginRegistry}/${packageName}`, { signal: AbortSignal.timeout(10000) });
         if (!response.ok) return;
         const metadata = await response.json() as {
             versions?: Record<string, unknown>;
@@ -59,15 +59,15 @@ export default class EnsureStore implements IJob<never, string>
         {
             if (!storePackage.dependencies?.[sdkPkg.name] || storePackage.dependencies?.[sdkPkg.name] !== sdkPkg.version)
             {
-                let response = await runBunPackageCommand(["add", `${sdkPkg.name}@${sdkPkg.version}`, "--registry", PluginRegistry, '--omit', 'peer']);
-                console.log(response);
-            }
-
-            // probably just means we couldn't find a version of the sdk, just install latest
-            if (storePackage.dependencies?.[sdkPkg.name] !== sdkPkg.version)
-            {
-                let response = await runBunPackageCommand(["add", '--exact', `${sdkPkg.name}@latest`, "--registry", PluginRegistry, '--omit', 'peer']);
-                console.log(response);
+                try
+                {
+                    await runBunPackageCommand(["add", '--exact', `${sdkPkg.name}@${sdkPkg.version}`, "--registry", PluginRegistry, '--omit', 'peer']);
+                } catch
+                {
+                    // A development app may reference an SDK version not published yet.
+                    // Fall back only if that installation failed, not from stale package metadata.
+                    await runBunPackageCommand(["add", '--exact', `${sdkPkg.name}@latest`, "--registry", PluginRegistry, '--omit', 'peer']);
+                }
             }
         } else
         {

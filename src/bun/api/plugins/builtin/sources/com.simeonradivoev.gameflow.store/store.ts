@@ -40,7 +40,18 @@ export default class StoreIntegration implements PluginType
     {
         console.log("Store Directory is ", getStoreFolder());
         ctx.setProgress(0, "Updating Store");
-        await taskQueue.enqueue(EnsureStore.id, new EnsureStore());
+        try
+        {
+            await taskQueue.enqueue(EnsureStore.id, new EnsureStore());
+        } catch (error)
+        {
+            // Updating packages is optional when the installed catalog is still available.
+            // Do not lose every store hook because an npm/SDK update failed at startup.
+            const available = await Promise.all(['buckets/games', 'buckets/emulators'].map(directory =>
+                fs.stat(path.join(getStoreFolder(), directory)).then(stat => stat.isDirectory()).catch(() => false)));
+            if (!available.every(Boolean)) throw error;
+            console.warn('Store update failed; using the installed catalog. Retry Update Store in plugin settings.');
+        }
     }
 
     async load (ctx: PluginLoadingContextType)
