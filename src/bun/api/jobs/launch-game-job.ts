@@ -146,6 +146,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
             catch { /* Aborting a process can close its output streams. */ }
             finally { reader.end(); outputReaders.delete(source); source.releaseLock(); }
         };
+        let processStarted = false;
         context.setProgress(0, 'Preparing game');
         await new Promise(async (resolve, reject) =>
         {
@@ -184,6 +185,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
 
                         context.setProgress(0, "playing");
 
+                        processStarted = true;
                         outputTasks.push(readOutput(bunGame.stdout, 'stdout'), readOutput(bunGame.stderr, 'stderr'));
                         game = bunGame;
                     } else
@@ -212,6 +214,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                             spawnGame[name].on('data', chunk => reader.write(chunk));
                             spawnGame[name].on('end', () => reader.end());
                         }
+                        spawnGame.once('spawn', () => { processStarted = true; });
                         spawnGame.on('close', (code) =>
                         {
                             if (code && !context.abortSignal.aborted) reject(new Error(`Game process exited with code ${code}. Check the launcher settings and application logs.`));
@@ -280,6 +283,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                         });
                     }*/
 
+                    processStarted = true;
                     outputTasks.push(readOutput(bunGame.stdout, 'stdout'), readOutput(bunGame.stderr, 'stderr'));
                     game = bunGame;
 
@@ -306,7 +310,8 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
             // Descendants may inherit pipes; they must not hold the launch job open after exit.
             await Promise.allSettled([...outputReaders].map(reader => reader.cancel()));
             await Promise.all(outputTasks);
-            await this.postPlay({ platformSlug: gameInfo?.platformSlug });
+            // Failed preparation must not export stale saves; real game crashes still run cleanup.
+            if (processStarted) await this.postPlay({ platformSlug: gameInfo?.platformSlug });
         });
     }
 

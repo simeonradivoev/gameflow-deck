@@ -1,6 +1,6 @@
 import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
-import { config, db, events } from "@/bun/api/app";
+import { config, events } from "@/bun/api/app";
 import path from 'node:path';
 import unzip from 'unzip-stream';
 import { ensureDir } from "fs-extra";
@@ -10,8 +10,10 @@ import fs from 'node:fs/promises';
 import { randomUUIDv7 } from "bun";
 import z from "zod";
 import { createInterface } from "node:readline";
-import { getLocalGameMatch } from "@/bun/api/games/services/utils";
-import { getErrorMessage } from "@/bun/utils";
+import { setTimeout as delay } from 'node:timers/promises';
+import { RcloneClient } from './client';
+import { captureSaveSnapshot } from '@/bun/api/saves/snapshot';
+import { uploadSaveSnapshot } from './backup';
 
 const DefaultLocalName = "Default_Local";
 
@@ -25,20 +27,26 @@ const SettingsSchema = z.object({
     remoteName: z.string().default(DefaultLocalName),
     verboseLog: z.boolean()
         .default(false)
-        .describe("Show detailed log of operation for debugging")
+        .describe("Show backup status messages")
         .meta({ $comment: JSON.stringify({ category: "debug" }) }),
-    importSaves: z.boolean().default(true).describe("Import Saves From the Destination. This will override local saves"),
-    exportSaves: z.boolean().default(true).describe("Export saves to remove. This will sync current saves with remote")
+    importSaves: z.boolean().default(true).describe("Automatic restore is paused while conflict recovery is being added. Existing local saves are never overwritten."),
+    exportSaves: z.boolean().default(true).describe("Keep separate, verified save backups after playing. Existing destination saves are never replaced or deleted."),
+    safetyStatus: z.string().default("Backup only. Automatic restore and conflict resolution are not available yet.").readonly()
+        .meta({ title: "Save protection" })
 });
 
 type SettingsType = z.infer<typeof SettingsSchema>;
-const loginTokenUrlRegex = /http:\/\/[\w\d:\-@\[\]\.\/?=]+/gm;
 
 export default class RcloneIntegration implements PluginType<SettingsType>
 {
     settingsSchema = SettingsSchema;
     rclonePath: string | undefined;
     server: Bun.Subprocess | undefined;
+    private lifetime = new AbortController();
+    private client!: RcloneClient;
+    private reader?: ReturnType<typeof createInterface>;
+    private backupWork = Promise.resolve();
+    private reportedRestorePause = false;
     password: string;
     user = "gameflow";
     loginUrl: string | undefined = undefined;
@@ -56,6 +64,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
     constructor()
     {
         this.password = randomUUIDv7();
+        this.client = new RcloneClient('http://localhost:5572', this.user, this.password, this.lifetime.signal);
     }
 
     async onEvent (id: string)
@@ -64,11 +73,9 @@ export default class RcloneIntegration implements PluginType<SettingsType>
         {
             case "open-web-gui":
                 return { openTab: this.loginUrl };
-                break;
             case "refresh":
                 await this.refresh();
                 return { reload: true };
-                break;
         }
     }
 
@@ -84,6 +91,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             linux: 'rclone-*/rclone',
             darwin: 'rclone-*/rclone'
         };
+        if (!binaryMap[process.platform]) throw new Error('Save backups are not supported on this operating system.');
         const existingRclones = await Array.fromAsync(fs.glob(binaryMap[process.platform], { cwd: toolsPath }));
         if (existingRclones[0])
         {
@@ -102,12 +110,15 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             x64: "amd64",
             arm64: "arm64"
         };
+        if (!archMap[process.arch]) throw new Error('Save backups are not supported on this processor.');
         const downloadUrl = `https://downloads.rclone.org/rclone-current-${platformMap[process.platform]}-${archMap[process.arch]}.zip`;
         console.log("Starting Download", downloadUrl);
-        const rcCloseZip = await fetch(downloadUrl);
+        const downloadSignal = AbortSignal.any([this.lifetime.signal, AbortSignal.timeout(120_000)]);
+        const rcCloseZip = await fetch(downloadUrl, { signal: downloadSignal });
+        if (!rcCloseZip.ok || !rcCloseZip.body) throw new Error('Could not download the save backup tool.');
 
         await ensureDir(toolsPath);
-        await pipeline(Readable.fromWeb(rcCloseZip.body as any), unzip.Extract({ path: toolsPath }));
+        await pipeline(Readable.fromWeb(rcCloseZip.body as any), unzip.Extract({ path: toolsPath }), { signal: downloadSignal });
         const dests = await Array.fromAsync(fs.glob(binaryMap[process.platform], { cwd: toolsPath }));
         if (dests[0])
         {
@@ -122,352 +133,142 @@ export default class RcloneIntegration implements PluginType<SettingsType>
     {
         try
         {
-            const data = await this.request('/config/listremotes', {});
+            const data = z.object({ remotes: z.array(z.string()) }).parse(await this.client.request('/config/listremotes', {}));
             z.globalRegistry.add(SettingsSchema.shape.remoteName, {
-                examples: [''].concat(...data.remotes),
-                description: "The name of the remote to sync with"
+                examples: [DefaultLocalName, ...data.remotes],
+                description: "The destination for new backups. Default_Local keeps backups on this device."
             });
         } catch (error)
         {
-            events.emit('notification', { message: getErrorMessage(error), type: 'error' });
+            events.emit('notification', { message: 'Could not list backup destinations.', type: 'error' });
             z.globalRegistry.add(SettingsSchema.shape.remoteName, {
-                examples: [''],
-                description: "The name of the remote to sync with"
+                examples: [DefaultLocalName],
+                description: "The destination for new backups. Default_Local keeps backups on this device."
             });
         }
     }
 
     async startServer (ctx: PluginLoadingContextType<SettingsType>)
     {
-        const args: string[] = [];
-        if (ctx.config.get('runWebGui'))
-        {
-            args.push("--rc-web-gui");
-            args.push("--rc-web-gui-no-open-browser");
-        }
-        if (ctx.config.get(''))
-        {
-            args.push('-vv');
-        }
-        let env: Record<string, string> | undefined = undefined;
+        const args = ctx.config.get('runWebGui') ? ['--rc-web-gui', '--rc-web-gui-no-open-browser'] : [];
+        const env = { ...process.env };
         if (!ctx.config.get('globalConfig'))
         {
-            env = { RCLONE_CONFIG: path.join(config.get('downloadPath'), 'tools', 'config', 'rclone', 'rclone.conf') };
+            const directory = path.join(config.get('downloadPath'), 'tools', 'config', 'rclone');
+            await ensureDir(directory);
+            env.RCLONE_CONFIG = path.join(directory, 'rclone.conf');
         }
         ctx.config.set('webGuiPassword', this.password);
-        this.server = Bun.spawn([this.rclonePath!, "rcd", '--use-json-log', `--rc-user=${this.user}`, ...args, `--rc-pass=${this.password}`, "--rc-addr", "localhost:5572"], {
-            stdout: "pipe",
-            stderr: "pipe",
-            env
-        });
-        const rl = createInterface({ input: Readable.fromWeb(this.server.stderr as any) });
-        rl.on('line', e =>
+        this.server = Bun.spawn([this.rclonePath!, 'rcd', '--use-json-log', `--rc-user=${this.user}`,
+            `--rc-pass=${this.password}`, '--rc-addr', 'localhost:5572', ...args], { stdout: 'ignore', stderr: 'pipe', env });
+        this.reader = createInterface({ input: Readable.fromWeb(this.server.stderr as any) });
+        this.reader.on('line', line =>
         {
+            // Raw rclone logs can contain local paths, credentials, and login tokens.
             try
             {
-                const data = JSON.parse(e);
-
-                if (data.level === 'error')
-                {
-                    console.error(data.msg);
-                } else if (data.level === 'critical')
-                {
-                    console.error(data.msg);
-                }
-
-                else
-                {
-                    console.log(e);
-                    if (loginTokenUrlRegex.test(data.msg))
-                    {
-                        this.loginUrl = (data.msg as string).match(loginTokenUrlRegex)?.find(e => e);
-                    }
-                }
-            } catch (error)
-            {
-                console.log(e);
-            }
-
+                const data = JSON.parse(line);
+                if (typeof data.msg !== 'string') return;
+                const match = data.msg.match(/http:\/\/(?:localhost|127\.0\.0\.1):5572\/[^\s]*/);
+                if (match) this.loginUrl = match[0];
+            } catch {}
         });
-
-        await new Promise((resolve, reject) =>
+        const readiness = AbortSignal.any([this.lifetime.signal, AbortSignal.timeout(10_000)]);
+        try
         {
-            const handleResolve = (line: string) =>
+            while (true)
             {
+                readiness.throwIfAborted();
+                if (this.server.exitCode !== null) throw new Error('The backup tool could not start.');
                 try
                 {
-                    const data = JSON.parse(line);
-                    if (!loginTokenUrlRegex.test(data.msg)) return;
-                    rl.off('line', handleResolve);
-                    resolve(data);
-                } catch (error)
-                {
-
+                    const running = z.object({ pid: z.number().int() }).parse(await this.client.request('/core/pid', {}, readiness));
+                    if (running.pid !== this.server.pid) throw new Error('Another backup process is using this port.');
+                    break;
                 }
-            };
-            rl.on('line', handleResolve);
-            setTimeout(() => { reject("Timeout"); }, 5000);
-        });
-
-        await this.refresh();
-    }
-
-    async request (path: string, body: any)
-    {
-        const response = await fetch(`http://localhost:5572${path}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Basic ${Buffer.from(`${this.user}:${this.password}`).toString('base64')}`
-            },
-            body: JSON.stringify(body)
-        });
-
-        const data = await response.json();
-        if (response.ok)
+                catch
+                {
+                    readiness.throwIfAborted();
+                    await delay(100, undefined, { signal: readiness });
+                }
+            }
+            await this.refresh();
+            if (ctx.config.get('verboseLog')) console.info('Rclone backup service ready');
+        } catch
         {
-            return data;
-        } else
-        {
-            throw new Error(response.statusText, { cause: data });
+            await this.cleanup();
+            throw new Error('The backup service could not start. Check that its local port is available.');
         }
     }
 
     async cleanup ()
     {
-        await new Promise((resolve) =>
+        this.lifetime.abort();
+        this.reader?.close();
+        this.reader = undefined;
+        const server = this.server;
+        this.server = undefined;
+        if (server)
         {
-            this.request('/core/quit', {}).catch(e =>
-            {
-                this.server?.kill("SIGKILL");
-                this.server = undefined;
-            });
-
-            setTimeout(() =>
-            {
-                this.request('/core/quit', { exitCode: 9 }).then(e =>
-                {
-                    resolve(false);
-                    this.server = undefined;
-                }).catch(e =>
-                {
-                    resolve(false);
-                    this.server?.kill("SIGKILL");
-                    this.server = undefined;
-                });
-
-
-            }, 5000);
-
-            this.server?.exited.then(() => resolve(true));
-        });
-
+            server.kill();
+            const timeout = setTimeout(() => { if (server.exitCode === null) server.kill('SIGKILL'); }, 2000);
+            try { await server.exited; }
+            finally { clearTimeout(timeout); }
+        }
+        await this.backupWork;
     }
 
     async load (ctx: PluginLoadingContextType<SettingsType>)
     {
-        await this.setup(ctx);
-
-        ctx.hooks.games.prePlay.tapPromise({
-            name: desc.name,
-            stage: 10,
-        }, async ({ source, id, setProgress, saveFolderSlots, command }) =>
+        // PluginManager reuses the instance after cleanup when reloading.
+        if (this.lifetime.signal.aborted)
         {
-            if (!this.rclonePath || !saveFolderSlots || !ctx.config.get('importSaves')) return;
-
-            const destination = source === 'store' ? [source, id] : command.emulator ? [command.emulator] : undefined;
-            if (!destination) return;
-
-            const remoteName = ctx.config.get('remoteName');
-
-            for await (const [slot, { cwd }] of Object.entries(saveFolderSlots))
+            this.lifetime = new AbortController();
+            this.client = new RcloneClient('http://localhost:5572', this.user, this.password, this.lifetime.signal);
+        }
+        this.loginUrl = undefined;
+        this.reportedRestorePause = false;
+        await this.setup(ctx);
+        ctx.hooks.games.prePlay.tapPromise({ name: desc.name, stage: 10 }, async ({ saveFolderSlots }) =>
+        {
+            if (ctx.config.get('importSaves') && Object.keys(saveFolderSlots).length && !this.reportedRestorePause)
             {
-                let supportsMetadata = true;
-                let src: string;
-
-                if (remoteName && remoteName !== DefaultLocalName)
-                {
-                    src = `${remoteName}:gameflow/saves/${destination.join('/')}/${slot}`;
-
-                    const exists = await this.request('/operations/stat', {
-                        fs: `${remoteName}:`,
-                        remote: `gameflow/saves/${destination.join('/')}/${slot}`
-                    }).catch(e => undefined);
-                    if (!exists || !exists.item) return;
-                    const remote = await this.request('/operations/fsinfo', {
-                        fs: `${remoteName}:`
-                    });
-                    supportsMetadata = !remote.ReadMetadata;
-                    if (supportsMetadata)
-                    {
-                        console.warn("Remote", remoteName, "does not support metadata");
-                    }
-                } else
-                {
-                    src = path.join(config.get('downloadPath'), 'saves', ...destination, slot);
-                    if (!await fs.exists(path.join(config.get('downloadPath'), 'saves', ...destination, slot))) return;
-                }
-
-                const job = await this.request('/sync/copy', {
-                    srcFs: src,
-                    dstFs: cwd,
-                    createEmptySrcDirs: true,
-                    _async: true,
-                    _config: {
-                        CheckFirst: true,
-                        Metadata: true,
-                        NoCheckDest: supportsMetadata
-                    }
-                }).catch(e =>
-                {
-                    events.emit('notification', { message: `RClone: ${e.cause?.error ?? e.message ?? e}`, type: 'error' });
-                    return undefined;
-                });;
-
-                await new Promise(async (resolve, reject) =>
-                {
-                    setProgress(0, "RClone: Syncing Saves");
-
-                    const checkInterval = setInterval(async () =>
-                    {
-                        const stat = await this.request('/job/status', { jobid: job.jobid });
-                        if (stat.finished)
-                        {
-                            clearInterval(checkInterval);
-                            console.log(stat.output);
-                            resolve(true);
-
-                        } else if (stat.error)
-                        {
-                            reject(stat.error);
-                        } else
-                        {
-                            setProgress(stat.progress, "RClone: Syncing Saves");
-                        }
-                    }, 500);
+                this.reportedRestorePause = true;
+                events.emit('notification', {
+                    message: 'Save protection is backup-only for now. Automatic restore is paused; this game will use the saves on this device.',
+                    type: 'info', icon: 'save'
                 });
             }
-
         });
-
         ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles, command }) =>
         {
-            if (!this.rclonePath || !ctx.config.get('exportSaves')) return;
-            const local = await db.query.games.findFirst({ where: getLocalGameMatch(id, source) });
-            console.log("Save Files", Object.values(validChangedSaveFiles).flatMap(c => Array.isArray(c.subPath) ? c.subPath : [c.subPath]).join(","));
-
-            const destination = source === 'store' ? [source, id] : command.emulator ? [command.emulator] : undefined;
-            if (!destination) return;
-
-            const remoteName = ctx.config.get('remoteName');
-
-            await Promise.all(Object.entries(validChangedSaveFiles).map(async ([slot, change]) =>
+            if (!ctx.config.get('exportSaves')) return;
+            const changes = Object.entries(validChangedSaveFiles);
+            if (!changes.length) return;
+            const remote = ctx.config.get('remoteName');
+            const backupRoot = path.join(config.get('downloadPath'), 'save-backups', 'rclone');
+            // Serialize captures across shared emulator resources and overlapping slots.
+            const work = this.backupWork.then(async () =>
             {
-                let suportsMetadata = false;
-                let dest: string;
-                if (remoteName && remoteName !== DefaultLocalName)
+                let failed = false;
+                for (const [slot, change] of changes)
                 {
-                    dest = `${remoteName}:gameflow/saves/${destination.join('/')}/${slot}`;
-                    const remote = await this.request('/operations/fsinfo', {
-                        fs: `${remoteName}:`
-                    });
-                    suportsMetadata = !remote.ReadMetadata;
-                    if (suportsMetadata)
+                    this.lifetime.signal.throwIfAborted();
+                    try
                     {
-                        console.warn("Remote", remoteName, "does not support metadata");
-                    }
-                } else
-                {
-                    dest = path.join(config.get('downloadPath'), 'saves', ...destination, slot);
+                        const identity = change.shared && command.emulator
+                            ? ['emulator', command.emulator, slot]
+                            : [source, id, command.emulator ?? '', slot];
+                        const snapshot = await captureSaveSnapshot(backupRoot, identity, change, this.lifetime.signal);
+                        if (!snapshot) continue;
+                        if (remote && remote !== DefaultLocalName)
+                            await uploadSaveSnapshot(this.client.request, remote, snapshot, this.lifetime.signal);
+                    } catch { failed = true; }
                 }
-
-                const filter = {
-                    IncludeRule: Array.isArray(change.subPath) ?
-                        change.subPath.map(s =>
-                        {
-                            if (change.isGlob) return s;
-                            else s.replaceAll('\\', '/');
-                        }) :
-                        [change.isGlob ? change.subPath : change.subPath.replaceAll('\\', '/')]
-                };
-
-                let jobid: number | undefined = undefined;
-
-                if (change.fixedSize)
-                {
-                    await this.request('/sync/copy', {
-                        srcFs: change.cwd,
-                        dstFs: dest,
-                        createEmptySrcDirs: true,
-                        _async: true,
-                        _config: {
-                            NoCheckDest: true
-                        },
-                        _filter: filter
-                    })
-                        .then(job => jobid = job.jobid)
-                        .catch(e =>
-                        {
-                            events.emit('notification', { message: `RClone: ${e.cause?.error ?? e.message ?? e}`, type: 'error' });
-                            return undefined;
-                        });
-                } else
-                {
-                    await this.request('/sync/sync', {
-                        srcFs: change.cwd,
-                        dstFs: dest,
-                        createEmptySrcDirs: true,
-                        _async: true,
-                        _config: {
-                            CheckSum: true,
-                            CheckFirst: true,
-                            Metadata: true,
-                            MetadataSet: {
-                                igdb_id: local?.igdb_id ? String(local?.igdb_id) : undefined,
-                                ra_id: local?.ra_id ? String(local?.ra_id) : undefined
-                            }
-                        },
-                        _filter: filter
-                    })
-                        .then(job => jobid = job.jobid)
-                        .catch(e =>
-                        {
-                            events.emit('notification', { message: `RClone: ${e.cause?.error ?? e.message ?? e}`, type: 'error' });
-                            return undefined;
-                        });
-                }
-
-                if (!jobid) return;
-                await new Promise(async (resolve, reject) =>
-                {
-                    const checkInterval = setInterval(async () =>
-                    {
-                        const stat = await this.request('/job/status', { jobid });
-                        if (stat.finished)
-                        {
-                            clearInterval(checkInterval);
-                            console.log(stat.output);
-                            resolve(true);
-
-                        } else if (stat.error)
-                        {
-                            reject(stat.error);
-                        } else
-                        {
-
-                        }
-                    }, 500);
-                });
-
-                const stats = await this.request('/core/stats', {
-                    group: `job/${jobid}`
-                });
-
-                if (stats.transfers > 0)
-                {
-                    events.emit('notification', { message: "RClone: Save Synced", type: 'success', icon: 'save' });
-                }
-            }));
+                if (failed) throw new Error('Some save backups could not be completed. Your game saves and completed local backups have been kept. Automatic retry is not available yet.');
+            });
+            this.backupWork = work.catch(() => {});
+            await work;
         });
     }
 }

@@ -76,3 +76,18 @@ test('launch job reports real child stdout and stderr and runs cleanup after a f
     expect(updates).toContain('Preparing proton');
     expect(cleaned).toBe(true);
 });
+
+test('failed preparation never invokes post-play save export', async () =>
+{
+    const { LaunchGameJob } = await import('@/bun/api/jobs/launch-game-job');
+    let exported = false;
+    const job = new LaunchGameJob({ source: 'emulator', id: 'test' }, {
+        id: 'test', valid: true, metadata: {}, command: [process.execPath, '-e', 'process.exit(0)']
+    });
+    job.prePlay = async () => { throw new Error('Save preparation failed'); };
+    job.postPlay = async () => { exported = true; };
+    await expect(job.start({ abortSignal: new AbortController().signal, setProgress: () => {} } as never))
+        .rejects.toThrow('Save preparation failed');
+    expect(exported).toBe(false);
+    expect(job.activeGame).toBeNull();
+});
