@@ -1,3 +1,4 @@
+import StoreLoadError from '@/mainview/components/store/StoreLoadError';
 import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { useFocusable, FocusContext, getCurrentFocusKey } from "@noriginmedia/norigin-spatial-navigation";
 import { MissingEmulatorsSection } from "../../../components/store/MissingEmulatorsSection";
@@ -30,18 +31,18 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
     const [nextSwitch, setNextSwitch] = useState(new Date().getTime() + 10000);
     const progressRef = useRef<HTMLProgressElement>(null);
     const { ref, focusKey } = useFocusable({ focusKey: 'main-featured-area' });
-    const game = data.games ? data.games[selectedGame] : undefined;
+    const game = data.games?.[selectedGame] ?? data.games?.[0];
 
     useInterval(() =>
     {
-        if (!data.games) return;
+        if (!data.games?.length) return;
         setSelectedGame(current => (current + 1) % data.games!.length);
         setNextSwitch(new Date().getTime() + 10000);
     }, 10000);
 
     useEffect(() =>
     {
-        if (!data.games) return;
+        if (!data.games?.length) return;
         setSelectedGame(new Date().getSeconds() % data.games.length);
     }, [data.games]);
 
@@ -74,7 +75,7 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
                             <div className='flex sm:portrait:flex-wrap sm:portrait:grow gap-4 max-h-full justify-center'>
                                 <div className='relative rounded-3xl max-w-xs h-48 overflow-hidden  shadow-lg'>
                                     <div className='flex absolute bottom-4 left-4 size-8 bg-base-content text-base-100 rounded-full items-center justify-center shadow-lg '><HardDrive /></div>
-                                    {!!data.games && <img className='object-cover w-full h-full' src={`${RPC_URL(__HOST__)}${data.games[selectedGame].path_covers[0]}`} />}
+                                    {!!data.games && <img className='object-cover w-full h-full' src={`${RPC_URL(__HOST__)}${game.path_covers[0]}`} />}
                                 </div>
                                 <div className='flex flex-col gap-2 py-3 max-w-md'>
                                     <h1 className='font-semibold text-3xl text-shadow-md'>{game.name}</h1>
@@ -86,7 +87,7 @@ function Main (data: { games?: FrontEndGameTypeDetailed[]; })
                         <Button onAction={() => storeContext.showDetails('game', game.id.source, game.id.id, focusKey)} className='px-6 py-3 text-2xl! z-1 gap-2 drop-shadow-md focusable focusable-primary' id={'play-featured-btn'}> <Search /> Details</Button>
                     </div>
                 </div>
-            </div> : <div className='skeleton w-full rounded-3xl grow sm:h-64 z-15' />}
+            </div> : data.games ? <p className='p-6'>No featured games available.</p> : <div className='skeleton w-full rounded-3xl grow sm:h-64 z-15' />}
             <div className='sm:flex sm:flex-wrap grow justify-stretch md:grid sm:landscape:grid-flow-col sm:auto-cols-[minmax(8rem,1fr)] md:grid-flow-row! auto-rows-fr landscape:min-w-xs gap-4'>
                 {data.games?.map((g, i) =>
                     <div key={i} data-active={i === selectedGame} className='flex grow flex-col gap-1 transition-opacity duration-500 data-[active=true]:opacity-50 rounded-3xl bg-base-100 p-4 justify-center shadow-md'>
@@ -108,9 +109,9 @@ export function RouteComponent ()
 {
     const { focus } = useSearch({ from: '/store/tab' });
     const { data: crucialEmulators, isSuccess } = useQuery({ ...autoEmulatorsQuery, select: (data) => data.filter(e => !e.validSources.some(s => s.exists) && e.isCritical) });
-    const { data: featuredGames } = useQuery(storeFeaturedGamesQuery);
-    const { data: gameSections } = useQuery(storeGameSectionsQuery);
-    const { data: recommendedEmulators } = useQuery(storeEmulatorsRecommendedQuery());
+    const { data: featuredGames, isError: featuredError, refetch: retryFeatured } = useQuery({ ...storeFeaturedGamesQuery, retry: false });
+    const { data: gameSections, isError: sectionsError, refetch: retrySections } = useQuery({ ...storeGameSectionsQuery, retry: false });
+    const { data: recommendedEmulators, isError: emulatorsError, refetch: retryEmulators } = useQuery({ ...storeEmulatorsRecommendedQuery(), retry: false });
 
     const { focusKey, ref, focusSelf } = useFocusable({ focusKey: 'main-area', preferredChildFocusKey: focus ?? "recommended-emulators" });
     const storeContext = useContext(StoreContext);
@@ -127,16 +128,16 @@ export function RouteComponent ()
     return (
         <div className='animate-slide-up' ref={ref}>
             <FocusContext value={focusKey}>
-                {<Main games={featuredGames} />}
+                {featuredError ? <StoreLoadError id="featured" label="featured games" retry={() => void retryFeatured()} /> : <Main games={featuredError ? [] : featuredGames} />}
                 {!!crucialEmulators && crucialEmulators?.length > 0 && <MissingEmulatorsSection
                     onSelect={(em, focus) => storeContext.showDetails('emulator', em.source, em.name, focus)}
                     emulators={crucialEmulators} />}
                 <div className='pt-4'>
-                    <EmulatorsSection
+                    {emulatorsError ? <StoreLoadError id="recommended" label="emulators" retry={() => void retryEmulators()} /> : <EmulatorsSection
                         id="recommended-emulators"
                         onSelect={(em, focus) => storeContext.showDetails('emulator', em.source, em.name, focus)}
                         onFocus={scrollIntoViewHandler({ block: 'end' })}
-                        emulators={recommendedEmulators} />
+                        emulators={recommendedEmulators} />}
                 </div>
 
                 <div className="px-6 py-3">
@@ -151,10 +152,11 @@ export function RouteComponent ()
                     <GamesSection
                         onSelect={(id, focus) => storeContext.showDetails('game', id.source, id.id, focus)}
                         onFocus={scrollIntoViewHandler({ block: 'center' })}
-                        games={featuredGames}
+                        games={featuredError ? [] : featuredGames}
                     />
                 </div>
 
+                {sectionsError && <StoreLoadError id="sections" label="game sections" retry={() => void retrySections()} />}
                 {gameSections?.map(section => <div className="px-6 py-3" key={section.id}>
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-2 h-5 rounded-full bg-secondary shadow-sm" />

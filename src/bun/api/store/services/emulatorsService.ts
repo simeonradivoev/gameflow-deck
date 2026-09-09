@@ -101,7 +101,7 @@ export async function getOrCachedScoopPackage (id: string, url: string)
 {
     const data = await getOrCached(`scoop-dl-${id}`, async () =>
     {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (res.ok)
         {
             return ScoopPackageSchema.parseAsync(await res.json());

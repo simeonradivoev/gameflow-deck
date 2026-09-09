@@ -2,10 +2,18 @@ import { infiniteQueryOptions, mutationOptions, queryOptions } from "@tanstack/r
 import { rommApi, storeApi } from "../clientApi";
 import { GameListFilterType, FrontEndGameType } from '@simeonradivoev/gameflow-sdk/shared';
 
+async function storeRequest<T>(load: (signal: AbortSignal) => Promise<T>): Promise<T>
+{
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    try { return await load(controller.signal); }
+    finally { clearTimeout(timeout); }
+}
+
 export const storeEmulatorsQuery = (filters: { search?: string; }) => queryOptions({
     queryKey: ['store-emulators', filters], queryFn: async () =>
     {
-        const { data, error } = await storeApi.api.store.emulators.get({ query: { search: filters.search } });
+        const { data, error } = await storeRequest(signal => storeApi.api.store.emulators.get({ query: { search: filters.search }, fetch: { signal } }));
         if (error) throw new Error(JSON.stringify(error.value));
         return data;
     }
@@ -13,7 +21,7 @@ export const storeEmulatorsQuery = (filters: { search?: string; }) => queryOptio
 export const storeFeaturedGamesQuery = queryOptions({
     queryKey: ['store-emulators', 'featured'], queryFn: async () =>
     {
-        const { data, error } = await storeApi.api.store.games.featured.get();
+        const { data, error } = await storeRequest(signal => storeApi.api.store.games.featured.get({ fetch: { signal } }));
         if (error) throw error;
         return data;
     }
@@ -21,7 +29,7 @@ export const storeFeaturedGamesQuery = queryOptions({
 export const storeEmulatorsRecommendedQuery = (id?: string) => queryOptions({
     queryKey: ['store-emulators', 'recommended', id ?? 'all'], queryFn: async () =>
     {
-        const { data, error } = await storeApi.api.store.emulators.get({ query: { limit: 6, missing: true, orderBy: 'importance', related: id } });
+        const { data, error } = await storeRequest(signal => storeApi.api.store.emulators.get({ query: { limit: 6, missing: true, orderBy: 'importance', related: id }, fetch: { signal } }));
         if (error) throw error;
         return data;
     }
@@ -89,7 +97,7 @@ export const deleteBiosMutation = mutationOptions({
     }
 });
 export const getUpdateInfoForEmulator = (id: string) => queryOptions({
-    queryKey: ['emulator', 'update'], queryFn: async () =>
+    queryKey: ['emulator', 'update', id], queryFn: async () =>
     {
         const { data, error } = await storeApi.api.store.emulator({ id }).update.get();
         if (error) throw error;
@@ -117,7 +125,7 @@ export const pluginDetailsQuery = (id: string) => queryOptions({
 export const storeGameSectionsQuery = queryOptions({
     queryKey: ['store-games', 'sections'], queryFn: async () =>
     {
-        const { data, error } = await storeApi.api.store.games.sections.get();
+        const { data, error } = await storeRequest(signal => storeApi.api.store.games.sections.get({ fetch: { signal } }));
         if (error) throw error;
         return data;
     }

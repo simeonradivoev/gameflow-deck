@@ -1,3 +1,4 @@
+import StoreLoadError from '@/mainview/components/store/StoreLoadError';
 
 
 import { createFileRoute } from '@tanstack/react-router';
@@ -31,10 +32,10 @@ function RouteComponent ()
     preferredChildFocusKey: focus
   });
   const storeContext = useContext(StoreContext);
-  const { data: emulators } = useQuery({
+  const { data: emulators, isError, refetch } = useQuery({
     ...storeEmulatorsQuery({ search }),
     retry: false,
-    throwOnError: true
+    throwOnError: false
   });
 
   useEffect(() =>
@@ -55,9 +56,10 @@ function RouteComponent ()
             Emulators
           </h2>
         </div>
+        {isError && <StoreLoadError id="emulator-list" label="emulators" retry={() => void refetch()} />}
         {/* Cards */}
         <div className="grid grid-cols-[repeat(auto-fill,18rem)] auto-rows-[12rem] py-2 md:px-4 gap-4 justify-center-safe">
-          {emulators?.map((data) => (
+          {(isError ? [] : emulators)?.map((data) => (
             <StoreEmulatorCard
               id={data.name}
               key={data.name}

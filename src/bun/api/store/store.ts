@@ -27,7 +27,7 @@ const pluginsResponseSchema = z.object({
 export const store = new Elysia({ prefix: '/api/store' })
     .get('/emulators', async ({ query }) =>
     {
-        const rommPlatforms = await getOrCached(CACHE_KEYS.ROM_PLATFORMS, () => getPlatformsApiPlatformsGet({ throwOnError: true }), { expireMs: 60 * 60 * 1000 }).then(d => d.data).catch(e =>
+        const rommPlatforms = await getOrCached(CACHE_KEYS.ROM_PLATFORMS, () => getPlatformsApiPlatformsGet({ throwOnError: true, signal: AbortSignal.timeout(5000) }), { expireMs: 60 * 60 * 1000 }).then(d => d.data).catch(e =>
         {
             console.error(e);
             return undefined;
@@ -55,7 +55,7 @@ export const store = new Elysia({ prefix: '/api/store' })
             await plugins.hooks.emulators.findEmulatorSource.promise({ emulator: e.name, sources: execPaths });
             const integrations = findEmulatorPluginIntegration(e.name, execPaths);
 
-            e.gameCount = gameCounts.reduce((a, c) => a + c);
+            e.gameCount = gameCounts.reduce((a, c) => a + c, 0);
             e.integrations = integrations;
         }));
 

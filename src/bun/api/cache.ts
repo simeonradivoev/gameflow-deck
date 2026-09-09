@@ -43,18 +43,30 @@ export async function getOrCached<T> (key: string, getter: (lastValue: T | undef
 const releaseRequests = new Map<string, Promise<z.infer<typeof GithubReleaseSchema>>>();
 const changelogRequests = new Map<string, Promise<string>>();
 
+/** The deadline includes queue wait as well as the HTTP request. */
+export async function queuedGithubRequest<T>(load: (signal: AbortSignal) => Promise<T>, timeoutMs = 10000): Promise<T>
+{
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(new Error('GitHub update check timed out. Please retry later.')), timeoutMs);
+    try { return await githubRequestQueue.add(() => load(controller.signal), { signal: controller.signal }) as T; }
+    finally { clearTimeout(timeout); }
+}
+
 export async function getOrCachedGithubRelease (path: string, forceCheck?: boolean)
 {
     const pending = releaseRequests.get(path);
     if (pending) return pending;
-    const request = getOrCached<z.infer<typeof GithubReleaseSchema>>(`github-release-${path}`, () => githubRequestQueue.add(async () =>
+    const request = getOrCached<z.infer<typeof GithubReleaseSchema>>(`github-release-${path}`, lastValue => queuedGithubRequest(async signal =>
     {
         const response = await fetch(`https://api.github.com/repos/${path}/releases/latest`, {
-            method: "GET"
+            method: "GET", signal
         });
-        if (!response.ok) throw new Error(response.statusText);
+        if (!response.ok) throw new Error(`GitHub release check failed (${response.status}). Please retry later.`);
         const release = await GithubReleaseSchema.parseAsync(await response.json());
         return release;
+    }).catch(error => {
+        if (lastValue) return lastValue;
+        throw error;
     }), { expireMs: 1000 * 60 * 60, force: forceCheck, minAgeMs: 60 * 1000 });
     releaseRequests.set(path, request);
     try { return await request; }
