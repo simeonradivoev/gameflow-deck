@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.11.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.10.1...v1.11.0) (2026-09-09)
+
+
+### Features
+
+* **game:** add store and download task navigation to details menus ([ec9f645](https://github.com/simeonradivoev/gameflow-deck/commit/ec9f645be25c1c2cc05ae38a3c47798049266705))
+
+
+### Bug Fixes
+
+* **launcher:** restore controller back navigation after launch errors ([5ff73fa](https://github.com/simeonradivoev/gameflow-deck/commit/5ff73faf60468b43aaddd134ba6b1bb99650a18d))
+* **store:** bound update checks and recover from catalog loading failures ([7f52094](https://github.com/simeonradivoev/gameflow-deck/commit/7f520943f108092e5b3087a92f6eafdaea2dd51a))
+* **store:** retain installed catalog when startup updates fail ([c26ebe2](https://github.com/simeonradivoev/gameflow-deck/commit/c26ebe2d1c9763addeeab5c776bd4140cc8ca8bf))
+
 ## [1.10.1](https://github.com/simeonradivoev/gameflow-deck/compare/v1.10.0...v1.10.1) (2026-09-08)
 
 
