@@ -44,3 +44,11 @@ ctx.hooks.games.launchOutput?.tap(packageName, ({ command, line }) => {
 ```
 
 Optional chaining allows a plugin to retain its existing behavior on older Gameflow hosts without this additive hook. Unknown output is ignored. Streams are decoded separately, ANSI control sequences are removed, lines are bounded, repeated statuses are deduplicated, and adapter exceptions do not interrupt the game. The launch screen keeps its existing Back shortcut and announces status updates to assistive technology.
+
+## Save-set discovery
+
+The optional games.findSaveSets hook receives { source, id, command, saveFolderSlots, sets } after launch preparation. Add declarations to sets keyed by the same stable slot used for post-play saves. Discovery must be read-only: do not download, create, delete, or modify saves.
+
+A SaveSetDefinition extends SaveFileChange with a positive integer scopeVersion and optional exclude glob patterns. Declare the complete group required for a consistent restore, including associated data files. Set shared to true for emulator cards shared between games. fixedSize describes the format; it does not establish equality. Increment scopeVersion when selection semantics change. Resolve locations from the prepared slots, and omit declarations when a reliable complete scope is unavailable.
+
+Use ctx.hooks.games.findSaveSets?.tapPromise(...) when supporting older hosts. Existing plugins can continue using post-play save declarations without implementing this additive hook; their backups are not automatically eligible for restoration. Plugins requiring discovery must declare a peer range covering the SDK release that provides it. No new SDK release is published by this change.

@@ -261,6 +261,17 @@ export interface SaveFileChange
     cwd: string;
     shared: boolean;
     fixedSize?: boolean;
+    /** Relative glob exclusions applied after the included save selection. */
+    exclude?: string[];
+}
+
+/** A complete consistency group, discovered before play without writing game files.
+ * Increment scopeVersion when the file scope or save format changes.
+ * Shared sets may contain progress for several games and must be restored together.
+ */
+export interface SaveSetDefinition extends SaveFileChange
+{
+    scopeVersion: number;
 }
 
 export type EmulatorSourceType = 'custom' | 'store' | 'registry' | 'system' | 'static' | 'embedded';

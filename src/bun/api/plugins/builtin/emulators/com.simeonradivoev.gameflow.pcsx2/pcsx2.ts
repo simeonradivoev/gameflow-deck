@@ -32,6 +32,14 @@ export default class PCSX2Integration implements PluginType
             }
         });
 
+        ctx.hooks.games.findSaveSets.tapPromise({ name: desc.name }, async ({ command, saveFolderSlots, sets }) =>
+        {
+            if (command.emulator !== this.emulator || !saveFolderSlots[this.emulator] || !command.metadata.romPath) return;
+            sets[this.emulator] = {
+                cwd: saveFolderSlots[this.emulator].cwd, subPath: '*.ps2', isGlob: true,
+                shared: true, fixedSize: true, scopeVersion: 1
+            };
+        });
         ctx.hooks.games.postPlay.tapPromise({ name: desc.name }, async ({ saveFolderSlots, validChangedSaveFiles, command }) =>
         {
             if (command.emulator !== this.emulator || !(saveFolderSlots?.[this.emulator]) || !command.metadata.romPath) return;

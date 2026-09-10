@@ -1,5 +1,5 @@
 
-import { EmulatorPackageType, GameListFilterType, CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSlots, DownloadLookupEntry, DownloadLookupDetails, DownloadsLookupFilterValues, DownloadsLookupFilter, ProgressStats } from '../shared';
+import { EmulatorPackageType, GameListFilterType, CommandEntry, DownloadInfo, EmulatorSourceEntryType, EmulatorSupport, EmulatorSystem, FrontEndCollection, FrontEndFilterSets, FrontEndGameType, FrontEndGameTypeDetailed, FrontEndGameTypeWithIds, FrontEndId, FrontEndPlatformType, GameLookup, SaveFileChange, SaveSetDefinition, SaveSlots, DownloadLookupEntry, DownloadLookupDetails, DownloadsLookupFilterValues, DownloadsLookupFilter, ProgressStats } from '../shared';
 import { SyncBailHook, AsyncSeriesHook, AsyncSeriesBailHook, AsyncSeriesWaterfallHook } from 'tapable';
 
 export default class GameHooks
@@ -19,6 +19,16 @@ export default class GameHooks
         game: FrontEndGameTypeDetailed;
         commands: CommandEntry[];
         locations: SaveSlots;
+    }]>(['ctx']);
+    /** Declare complete save sets without launching, writing, or syncing.
+     * Folder-only legacy integrations remain backup-only until they implement this hook.
+     */
+    findSaveSets = new AsyncSeriesHook<[ctx: {
+        source: string;
+        id: string;
+        command: CommandEntry;
+        saveFolderSlots: SaveSlots;
+        sets: Record<string, SaveSetDefinition>;
     }]>(['ctx']);
     /** Build commands the game can be launched with. */
     buildLaunchCommands = new AsyncSeriesBailHook<[ctx: {

@@ -1,3 +1,6 @@
+import { normalizeSaveLocations } from '../games/services/saveLocationPaths';
+import { acquireSaveLocks } from '../saves/locks';
+import { discoverSaveSets, recoverSaveRoots } from '../saves/runtime';
 import { createLaunchOutputReporter } from "@/bun/utils/launch-output";
 import z from "zod";
 import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
@@ -23,6 +26,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
     gameSourceId?: string;
     changedSaveFiles: Map<string, { subPath: string, cwd: string; }>;
     saveSlots: SaveSlots = {};
+    private releaseSaveLocks?: () => void;
 
     constructor(gameId: FrontEndId, validCommand: CommandEntry, source?: string, sourceId?: string)
     {
@@ -74,6 +78,15 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
             command: this.validCommand,
             setProgress: setProgress,
             gameInfo
+        });
+        this.saveSlots = normalizeSaveLocations(this.saveSlots, this.validCommand.startDir);
+        const sets = await discoverSaveSets(plugins.hooks, this.gameSource ?? this.gameId.source,
+            this.gameSourceId ?? this.gameId.id, this.validCommand, this.saveSlots);
+        const roots = [...Object.values(this.saveSlots).map(slot => slot.cwd), ...sets.map(set => set.scope.cwd)];
+        this.releaseSaveLocks = await acquireSaveLocks(roots, this.validCommand);
+        await recoverSaveRoots(roots, sets, this.validCommand).catch(() =>
+        {
+            throw new Error('Save recovery could not be completed. Keep the save integration and its original location available before trying again.');
         });
         await rememberSaveLocations(this.gameId, this.saveSlots, this.validCommand.startDir).catch(() =>
         {
@@ -307,11 +320,18 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
             }
         }).finally(async () =>
         {
-            // Descendants may inherit pipes; they must not hold the launch job open after exit.
-            await Promise.allSettled([...outputReaders].map(reader => reader.cancel()));
-            await Promise.all(outputTasks);
-            // Failed preparation must not export stale saves; real game crashes still run cleanup.
-            if (processStarted) await this.postPlay({ platformSlug: gameInfo?.platformSlug });
+            try
+            {
+                // Descendants may inherit pipes; they must not hold the launch job open after exit.
+                await Promise.allSettled([...outputReaders].map(reader => reader.cancel()));
+                await Promise.all(outputTasks);
+                // Failed preparation must not export stale saves; real game crashes still run cleanup.
+                if (processStarted) await this.postPlay({ platformSlug: gameInfo?.platformSlug });
+            } finally
+            {
+                this.releaseSaveLocks?.();
+                this.releaseSaveLocks = undefined;
+            }
         });
     }
 

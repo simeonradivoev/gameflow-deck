@@ -75,3 +75,35 @@ export const screenshotsRelations = relations(screenshots, ({ one }) => ({
         references: [games.id]
     })
 }));
+// Save recovery data is host-only. API responses must not expose the stored roots.
+export const saveSets = sqliteTable('save_sets', {
+    id: text('id').primaryKey(),
+    source: text('source').notNull(),
+    sourceId: text('source_id').notNull(),
+    slot: text('slot').notNull(),
+    identity: text('identity', { mode: 'json' }).$type<string[]>().notNull(),
+    scope: text('scope', { mode: 'json' }).$type<import('@simeonradivoev/gameflow-sdk/shared').SaveSetDefinition>().notNull(),
+    scopeHash: text('scope_hash').notNull(),
+});
+
+export const saveSnapshots = sqliteTable('save_snapshots', {
+    id: text('id').primaryKey(),
+    saveSetId: text('save_set_id').notNull().references(() => saveSets.id),
+    scopeHash: text('scope_hash').notNull(),
+    createdAt: text('created_at').notNull(),
+    reason: text('reason', { enum: ['backup', 'before-restore'] }).notNull(),
+    manifestHash: text('manifest_hash').notNull(),
+    fileCount: integer('file_count').notNull(),
+    byteCount: integer('byte_count').notNull(),
+});
+
+export const saveRestores = sqliteTable('save_restores', {
+    id: text('id').primaryKey(),
+    saveSetId: text('save_set_id').notNull().references(() => saveSets.id),
+    scopeHash: text('scope_hash').notNull(),
+    snapshotId: text('snapshot_id').notNull().references(() => saveSnapshots.id),
+    rollbackId: text('rollback_id').notNull().references(() => saveSnapshots.id),
+    files: text('files', { mode: 'json' }).$type<string[]>().notNull(),
+    state: text('state', { enum: ['prepared', 'applying', 'rolling-back', 'completed', 'rolled-back'] }).notNull(),
+    createdAt: text('created_at').notNull(),
+});

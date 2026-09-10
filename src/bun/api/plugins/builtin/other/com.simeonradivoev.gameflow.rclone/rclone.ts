@@ -1,3 +1,5 @@
+import { withSaveLocks } from '@/bun/api/saves/locks';
+import { discoverSaveSets, localRecovery } from '@/bun/api/saves/runtime';
 import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
 import desc from './package.json';
 import { config, events } from "@/bun/api/app";
@@ -240,7 +242,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
                 });
             }
         });
-        ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles, command }) =>
+        ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles, command, saveFolderSlots }) =>
         {
             if (!ctx.config.get('exportSaves')) return;
             const changes = Object.entries(validChangedSaveFiles);
@@ -250,6 +252,8 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             // Serialize captures across shared emulator resources and overlapping slots.
             const work = this.backupWork.then(async () =>
             {
+                const sets = await discoverSaveSets(ctx.hooks, source, id, command, saveFolderSlots ?? {});
+                const recovery = localRecovery();
                 let failed = false;
                 for (const [slot, change] of changes)
                 {
@@ -259,7 +263,10 @@ export default class RcloneIntegration implements PluginType<SettingsType>
                         const identity = change.shared && command.emulator
                             ? ['emulator', command.emulator, slot]
                             : [source, id, command.emulator ?? '', slot];
-                        const snapshot = await captureSaveSnapshot(backupRoot, identity, change, this.lifetime.signal);
+                        const declared = sets.find(set => set.slot === slot);
+                        const snapshot = declared
+                            ? await recovery.capture(declared, this.lifetime.signal, command)
+                            : await withSaveLocks([change.cwd], () => captureSaveSnapshot(backupRoot, identity, change, this.lifetime.signal), command);
                         if (!snapshot) continue;
                         if (remote && remote !== DefaultLocalName)
                             await uploadSaveSnapshot(this.client.request, remote, snapshot, this.lifetime.signal);

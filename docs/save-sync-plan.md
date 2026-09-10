@@ -184,3 +184,25 @@ Verification on Windows with Bun:
 - bun run test: 80 passed, 1 skipped, 1 failed. The existing uses custom emulator test fails at its platform insert with UNIQUE constraint failed: platforms.slug, before launch behavior.
 - bun run tsc: remains blocked by eight existing diagnostics in packaging, Windows controls, GameList, Header, SelectMenu, and test preload. No diagnostics were reported in changed files.
 - No frontend files changed; no frontend build, controller UI exercise, Linux runtime, AppImage, or Flatpak verification was performed in this milestone.
+
+## Implementation progress — local recovery foundations
+
+Implemented on 2026-09-10:
+
+- Added an optional, read-only SDK save-set discovery hook with versioned file scopes and exclusions. PCSX2 declares its complete shared memory-card group; the bundled store declares its existing save selection. Other adapters remain backup-only until their complete restore scope is audited.
+- Added a generated SQLite migration for save sets, indexed snapshots, and durable restore journals. Snapshot records bind the file scope and manifest digest, so editing both a payload and its manifest cannot silently replace an indexed backup.
+- Added backend history, restore preview, restore, and undo operations. Previews expire when save content changes. Restore captures the previous state first, validates all payloads, replaces only declared files, and preserves excluded or unrelated files.
+- Added overlapping-folder leases held through gameplay and post-play backup. Launch checks incomplete restore journals before starting the game. Interrupted operations roll back from retained snapshots; unexpected external edits block recovery instead of being overwritten.
+- Rclone indexes new snapshots from audited declarations. Existing unindexed backups remain retained; they are not automatically promoted to restorable history. Plugin enablement and automatic remote restore settings are unchanged.
+
+This completes the backend foundation of phase 2, with adapter coverage still deliberately limited. No history screen or public restore API is exposed yet. Phase 3 adds remote revision ancestry and durable upload retry; phase 4 exposes conflict decisions and history through controller-friendly UI. Complete scope audits, legacy import, retention, and release gates remain pending.
+
+Verification on Windows with Bun:
+
+- Final bun run test: 95 passed, 1 skipped, 1 failed. The existing uses custom emulator test still fails with a platforms.slug uniqueness error before launch.
+- The real rclone 1.73.4 integration passed against a temporary local alias destination and isolated configuration.
+- Final bun run tsc reports the same eight existing diagnostics described above, with none in changed files.
+- bun run drizzle:generate produced the reviewed additive migration. No existing migration was rewritten.
+- Recovery tests simulate process interruption using a persisted partial journal and a fresh service instance. Power-loss durability, Linux filesystem behavior, packaged builds, and interactive UI remain unverified. Leases coordinate this application process; they are not distributed locks.
+- No frontend files changed, so no frontend build or UI exercise was performed. Pre-existing test data was preserved separately during verification and restored afterward.
+- Final focused check: bun test src/tests/save-recovery.test.ts src/tests/save-backup.test.ts src/tests/launch-output.test.ts passed all 35 tests (133 assertions).

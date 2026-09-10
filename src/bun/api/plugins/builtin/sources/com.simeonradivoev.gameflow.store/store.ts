@@ -161,6 +161,18 @@ export default class StoreIntegration implements PluginType
             saves?.forEach(([slot, save]) => saveFolderSlots[slot] = { cwd: save.cwd });
         });
 
+        ctx.hooks.games.findSaveSets.tapPromise(desc.name, async ({ source, id, command, sets }) =>
+        {
+            if (source !== 'store') return;
+            const storeGame = await getStoreGame(id);
+            const localGame = await getSourceGameDetailed(source, id);
+            if (!localGame?.version_source || !storeGame) return;
+            const download = storeGame.downloads[localGame.version_source];
+            buildSaves(command, storeGame, download)?.forEach(([slot, save]) =>
+            {
+                sets[slot] = { ...save, scopeVersion: 1 };
+            });
+        });
         ctx.hooks.games.postPlay.tapPromise(desc.name, async ({ validChangedSaveFiles, source, id, command }) =>
         {
             if (source !== 'store') return;
