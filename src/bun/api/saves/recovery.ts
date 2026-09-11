@@ -15,7 +15,7 @@ async function readableRoot (set: RegisteredSaveSet)
         throw new Error('The save folder has moved or is unavailable.');
 }
 
-async function currentFiles (set: RegisteredSaveSet, signal?: AbortSignal)
+export async function currentFiles (set: RegisteredSaveSet, signal?: AbortSignal)
 {
     await readableRoot(set);
     const files: SnapshotFile[] = [];
@@ -89,14 +89,14 @@ export class LocalSaveRecovery
         }
     }
 
-    async capture (set: RegisteredSaveSet, signal?: AbortSignal, owner?: object | symbol)
+    async capture (set: RegisteredSaveSet, signal?: AbortSignal, owner?: object | symbol, allowEmpty = false)
     {
         return withSaveLocks([set.scope.cwd], async () =>
         {
             await this.assertNoPending(set);
             await this.store.register(set);
 
-            const snapshot = await captureSaveSnapshot(this.backupRoot, set.identity, set.scope, signal);
+            const snapshot = await captureSaveSnapshot(this.backupRoot, set.identity, set.scope, signal, { allowEmpty });
             if (snapshot) await this.store.index(set, snapshot, 'backup');
             return snapshot;
         }, owner);
@@ -113,7 +113,7 @@ export class LocalSaveRecovery
         return { target, current, token: digest([set.scopeHash, snapshotId, current, target.manifest.files]) };
     }
 
-    async preview (set: RegisteredSaveSet, snapshotId: string, signal?: AbortSignal)
+    async preview (set: RegisteredSaveSet, snapshotId: string, signal?: AbortSignal, owner?: object | symbol)
     {
         return withSaveLocks([set.scope.cwd], async () =>
         {
@@ -124,10 +124,9 @@ export class LocalSaveRecovery
                 restoreFiles: target.manifest.files.length,
                 removeFiles: current.filter(file => !targetPaths.has(file.path)).length
             };
-        });
+        }, owner);
     }
-
-    async restore (set: RegisteredSaveSet, snapshotId: string, token: string, signal?: AbortSignal)
+    async restore (set: RegisteredSaveSet, snapshotId: string, token: string, signal?: AbortSignal, owner?: object | symbol)
     {
         return withSaveLocks([set.scope.cwd], async () =>
         {
@@ -167,9 +166,8 @@ export class LocalSaveRecovery
                 catch { throw new Error('Restore was interrupted. Recovery is required before launching this game. Both backups are retained.'); }
                 throw new Error('Restore could not finish. Your previous saves were recovered.');
             }
-        });
+        }, owner);
     }
-
     private async cleanStaging (set: RegisteredSaveSet, operation: RestoreRecord)
     {
         for (const file of operation.files)

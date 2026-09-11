@@ -1,3 +1,4 @@
+import { saves } from './saves/api';
 import { cors } from "@elysiajs/cors";
 import Elysia from "elysia";
 import { RPC_PORT } from "@shared/constants";
@@ -10,8 +11,9 @@ import { jobs } from "./jobs/jobs";
 import plugins from "./plugins/plugins";
 
 const api = new Elysia()
-    .use([cors(), clients, settings, system, store, jobs, plugins]);
+    .use([cors(), clients, settings, system, store, jobs, plugins, saves]);
 
+export type SavesAPIType = typeof saves;
 export type RommAPIType = typeof clients;
 export type SettingsAPIType = typeof settings;
 export type SystemAPIType = typeof system;

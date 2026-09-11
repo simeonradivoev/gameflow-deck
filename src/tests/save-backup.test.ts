@@ -222,6 +222,26 @@ test.skipIf(!process.env.GAMEFLOW_TEST_RCLONE)('real rclone preserves legacy sav
             expect(await fs.readFile(path.join(uploaded, 'files', 'save.dat'), 'utf8')).toBe(content);
             expect(JSON.parse(await fs.readFile(path.join(uploaded, 'manifest.json'), 'utf8'))).toEqual(snapshot.manifest);
         }
+        const { defineSaveSet } = await import('@/bun/api/saves/sets');
+        const { portableScope, revisionHeads } = await import('@/bun/api/saves/revisions');
+        const { RcloneSaveTransport } = await import('@/bun/api/plugins/builtin/other/com.simeonradivoev.gameflow.rclone/transport');
+        const { randomUUID } = await import('node:crypto');
+        const set = await defineSaveSet('store', 'real-test', undefined, 'saves', { cwd: saves, subPath: 'save.dat', shared: false, scopeVersion: 1 });
+        const transport = new RcloneSaveTransport('isolated', client.request, 'isolated', backups);
+        expect(await transport.list(set)).toEqual([]);
+        const snap = (await captureSaveSnapshot(backups, set.identity, set.scope))!;
+        const revision = {
+            version: 2 as const, id: randomUUID(), saveSetId: set.id, scope: portableScope(set),
+            device: randomUUID(), createdAt: new Date().toISOString(), parents: [], files: snap.manifest.files
+        };
+        await transport.publish(set, revision, snap);
+        await transport.publish(set, revision, snap);
+        expect(revisionHeads(await transport.list(set))).toEqual([revision]);
+        const downloaded = await transport.download(set, revision);
+        expect(await fs.readFile(path.join(downloaded.directory, 'files', 'save.dat'), 'utf8')).toBe('BBBB');
+        const remoteFile = path.join(remoteRoot, 'gameflow', 'save-sync', 'v2', set.id, 'revisions', revision.id, 'files', 'save.dat');
+        await fs.writeFile(remoteFile, 'XXXX');
+        await expect(transport.download(set, revision)).rejects.toThrow('damaged');
         expect(await fs.readFile(legacy, 'utf8')).toBe('existing remote progress');
     } finally
     {
@@ -229,7 +249,7 @@ test.skipIf(!process.env.GAMEFLOW_TEST_RCLONE)('real rclone preserves legacy sav
         server.kill();
         await server.exited;
     }
-}, 20000);
+}, 60000);
 
 test('backup-only hooks preserve local saves, continue after a missing slot, and survive reload', async () =>
 {

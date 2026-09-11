@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { saveSets, saveSnapshots, saveRestores } from '@schema/app';
+import { saveSets, saveSnapshots, saveRestores, gameSaveSets } from '@schema/app';
 import { assertSaveSet, digest, type RegisteredSaveSet } from './sets';
 import type { SaveSnapshot } from './snapshot';
 
@@ -17,6 +17,9 @@ export class SaveRecoveryStore
         if (pending.some(entry => entry.scopeHash !== set.scopeHash))
             throw new Error('An interrupted save restore must be recovered before changing this save location.');
         await this.database.insert(saveSets).values(set).onConflictDoUpdate({ target: saveSets.id, set });
+        await this.database.insert(gameSaveSets).values({
+            id: digest([set.source, set.sourceId, set.id]), source: set.source, sourceId: set.sourceId, saveSetId: set.id
+        }).onConflictDoNothing();
     }
 
     async getSet (id: string)

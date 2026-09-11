@@ -107,3 +107,28 @@ export const saveRestores = sqliteTable('save_restores', {
     state: text('state', { enum: ['prepared', 'applying', 'rolling-back', 'completed', 'rolled-back'] }).notNull(),
     createdAt: text('created_at').notNull(),
 });
+
+export const saveSyncProfiles = sqliteTable('save_sync_profiles', {
+    id: text('id').primaryKey(),
+    saveSetId: text('save_set_id').notNull().references(() => saveSets.id),
+    destination: text('destination').notNull(),
+    scopeHash: text('scope_hash').notNull(),
+    baseline: text('baseline', { mode: 'json' }).$type<string[]>().notNull(),
+    paused: integer('paused', { mode: 'boolean' }).notNull(),
+    status: text('status', { enum: ['unchecked', 'matching', 'choice', 'error'] }).notNull().default('unchecked'),
+});
+
+export const saveSyncOutbox = sqliteTable('save_sync_outbox', {
+    id: text('id').primaryKey(),
+    profileId: text('profile_id').notNull().references(() => saveSyncProfiles.id),
+    snapshotId: text('snapshot_id').notNull().references(() => saveSnapshots.id),
+    revision: text('revision', { mode: 'json' }).$type<import('../saves/revisions').SaveRevision>().notNull(),
+    state: text('state', { enum: ['pending', 'complete', 'failed'] }).notNull(),
+});
+
+export const gameSaveSets = sqliteTable('game_save_sets', {
+    id: text('id').primaryKey(),
+    source: text('source').notNull(),
+    sourceId: text('source_id').notNull(),
+    saveSetId: text('save_set_id').notNull().references(() => saveSets.id),
+});

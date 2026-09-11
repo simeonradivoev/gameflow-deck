@@ -206,3 +206,30 @@ Verification on Windows with Bun:
 - Recovery tests simulate process interruption using a persisted partial journal and a fresh service instance. Power-loss durability, Linux filesystem behavior, packaged builds, and interactive UI remain unverified. Leases coordinate this application process; they are not distributed locks.
 - No frontend files changed, so no frontend build or UI exercise was performed. Pre-existing test data was preserved separately during verification and restored afterward.
 - Final focused check: bun test src/tests/save-recovery.test.ts src/tests/save-backup.test.ts src/tests/launch-output.test.ts passed all 35 tests (133 assertions).
+
+## Implementation progress — remote versions and save actions
+
+Implemented on 2026-09-11:
+
+- Added the isolated gameflow/save-sync/v2 namespace for audited save sets. Revisions contain portable scope fingerprints, full SHA-256 inventories, device identities, and parent revisions. Local paths are excluded. Missing ancestors, cycles, incompatible paths/scopes, and damaged payloads fail verification.
+- Added a durable SQLite upload outbox and destination-bound baseline, pause, and review status. Audited post-play snapshots enqueue background SaveSyncJob work; retries retain the original revision ID and ancestry. Uploads resume on plugin load, subsequent backup work, or explicit Retry. Unchanged saves do not create duplicate remote revisions.
+- Rclone reads back payloads before publishing the commit record. Retrying an already committed revision verifies it without rewriting it. Unpublished payloads can be resumed. Only successful parent-directory listings establish absence; failed remote requests cannot establish an empty destination.
+- Added game-scoped typed history, preview, restore, review, resolve, pause, and retry APIs. Restore actions rediscover the current plugin scope. Requests use opaque IDs and review tokens; backend paths and configuration remain private.
+- Added Saves to game details. Users can preview and restore local backups, locate the pre-restore undo entry, review cloud alternatives, choose this device or another version, defer, retry uploads, or pause cloud backups. Shared save groups explicitly warn that other games are affected. Snapshot dates are labelled as snapshot dates, not evidence of progress.
+- Cloud decisions revalidate local contents and all observed remote heads, preserve both versions, and publish a resolution with every reviewed branch as a parent. A newly visible competing branch stays unresolved. Another device's change produces a persistent Needs your choice state and a notification when newly detected.
+- UI reuses the existing dialog and buttons, scrolls focused controls into view, prevents duplicate Enter/submission actions, and restores focus on close. Cloud setup failure does not hide local backup history.
+
+Automatic cloud application at launch remains paused. Games continue with local saves until a user explicitly restores a cloud version. This milestone provides manual reconciliation and local history, not the completed automatic session state machine. Launch-time conflict interruption, a global pending-actions page, timed retry/backoff, richer device naming, broader emulator scope audits, legacy import, remote-history browsing beyond current alternatives, retention, and Linux/package release gates remain pending. Local-only mode continues using local recovery snapshots rather than a second remote transport. Existing unindexed and legacy backups are preserved without automatic migration or pruning. No plugin was enabled and no user save destination was accessed.
+
+Verification:
+
+- bun test src/tests/save-sync.test.ts src/tests/save-recovery.test.ts src/tests/save-backup.test.ts src/tests/launch-output.test.ts: 43 passed, 170 assertions.
+- Final bun run test: 103 passed, 1 skipped, 1 failed. Only the existing uses custom emulator platform uniqueness failure remains.
+- Real rclone 1.73.4 passed isolated publication, idempotent retry, listing, download, and corrupted-payload rejection while preserving legacy files.
+- bun run tsc: eight existing diagnostics, none in changed files.
+- bun run build:vite: passed; reviewed the generated additive database migration from bun run drizzle:generate.
+- Exercised the actual Saves component with a disposable mocked API fixture in the in-app browser: handheld 800x480 dark layout, desktop 1280x800 light layout, mouse and Enter activation, simulated controller A/B and directional navigation, scrolling, focus restoration, restore confirmation, undo history, stale-choice errors, pause, and disabled cloud choices. No physical controller, packaged runtime, Linux, or live provider account was tested.
+- A full-suite run while the fixture's Vite watcher watched the repository hit a Windows EPERM renaming a temporary backup directory. Stopping the fixture restored the passing backup test; no retry bypass or weakened filesystem safeguard was added.
+- Pre-existing test data was preserved separately during verification and restored afterward. Temporary fixture files and logs are excluded from the commit.
+
+Rclone operation contracts were checked against its official remote-control documentation: https://rclone.org/rc/.

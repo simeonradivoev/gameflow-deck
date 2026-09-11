@@ -1,3 +1,4 @@
+import { SaveSyncJob } from './save-sync-job';
 import Elysia from "elysia";
 import z, { _ZodType } from "zod";
 import { taskQueue } from "../app";
@@ -185,6 +186,7 @@ export const jobs = new Elysia({ prefix: '/api/jobs' })
             (ws.data as any).dispose.forEach((d: any) => d());
         },
     })
+    .use(registerJob(SaveSyncJob))
     .use(registerJob(LaunchGameJob))
     .use(registerJob(LoginJob))
     .use(registerJob(TwitchLoginJob))

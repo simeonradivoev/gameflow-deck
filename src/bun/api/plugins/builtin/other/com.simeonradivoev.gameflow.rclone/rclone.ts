@@ -1,3 +1,8 @@
+import { registerSaveSync, retrySaveSync } from '@/bun/api/saves/provider';
+import { SaveSyncService, saveDeviceId } from '@/bun/api/saves/sync';
+import { digest } from '@/bun/api/saves/sets';
+import { db } from '@/bun/api/app';
+import { RcloneSaveTransport } from './transport';
 import { withSaveLocks } from '@/bun/api/saves/locks';
 import { discoverSaveSets, localRecovery } from '@/bun/api/saves/runtime';
 import { PluginLoadingContextType, PluginType } from "@simeonradivoev/gameflow-sdk";
@@ -33,7 +38,7 @@ const SettingsSchema = z.object({
         .meta({ $comment: JSON.stringify({ category: "debug" }) }),
     importSaves: z.boolean().default(true).describe("Automatic restore is paused while conflict recovery is being added. Existing local saves are never overwritten."),
     exportSaves: z.boolean().default(true).describe("Keep separate, verified save backups after playing. Existing destination saves are never replaced or deleted."),
-    safetyStatus: z.string().default("Backup only. Automatic restore and conflict resolution are not available yet.").readonly()
+    safetyStatus: z.string().default("Automatic restore is paused. Review cloud versions and restore backups from Saves in game details.").readonly()
         .meta({ title: "Save protection" })
 });
 
@@ -49,6 +54,8 @@ export default class RcloneIntegration implements PluginType<SettingsType>
     private reader?: ReturnType<typeof createInterface>;
     private backupWork = Promise.resolve();
     private reportedRestorePause = false;
+    private unregisterSync?: () => void;
+    private syncWork = Promise.resolve();
     password: string;
     user = "gameflow";
     loginUrl: string | undefined = undefined;
@@ -205,6 +212,8 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
     async cleanup ()
     {
+        this.unregisterSync?.();
+        this.unregisterSync = undefined;
         this.lifetime.abort();
         this.reader?.close();
         this.reader = undefined;
@@ -218,6 +227,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             finally { clearTimeout(timeout); }
         }
         await this.backupWork;
+        await this.syncWork;
     }
 
     async load (ctx: PluginLoadingContextType<SettingsType>)
@@ -231,6 +241,28 @@ export default class RcloneIntegration implements PluginType<SettingsType>
         this.loginUrl = undefined;
         this.reportedRestorePause = false;
         await this.setup(ctx);
+        const makeSync = async () =>
+        {
+            const remote = ctx.config.get('remoteName');
+            if (!ctx.config.get('exportSaves') || !remote || remote === DefaultLocalName) return undefined;
+            const recovery = localRecovery();
+            // A renamed/reconfigured remote must not inherit another destination's baseline.
+            const remoteConfig = await this.client.request('/config/get', { name: remote });
+            const destination = digest([remote, ctx.config.get('globalConfig'), remoteConfig]);
+            return new SaveSyncService(db, recovery,
+                new RcloneSaveTransport(destination, this.client.request, remote, recovery.backupRoot),
+                await saveDeviceId(recovery.backupRoot));
+        };
+        this.unregisterSync = registerSaveSync(makeSync);
+        const schedule = () =>
+        {
+            this.syncWork = retrySaveSync().then(() => {}, () =>
+            {
+                if (!this.lifetime.signal.aborted)
+                    events.emit('notification', { message: 'A save backup is waiting. Open Saves in game details to retry.', type: 'error' });
+            });
+        };
+        schedule();
         ctx.hooks.games.prePlay.tapPromise({ name: desc.name, stage: 10 }, async ({ saveFolderSlots }) =>
         {
             if (ctx.config.get('importSaves') && Object.keys(saveFolderSlots).length && !this.reportedRestorePause)
@@ -268,11 +300,17 @@ export default class RcloneIntegration implements PluginType<SettingsType>
                             ? await recovery.capture(declared, this.lifetime.signal, command)
                             : await withSaveLocks([change.cwd], () => captureSaveSnapshot(backupRoot, identity, change, this.lifetime.signal), command);
                         if (!snapshot) continue;
-                        if (remote && remote !== DefaultLocalName)
+                        if (declared)
+                        {
+                            const sync = await makeSync();
+                            if (sync) await sync.enqueue(declared, snapshot);
+                        }
+                        else if (remote && remote !== DefaultLocalName)
                             await uploadSaveSnapshot(this.client.request, remote, snapshot, this.lifetime.signal);
                     } catch { failed = true; }
                 }
-                if (failed) throw new Error('Some save backups could not be completed. Your game saves and completed local backups have been kept. Automatic retry is not available yet.');
+                schedule();
+                if (failed) throw new Error('Some save backups could not be completed. Your game saves and completed local backups have been kept. Open Saves in game details to check pending uploads.');
             });
             this.backupWork = work.catch(() => {});
             await work;

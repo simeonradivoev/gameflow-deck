@@ -1,3 +1,4 @@
+import SaveHistory from './SaveHistory';
 import { scrollIntoViewHandler } from "@/mainview/scripts/utils";
 import { RPC_URL } from "@/shared/constants";
 import { FocusContext, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
@@ -99,6 +100,7 @@ export default function Details (data: {
                         </div>}
                     </div>
                     <ActionButtons source={data.source} id={data.id} game={data.game} key="actions" />
+                    <SaveHistory source={data.source} id={data.id} />
                 </div>
             </section>
         </FocusContext>
