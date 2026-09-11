@@ -12,7 +12,7 @@ import { contentIdentity, portableScope, revisionHeads, validateRevision, type S
 type Database = typeof import('../app').db;
 export class SaveSyncService
 {
-    constructor(private db: Database, readonly recovery: LocalSaveRecovery, readonly transport: SaveTransport, readonly device: string) {}
+    constructor(private db: Database, readonly recovery: LocalSaveRecovery, readonly transport: SaveTransport, readonly device: string, readonly autoRestore = true) {}
 
     async profile (set: RegisteredSaveSet)
     {
@@ -67,6 +67,7 @@ export class SaveSyncService
         {
             const set = await this.recovery.store.getSet(profile.saveSetId);
             if (!set || set.scopeHash !== profile.scopeHash) continue;
+            let published = false;
             for (const row of await this.pending(profile.id))
             {
                 signal?.throwIfAborted();
@@ -79,6 +80,7 @@ export class SaveSyncService
                         || contentIdentity(snapshot.manifest.files) !== contentIdentity(revision.files))
                         throw new Error('The pending backup changed.');
                     await this.transport.publish(set, revision, snapshot, signal);
+                    published = true;
                     // A committed child is the local baseline only after verified publication.
                     this.db.transaction(tx =>
                     {
@@ -99,7 +101,7 @@ export class SaveSyncService
                 if (current.baseline.some(id => !revisions.some(revision => revision.id === id)))
                     throw new Error('Previously verified cloud history is missing.');
                 const heads = revisionHeads(revisions);
-                const status = !heads.length ? 'unchecked' : heads.length === 1 && current.baseline.includes(heads[0]!.id) ? 'matching' : 'choice';
+                const status = heads.length > 1 || (current.status === 'choice' && !published) ? 'choice' : heads.length === 1 && current.baseline.includes(heads[0]!.id) ? 'matching' : 'unchecked';
                 needsChoice ||= status === 'choice' && profile.status !== 'choice';
                 await this.db.update(saveSyncProfiles).set({ status }).where(eq(saveSyncProfiles.id, profile.id));
             } catch
@@ -132,7 +134,61 @@ export class SaveSyncService
             snapshots.set(head.id, downloaded);
         }
         const token = digest([set.scopeHash, this.transport.id, contentIdentity(local.manifest.files), heads.map(head => digest(head))]);
-        return { profile, local, heads, snapshots, token };
+        return { profile, local, heads, snapshots, token, revisions };
+    }
+
+    /** Called inside the launch lease. Provider timestamps never choose a winner. */
+    async reconcile (set: RegisteredSaveSet, owner: object = {}, signal?: AbortSignal)
+    {
+        return withSaveLocks([set.scope.cwd], async () =>
+        {
+            const profile = await this.profile(set);
+            if (profile.paused || !this.autoRestore) return 'paused' as const;
+            const inspected = await this.inspect(set, owner, signal);
+            const { local, heads, snapshots, revisions } = inspected;
+            const localHash = contentIdentity(local.manifest.files);
+            const head = heads.length === 1 ? heads[0] : undefined;
+            const baseline = profile.baseline.length === 1 ? revisions.find(row => row.id === profile.baseline[0]) : undefined;
+            const matches = heads.length > 0 && heads.every(row => contentIdentity(row.files) === localHash);
+            const localUnchanged = baseline && contentIdentity(baseline.files) === localHash;
+            const remoteUnchanged = head && head.id === baseline?.id;
+            // A missing root is rejected by inspect. An emptied established save is a
+            // possible reset/deletion, not an empty first installation.
+            const initialDownload = !profile.baseline.length && !local.manifest.files.length && head?.files.length;
+            const initialUpload = !profile.baseline.length && !heads.length;
+            const download = head && !matches && (localUnchanged || initialDownload) && head.files.length > 0;
+            const upload = initialUpload || (remoteUnchanged && local.manifest.files.length > 0);
+            if (!matches && !download && !upload)
+            {
+                await this.db.update(saveSyncProfiles).set({ status: 'choice' }).where(eq(saveSyncProfiles.id, profile.id));
+                return 'choice' as const;
+            }
+            // Recheck after payload verification and immediately before applying anything.
+            if (digest(revisionHeads(await this.transport.list(set, signal))) !== digest(heads)
+                || contentIdentity(await currentFiles(set, signal)) !== localHash)
+                throw new Error('Cloud saves changed during launch preparation. Try again.');
+            if (download)
+            {
+                const snapshot = snapshots.get(head.id)!;
+                const preview = await this.recovery.preview(set, snapshot.manifest.id, signal, owner);
+                if (contentIdentity(await currentFiles(set, signal)) !== localHash)
+                    throw new Error('Saves changed during launch preparation. Try again.');
+                await this.recovery.restore(set, snapshot.manifest.id, preview.token, signal, owner);
+            }
+            if (matches && heads.length > 1)
+            {
+                await this.enqueue(set, local, heads.map(row => row.id));
+                return 'queued' as const;
+            }
+            if (matches || download)
+            {
+                await this.db.update(saveSyncProfiles).set({ baseline: [head!.id], status: 'matching' })
+                    .where(eq(saveSyncProfiles.id, profile.id));
+                return download ? 'restored' as const : 'matching' as const;
+            }
+            if (local.manifest.files.length) await this.enqueue(set, local);
+            return 'queued' as const;
+        }, owner);
     }
 
     async review (set: RegisteredSaveSet, signal?: AbortSignal)
@@ -147,7 +203,7 @@ export class SaveSyncService
                 status: same ? 'matching' as const : heads.length ? 'choice' as const : 'first-backup' as const,
                 local: { fileCount: local.manifest.files.length, bytes: local.manifest.files.reduce((sum, file) => sum + file.size, 0) },
                 versions: heads.map(head => ({
-                    id: head.id, device: head.device === this.device ? 'This device' : 'Other device ' + head.device.slice(0, 6),
+                    id: head.id, device: head.device === this.device ? 'This device' : 'Another device',
                     createdAt: head.createdAt, fileCount: head.files.length, bytes: head.files.reduce((sum, file) => sum + file.size, 0)
                 }))
             };
@@ -173,6 +229,8 @@ export class SaveSyncService
             if (choice !== 'local')
             {
                 const preview = await this.recovery.preview(set, chosen.manifest.id, signal, owner);
+                if (contentIdentity(await currentFiles(set, signal)) !== contentIdentity(inspected.local.manifest.files))
+                    throw new Error('Saves changed during verification. Refresh and choose again.');
                 undoSnapshotId = (await this.recovery.restore(set, chosen.manifest.id, preview.token, signal, owner)).undoSnapshotId;
             }
             const queued = await this.enqueue(set, chosen, inspected.heads.map(head => head.id));

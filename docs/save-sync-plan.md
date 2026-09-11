@@ -233,3 +233,20 @@ Verification:
 - Pre-existing test data was preserved separately during verification and restored afterward. Temporary fixture files and logs are excluded from the commit.
 
 Rclone operation contracts were checked against its official remote-control documentation: https://rclone.org/rc/.
+
+### Automatic sync and simpler controls (2026-09-11)
+
+- Moved Cloud saves into the game's existing Settings context menu. Removed the standalone details-page button. The overview shows status, pause/resume, and a separate backup-history screen; conflict choices and restore previews no longer share the screen with history.
+- Launch now reconciles audited save sets under the existing launch lease. Matching contents establish the baseline without a prompt. Local-only changes upload automatically; cloud-only changes restore automatically with an undo backup. Verified empty first installations can download, and first local saves can upload. Identical branches consolidate automatically.
+- Diverged contents, ambiguous first saves, and an emptied established save require a choice. The launcher displays local/cloud choices directly. Both versions are retained and choices still revalidate contents. After choosing, return to the game and press Play again.
+- Unavailable cloud storage allows local play with a notice. Immutable uploads retain their original ancestry, so offline play cannot silently replace another device's branch. An interrupted local restore still blocks play until recovery finishes.
+- Background retries run every minute and stop on plugin cleanup. Repeated failures do not repeat the notification. Background scans preserve a known conflict until reconciliation or publication resolves it.
+- Existing plugin enablement and import/export preferences remain unchanged. Automatic application is limited to audited save-set integrations. No SDK contract or database migration changed. Legacy backups remain untouched.
+
+Validation used isolated Windows test data and a mocked browser transport; no user save destination was accessed. The actual Settings menu and save controls were exercised with mouse, keyboard Enter, simulated controller A/B and directional focus, at 800x480 and 1280x800 in light/dark themes. Backup disclosure, restore preview, conflict selection, and focus restoration passed. Production frontend build passed. Linux/package behavior and physical controller hardware remain untested.
+
+Verification results:
+- Focused save/recovery/backup/launch-output suite: 50 passed, 1 opt-in real-rclone test skipped. The final reconciliation suite, including persistent-conflict and restore-preview race regressions: 18 passed.
+- Full Bun suite: 109 passed, 2 skipped, 4 failed. All four failures are download tests whose external ROMM/Wikimedia assets return ConnectionRefused. The isolated run skips the occupied frontend port and binds the test API to loopback through a temporary preload.
+- TypeScript: the same eight existing errors in package-bun.ts, controls/windows.ts, GameList.tsx, Header.tsx, SelectMenu.tsx, and tests/preload.ts; no errors in changed files.
+- bun run build:vite and git diff --check passed.

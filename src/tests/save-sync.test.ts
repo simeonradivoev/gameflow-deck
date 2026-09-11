@@ -163,3 +163,131 @@ test('portable scopes exclude host paths; invalid graphs and paths fail closed',
     const other = await branch('CCCC', [revision.id]);
     expect(() => revisionHeads([{ ...revision, parents: [other.id] }, other])).toThrow('cycle');
 });
+
+test('launch adopts matching saves and restores only remote changes with an undo backup', async () =>
+{
+    const base = await branch('AAAA');
+    expect(await service.reconcile(set)).toBe('matching');
+    expect((await service.profile(set)).baseline).toEqual([base.id]);
+    const next = await branch('BBBB', [base.id]);
+    expect(await service.reconcile(set)).toBe('restored');
+    expect(await fs.readFile(path.join(root, 'a.sav'), 'utf8')).toBe('BBBB');
+    expect((await service.profile(set)).baseline).toEqual([next.id]);
+    expect((await recovery.store.history(set.id)).some(row => row.reason === 'before-restore')).toBe(true);
+    expect(await service.reconcile(set)).toBe('matching');
+    expect(await service.pending((await service.profile(set)).id)).toHaveLength(0);
+});
+
+test('launch automatically backs up first saves and local-only changes', async () =>
+{
+    expect(await service.reconcile(set)).toBe('queued');
+    await service.flush();
+    const base = (await service.profile(set)).baseline[0]!;
+    await fs.writeFile(path.join(root, 'a.sav'), 'BBBB');
+    expect(await service.reconcile(set)).toBe('queued');
+    await service.flush();
+    const heads = revisionHeads(await transport.list());
+    expect(heads).toHaveLength(1);
+    expect(heads[0]!.parents).toEqual([base]);
+});
+
+test('launch never picks a winner for diverged saves, including equal-size edits', async () =>
+{
+    const base = await branch('AAAA');
+    await service.reconcile(set);
+    await fs.writeFile(path.join(root, 'a.sav'), 'CCCC');
+    await branch('BBBB', [base.id]);
+    expect(await service.reconcile(set)).toBe('choice');
+    expect((await service.profile(set)).status).toBe('choice');
+    expect(await fs.readFile(path.join(root, 'a.sav'), 'utf8')).toBe('CCCC');
+    expect(await service.pending((await service.profile(set)).id)).toHaveLength(0);
+});
+
+test('launch restores into a verified empty first installation but never an emptied baseline', async () =>
+{
+    await fs.unlink(path.join(root, 'a.sav'));
+    await branch('BBBB');
+    expect(await service.reconcile(set)).toBe('restored');
+    await fs.unlink(path.join(root, 'a.sav'));
+    expect(await service.reconcile(set)).toBe('choice');
+    expect(await fs.readdir(root)).toEqual([]);
+});
+
+test('launch keeps ambiguous first saves and multiple cloud branches unchanged', async () =>
+{
+    await branch('BBBB');
+    expect(await service.reconcile(set)).toBe('choice');
+    await branch('AAAA');
+    expect(await service.reconcile(set)).toBe('choice');
+    expect(await fs.readFile(path.join(root, 'a.sav'), 'utf8')).toBe('AAAA');
+});
+
+test('launch respects pause, disabled imports, missing roots, and active game leases', async () =>
+{
+    await service.pause(set, true);
+    expect(await service.reconcile(set)).toBe('paused');
+    await service.pause(set, false);
+    const disabled = new SaveSyncService(app.db, recovery, transport, randomUUID(), false);
+    expect(await disabled.reconcile(set)).toBe('paused');
+    const owner = {};
+    const release = await acquireSaveLocks([root], owner);
+    try
+    {
+        await expect(service.reconcile(set)).rejects.toThrow('in use');
+        expect(await service.reconcile(set, owner)).toBe('queued');
+    } finally { release(); }
+    await service.flush();
+    await fs.rename(root, path.join(temporary, 'unavailable'));
+    await expect(service.reconcile(set)).rejects.toThrow();
+});
+
+test('launch rechecks local edits before applying a verified cloud save', async () =>
+{
+    const base = await branch('AAAA');
+    await service.reconcile(set);
+    await branch('BBBB', [base.id]);
+    transport.onList = async () => { await fs.writeFile(path.join(root, 'a.sav'), 'CCCC'); };
+    await expect(service.reconcile(set)).rejects.toThrow('changed');
+    expect(await fs.readFile(path.join(root, 'a.sav'), 'utf8')).toBe('CCCC');
+    expect((await service.profile(set)).baseline).toEqual([base.id]);
+});
+
+test('identical branches reconcile automatically without asking the user to choose', async () =>
+{
+    const first = await branch('AAAA'), second = await branch('AAAA');
+    expect(await service.reconcile(set)).toBe('queued');
+    await service.flush();
+    const heads = revisionHeads(await transport.list());
+    expect(heads).toHaveLength(1);
+    expect(heads[0]!.parents.sort()).toEqual([first.id, second.id].sort());
+    expect(await fs.readFile(path.join(root, 'a.sav'), 'utf8')).toBe('AAAA');
+});
+
+test('background retries keep a launch conflict visible until it is resolved', async () =>
+{
+    await branch('AAAA');
+    await service.reconcile(set);
+    await fs.unlink(path.join(root, 'a.sav'));
+    expect(await service.reconcile(set)).toBe('choice');
+    await service.flush();
+    expect((await service.profile(set)).status).toBe('choice');
+});
+
+test('edits arriving during restore preview block automatic and explicit cloud restore', async () =>
+{
+    const base = await branch('AAAA');
+    await service.reconcile(set);
+    const remote = await branch('BBBB', [base.id]);
+    const originalPreview = recovery.preview.bind(recovery);
+    recovery.preview = async (...args) =>
+    {
+        await fs.writeFile(path.join(root, 'a.sav'), 'CCCC');
+        return originalPreview(...args);
+    };
+    await expect(service.reconcile(set)).rejects.toThrow('changed');
+    expect(await fs.readFile(path.join(root, 'a.sav'), 'utf8')).toBe('CCCC');
+    await fs.writeFile(path.join(root, 'a.sav'), 'AAAA');
+    const review = await service.review(set);
+    await expect(service.resolve(set, review.token, remote.id)).rejects.toThrow('changed');
+    expect(await fs.readFile(path.join(root, 'a.sav'), 'utf8')).toBe('CCCC');
+});

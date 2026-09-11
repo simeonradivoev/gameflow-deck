@@ -15,7 +15,7 @@ export class SaveSyncJob implements IJob<{ label: string }, string>
         const service = await currentSaveSync();
         if (!service) return;
         if (await service.flush(context.abortSignal))
-            events.emit('notification', { message: 'Saves changed on another device. Open Saves in game details to review both versions. Your local saves are unchanged.', type: 'info' });
+            events.emit('notification', { message: 'Cloud saves conflict. Choose a save when you next play, or open Settings → Cloud saves. Both versions are kept.', type: 'info' });
         context.setProgress(1, 'Backups saved');
     }
 }

@@ -1,10 +1,13 @@
+import { useState } from 'react';
+import SaveHistory from './SaveHistory';
+import { FOCUS_KEYS } from '@/mainview/scripts/types';
 import { deleteGameMutation, fixSourceMutation, gameInvalidationQuery, updateSourceMutation, validateSourceQuery } from "@/mainview/scripts/queries/romm";
 import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
 import { getErrorMessage } from "react-error-boundary";
 import toast from "react-hot-toast";
-import { Download, Store, Hammer, RefreshCcw, RefreshCcwDot, Settings, Trash, Trophy } from "lucide-react";
+import { Download, Store, History, Hammer, RefreshCcw, RefreshCcwDot, Settings, Trash, Trophy } from "lucide-react";
 import MainActions from "./MainActions";
 import ActionButton from "./ActionButton";
 import { useLocalStorage } from "usehooks-ts";
@@ -38,6 +41,8 @@ export default function ActionButtons (data: {
 {
     const [, setDetailsSection] = useLocalStorage('details-section', 'screenshots');
     const navigate = useNavigate();
+    const [showSaves, setShowSaves] = useState(false);
+    const [savesBusy, setSavesBusy] = useState(false);
 
     const fixMutation = useMutation({
         ...fixSourceMutation,
@@ -100,11 +105,21 @@ export default function ActionButtons (data: {
     useBlocker({
         shouldBlockFn: () =>
         {
-            return deleteMutation.isPending || fixMutation.isPending || updateMutation.isPending;
+            return savesBusy || deleteMutation.isPending || fixMutation.isPending || updateMutation.isPending;
         }
     });
 
     const contextOptions: DialogEntry[] = [{
+        id: 'saves',
+        content: 'Cloud saves',
+        icon: <History />,
+        type: 'primary',
+        action ()
+        {
+            setShowSaves(true);
+            requestAnimationFrame(() => setFocus('save-history-close'));
+        }
+    }, {
         id: 'go-to-store',
         type: 'primary',
         content: 'Go to Store',
@@ -191,7 +206,16 @@ export default function ActionButtons (data: {
         });
     }
 
-    const { setOpen, dialog: settingsDialog } = useContextDialog("settings-context", { content: <ContextList disableCloseButton={deleteMutation.isPending} options={contextOptions} />, canClose: !deleteMutation.isPending });
+    const { setOpen, dialog: settingsDialog } = useContextDialog("settings-context", {
+        content: showSaves ? <SaveHistory source={data.source} id={data.id} busy={savesBusy} setBusy={setSavesBusy} close={() =>
+        {
+            setShowSaves(false);
+            requestAnimationFrame(() => setFocus(FOCUS_KEYS.CONTEXT_DIALOG_OPTION('settings-context', 'saves')));
+        }} /> : <ContextList disableCloseButton={deleteMutation.isPending} options={contextOptions} />,
+        className: showSaves ? 'w-[min(36rem,94vw)]' : undefined,
+        canClose: !deleteMutation.isPending && !savesBusy,
+        onClose: () => setShowSaves(false)
+    });
 
     return <div ref={ref} className="flex sm:gap-2 md:gap-4 sm:h-16 md:h-32 overflow-hidden p-2 items-center shrink-0">
         <FocusContext value={focusKey}>

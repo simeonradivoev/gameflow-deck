@@ -36,9 +36,9 @@ const SettingsSchema = z.object({
         .default(false)
         .describe("Show backup status messages")
         .meta({ $comment: JSON.stringify({ category: "debug" }) }),
-    importSaves: z.boolean().default(true).describe("Automatic restore is paused while conflict recovery is being added. Existing local saves are never overwritten."),
+    importSaves: z.boolean().default(true).describe("Sync verified cloud saves before playing. If both devices changed, choose which save to use."),
     exportSaves: z.boolean().default(true).describe("Keep separate, verified save backups after playing. Existing destination saves are never replaced or deleted."),
-    safetyStatus: z.string().default("Automatic restore is paused. Review cloud versions and restore backups from Saves in game details.").readonly()
+    safetyStatus: z.string().default("Saves sync when you play. Conflicts ask for your choice; earlier versions are kept in Settings → Cloud saves.").readonly()
         .meta({ title: "Save protection" })
 });
 
@@ -53,9 +53,10 @@ export default class RcloneIntegration implements PluginType<SettingsType>
     private client!: RcloneClient;
     private reader?: ReturnType<typeof createInterface>;
     private backupWork = Promise.resolve();
-    private reportedRestorePause = false;
     private unregisterSync?: () => void;
     private syncWork = Promise.resolve();
+    private retryTimer?: ReturnType<typeof setInterval>;
+    private reportedSyncFailure = false;
     password: string;
     user = "gameflow";
     loginUrl: string | undefined = undefined;
@@ -212,6 +213,8 @@ export default class RcloneIntegration implements PluginType<SettingsType>
 
     async cleanup ()
     {
+        clearInterval(this.retryTimer);
+        this.retryTimer = undefined;
         this.unregisterSync?.();
         this.unregisterSync = undefined;
         this.lifetime.abort();
@@ -239,7 +242,6 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             this.client = new RcloneClient('http://localhost:5572', this.user, this.password, this.lifetime.signal);
         }
         this.loginUrl = undefined;
-        this.reportedRestorePause = false;
         await this.setup(ctx);
         const makeSync = async () =>
         {
@@ -251,29 +253,21 @@ export default class RcloneIntegration implements PluginType<SettingsType>
             const destination = digest([remote, ctx.config.get('globalConfig'), remoteConfig]);
             return new SaveSyncService(db, recovery,
                 new RcloneSaveTransport(destination, this.client.request, remote, recovery.backupRoot),
-                await saveDeviceId(recovery.backupRoot));
+                await saveDeviceId(recovery.backupRoot), ctx.config.get('importSaves'));
         };
         this.unregisterSync = registerSaveSync(makeSync);
         const schedule = () =>
         {
-            this.syncWork = retrySaveSync().then(() => {}, () =>
+            this.syncWork = retrySaveSync().then(() => { this.reportedSyncFailure = false; }, () =>
             {
-                if (!this.lifetime.signal.aborted)
-                    events.emit('notification', { message: 'A save backup is waiting. Open Saves in game details to retry.', type: 'error' });
+                if (!this.lifetime.signal.aborted && !this.reportedSyncFailure)
+                    events.emit('notification', { message: 'Cloud sync is waiting for a connection. Your backups are kept; we’ll retry automatically.', type: 'info' });
+                this.reportedSyncFailure = true;
             });
         };
         schedule();
-        ctx.hooks.games.prePlay.tapPromise({ name: desc.name, stage: 10 }, async ({ saveFolderSlots }) =>
-        {
-            if (ctx.config.get('importSaves') && Object.keys(saveFolderSlots).length && !this.reportedRestorePause)
-            {
-                this.reportedRestorePause = true;
-                events.emit('notification', {
-                    message: 'Save protection is backup-only for now. Automatic restore is paused; this game will use the saves on this device.',
-                    type: 'info', icon: 'save'
-                });
-            }
-        });
+        this.retryTimer = setInterval(schedule, 60_000);
+        this.retryTimer.unref();
         ctx.hooks.games.postPlay.tapPromise({ name: desc.name, stage: 10 }, async ({ source, id, validChangedSaveFiles, command, saveFolderSlots }) =>
         {
             if (!ctx.config.get('exportSaves')) return;
@@ -310,7 +304,7 @@ export default class RcloneIntegration implements PluginType<SettingsType>
                     } catch { failed = true; }
                 }
                 schedule();
-                if (failed) throw new Error('Some save backups could not be completed. Your game saves and completed local backups have been kept. Open Saves in game details to check pending uploads.');
+                if (failed) throw new Error('Some save backups could not be completed. Your game saves and completed local backups have been kept. Open Settings → Cloud saves to check pending uploads.');
             });
             this.backupWork = work.catch(() => {});
             await work;

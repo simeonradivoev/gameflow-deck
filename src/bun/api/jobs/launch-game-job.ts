@@ -1,6 +1,7 @@
+import { currentSaveSync, retrySaveSync } from '../saves/provider';
 import { normalizeSaveLocations } from '../games/services/saveLocationPaths';
 import { acquireSaveLocks } from '../saves/locks';
-import { discoverSaveSets, recoverSaveRoots } from '../saves/runtime';
+import { discoverSaveSets, recoverSaveRoots, localRecovery } from '../saves/runtime';
 import { createLaunchOutputReporter } from "@/bun/utils/launch-output";
 import z from "zod";
 import { IJob, JobContext } from "@simeonradivoev/gameflow-sdk/task-queue";
@@ -69,7 +70,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
         });
     }
 
-    async prePlay (setProgress: (progress: number, state: string) => void, gameInfo: { platformSlug?: string; })
+    async prePlay (setProgress: (progress: number, state: string) => void, gameInfo: { platformSlug?: string; }, signal?: AbortSignal)
     {
         await plugins.hooks.games.prePlay.promise({
             source: this.gameSource ?? this.gameId.source,
@@ -88,6 +89,44 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
         {
             throw new Error('Save recovery could not be completed. Keep the save integration and its original location available before trying again.');
         });
+        if (sets.length)
+        {
+            setProgress(0, 'saves');
+            try
+            {
+                const sync = await currentSaveSync();
+                if (sync?.autoRestore)
+                {
+                    const activeSets = [];
+                    for (const set of sets)
+                        if (!(await sync.profile(set)).paused) activeSets.push(set);
+                    if (activeSets.length)
+                    {
+                        // Finish durable publications before reading the baseline.
+                        await retrySaveSync();
+                        for (const set of activeSets)
+                        {
+                            signal?.throwIfAborted();
+                            if (await sync.reconcile(set, this.validCommand, signal) === 'choice')
+                                throw new Error('Save conflict: choose which save to use before playing.');
+                        }
+                        void retrySaveSync().catch(() => {});
+                    }
+                }
+            } catch (error)
+            {
+                signal?.throwIfAborted();
+                if (error instanceof Error && error.message.startsWith('Save conflict:')) throw error;
+                // Offline play must never bypass an interrupted local restore.
+                for (const set of sets)
+                    if ((await localRecovery().store.pending(set.id)).length)
+                        throw new Error('Save recovery must finish before playing. Please try launching again.');
+                events.emit('notification', {
+                    message: 'Cloud sync is unavailable. Playing with this device’s saves; backups will retry automatically.',
+                    type: 'info'
+                });
+            }
+        }
         await rememberSaveLocations(this.gameId, this.saveSlots, this.validCommand.startDir).catch(() =>
         {
             // Optional stats must not prevent a game from launching.
@@ -168,7 +207,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 let game: any;
                 if (!commandArgs)
                 {
-                    await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug });
+                    await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug }, context.abortSignal);
 
                     if (Array.isArray(this.validCommand.command))
                     {
@@ -246,7 +285,7 @@ export class LaunchGameJob implements IJob<z.infer<typeof LaunchGameJob.dataSche
                 {
                     this.saveSlots = commandArgs.savesPath ?? {};
 
-                    await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug });
+                    await this.prePlay(context.setProgress.bind(context), { platformSlug: gameInfo?.platformSlug }, context.abortSignal);
 
                     let command = [this.validCommand.metadata.emulatorBin, ...commandArgs.args];
                     if (process.env.FLATPAK_BUILD) command = ['flatpak-spawn', '--host', `--directory=${config.get('downloadPath')}`, ...command];
