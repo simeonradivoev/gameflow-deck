@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from "node:fs";
 import { config, jar } from "../api/app";
 import { moveAllFiles } from "../utils";
+import { downloadFileViaCurl } from "./curl";
 import { DownloadFileEntry, ProgressStats } from "@simeonradivoev/gameflow-sdk/shared";
 
 interface TmpDownloadMetadata
@@ -22,6 +23,7 @@ export class Downloader
     headers?: Record<string, string>;
     onProgress?: (stats: ProgressStats) => void;
     signal?: AbortSignal;
+    shouldUseCurl?: (file: DownloadFileEntry) => boolean;
     activeFile?: DownloadFileEntry;
     downloadPath: string | undefined;
     id: string;
@@ -43,12 +45,14 @@ export class Downloader
             headers?: Record<string, string>,
             onProgress?: (stats: ProgressStats) => void;
             signal?: AbortSignal;
+            shouldUseCurl?: (file: DownloadFileEntry) => boolean;
         })
     {
         this.files = files;
         this.headers = init?.headers;
         this.onProgress = init?.onProgress;
         this.signal = init?.signal;
+        this.shouldUseCurl = init?.shouldUseCurl;
         this.downloadPath = downloadPath;
         this.id = id;
         this.tmpPath = path.join(config.get('downloadPath'), 'downloads', this.id);
@@ -63,6 +67,73 @@ export class Downloader
 
         await ensureDir(path.join(config.get('downloadPath'), 'downloads'));
         await fs.writeFile(this.tmpPathMeta, JSON.stringify(meta));
+    }
+
+    /**
+     * Downloads a single file through the curl child process.
+     * Used for hosts that reject Bun's fetch TLS fingerprint (e.g. ModDB).
+     * Mirrors the progress and cancel semantics of the fetch path.
+     */
+    async downloadViaCurl (file: DownloadFileEntry, totalSize: number, bytesReceived: number, cookie: string)
+    {
+        const filePath = path.join(this.tmpPath, file.file_path, file.file_name);
+        let startSize = 0;
+        try
+        {
+            startSize = (await fs.stat(filePath)).size;
+        } catch
+        {
+            startSize = 0;
+        }
+        bytesReceived += startSize;
+
+        let lastBytes = startSize;
+        let lastUpdate = 0;
+
+        try
+        {
+            await downloadFileViaCurl({
+                url: file.url.href,
+                destPath: filePath,
+                headers: { ...this.headers, ...(cookie ? { cookie } : undefined) },
+                signal: this.signal,
+                onBytes: (size, total) =>
+                {
+                    const totalBytes = totalSize || total;
+                    const delta = size - lastBytes;
+                    lastBytes = size;
+                    const overall = bytesReceived + (size - startSize);
+                    if (totalBytes > 0 && this.onProgress)
+                    {
+                        const timeDelta = Date.now() - lastUpdate;
+                        if (timeDelta > 100)
+                        {
+                            this.downloadSpeed = this.downloadSpeed * 0.8 + Math.round(delta / (timeDelta / 1000)) * 0.2;
+                            this.onProgress({ progress: (overall / totalBytes) * 100, downloaded: overall, total: totalBytes, speed: this.downloadSpeed });
+                            lastUpdate = Date.now();
+                        }
+                    }
+                }
+            });
+        } catch (error)
+        {
+            if (error instanceof DOMException && error.name === 'AbortError')
+            {
+                if (this.signal?.reason === 'cancel')
+                {
+                    console.log("Canceling Download and cleaning up files");
+                    await fs.rm(this.tmpPath, { recursive: true, maxRetries: 3, retryDelay: 3 });
+                    await fs.rm(this.tmpPathMeta);
+                    return { bytesReceived, cancelled: true };
+                }
+
+                console.log("Aborting Download: ", this.signal?.reason);
+                return { bytesReceived: bytesReceived + lastBytes - startSize, cancelled: false };
+            }
+            throw error;
+        }
+
+        return { bytesReceived: bytesReceived + lastBytes - startSize, cancelled: false };
     }
 
     async start ()
@@ -82,6 +153,14 @@ export class Downloader
             const file = this.files[i];
             this.activeFile = file;
             const cookie = await jar.getCookieString(file.url.href);
+
+            if (this.shouldUseCurl?.(file))
+            {
+                const result = await this.downloadViaCurl(file, totalSize, bytesReceived, cookie);
+                if (result.cancelled) return;
+                bytesReceived = result.bytesReceived;
+                continue;
+            }
 
             await ensureDir(path.join(this.tmpPath, file.file_path));
 

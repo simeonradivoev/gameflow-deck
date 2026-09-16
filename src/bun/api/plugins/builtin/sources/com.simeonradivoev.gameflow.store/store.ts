@@ -407,6 +407,8 @@ export default class StoreIntegration implements PluginType
                     signal: abortSignal,
                     headers,
                     onProgress: updateProgress,
+                    // ModDB rejects Bun's fetch TLS fingerprint, download mirrors through curl.
+                    shouldUseCurl: (file) => isModDbDownloadUrl(file.url),
                 });
 
             const downloadedFiles = await downloader.start();

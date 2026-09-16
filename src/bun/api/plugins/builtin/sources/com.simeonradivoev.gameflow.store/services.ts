@@ -8,6 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { getOrCached } from "@/bun/api/cache";
 import { Glob } from "bun";
 import { shuffleInPlace } from "@/bun/utils";
+import { fetchTextViaCurl } from "@/bun/utils/curl";
 import mustache from "mustache";
 import { getEmulatorDownload, getEmulatorPath } from "@/bun/api/store/services/emulatorsService";
 import fs from "node:fs/promises";
@@ -197,12 +198,16 @@ const MODDB_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 export async function resolveModDbDownloadUrl (fileId: number)
 {
     const startUrl = new URL(`/downloads/start/${fileId}`, 'https://www.moddb.com');
-    const response = await fetch(startUrl, {
-        headers: getModDbDownloadHeaders()
-    });
-    if (!response.ok) throw new Error(`Could not resolve ModDB file ${fileId}: ${response.status} ${response.statusText}`);
+    // ModDB rejects Bun's fetch TLS fingerprint with 403, so resolve through curl.
+    let html: string;
+    try
+    {
+        html = await fetchTextViaCurl(startUrl.toString(), getModDbDownloadHeaders());
+    } catch (error)
+    {
+        throw new Error(`Could not resolve ModDB file ${fileId}: ${error instanceof Error ? error.message : error}`);
+    }
 
-    const html = await response.text();
     const mirrorPath = html.match(new RegExp(`(?:https://www\\.moddb\\.com)?(/downloads/mirror/${fileId}/[^"'<>\\s]+)`))?.[1];
     if (!mirrorPath) throw new Error(`Could not find a ModDB mirror for file ${fileId}`);
     return new URL(mirrorPath, startUrl);
@@ -490,9 +495,8 @@ export async function createStoreLaunchWrapper (downloadPath: string, info: Pick
 export async function buildLaunchCommand (ctx: { gamePath: string; systemSlug: string; mainGlob?: string | null; }): Promise<CommandEntry | undefined>
 {
     if (ctx.systemSlug !== 'win' && ctx.systemSlug !== 'linux' && ctx.systemSlug !== 'mac') return;
-    const downloadPath = config.get('downloadPath');
     if (ctx.systemSlug === 'win' && process.platform !== 'win32') return;
-    const gamePathAbsolute = path.resolve(downloadPath, ctx.gamePath);
+    const gamePathAbsolute = path.resolve(config.get('downloadPath'), ctx.gamePath);
     if (!(await fs.exists(gamePathAbsolute))) return;
     const gamePathStat = await fs.stat(gamePathAbsolute);
 
@@ -502,21 +506,21 @@ export async function buildLaunchCommand (ctx: { gamePath: string; systemSlug: s
         if (!mainGlob && ctx.systemSlug === 'win') mainGlob = '**/*.exe';
         if (!mainGlob) return;
         const fileGlob = new Glob(mainGlob);
-        for await (const file of fileGlob.scan({ cwd: path.join(downloadPath, ctx.gamePath) }))
+        for await (const file of fileGlob.scan({ cwd: gamePathAbsolute }))
         {
             const extension = path.extname(file).toLowerCase();
             const isWindowsScript = process.platform === 'win32' && (extension === '.bat' || extension === '.cmd');
             const executable = process.platform === 'linux'
-                ? path.join(downloadPath, ctx.gamePath, file)
+                ? path.join(gamePathAbsolute, file)
                 : `./${path.basename(file)}`;
             return {
-                startDir: path.join(downloadPath, ctx.gamePath, path.dirname(file)),
+                startDir: path.join(gamePathAbsolute, path.dirname(file)),
                 command: isWindowsScript ? ['cmd.exe', '/d', '/s', '/c', 'call', path.basename(file)] : [executable],
                 id: `store-${process.platform}`,
                 shell: false,
                 valid: true,
                 metadata: {
-                    romPath: path.join(downloadPath, ctx.gamePath, file)
+                    romPath: path.join(gamePathAbsolute, file)
                 }
             };
         }
@@ -524,13 +528,13 @@ export async function buildLaunchCommand (ctx: { gamePath: string; systemSlug: s
     } else
     {
         return {
-            startDir: path.join(downloadPath, path.dirname(ctx.gamePath)),
+            startDir: path.dirname(gamePathAbsolute),
             command: [`./${path.basename(ctx.gamePath)}`],
             id: `store-${process.platform}`,
             valid: true,
             shell: false,
             metadata: {
-                romPath: path.join(downloadPath, ctx.gamePath),
+                romPath: gamePathAbsolute,
             }
         };
     }

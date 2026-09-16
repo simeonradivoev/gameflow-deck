@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import * as app from '@/bun/api/app';
-import { createStoreLaunchWrapper } from '@/bun/api/plugins/builtin/sources/com.simeonradivoev.gameflow.store/services';
+import { createStoreLaunchWrapper, buildLaunchCommand } from '@/bun/api/plugins/builtin/sources/com.simeonradivoev.gameflow.store/services';
 
 test('Linux store launch wrapper avoids duplicate Steam Deck input', async () =>
 {
@@ -25,4 +25,19 @@ test('Linux store launch wrapper avoids duplicate Steam Deck input', async () =>
     expect(wrapper).toContain('SDL_GAMECONTROLLER_IGNORE_DEVICES="0x28de/0x1205"');
     expect(wrapper).toContain('"28de" ] && [ "$(cat -- "$GAMEFLOW_INPUT_DEVICE/id/product")" = "11ff"');
     expect(wrapper.indexOf('SDL_GAMECONTROLLER_IGNORE_DEVICES')).toBeLessThan(wrapper.indexOf('exec "$SCRIPT_DIR"'));
+});
+
+test('Store buildLaunchCommand accepts absolute game paths without doubling', async () =>
+{
+    const gamePath = path.join('roms', 'linux', 'abs-path-game');
+    const installPath = path.join(app.config.get('downloadPath'), gamePath);
+    await fs.mkdir(installPath, { recursive: true });
+    await fs.writeFile(path.join(installPath, 'run.sh'), '');
+
+    try
+    {
+        const command = await buildLaunchCommand({ gamePath: installPath, systemSlug: 'linux', mainGlob: '**/run.sh' });
+        expect(command).toBeDefined();
+        expect(command!.metadata.romPath).toBe(path.join(installPath, 'run.sh'));
+    } finally { await fs.rm(installPath, { recursive: true, force: true }); }
 });
