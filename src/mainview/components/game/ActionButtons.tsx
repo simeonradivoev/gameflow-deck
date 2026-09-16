@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import SaveHistory from './SaveHistory';
 import { FOCUS_KEYS } from '@/mainview/scripts/types';
-import { deleteGameMutation, fixSourceMutation, gameInvalidationQuery, updateSourceMutation, validateSourceQuery } from "@/mainview/scripts/queries/romm";
+import { deleteGameMutation, downloadLookupQuery, fixSourceMutation, gameInvalidationQuery, gameQuery, updateSourceMutation, validateSourceQuery } from "@/mainview/scripts/queries/romm";
 import { FocusContext, setFocus, useFocusable } from "@noriginmedia/norigin-spatial-navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ContextList, DialogEntry, useContextDialog } from "../ContextDialog";
@@ -69,6 +69,11 @@ export default function ActionButtons (data: {
         }
     });
     const { data: validation } = useQuery(validateSourceQuery(data.source, data.id));
+    const storeId = data.game?.id.source === 'store' ? data.game.id.id : data.game?.source === 'store' ? data.game.source_id : undefined;
+    const source = data.game?.source ?? data.game?.id.source;
+    const sourceId = data.game?.source_id ?? data.game?.id.id;
+    const { data: storeGame } = useQuery({ ...gameQuery('store', storeId ?? ''), enabled: !!storeId, retry: false });
+    const { data: download } = useQuery({ ...downloadLookupQuery(source ?? '', sourceId ?? ''), enabled: !!source && !!sourceId && source !== 'store', retry: false });
     const { ref, focusKey, hasFocusedChild } = useFocusable({ focusKey: 'actions', forceFocus: true, trackChildren: true, preferredChildFocusKey: 'mainAction' });
     const router = useRouter();
     const deleteMutation = useMutation({
@@ -119,7 +124,10 @@ export default function ActionButtons (data: {
             setShowSaves(true);
             requestAnimationFrame(() => setFocus('save-history-close'));
         }
-    }, {
+    }];
+    if (storeGame)
+    {
+        contextOptions.push({
         id: 'go-to-store',
         type: 'primary',
         content: 'Go to Store',
@@ -127,9 +135,13 @@ export default function ActionButtons (data: {
         action (ctx)
         {
             ctx.close();
-            navigate({ to: '/store/tab/games' });
+            navigate({ to: '/game/$source/$id', params: { source: 'store', id: storeGame.id.id } });
         }
-    }, {
+        });
+    }
+    if (download)
+    {
+        contextOptions.push({
         id: 'go-to-downloads',
         type: 'primary',
         content: 'Go to Downloads',
@@ -137,9 +149,10 @@ export default function ActionButtons (data: {
         action (ctx)
         {
             ctx.close();
-            navigate({ to: '/store/tab/download' });
+            navigate({ to: '/store/details/download/$source/$id', params: { source: encodeURIComponent(download.source), id: encodeURIComponent(download.id) } });
         }
-    }];
+        });
+    }
     if (data.game?.local)
     {
         contextOptions.push({
