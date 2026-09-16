@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.11.0...v1.12.0) (2026-09-16)
+
+
+### Features
+
+* **saves:** add scoped local restore and recovery journals ([f959b47](https://github.com/simeonradivoev/gameflow-deck/commit/f959b47a0a0e0e9a7e4a7ee576fa7e91431b62e1))
+* **saves:** add versioned cloud backups and conflict review ([ede2726](https://github.com/simeonradivoev/gameflow-deck/commit/ede2726cc8fd59038e2ccf5fbd2b81f7f609e7d0))
+* **saves:** automate safe cloud sync and simplify conflict controls ([b610316](https://github.com/simeonradivoev/gameflow-deck/commit/b61031627a1081e80fecedac2cd26f934e14931e))
+
+
+### Bug Fixes
+
+* Fixed moddb downloads ([5c65863](https://github.com/simeonradivoev/gameflow-deck/commit/5c6586351f2e3236f6906f6554524d2cf5d4b455))
+* **game:** link related store actions ([88a2d0f](https://github.com/simeonradivoev/gameflow-deck/commit/88a2d0fc6bba061c6709f37eef3e3dd0a1fab04e))
+* **saves:** prevent destructive rclone sync and preserve snapshots ([94aacc2](https://github.com/simeonradivoev/gameflow-deck/commit/94aacc231d76ebc1e000097880bec4a77a559f92))
+
 ## [1.11.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.10.1...v1.11.0) (2026-09-09)
 
 
