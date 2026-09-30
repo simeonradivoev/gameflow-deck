@@ -15,6 +15,33 @@ const APP_NAME = pkg.displayName ?? pkg.name;
 const APP_ID = pkg.name;
 const APPDIR = path.resolve(TMP_FOLDER, `${APP_ID}.AppDir`);
 
+const EXCLUDED_LIBS = new Set([
+    'libc.so.6', 'libpthread.so.0', 'libdl.so.2', 'librt.so.1', 'libm.so.6',
+    'ld-linux-x86-64.so.2', 'libgcc_s.so.1', 'libresolv.so.2',
+    'libBrokenLocale.so.1', 'libanl.so.1', 'libcidn.so.1', 'libthread_db.so.1',
+]);
+
+async function bundleSharedLibraries(binaries: string[]) {
+    const libDir = path.join(APPDIR, 'usr', 'lib');
+    const bundled = new Set<string>();
+    const queue = [...binaries];
+    while (queue.length > 0) {
+        const binary = queue.pop()!;
+        const out = await $`ldd ${binary}`.nothrow().text();
+        for (const line of out.split('\n')) {
+            const match = line.match(/=>\s+(\/\S+\.so[^\s]*)/);
+            if (!match) continue;
+            const src = match[1];
+            const name = path.basename(src);
+            if (EXCLUDED_LIBS.has(name) || bundled.has(name)) continue;
+            bundled.add(name);
+            await fs.cp(src, path.join(libDir, name));
+            queue.push(path.join(libDir, name));
+        }
+    }
+    console.log(`>>> Bundled ${bundled.size} shared libraries into ${libDir}`);
+}
+
 console.log(`>>> Building AppImage for ${APP_NAME} (${APP_ID})...`);
 
 await ensureDir(path.join(APPDIR, `usr`, 'bin'));
@@ -45,6 +72,8 @@ if (await fs.realpath(nwLinkPath) !== await fs.realpath(stagedNwPath))
 {
     throw new Error('AppImage NW.js launcher symlink does not resolve to the staged runtime');
 }
+
+await bundleSharedLibraries([stagedNwPath, stagedCodecPath]);
 
 const templateVars = {
     APP_NAME,
@@ -98,7 +127,8 @@ const config = {
 // Remove the build dir, mainly to help with CIs
 await fs.rm(APP_DIR, { recursive: true });
 await ensureDir(APP_DIR);
-const OUTPUT = path.resolve(APP_DIR, `${APP_NAME}-${process.platform}-${process.arch}.AppImage`);
+const APPIMAGE_ARCH = process.arch === 'x64' ? 'x86_64' : process.arch;
+const OUTPUT = path.resolve(APP_DIR, `${APP_NAME}-${APPIMAGE_ARCH}.AppImage`);
 const STAGE = path.resolve(TMP_FOLDER, `${APP_ID}.stage`);
 
 await ensureDir(STAGE);

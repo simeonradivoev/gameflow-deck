@@ -3,9 +3,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import StreamZip from 'node-stream-zip';
 
-const NW_VERSION = '0.110.1';
-const LINUX_X64_SHA256 = '4b895cc0212d9cec7f96943be998e5e6fb8db7104c0b9264ddd471f0d3cedf95';
-const LINUX_X64_LIBRARY_SHA256 = '4926839832ee5ab492bf6946fa950996cb6d40351ed0f61d37b2a736fed6c927';
+const CODEC_VERSION = '0.103.0';
+const LINUX_X64_SHA256 = '0398f3a7d7f90b9663e2bfc632b404bfd818c993a22a3cad1f4ee622807bf55e';
+const LINUX_X64_LIBRARY_SHA256 = 'd7633f6fb36313b78545fe09dfea03960ce58bcfa2577c77020262a9ddbe9246';
 
 if (process.platform !== 'linux')
 {
@@ -16,8 +16,8 @@ if (process.arch !== 'x64')
     throw new Error(`NW.js codec installation is not configured for ${process.arch}`);
 }
 
-const downloadUrl = `https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases/download/${NW_VERSION}/${NW_VERSION}-linux-x64.zip`;
-const archivePath = path.resolve(`./bin/nw-ffmpeg-${NW_VERSION}-linux-x64.zip`);
+const downloadUrl = `https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases/download/${CODEC_VERSION}/${CODEC_VERSION}-linux-x64.zip`;
+const archivePath = path.resolve(`./bin/nw-ffmpeg-${CODEC_VERSION}-linux-x64.zip`);
 const outputDirectory = path.resolve('./bin/nw/lib');
 const codecPath = path.join(outputDirectory, 'libffmpeg.so');
 const temporaryCodecPath = `${codecPath}.tmp`;
