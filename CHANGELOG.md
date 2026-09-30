@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.1](https://github.com/simeonradivoev/gameflow-deck/compare/v1.12.0...v1.12.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **appimage:** make AppImage self-contained and compatible with glibc 2.35 ([acec6f6](https://github.com/simeonradivoev/gameflow-deck/commit/acec6f68500243f4468f87e36e97a34c1728e443))
+* **tests:** make launch fixture idempotent and clean shared cache ([e69a864](https://github.com/simeonradivoev/gameflow-deck/commit/e69a864766ae9c3dc15ce7a17ddec907daf35ce0))
+* **update:** match renamed Linux AppImage asset in self-update ([88239a3](https://github.com/simeonradivoev/gameflow-deck/commit/88239a3b78680675c74ba13b06e1554644139d1a))
+
 ## [1.12.0](https://github.com/simeonradivoev/gameflow-deck/compare/v1.11.0...v1.12.0) (2026-09-16)
 
 
