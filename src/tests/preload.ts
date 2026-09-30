@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, afterEach } from 'bun:test';
 import { resolve } from 'node:path';
+import os from 'node:os';
 import * as app from '@/bun/api/app';
 import { ensureDir, remove } from 'fs-extra';
 
@@ -32,6 +33,7 @@ async function FileCleanup ()
         await remove(resolve('./src/tests/mock-config'));
         await remove(resolve('./src/tests/mock-store'));
         await remove(resolve('./src/tests/mock-roms'));
+        await remove(resolve(os.tmpdir(), 'gameflow'));
     } catch
     {
         //TODO: Bun doesn't close DB correctly and it gets locked so it doesn't get removed
