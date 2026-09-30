@@ -57,7 +57,11 @@ export default class SelfUpdateJob implements IJob<never, string>
                     }
                     break;
                 case "linux":
-                    validAsset = data.assets.find((e: any) => new Bun.Glob(`Gameflow-${process.platform}-${process.arch}.AppImage`).match(e.name));
+                    validAsset = data.assets.find((e: any) => new Bun.Glob(`Gameflow-x86_64.AppImage`).match(e.name));
+                    if (!validAsset)
+                    {
+                        validAsset = data.assets.find((e: any) => new Bun.Glob(`Gameflow-*.AppImage`).match(e.name));
+                    }
                     break;
                 default:
                     events.emit('notification', { message: "Unsupported Platfrom", title: 'Failed Update', type: "error" });
